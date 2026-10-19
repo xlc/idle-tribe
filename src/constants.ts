@@ -1,141 +1,139 @@
-import type {
-  ActionId,
-  Cost,
-  GameState,
-  JobId,
-  ResearchId,
+import type { ResourceId } from './ids'
+export const EPSILON = 1e-9
+export const RESOURCE_INFO: Record<
   ResourceId,
-  Specialization,
-} from './types'
-
-export const ACTION_IMMEDIATE_THRESHOLD_MS = 100
-export const FOOD_TICK_MS = 60000
-export const MAX_HUNGER = 5
-export const FEAST_FRUIT_PER_HEART = 1
-export const FED_MEAL_FRUIT = 1
-export const EXPLORE_COST = 10
-export const EXPLORE_UNLOCK_FRUIT = 5
-export const EXPLORE_DURATION_MS = 2000
-export const EXPLORE_FURTHER_COST = 10
-export const EXPLORE_FURTHER_DURATION_MS = 3000
-export const GATHER_DURATION_MS = 1000
-export const GATHER_WOOD_DURATION_MS = 2000
-export const GATHER_STONE_DURATION_MS = 3000
-export const RESEARCH_UNLOCK_WOOD = 2
-export const ACTION_XP_PER_COMPLETION = 1
-export const OFFLINE_CAP_MS = 24 * 60 * 60 * 1000
-export const ACTION_XP_SPEED_REDUCTION = 0.03
-export const ACTION_XP_GROWTH = 1.2
-export const ACTION_YIELD_MILESTONE = 5
-export const ACTION_SKILL_CONFIG: Record<
-  ActionId,
-  {
-    baseXp: number
-    resource?: ResourceId
-    researchBonus?: (state: GameState) => number
-    xpResearch?: ResearchId
-  }
+  { name: string; description: string; threshold: number; icon: string }
 > = {
-  gather: {
-    baseXp: 4,
-    resource: 'fruit',
-    xpResearch: 'foraging-practice',
-    researchBonus: (state) => {
-      const level = state.researchLevels['sharpened-stick']
-      return level > 0 ? 1 + 0.5 * (level - 1) : 0
-    },
+  food: {
+    name: 'Food',
+    description: 'The one resource everyone insists on consuming.',
+    threshold: 120,
+    icon: '●',
   },
-  explore: { baseXp: 1 },
-  sticks: {
-    baseXp: 3,
-    resource: 'wood',
-    researchBonus: (state) => state.researchLevels['stone-axes'] * 0.5,
+  wood: {
+    name: 'Wood',
+    description: 'Future homes, currently shaped like trees.',
+    threshold: 60,
+    icon: '♣',
   },
-  'explore-further': { baseXp: 2 },
   stone: {
-    baseXp: 5,
-    resource: 'stone',
-    researchBonus: (state) =>
-      state.researchLevels['stone-flakes'] * 0.1 +
-      state.researchLevels.quarrying * 0.5,
+    name: 'Stone',
+    description:
+      'The settlement’s oldest and least flexible building material.',
+    threshold: 60,
+    icon: '◆',
   },
-  research: { baseXp: 2 },
-  'research-foraging': { baseXp: 3 },
-  'research-stone-flakes': { baseXp: 4 },
-  'research-shelters': { baseXp: 3 },
-  'research-axes': { baseXp: 3 },
-  'research-quarrying': { baseXp: 4 },
-  'research-teamwork': { baseXp: 4 },
-  'research-carpentry': { baseXp: 4 },
-  'research-masonry': { baseXp: 4 },
-  'research-writing': { baseXp: 4 },
-  'research-forestry': { baseXp: 4 },
-  'research-stonecraft': { baseXp: 4 },
-  'research-joinery': { baseXp: 4 },
-  'research-architecture': { baseXp: 4 },
-  'research-agriculture': { baseXp: 4 },
-  'research-engineering': { baseXp: 4 },
+  planks: {
+    name: 'Planks',
+    description: 'Wood persuaded to take a more useful shape.',
+    threshold: 20,
+    icon: '▰',
+  },
+  blocks: {
+    name: 'Blocks',
+    description: 'Stone with its corners finally in order.',
+    threshold: 20,
+    icon: '■',
+  },
+  tools: {
+    name: 'Tools',
+    description: 'An excellent way to stop doing everything the hard way.',
+    threshold: 10,
+    icon: '⚒',
+  },
+  knowledge: {
+    name: 'Knowledge',
+    description: 'Useful ideas that survived being explained to someone else.',
+    threshold: 20,
+    icon: '✧',
+  },
+  ore: {
+    name: 'Ore',
+    description: 'Rock with a more ambitious job hidden inside.',
+    threshold: 100,
+    icon: '\u2b1f',
+  },
+  metal: {
+    name: 'Metal',
+    description: 'Shiny proof that the furnace was worth the trouble.',
+    threshold: 50,
+    icon: '\u25b1',
+  },
+  machinery: {
+    name: 'Machinery',
+    description: 'Several moving parts that have agreed to move together.',
+    threshold: 10,
+    icon: '\u2699',
+  },
+  charge: {
+    name: 'Charge',
+    description: 'Stored energy, impatient for something to switch on.',
+    threshold: 100,
+    icon: '\u03df',
+  },
+  circuits: {
+    name: 'Circuits',
+    description: 'Tiny roads for decisions that happen much too quickly.',
+    threshold: 20,
+    icon: '\u2318',
+  },
+  data: {
+    name: 'Data',
+    description: 'Facts gathered faster than anyone can nod thoughtfully.',
+    threshold: 50,
+    icon: '\u25a4',
+  },
+  'exotic-material': {
+    name: 'Exotic material',
+    description:
+      'Matter that makes the old textbooks look a little embarrassed.',
+    threshold: 10,
+    icon: '\u2726',
+  },
+  'quantum-components': {
+    name: 'Quantum components',
+    description: 'Small parts with unusually complicated working arrangements.',
+    threshold: 5,
+    icon: '\u25c8',
+  },
+  'causal-models': {
+    name: 'Causal models',
+    description:
+      'Careful diagrams of why things happened, or might insist on happening.',
+    threshold: 5,
+    icon: '\u232c',
+  },
 }
-
-export const RECRUIT_COST = 15
-export const JOBS: Record<
-  Exclude<JobId, 'idle'>,
+export const ERAS = [
   {
-    name: string
-    resource: ResourceId
-    actionId: ActionId | null
-    durationMs: number
-    input?: (state: GameState) => Cost
-    outputMultipliers?: (state: GameState) => number[]
-    specialization?: Specialization
-  }
-> = {
-  forager: {
-    name: 'Forager',
-    outputMultipliers: (state) => [
-      1 + state.researchLevels['foraging-practice'] * 0.25,
-      state.researchLevels.agriculture ? 2 : 1,
-    ],
-    resource: 'fruit',
-    actionId: 'gather',
-    durationMs: 5000,
+    name: 'Tribal',
+    description:
+      'Civilization begins with lunch and a fairly optimistic stick.',
   },
-  woodcutter: {
-    name: 'Woodcutter',
-    specialization: 'forestry',
-    resource: 'wood',
-    actionId: 'sticks',
-    durationMs: 8000,
+  {
+    name: 'Agricultural',
+    description: 'Dinner has put down roots, and so have we.',
   },
-  sawyer: {
-    name: 'Sawyer',
-    specialization: 'forestry',
-    input: (state) => ({ wood: state.researchLevels.joinery ? 2 : 3 }),
-    resource: 'planks',
-    actionId: null,
-    durationMs: 8000,
+  {
+    name: 'Town',
+    description:
+      'A settlement large enough for everyone to have opinions about it.',
   },
-  mason: {
-    name: 'Mason',
-    specialization: 'stonecraft',
-    input: (state) => ({ stone: state.researchLevels.joinery ? 2 : 3 }),
-    outputMultipliers: (state) => [state.researchLevels.architecture ? 1.5 : 1],
-    resource: 'blocks',
-    actionId: null,
-    durationMs: 10000,
+  {
+    name: 'Industrial',
+    description: 'The settlement has discovered a louder way to work.',
   },
-  scholar: {
-    name: 'Scholar',
-    input: () => ({ fruit: 1 }),
-    resource: 'knowledge',
-    actionId: null,
-    durationMs: 8000,
+  {
+    name: 'Digital',
+    description: 'The blinking lights insist everything is under control.',
   },
-  stoneworker: {
-    name: 'Stoneworker',
-    specialization: 'stonecraft',
-    resource: 'stone',
-    actionId: 'stone',
-    durationMs: 12000,
+  { name: 'Space', description: 'The roof was becoming a limitation.' },
+  {
+    name: 'Quantum',
+    description: 'Very small things are making very large demands.',
   },
-}
+  {
+    name: 'Beyond quantum',
+    description: 'The laws of physics have received your suggested edits.',
+  },
+]

@@ -1,393 +1,199 @@
-import { describe, expect, test } from 'bun:test'
-import { createActivityTimer, createClock } from './clock'
-import { FOOD_TICK_MS, OFFLINE_CAP_MS } from './constants'
-import { createGame } from './game'
+import { expect, test } from 'bun:test'
+import { feast, feastCost } from './food'
 import { RESOURCES } from './ids'
-import { parseSave } from './persistence'
+import { createRecord } from './records'
+import { enqueue, nextExpansion } from './research'
+import { arrivalStatus, happinessTarget, workerRate } from './settlement'
+import { advanceTime, resourceRates } from './simulation'
 import { createDefaultState } from './state'
-import { itemAt } from './test-helpers'
-import type { ActionKey, JobId, Specialization } from './types'
+import { complete, people, required, settlement } from './test-helpers'
 
-function workshop() {
-  const state = createDefaultState()
-  state.researchUnlocked = state.explored = state.stoneFound = true
-  state.researchLevels.shelters =
-    state.researchLevels.carpentry =
-    state.researchLevels.masonry =
-    state.researchLevels.writing =
-      1
-  for (const id of [
-    'foraging-camp',
-    'lumber-camp',
-    'quarry',
-    'sawmill',
-    'stoneworks',
-    'study',
-  ] as const)
-    state.buildings[id] = 1
-  state.fruit = 100
-  return createGame(state)
-}
+test('processing consumes one recipe per completion; scarce inputs resolve in roster order', () => {
+  const s = settlement()
+  people(s, 'sawyer', 'sawyer')
+  s.resources.wood = 2
+  s.resources.planks = 0
+  advanceTime(s, 600)
+  expect(s.resources.planks).toBe(1)
+  expect(s.resources.wood).toBe(0)
+  expect(s.people[0]?.progress).toBe(0)
+  expect(s.people[1]?.progress).toBe(1)
+  s.resources.wood = 2
+  advanceTime(s, 0)
+  expect(s.resources.planks).toBe(2)
+  expect(s.resources.wood).toBe(0)
+})
 
-describe('settlement production', () => {
-  test('workplaces enforce capacity and preserve work when a full assignment is rejected', () => {
-    const game = workshop()
-    game.recruitPerson()
-    game.recruitPerson()
-    expect(game.adjustWorkers('sawyer', 1)).toBe(true)
-    expect(game.adjustWorkers('sawyer', 1)).toBe(true)
-    const before = structuredClone(game.state)
-    expect(game.adjustWorkers('sawyer', 1)).toBe(false)
-    expect(game.state).toEqual(before)
-    expect(game.adjustWorkers('sawyer', -1)).toBe(true)
-    expect(game.adjustWorkers('mason', 1)).toBe(true)
-  })
+test('newly produced inputs start downstream work from that timestamp, without retroactive progress', () => {
+  const s = createDefaultState()
+  complete(s, 'sharpened-stick', 'shelters', 'carpentry')
+  s.facilities.lumber.level = 1
+  s.facilities.sawmill.level = 1
+  s.welcome = false
+  people(s, 'woodcutter', 'sawyer')
+  s.resources.food = 10
+  s.resources.wood = 2
+  advanceTime(s, 30)
+  expect(s.resources.wood).toBe(3)
+  expect(s.people[1]?.progress).toBeCloseTo(0, 8)
+  advanceTime(s, 30)
+  expect(s.people[1]?.progress).toBeCloseTo(0.25, 8)
+})
 
-  test('processors wait for inputs, convert exactly once, and resume partial cycles', () => {
-    const game = workshop()
-    const worker = itemAt(game.state.people, 0)
-    game.assignJob(worker, 'sawyer')
-    game.advanceTime(4000)
-    expect(game.state.planks).toBe(0)
-    expect(worker.workElapsedMs).toBe(0)
-    game.state.wood = 3
-    game.advanceTime(4500)
-    const restored = createGame(parseSave(JSON.stringify(game.state)))
-    restored.advanceTime(3500)
-    expect(restored.state.wood).toBe(0)
-    expect(restored.state.planks).toBe(1)
-    restored.advanceTime(30000)
-    expect(restored.state.planks).toBe(1)
-    restored.state.wood = 3
-    restored.advanceTime(8000)
-    expect(restored.state.planks).toBe(2)
-  })
-
-  test('competing processors cannot double spend the same input', () => {
-    const game = workshop()
-    game.recruitPerson()
-    game.state.wood = 3
-    game.adjustWorkers('sawyer', 1)
-    game.adjustWorkers('sawyer', 1)
-    game.advanceTime(8000)
-    expect(game.state.wood).toBe(0)
-    expect(game.state.planks).toBe(1)
-  })
-
-  test('building payment is atomic and houses raise capacity without deleting existing people', () => {
-    const game = workshop()
-    const original = structuredClone(game.state)
-    expect(game.build('houses')).toBe(false)
-    expect(game.state).toEqual(original)
-    game.state.planks = 8
-    game.state.blocks = 4
-    expect(game.build('houses')).toBe(true)
-    expect(game.getPopulationCapacity()).toBe(5)
-    expect(game.state.planks).toBe(0)
-    expect(game.build('houses')).toBe(false)
-  })
-
-  test('specializations survive reload and permanently reject the other branch', () => {
-    const game = workshop()
-    game.state.knowledge = game.state.planks = game.state.blocks = 100
-    expect(game.startAction(game.actions.researchForestry)).toBe(true)
-    let saved = ''
-    const reserved = createGame(structuredClone(game.state), (snapshot) => {
-      saved = JSON.stringify(snapshot)
-    })
-    // The original active research keeps the choice unset until completion.
-    expect(game.state.specialization).toBeNull()
-    game.finishAction(game.actions.researchForestry)
-    const restored = createGame(parseSave(JSON.stringify(game.state)))
-    expect(restored.state.specialization).toBe('forestry')
-    expect(restored.startAction(restored.actions.researchStonecraft)).toBe(
-      false,
-    )
-    expect(restored.startAction(restored.actions.researchArchitecture)).toBe(
-      false,
-    )
-    expect(restored.startAction(restored.actions.researchMasonry)).toBe(false)
-    expect(restored.isJobUnlocked('mason')).toBe(true)
-    reserved.saveProgress()
-    expect(parseSave(saved).specialization).toBeNull()
-  })
-
-  test('new research refunds processed resources on interruption and commits only once', () => {
-    const game = workshop()
-    game.state.planks = 20
-    game.state.blocks = 20
-    game.state.researchLevels.writing = 0
-    let saved = ''
-    const saving = createGame(game.state, (snapshot) => {
-      saved = JSON.stringify(snapshot)
-    })
-    expect(saving.startAction(saving.actions.researchWriting)).toBe(true)
-    expect(game.state.planks).toBe(14)
-    const restored = parseSave(saved)
-    expect(restored.planks).toBe(20)
-    expect(restored.blocks).toBe(20)
-    saving.finishAction(saving.actions.researchWriting)
-    expect(parseSave(saved).planks).toBe(14)
-    expect(saving.finishAction(saving.actions.researchWriting)).toBeNull()
+test('live and sliced simulations have the same resources, projects, meals and arrivals', () => {
+  const initial = settlement()
+  people(
+    initial,
+    'forager',
+    'forager',
+    'woodcutter',
+    'stoneworker',
+    'sawyer',
+    'mason',
+    'toolmaker',
+    'scholar',
+    'builder',
+  )
+  initial.welcome = true
+  initial.resources.food = 400
+  enqueue(initial, nextExpansion(initial, 'food-store'))
+  initial.research['record-keeping'] = false
+  enqueue(initial, { kind: 'research', id: 'record-keeping' })
+  const one = structuredClone(initial),
+    many = structuredClone(initial)
+  advanceTime(one, 18000)
+  for (let i = 0; i < 1800; i++) advanceTime(many, 10)
+  for (const r of RESOURCES)
+    expect(one.resources[r]).toBeCloseTo(many.resources[r], 6)
+  expect(one.facilities).toEqual(many.facilities)
+  expect(one.research).toEqual(many.research)
+  expect(one.people.length).toBe(many.people.length)
+  expect(one.happiness).toBeCloseTo(many.happiness, 6)
+  one.people.forEach((p, i) => {
+    expect(p.progress).toBeCloseTo(many.people[i]?.progress ?? -1, 6)
+    expect(p.health).toBe(required(many.people[i]).health)
   })
 })
 
-describe('offline simulation and page clock', () => {
-  test('offline resource changes include consumed inputs and meals', () => {
-    const game = workshop()
-    game.state.wood = 30
-    game.state.savedAt = 1000
-    game.assignJob(itemAt(game.state.people, 0), 'sawyer')
-    const before = structuredClone(game.state)
-    const away = game.applyOffline(1000 + FOOD_TICK_MS)
-    expect(away.gains.fruit).toBe(-1)
-    expect(away.gains.wood).toBe(-21)
-    expect(away.gains.planks).toBe(7)
-    for (const resource of RESOURCES)
-      expect(away.gains[resource]).toBeCloseTo(
-        game.state[resource] - before[resource],
-      )
-    const repeated = game.applyOffline(game.state.savedAt)
-    for (const resource of RESOURCES) expect(repeated.gains[resource]).toBe(0)
-  })
-
-  test('24-hour catchup matches live ticks with processing, hunger, and competition', () => {
-    const game = workshop()
-    game.state.researchLevels.shelters = 3
-    for (let i = 0; i < 5; i++) game.recruitPerson()
-    const jobs: JobId[] = [
-      'forager',
-      'woodcutter',
-      'stoneworker',
-      'sawyer',
-      'mason',
-      'scholar',
-    ]
-    game.state.people.forEach((person, i) => {
-      game.assignJob(person, itemAt(jobs, i))
-    })
-    game.state.fruit = 0
-    game.state.foodElapsedMs = FOOD_TICK_MS - 500
-    game.state.savedAt = 1000
-    const live = createGame(structuredClone(game.state))
-    const away = game.applyOffline(1000 + 2 * OFFLINE_CAP_MS)
-    for (let i = 0; i < OFFLINE_CAP_MS / 1000; i++) live.advanceTime(1000)
-    live.state.savedAt = game.state.savedAt
-    expect(game.state).toEqual(live.state)
-    expect(away.elapsed).toBe(OFFLINE_CAP_MS)
-    const once = structuredClone(game.state)
-    expect(game.applyOffline(game.state.savedAt).elapsed).toBe(0)
-    expect(game.state).toEqual(once)
-    expect(game.state.people).toHaveLength(6)
-    expect(game.state.planks).toBeGreaterThan(0)
-    expect(game.state.knowledge).toBeGreaterThan(0)
-  })
-
-  test('missing and future timestamps never award invented progress', () => {
-    const game = workshop()
-    game.assignJob(itemAt(game.state.people, 0), 'forager')
-    expect(game.applyOffline(10000).elapsed).toBe(0)
-    game.state.savedAt = 20000
-    expect(game.applyOffline(10000).elapsed).toBe(0)
-    expect(game.state.fruit).toBe(100)
-  })
-
-  test('visibility and restoration settle one absence once and cap long sleeps', () => {
-    const elapsed: number[] = []
-    const clock = createClock((ms) => elapsed.push(ms), 1000, true)
-    clock.tick(2000)
-    clock.setVisible(false, 3000)
-    clock.tick(10000)
-    clock.setVisible(false, 11000)
-    expect(clock.settledAt()).toBe(3000)
-    expect(clock.setVisible(true, 13000)).toBe(10000)
-    expect(clock.setVisible(true, 13000)).toBe(0)
-    clock.tick(14000)
-    expect(elapsed).toEqual([1000, 1000, 10000, 1000])
-    clock.setVisible(false, 15000)
-    expect(clock.setVisible(true, OFFLINE_CAP_MS * 3)).toBe(OFFLINE_CAP_MS)
-  })
+test('simultaneous project completion changes housing before immigration checks', () => {
+  const s = createDefaultState()
+  complete(s, 'sharpened-stick', 'shelters')
+  people(s, 'forager', 'builder')
+  s.facilities.housing.level = 1
+  s.resources.food = 80
+  s.resources.wood = 100
+  enqueue(s, nextExpansion(s, 'housing'))
+  advanceTime(s, 0)
+  const active = s.queues.construction.active
+  if (!active) throw new Error('No project')
+  active.progress = active.total
+  s.arrivalProgress = 1
+  advanceTime(s, 0)
+  expect(s.facilities.housing.level).toBe(2)
+  expect(s.people.length).toBe(3)
+  expect(s.people[2]?.job).toBe('idle')
 })
 
-// A playable route, using real costs, recipes and elapsed time. No resources or
-// technologies are granted after the opening, and neither route needs manual
-// gathering once shelters start the first workplace.
-export function playChapter(path: Specialization) {
-  const game = createGame(createDefaultState())
-  let elapsed = 0
-  const advance = (ms: number) => {
-    game.advanceTime(ms)
-    elapsed += ms
-  }
-  function action(key: ActionKey) {
-    const selected = game.actions[key]
-    game.syncUnlocks()
-    if (!game.startAction(selected)) throw new Error(`Cannot start ${key}`)
-    advance(game.getActionDuration(selected))
-    game.finishAction(selected)
-  }
-  function gatherUntil(resource: 'fruit' | 'wood', count: number) {
-    while (game.state[resource] < count)
-      action(resource === 'fruit' ? 'gather' : 'sticks')
-  }
-  function waitUntil(condition: () => boolean) {
-    let attempts = 0
-    while (!condition()) {
-      advance(1000)
-      if (++attempts > 7200)
-        throw new Error(
-          `Stalled at ${elapsed / 60000} minutes: ${JSON.stringify(game.state)}`,
-        )
-    }
-  }
-  function research(key: ActionKey) {
-    waitUntil(() => Boolean(game.actions[key].canStart?.()))
-    action(key)
-  }
-  gatherUntil('fruit', 10)
-  action('explore')
-  gatherUntil('wood', 2)
-  gatherUntil('fruit', 5)
-  action('research')
-  gatherUntil('wood', 4)
-  gatherUntil('fruit', 8)
-  action('researchShelters')
-  const openingActions = game.state.actions
-  function recruit(job: Exclude<JobId, 'idle'>) {
-    waitUntil(game.canRecruit)
-    game.recruitPerson()
-    if (
-      !game.assignJob(
-        itemAt(game.state.people, game.state.people.length - 1),
-        job,
-      )
-    )
-      throw new Error(`Cannot assign ${job}`)
-  }
-  recruit('woodcutter')
-  waitUntil(() => game.state.fruit >= 10)
-  action('exploreFurther')
-  recruit('stoneworker')
-  research('researchShelters')
-  research('researchCarpentry')
-  research('researchStone')
-  research('researchMasonry')
-  research('researchShelters')
-  research('researchTeamwork')
-  for (const id of ['sawmill', 'stoneworks'] as const) {
-    waitUntil(() => game.canBuild(id))
-    game.build(id)
-  }
-  recruit('sawyer')
-  recruit('mason')
-  research('researchWriting')
-  waitUntil(() => game.canBuild('study'))
-  game.build('study')
-  recruit('scholar')
-  research(path === 'forestry' ? 'researchForestry' : 'researchStonecraft')
-  research('researchAgriculture')
-  research(path === 'forestry' ? 'researchJoinery' : 'researchArchitecture')
-  research('researchEngineering')
-  waitUntil(() => game.canBuild('great-hall'))
-  game.build('great-hall')
-  return { game, elapsed, openingActions }
-}
-
-for (const path of ['forestry', 'stonecraft'] as const)
-  test(`the ${path} chapter reaches the Great Hall through automated production`, () => {
-    const { game, elapsed, openingActions } = playChapter(path)
-    console.info(
-      `${path}: Great Hall in ${(elapsed / 60000).toFixed(1)} minutes; ${openingActions} opening actions`,
-    )
-    expect(game.state.buildings['great-hall']).toBe(1)
-    expect(game.state.specialization).toBe(path)
-    expect(game.state.people).toHaveLength(6)
-    expect(openingActions).toBeLessThan(40)
-    expect(elapsed).toBeLessThan(60 * 60 * 1000)
-    expect(RESOURCES.every((id) => game.state[id] >= 0)).toBe(true)
-    expect(parseSave(JSON.stringify(game.state))).toEqual(game.state)
-  })
-
-test('manual activity pauses while hidden and resumes without banking hidden time', () => {
-  const timer = createActivityTimer(1000, 0, true)
-  expect(timer.sample(400)).toBe(400)
-  timer.setVisible(false, 500)
-  expect(timer.sample(10000)).toBe(500)
-  timer.setVisible(true, 20000)
-  expect(timer.sample(20200)).toBe(700)
-  expect(timer.sample(20500)).toBe(1000)
-  expect(timer.sample(50000)).toBe(1000)
+test('immigration pauses on inadequate sustainable supply, resumes, and arrivals stay unassigned', () => {
+  const s = createDefaultState()
+  complete(s, 'sharpened-stick', 'shelters')
+  s.facilities.housing.level = 1
+  s.resources.food = 100
+  people(s, 'forager')
+  advanceTime(s, 300)
+  expect(s.people.length).toBe(2)
+  expect(s.people[1]?.job).toBe('idle')
+  s.welcome = false
+  const progress = s.arrivalProgress
+  advanceTime(s, 600)
+  expect(s.arrivalProgress).toBe(progress)
+  s.welcome = true
+  required(s.people[0]).job = 'idle'
+  advanceTime(s, 600)
+  expect(s.arrivalProgress).toBe(progress)
+  required(s.people[0]).job = 'forager'
+  expect(arrivalStatus(s).foodOutput).toBeGreaterThan(arrivalStatus(s).required)
 })
 
-test('processor recipes and stacked bonuses survive saves on both specialization paths', () => {
-  for (const path of ['forestry', 'stonecraft'] as const) {
-    const game = workshop()
-    const state = game.state
-    state.specialization = path
-    state.researchLevels[path] = 1
-    state.researchLevels.teamwork = 2
-    state.researchLevels.engineering = 1
-    state.researchLevels.joinery = path === 'forestry' ? 1 : 0
-    state.researchLevels.architecture = path === 'stonecraft' ? 1 : 0
-    state.buildings.sawmill = state.buildings.stoneworks = 2
-    state.wood = state.stone = 10
-    game.recruitPerson()
-    game.adjustWorkers('sawyer', 1)
-    game.adjustWorkers('mason', 1)
-    for (const person of state.people) person.hunger = 3
-    const restored = createGame(parseSave(JSON.stringify(state)))
-    restored.advanceTime(10000)
-    expect(restored.state.wood).toBe(path === 'forestry' ? 8 : 7)
-    expect(restored.state.stone).toBe(path === 'forestry' ? 8 : 7)
-    expect(restored.state.planks).toBe(path === 'forestry' ? 3.6 : 2.3)
-    expect(restored.state.blocks).toBe(path === 'forestry' ? 2.3 : 5.4)
-    restored.state.planks = 8
-    restored.state.blocks = 4
-    expect(restored.build('houses')).toBe(true)
-    expect(restored.getPopulationCapacity()).toBe(path === 'forestry' ? 5 : 7)
-  }
+test('food security guard accounts for scholarship at maximum happiness and ignores temporary hoards', () => {
+  const s = settlement()
+  people(s, 'farmer', 'scholar', 'scholar')
+  s.facilities.farm.level = 1
+  s.facilities.study.level = 1
+  s.facilities.study.form = 1
+  s.welcome = true
+  s.resources.food = 100000
+  const high = arrivalStatus(s)
+  s.resources.food = high.buffer
+  const buffer = arrivalStatus(s)
+  expect(high.foodOutput).toBe(buffer.foodOutput)
+  expect(high.required).toBeGreaterThan(1.1 * 4)
+  s.happiness = 0
+  expect(arrivalStatus(s).foodOutput).toBe(high.foodOutput)
+  s.happiness = 100
+  expect(arrivalStatus(s).required).toBe(high.required)
 })
 
-test('discovering stone before or after Shelters grants the same usable workplaces', () => {
-  for (const discoveryFirst of [true, false]) {
-    const state = createDefaultState()
-    state.explored = state.researchUnlocked = state.basicTools = true
-    state.researchLevels['sharpened-stick'] = state.seenResearchLevels[
-      'sharpened-stick'
-    ] = 1
-    state.fruit = state.wood = 100
-    const game = createGame(state)
-    const first = discoveryFirst
-      ? game.actions.exploreFurther
-      : game.actions.researchShelters
-    const second = discoveryFirst
-      ? game.actions.researchShelters
-      : game.actions.exploreFurther
-    expect(game.startAction(first)).toBe(true)
-    game.finishAction(first)
-    expect(game.startAction(second)).toBe(true)
-    game.finishAction(second)
-    expect(game.isJobUnlocked('forager')).toBe(true)
-    expect(game.isJobUnlocked('woodcutter')).toBe(true)
-    expect(game.isJobUnlocked('stoneworker')).toBe(true)
-    expect(state.buildings.quarry).toBe(1)
-    expect(itemAt(state.people, 0).job).toBe('forager')
-    expect(game.recruitPerson()).toBe(true)
-    expect(game.adjustWorkers('stoneworker', 1)).toBe(true)
-    game.advanceTime(12000)
-    expect(state.stone).toBe(2)
-    expect(parseSave(JSON.stringify(state))).toEqual(state)
-  }
+test('hunger remains recoverable and feasts consume exactly missing health', () => {
+  const s = createDefaultState()
+  complete(s, 'sharpened-stick', 'shelters')
+  people(s, 'idle', 'idle')
+  s.welcome = false
+  advanceTime(s, 300)
+  expect(s.people.map((p) => p.health)).toEqual([0, 0])
+  expect(feastCost(s)).toBe(10)
+  required(s.people[0]).job = 'forager'
+  advanceTime(s, 600)
+  expect(s.people.map((p) => p.health)).toEqual([5, 5])
+  required(s.people[0]).health = 2
+  s.resources.food = 3
+  expect(feast(s)).toBe(true)
+  expect(s.resources.food).toBe(0)
+  expect(s.people[0]?.health).toBe(5)
 })
 
-test('upgraded worker production and displayed rates retain rounding at a half-tenth', () => {
-  const game = workshop()
-  game.state.researchLevels['stone-flakes'] = 3
-  game.state.researchLevels.quarrying = 3
-  game.state.researchLevels.teamwork = 3
-  game.state.researchLevels.engineering = 1
-  expect(game.adjustWorkers('stoneworker', 1)).toBe(true)
-  expect(game.getResourceRates().stone).toBeCloseTo(12.3 / 12)
-  game.advanceTime(12000)
-  expect(game.state.stone).toBe(12.3)
+test('happiness begins at Writing and moves gradually after the shared meal', () => {
+  const s = createDefaultState()
+  complete(s, 'sharpened-stick', 'shelters')
+  s.facilities.housing.level = 12
+  s.resources.food = 1000
+  s.welcome = false
+  people(s, ...Array.from({ length: 20 }, () => 'idle' as const))
+  s.facilities['public-well'].level = 2
+  s.facilities['meeting-place'].level = 1
+  s.resources.food = 600
+  expect(happinessTarget(s)).toBe(90)
+  const before = s.happiness
+  advanceTime(s, 60)
+  expect(s.happiness).toBe(before)
+  complete(s, 'writing')
+  expect(s.happiness).toBe(50)
+  advanceTime(s, 60)
+  expect(s.happiness).toBe(52)
+})
+
+test('net rates include processor inputs, meals, equipment and storage pressure', () => {
+  const s = settlement()
+  people(s, 'forager', 'scholar', 'sawyer')
+  s.resources.wood = 20
+  s.resources.food = 100
+  const rates = resourceRates(s),
+    sum = (job: string) =>
+      s.people
+        .filter((p) => p.job === job)
+        .reduce((n, p) => n + workerRate(s, p), 0)
+  expect(rates.food).toBeCloseTo(sum('forager') - sum('scholar') - 3)
+  expect(rates.wood).toBeCloseTo(-2 * sum('sawyer'))
+  expect(rates.planks).toBeCloseTo(sum('sawyer'))
+})
+
+test('spending from an above-threshold stockpile immediately relieves production pressure', () => {
+  const s = settlement()
+  people(s, 'woodcutter')
+  s.resources = createRecord(RESOURCES, () => 0)
+  s.resources.food = 1000
+  s.resources.wood = 10000
+  const slow = workerRate(s, required(s.people[0]))
+  s.resources.wood = 1
+  expect(workerRate(s, required(s.people[0]))).toBeGreaterThan(slow)
 })

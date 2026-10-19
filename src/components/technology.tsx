@@ -1,81 +1,76 @@
-import { ACTION_KEYS, RESEARCH_ITEM_KEYS } from '../ids'
-import { isResearchExcluded, RESEARCH_GROUPS } from '../research-definitions'
-import { ActionButton, type ActionButtonProps } from './actions'
-import { Disclosure } from './common'
-
-type TechnologyProps = Omit<ActionButtonProps, 'action'>
-
-export function Technology(props: TechnologyProps) {
-  const { game } = props.session
-  const actions = ACTION_KEYS.map((key) => game.actions[key]).filter(
-    (action) =>
-      action.researchId && !isResearchExcluded(game.state, action.researchId),
-  )
-  const completed = actions.filter(
-    (action) =>
-      action.researchId && !game.getResearchNextLevel(action.researchId),
-  )
+import { formatDuration } from '../format'
+import { RESEARCH_IDS } from '../ids'
+import { allEntries, quoteProject, researchVisible } from '../research'
+import { RESEARCH } from '../research-definitions'
+import { Button, Costs, type ViewProps } from './common'
+import { Queue } from './queues'
+export function Technology({ session, confirm }: ViewProps) {
+  const s = session.game.state
   return (
     <>
-      <div className="technology-heading">
-        <h2>Technology</h2>
-        <span id="technology-count">
-          {
-            RESEARCH_ITEM_KEYS.filter((id) => game.getResearchLevel(id) > 0)
-              .length
-          }{' '}
-          researched
-        </span>
-      </div>
-      <div id="research-groups">
-        {RESEARCH_GROUPS.map((group) => {
-          const available = actions.filter(
-            (action) =>
-              action.researchId &&
-              game.getResearchDefinition(action.researchId).group ===
-                group.id &&
-              game.getResearchNextLevel(action.researchId),
-          )
-          if (!group.visible(game.state) || !available.length) return null
-          const content = (
-            <div key={group.id} className="tech-grid">
-              {available.map((action) => (
-                <ActionButton key={action.id} {...props} action={action} />
-              ))}
-            </div>
-          )
-          const collapsed = group.collapseWhen?.(game.state) ?? false
-          return group.collapseWhen ? (
-            <Disclosure
-              key={group.id}
-              title={group.name}
-              className="tech-section"
-              initiallyOpen={!collapsed}
-              collapseWhen={collapsed}
-            >
-              {content}
-            </Disclosure>
-          ) : (
-            <section key={group.id} className="tech-section">
-              <h3>{group.name}</h3>
-              {content}
-            </section>
-          )
-        })}
-      </div>
-      {completed.length > 0 && (
-        <Disclosure
-          id="completed-research"
-          summaryId="completed-count"
-          title={`Completed · ${completed.length}`}
-        >
-          <div className="tech-grid" id="completed-list">
-            {completed.map((action) => (
-              <ActionButton key={action.id} {...props} action={action} />
-            ))}
-          </div>
-        </Disclosure>
-      )}
+      <Queue session={session} confirm={confirm} id="research" />
+      <section className="tech-section">
+        <h2>Discoveries</h2>
+        <div className="tech-grid">
+          {RESEARCH_IDS.filter((id) => researchVisible(s, id)).map((id) => {
+            const def = RESEARCH[id],
+              quote = quoteProject(s, { kind: 'research', id }),
+              queued = allEntries(s).some(
+                (e) => e.project.kind === 'research' && e.project.id === id,
+              )
+            const queue = () => session.game.enqueue({ kind: 'research', id })
+            return (
+              <article
+                className="tech-card card"
+                key={id}
+                aria-label={def.name}
+              >
+                <h3>{def.name}</h3>
+                <p className="flavor">{def.description}</p>
+                <p className="tech-effect">{def.effect}</p>
+                <Costs session={session} cost={quote.cost} />
+                {quote.blocker && (
+                  <p className="requirement">{quote.blocker}</p>
+                )}
+                <div className="building-controls">
+                  <Button
+                    disabled={queued || quote.blocker === 'Other path planned'}
+                    onClick={() =>
+                      def.branch
+                        ? confirm(
+                            `Choose ${def.name}?`,
+                            `${def.effect} This choice lasts for this run. The other path will be locked when research completes. Cancelling unfinished research permits changing the choice.`,
+                            queue,
+                          )
+                        : session.change(queue)
+                    }
+                  >
+                    {queued
+                      ? 'Planned'
+                      : def.branch
+                        ? 'Choose path'
+                        : 'Queue research'}
+                  </Button>
+                  <small>{formatDuration(quote.total)}</small>
+                </div>
+              </article>
+            )
+          })}
+        </div>
+      </section>
+      <details>
+        <summary>
+          Completed research ·{' '}
+          {RESEARCH_IDS.filter((id) => s.research[id]).length}
+        </summary>
+        <div className="completed-research">
+          {RESEARCH_IDS.filter((id) => s.research[id]).map((id) => (
+            <p key={id} title={RESEARCH[id].description}>
+              <strong>{RESEARCH[id].name}</strong> · {RESEARCH[id].effect}
+            </p>
+          ))}
+        </div>
+      </details>
     </>
   )
 }

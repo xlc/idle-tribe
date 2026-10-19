@@ -1,49 +1,53 @@
-import { OFFLINE_CAP_MS } from './constants'
-
-// A page can receive both visibility and restoration events for one absence.
-// Keep one timeline so that absence is settled exactly once.
-export function createClock(
-  advance: (elapsed: number) => void,
-  now: number,
-  visible: boolean,
-) {
-  let at = now
-  let showing = visible
-  function tick(time: number) {
-    if (!showing) return
-    const elapsed = Math.min(OFFLINE_CAP_MS, Math.max(0, time - at))
-    at = time
-    if (elapsed) advance(elapsed)
-  }
-  function setVisible(next: boolean, time: number) {
-    if (next === showing) return 0
-    if (!next) tick(time)
-    const away = next ? Math.min(OFFLINE_CAP_MS, Math.max(0, time - at)) : 0
-    showing = next
-    at = time
-    if (away) advance(away)
-    return away
-  }
-  return { tick, setVisible, settledAt: () => at }
+import { BUILDINGS } from './economy'
+import { BUILDING_IDS, RESEARCH_IDS, RESOURCES } from './ids'
+import { createRecord } from './records'
+import { RESEARCH } from './research-definitions'
+import { advanceTime } from './simulation'
+import type { GameState } from './types'
+export function offlineWindow(state: GameState) {
+  let hours = 8 + (state.legacy.perks['longer-preparations'] ? 2 : 0)
+  for (const id of BUILDING_IDS)
+    hours +=
+      ((BUILDINGS[id].offlineHours ?? 0) +
+        (BUILDINGS[id].forms[state.facilities[id].form]?.offlineHours ?? 0)) *
+      Math.sqrt(state.facilities[id].level)
+  for (const id of RESEARCH_IDS)
+    if (state.research[id]) hours += RESEARCH[id].effects.offlineHours ?? 0
+  return hours
 }
-
-// Manual work and research use active page time; only workplaces earn offline.
-export function createActivityTimer(
-  duration: number,
-  now: number,
-  visible: boolean,
+export function effectiveOfflineSeconds(
+  wallSeconds: number,
+  windowHours: number,
 ) {
-  let at = now
-  let elapsed = 0
-  let active = visible
-  function sample(time: number) {
-    if (active) elapsed = Math.min(duration, elapsed + Math.max(0, time - at))
-    at = time
-    return elapsed
-  }
-  function setVisible(next: boolean, time: number) {
-    sample(time)
-    active = next
-  }
-  return { sample, setVisible }
+  const b = windowHours * 3600,
+    t = Math.max(0, wallSeconds)
+  return t <= b ? t : b * (2 * Math.sqrt(t / b) - 1)
 }
+export function beginAbsence(state: GameState, time: number) {
+  if (state.absence) return
+  state.absence = {
+    start: time,
+    windowHours: offlineWindow(state),
+    settledSeconds: 0,
+    resources: { ...state.resources },
+    population: state.people.length,
+    completed: state.completedProjects,
+  }
+}
+export function settleAbsence(state: GameState, time: number) {
+  const a = state.absence
+  if (!a) return null
+  const wall = Math.max(0, (time - a.start) / 1000),
+    effective = effectiveOfflineSeconds(wall, a.windowHours)
+  advanceTime(state, Math.max(0, effective - a.settledSeconds))
+  a.settledSeconds = Math.max(a.settledSeconds, effective)
+  state.savedAt = Math.max(state.savedAt, time)
+  return {
+    wallSeconds: wall,
+    effectiveSeconds: a.settledSeconds,
+    gains: createRecord(RESOURCES, (r) => state.resources[r] - a.resources[r]),
+    arrivals: state.people.length - a.population,
+    completed: state.completedProjects - a.completed,
+  }
+}
+export type AwayProgress = NonNullable<ReturnType<typeof settleAbsence>>

@@ -1,106 +1,373 @@
-import { RESEARCH_ITEM_KEYS } from './ids'
-import { isResearchAvailable, RESEARCH_CONFIG } from './research-definitions'
-import type { createResources } from './resources'
-import type { Action, GameState, ResearchCost, ResearchId } from './types'
-
-export function createResearch(
+import { BUILDINGS } from './economy'
+import { RESEARCH_IDS, RESOURCES } from './ids'
+import { RESEARCH } from './research-definitions'
+import {
+  canAfford,
+  capital,
+  cumulative,
+  difference,
+  marginal,
+  pay,
+  refund,
+} from './resources'
+import {
+  constructionSpeed,
+  prestigeMultiplier,
+  requirementBlocker,
+} from './settlement'
+import type { Cost, GameState, Project, QueueEntry, QueueId } from './types'
+export const QUEUES: QueueId[] = ['research', 'construction']
+export function projectName(state: GameState, project: Project) {
+  if (project.kind === 'research') return RESEARCH[project.id].name
+  const def = BUILDINGS[project.id],
+    f = state.facilities[project.id]
+  const form =
+    def.forms[
+      project.kind === 'convert' || (project.kind === 'expand' && !f.level)
+        ? project.form
+        : f.form
+    ]
+  return `${form?.name ?? project.id}${project.kind === 'equip' ? ` · tools ${project.target}` : project.kind === 'expand' ? ` · level ${project.target}` : ' · conversion'}`
+}
+export function quoteProject(
   state: GameState,
-  canAfford: ReturnType<typeof createResources>['canAfford'],
-  saveProgress: () => void,
-) {
-  function getResearchLevel(researchId: ResearchId) {
-    return Math.max(0, Math.floor(state.researchLevels[researchId]))
-  }
-
-  function getResearchDefinition(researchId: ResearchId) {
-    const definition = RESEARCH_CONFIG[researchId]
+  project: Project,
+): { cost: Cost; total: number; blocker: string; obsolete: boolean } {
+  if (project.kind === 'research') {
+    const def = RESEARCH[project.id]
+    const otherBranchPlanned =
+      def.branch &&
+      allEntries(state).some(
+        (entry) =>
+          entry.project.kind === 'research' &&
+          RESEARCH[entry.project.id].branch &&
+          RESEARCH[entry.project.id].branch !== def.branch,
+      )
+    const cost = state.legacy.perks['efficient-instruction']
+      ? Object.fromEntries(
+          RESOURCES.filter((r) => def.cost[r]).map((r) => [
+            r,
+            Math.ceil((def.cost[r] ?? 0) * 0.9),
+          ]),
+        )
+      : def.cost
     return {
-      ...definition,
-      prerequisite: () => isResearchAvailable(state, researchId),
+      cost,
+      total: (def.minutes * 60) / prestigeMultiplier(state),
+      blocker:
+        (otherBranchPlanned ? 'Other path planned' : '') ||
+        requirementBlocker(state, def.requires) ||
+        (def.branch &&
+        state.specialization &&
+        state.specialization !== def.branch
+          ? 'Other path chosen'
+          : ''),
+      obsolete: state.research[project.id],
     }
   }
-
-  function getResearchNextLevel(researchId: ResearchId): ResearchCost | null {
-    const definition = getResearchDefinition(researchId)
-    const level = getResearchLevel(researchId)
-    return level < definition.levels.length
-      ? (definition.levels[level] ?? null)
-      : null
-  }
-
-  function getUnreadResearch() {
-    if (!state.researchUnlocked) return []
-    return RESEARCH_ITEM_KEYS.filter(
-      (id) =>
-        getResearchDefinition(id).prerequisite() &&
-        getResearchNextLevel(id) &&
-        state.seenResearchLevels[id] < getResearchLevel(id) + 1,
-    )
-  }
-
-  function markResearchSeen() {
-    const unread = getUnreadResearch()
-    if (!unread.length) return
-    for (const id of unread) {
-      state.seenResearchLevels[id] = getResearchLevel(id) + 1
-    }
-    saveProgress()
-  }
-
-  function getResearchEffect(researchId: ResearchId, level: number) {
-    return RESEARCH_CONFIG[researchId].effect(level)
-  }
-
-  function canAffordResearch(researchId: ResearchId) {
-    const next = getResearchNextLevel(researchId)
-    return Boolean(next && canAfford(next))
-  }
-
-  function completeResearch(researchId: ResearchId) {
-    const definition = getResearchDefinition(researchId)
-    const nextLevel = getResearchLevel(researchId) + 1
-    state.researchLevels[researchId] = Math.min(
-      definition.levels.length,
-      nextLevel,
-    )
-    state.seenResearchLevels[researchId] = Math.max(
-      state.seenResearchLevels[researchId],
-      nextLevel,
-    )
-    state.basicTools = getResearchLevel('sharpened-stick') >= 1
-    if (definition.specialization?.kind === 'choice')
-      state.specialization = definition.specialization.id
-    if (nextLevel === 1) definition.onFirstCompletion?.(state)
-    const effect = getResearchEffect(researchId, nextLevel)
-    return `${definition.name} reached level ${nextLevel}. ${effect} applied.`
-  }
-
-  function createResearchAction(researchId: ResearchId): Action {
-    const definition = getResearchDefinition(researchId)
+  const def = BUILDINGS[project.id],
+    f = state.facilities[project.id],
+    form = def.forms[f.form]
+  if (!form) throw new Error('Invalid facility form')
+  if (project.kind === 'equip') {
+    const tier = project.target
+    const milestone = EQUIPMENT[Math.min(3, tier) - 1]
+    if (!milestone) throw new Error('Invalid equipment tier')
+    const factor = (tier / 3) ** 2
     return {
-      id: definition.actionId,
-      name: definition.name,
-      researchId,
-      baseDurationMs: () => getResearchNextLevel(researchId)?.durationMs ?? 1,
-      canStart: () =>
-        Boolean(
-          definition.prerequisite() &&
-            getResearchNextLevel(researchId) &&
-            canAffordResearch(researchId),
-        ),
-      cost: () => getResearchNextLevel(researchId),
-      complete: () => completeResearch(researchId),
+      cost:
+        tier <= 3
+          ? milestone.cost
+          : {
+              tools: Math.ceil(80 * factor),
+              knowledge: Math.ceil(150 * factor),
+            },
+      total: tier <= 3 ? milestone.work : 40 * factor,
+      obsolete: f.equipment >= tier,
+      blocker: !def.job
+        ? 'Not a production facility'
+        : !f.level
+          ? 'Requires workplace'
+          : f.equipment !== tier - 1
+            ? `Requires tools ${tier - 1}`
+            : requirementBlocker(state, { research: [milestone.research] }),
     }
   }
-
+  const target =
+    def.forms[project.kind === 'convert' || !f.level ? project.form : f.form]
+  if (!target) throw new Error('Invalid target form')
+  if (project.kind === 'convert')
+    return {
+      cost: difference(
+        capital(target.cost, f.level),
+        capital(form.cost, f.level),
+      ),
+      total: Math.max(0, target.work - form.work) * cumulative(f.level),
+      obsolete: f.form >= project.form,
+      blocker: !f.level
+        ? 'Requires workplace'
+        : requirementBlocker(state, target.requires),
+    }
   return {
-    getResearchLevel,
-    getResearchDefinition,
-    getResearchNextLevel,
-    getUnreadResearch,
-    markResearchSeen,
-    getResearchEffect,
-    canAffordResearch,
-    createResearchAction,
+    cost: difference(
+      capital(target.cost, project.target),
+      capital(target.cost, project.target - 1),
+    ),
+    total: target.work * marginal(project.target - 1),
+    obsolete: f.level >= project.target || Boolean(def.unique && f.level),
+    blocker:
+      def.unique && project.target > 1
+        ? 'Unique milestone'
+        : f.level !== project.target - 1
+          ? `Requires level ${project.target - 1}`
+          : requirementBlocker(state, target.requires),
   }
+}
+export const EQUIPMENT = [
+  {
+    research: 'toolmaking',
+    cost: { tools: 10 },
+    work: 10,
+    description: 'Finally, the right tool is more than a hopeful expression.',
+  },
+  {
+    research: 'organized-work',
+    cost: { tools: 30, knowledge: 50 },
+    work: 20,
+    description: 'Fewer awkward handles between you and a job well done.',
+  },
+  {
+    research: 'civic-engineering',
+    cost: { tools: 80, knowledge: 150 },
+    work: 40,
+    description: 'Even the tools have become specialists.',
+  },
+] satisfies {
+  research: import('./ids').ResearchId
+  cost: Cost
+  work: number
+  description: string
+}[]
+export function allEntries(state: GameState) {
+  return QUEUES.flatMap((id) => {
+    const q = state.queues[id]
+    return [...(q.active ? [q.active] : []), ...q.waiting]
+  })
+}
+export function enqueue(state: GameState, project: Project) {
+  const queue: QueueId =
+    project.kind === 'research' ? 'research' : 'construction'
+  if (quoteProject(state, project).obsolete) return false
+  if (
+    allEntries(state).some(
+      (e) => JSON.stringify(e.project) === JSON.stringify(project),
+    )
+  )
+    return false
+  if (project.kind === 'research') {
+    const branch = RESEARCH[project.id].branch
+    if (
+      branch &&
+      ((state.specialization && state.specialization !== branch) ||
+        allEntries(state).some(
+          (e) =>
+            e.project.kind === 'research' &&
+            RESEARCH[e.project.id].branch &&
+            RESEARCH[e.project.id].branch !== branch,
+        ))
+    )
+      return false
+  }
+  state.queues[queue].waiting.push({ sequence: state.nextSequence++, project })
+  return true
+}
+export function queueBlocker(state: GameState, id: QueueId) {
+  const q = state.queues[id]
+  if (q.active)
+    return id === 'construction' && !constructionSpeed(state)
+      ? 'No builders'
+      : ''
+  const entry = q.waiting[0]
+  if (!entry) return 'Waiting'
+  const quote = quoteProject(state, entry.project)
+  return (
+    quote.blocker ||
+    (id === 'construction' && !constructionSpeed(state) ? 'No builders' : '') ||
+    (!canAfford(state, quote.cost) ? 'Waiting for materials' : '')
+  )
+}
+export function startQueues(state: GameState) {
+  for (const id of QUEUES) {
+    const q = state.queues[id]
+    while (
+      !q.active &&
+      q.waiting[0] &&
+      quoteProject(state, q.waiting[0].project).obsolete
+    ) {
+      const removed = q.waiting.shift()
+      if (removed)
+        state.notice = `Removed completed plan: ${projectName(state, removed.project)}`
+    }
+  }
+  const order = [...QUEUES].sort(
+    (a, b) =>
+      (state.queues[a].waiting[0]?.sequence ?? Infinity) -
+      (state.queues[b].waiting[0]?.sequence ?? Infinity),
+  )
+  for (const id of order) {
+    const q = state.queues[id]
+    if (q.active || queueBlocker(state, id)) continue
+    const entry = q.waiting.shift()
+    if (!entry) continue
+    const quote = quoteProject(state, entry.project)
+    pay(state, quote.cost)
+    q.active = {
+      ...entry,
+      paid: { ...quote.cost },
+      progress: 0,
+      total: quote.total,
+    }
+  }
+}
+export function cancelProject(state: GameState, id: QueueId, sequence: number) {
+  const q = state.queues[id]
+  if (q.active?.sequence === sequence) {
+    refund(state, q.active.paid)
+    q.active = null
+    return true
+  }
+  const i = q.waiting.findIndex((e) => e.sequence === sequence)
+  if (i < 0) return false
+  q.waiting.splice(i, 1)
+  return true
+}
+export function moveProject(
+  state: GameState,
+  id: QueueId,
+  sequence: number,
+  direction: number,
+) {
+  const q = state.queues[id],
+    i = q.waiting.findIndex((e) => e.sequence === sequence),
+    entry = q.waiting[i]
+  if (!entry || i + direction < 0 || i + direction >= q.waiting.length)
+    return false
+  q.waiting.splice(i, 1)
+  q.waiting.splice(i + direction, 0, entry)
+  return true
+}
+export function completeProject(state: GameState, project: Project) {
+  if (project.kind === 'research') {
+    const def = RESEARCH[project.id]
+    state.research[project.id] = true
+    if (def.branch) state.specialization = def.branch
+    if (def.era) {
+      state.era = Math.max(state.era, def.era)
+      state.legacy.highestEra = Math.max(state.era, state.legacy.highestEra)
+    }
+    if (def.unlockHappiness) state.happiness = 50
+    if (def.discoverTimeBox) state.legacy.discovered = true
+    if (def.grant) {
+      const f = state.facilities[def.grant.building]
+      f.level = Math.max(1, f.level)
+      const player = state.people[0]
+      if (player?.job === 'idle') {
+        player.job = def.grant.job
+        player.progress = 0
+      }
+    }
+  } else {
+    const f = state.facilities[project.id]
+    if (project.kind === 'expand') {
+      if (!f.level) f.form = project.form
+      f.level = project.target
+    }
+    if (project.kind === 'convert') f.form = project.form
+    if (project.kind === 'equip') f.equipment = project.target
+  }
+}
+// Quotes project the preceding plans only; actual payment is always recalculated at start.
+export function plannedQuotes(state: GameState, id: QueueId) {
+  const projected =
+      id === 'construction' ? researchPlan(state) : structuredClone(state),
+    q = state.queues[id],
+    result = new Map<number, ReturnType<typeof quoteProject>>()
+  if (q.active) completeProject(projected, q.active.project)
+  for (const entry of q.waiting) {
+    const quote = quoteProject(projected, entry.project)
+    result.set(entry.sequence, quote)
+    if (!quote.blocker && !quote.obsolete)
+      completeProject(projected, entry.project)
+  }
+  return result
+}
+export function nextExpansion(
+  state: GameState,
+  id: import('./ids').BuildingId,
+  form = state.facilities[id].form,
+): Project {
+  const targets = allEntries(state).flatMap((e) =>
+    e.project.kind === 'expand' && e.project.id === id
+      ? [e.project.target]
+      : [],
+  )
+  let target = state.facilities[id].level + 1
+  while (targets.includes(target)) target++
+  return {
+    kind: 'expand',
+    id,
+    target,
+    form,
+  }
+}
+export function nextEquipment(
+  state: GameState,
+  id: import('./ids').BuildingId,
+): Project {
+  const targets = allEntries(state).flatMap((e) =>
+    e.project.kind === 'equip' && e.project.id === id ? [e.project.target] : [],
+  )
+  let target = state.facilities[id].equipment + 1
+  while (targets.includes(target)) target++
+  return {
+    kind: 'equip',
+    id,
+    target,
+  }
+}
+export function researchPlan(state: GameState) {
+  const projected = structuredClone(state)
+  for (const entry of allEntries(state))
+    if (entry.project.kind === 'research')
+      completeProject(projected, entry.project)
+  return projected
+}
+export function previewProject(state: GameState, project: Project) {
+  const projected = researchPlan(state)
+  const q = state.queues.construction
+  for (const entry of [...(q.active ? [q.active] : []), ...q.waiting]) {
+    const quote = quoteProject(projected, entry.project)
+    if (!quote.blocker && !quote.obsolete)
+      completeProject(projected, entry.project)
+  }
+  return quoteProject(projected, project)
+}
+export function researchVisible(
+  state: GameState,
+  id: import('./ids').ResearchId,
+) {
+  const def = RESEARCH[id]
+  return (
+    !state.research[id] &&
+    (!def.branch ||
+      !state.specialization ||
+      def.branch === state.specialization) &&
+    !requirementBlocker(researchPlan(state), def.requires)
+  )
+}
+export function completedTechnologies(state: GameState) {
+  return RESEARCH_IDS.filter((id) => state.research[id]).length
+}
+export function entryQueue(entry: QueueEntry): QueueId {
+  return entry.project.kind === 'research' ? 'research' : 'construction'
 }

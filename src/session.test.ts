@@ -1,102 +1,111 @@
 import { expect, test } from 'bun:test'
+import {
+  beginAbsence,
+  effectiveOfflineSeconds,
+  offlineWindow,
+  settleAbsence,
+} from './clock'
+import { RESOURCES } from './ids'
 import { parseSave } from './persistence'
+import { enqueue } from './research'
 import { createSession } from './session'
-import { createDefaultState } from './state'
-import { itemAt } from './test-helpers'
-import type { GameState } from './types'
+import { people, settlement } from './test-helpers'
 
-function settlement() {
-  const state = createDefaultState()
-  state.fruit = 100
-  state.wood = 100
-  state.stone = 100
-  state.explored = true
-  state.stoneFound = true
-  state.researchUnlocked = true
-  state.researchLevels['sharpened-stick'] = 1
-  state.researchLevels.shelters = 1
-  state.buildings['foraging-camp'] = 1
-  itemAt(state.people, 0).job = 'forager'
-  return state
-}
+const hour = 3600000
 
-test('session resumes concurrent activities after one offline settlement, including duplicate restoration events', () => {
-  const state = settlement()
-  const session = createSession(state, () => {}, 1000000, true)
-  const gather = session.game.actions.gather
-  const research = session.game.actions.researchStone
-  session.startAction(gather, 1000000, 0)
-  session.startAction(research, 1000000, 0)
-  session.advanceActivities(1000500, 500)
-  session.setVisible(false, 1000500, 500)
-  session.setVisible(false, 1000500, 500)
-  const fruitBefore = state.fruit
-  session.setVisible(true, 1300500, 300500)
-  const fruitAfter = state.fruit
-  expect(fruitAfter).toBeGreaterThan(fruitBefore)
-  expect(session.away?.elapsed).toBe(300000)
-  session.setVisible(true, 1300500, 300500)
-  expect(state.fruit).toBe(fruitAfter)
-  expect(session.activities.get(gather)?.getSnapshot()).toBe(500)
-  expect(session.activities.get(research)?.getSnapshot()).toBe(500)
-  expect(session.game.getActiveAction()).toBe(gather)
-  expect(session.game.getActiveResearch()).toBe(research)
-  session.advanceActivities(1301000, 301000)
-  expect(state.actions).toBe(1)
-  expect(session.game.getActiveResearch()).toBe(research)
-  session.advanceActivities(1310000, 310000)
-  expect(state.researchLevels['stone-flakes']).toBe(1)
-  expect(session.feedback).toBe('Flint knapping · level 1')
-})
-
-test('animation frames update the progress subscriber, and completion publishes the earned resources once', () => {
-  const state = createDefaultState()
-  const session = createSession(state, () => {}, 1000000, true)
-  const action = session.game.actions.gather
-  let settlementUpdates = 0
-  session.subscribe(() => settlementUpdates++)
-  session.startAction(action, 1000000, 0)
-  const activity = session.activities.get(action)
-  if (!activity) throw new Error('Gathering did not start')
-  const progress: number[] = []
-  activity.subscribe(() => progress.push(activity.getSnapshot()))
-  session.advanceActivities(1000250, 250)
-  session.advanceActivities(1000500, 500)
-  expect(progress).toEqual([250, 500])
-  expect(settlementUpdates).toBe(1)
-  session.advanceActivities(1001000, 1000)
-  expect(settlementUpdates).toBe(2)
-  expect(state.fruit).toBe(1)
-  expect(state.actions).toBe(1)
-  session.advanceActivities(1001000, 1000)
-  expect(state.actions).toBe(1)
-})
-
-test('session saves refund concurrent reserved materials at the settled timestamp and reload resumes workers', () => {
-  const state = settlement()
-  let saved: GameState | null = null
-  const session = createSession(
-    state,
-    (snapshot) => {
-      saved = snapshot
-    },
-    1000000,
-    true,
+test('the offline tail is continuous and keeps advancing after a week', () => {
+  expect(effectiveOfflineSeconds(8 * 3600, 8)).toBe(8 * 3600)
+  expect(effectiveOfflineSeconds(24 * 3600, 8) / 3600).toBeCloseTo(19.7128, 3)
+  expect(effectiveOfflineSeconds(168 * 3600, 8) / 3600).toBeCloseTo(65.3212, 3)
+  expect(effectiveOfflineSeconds(169 * 3600, 8)).toBeGreaterThan(
+    effectiveOfflineSeconds(168 * 3600, 8),
   )
-  const research = session.game.actions.researchStone
-  const cost = research.cost?.()
-  session.startAction(session.game.actions.sticks, 1000000, 0)
-  session.startAction(research, 1000000, 0)
-  session.setVisible(false, 1000500, 500)
-  const restored = parseSave(JSON.stringify(saved))
-  expect(restored.savedAt).toBe(1000500)
-  expect(restored.wood).toBe(state.wood + (cost?.wood ?? 0))
-  expect(restored.stone).toBe(state.stone + (cost?.stone ?? 0))
-  expect(restored.fruit).toBe(state.fruit + (cost?.fruit ?? 0))
-  expect(itemAt(restored.people, 0).workElapsedMs).toBe(500)
-  const savedFruit = restored.fruit
-  const reloaded = createSession(restored, () => {}, 1005500, true)
-  expect(reloaded.game.state.fruit).toBeGreaterThan(savedFruit)
-  expect(itemAt(restored.people, 0).job).toBe('forager')
-  expect(itemAt(restored.people, 0).workElapsedMs).toBe(500)
+})
+
+test('hidden callbacks and reloads preserve one snapshotted absence', () => {
+  const initial = settlement()
+  people(initial, 'forager', 'builder', 'scholar')
+  initial.savedAt = hour
+  const closed = structuredClone(initial)
+  beginAbsence(closed, hour)
+  settleAbsence(closed, 25 * hour)
+  const hidden = structuredClone(initial)
+  const first = createSession(hidden, () => {}, hour, true)
+  first.setVisible(false, hour)
+  for (let n = 2; n <= 13; n++) first.tick(n * hour)
+  const restored = parseSave(JSON.stringify(hidden))
+  const second = createSession(restored, () => {}, 13 * hour, false)
+  for (let n = 14; n <= 25; n++) second.tick(n * hour)
+  second.setVisible(true, 25 * hour)
+  for (const r of RESOURCES)
+    expect(restored.resources[r]).toBeCloseTo(closed.resources[r], 6)
+  expect(restored.people.length).toBe(closed.people.length)
+  expect(restored.absence).toBeNull()
+  expect(second.away?.wallSeconds).toBe(24 * 3600)
+})
+
+test('an offline upgrade extends the next absence without changing this one', () => {
+  const s = settlement()
+  people(s, 'forager')
+  s.research['record-keeping'] = false
+  s.savedAt = hour
+  enqueue(s, { kind: 'research', id: 'record-keeping' })
+  const before = offlineWindow(s)
+  beginAbsence(s, hour)
+  settleAbsence(s, 25 * hour)
+  expect(s.research['record-keeping']).toBe(true)
+  expect(offlineWindow(s)).toBe(before + 4)
+  expect(s.absence?.windowHours).toBe(before)
+  expect(s.absence?.settledSeconds).toBeCloseTo(
+    effectiveOfflineSeconds(24 * 3600, before),
+    6,
+  )
+})
+
+test('manual work pauses while hidden; research continues; duplicate restoration settles once', () => {
+  const s = settlement()
+  people(s, 'forager')
+  s.research['record-keeping'] = false
+  const session = createSession(s, () => {}, hour, true)
+  session.change(() => {
+    session.game.startAction('gather')
+    enqueue(s, { kind: 'research', id: 'record-keeping' })
+  }, hour)
+  session.setVisible(false, hour + 1000)
+  const manual = s.manual?.progress
+  session.tick(3 * hour)
+  expect(s.manual?.progress).toBe(manual)
+  expect(s.research['record-keeping']).toBe(true)
+  session.setVisible(true, 3 * hour)
+  const before = { ...s.resources }
+  session.setVisible(true, 3 * hour)
+  expect(s.resources).toEqual(before)
+  session.tick(3 * hour + 10000)
+  expect(s.manual).toBeNull()
+})
+
+test('actions settle elapsed gameplay before spending newly produced stock', () => {
+  const s = settlement()
+  people(s, 'woodcutter')
+  s.resources.wood = 0
+  const session = createSession(s, () => {}, hour, true)
+  session.change(() => {
+    expect(s.resources.wood).toBeGreaterThan(0)
+  }, hour + 60000)
+  expect(s.savedAt).toBe(hour + 60000)
+})
+
+test('a backwards wall clock cannot settle the same interval twice or invalidate a save', () => {
+  const s = settlement()
+  people(s, 'forager')
+  s.savedAt = 2 * hour
+  const session = createSession(s, () => {}, hour, false)
+  session.tick(hour + 60000)
+  const before = { ...s.resources }
+  expect(parseSave(JSON.stringify(s)).resources).toEqual(before)
+  session.setVisible(true, hour + 60000)
+  session.tick(2 * hour)
+  expect(s.resources).toEqual(before)
+  session.tick(2 * hour + 60000)
+  expect(s.resources.food).toBeGreaterThan(before.food)
 })

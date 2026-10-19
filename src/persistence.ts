@@ -1,153 +1,245 @@
-import { FOOD_TICK_MS, JOBS, MAX_HUNGER } from './constants'
-import { isJobUnlocked } from './economy'
-import { roundResource } from './format'
+import { cancelManual } from './actions'
+import { BUILDINGS } from './economy'
 import {
   ACTION_IDS,
   BUILDING_IDS,
-  isJobId,
-  RESEARCH_ITEM_KEYS,
+  JOB_IDS,
+  PERK_IDS,
+  RESEARCH_IDS,
   RESOURCES,
 } from './ids'
-import { isResearchExcluded, RESEARCH_CONFIG } from './research-definitions'
+import { createRecord } from './records'
+import { QUEUES } from './research'
+import { jobUnlocked } from './settlement'
 import { createDefaultState } from './state'
-import type { GameState, JobId } from './types'
-
+import type {
+  ActiveProject,
+  Cost,
+  GameState,
+  Project,
+  ProjectQueue,
+  QueueEntry,
+} from './types'
 export const STORAGE_KEY = 'primitive-tribe-v1'
-
-// JSON.parse produces only JSON values; missing object properties add undefined.
-type JsonValue = string | number | boolean | null | JsonObject | JsonValue[]
+// JSON is the untrusted boundary. Model its values explicitly and rebuild the
+// entire current schema; incompatible or incomplete records reset atomically.
+type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue }
 type JsonObject = { [key: string]: JsonValue }
-
-function record(value: JsonValue | undefined): JsonObject {
-  return value !== null && typeof value === 'object' && !Array.isArray(value)
-    ? value
-    : {}
+function object(v: JsonValue | undefined): JsonObject {
+  if (v === null || typeof v !== 'object' || Array.isArray(v))
+    throw new Error('Expected object')
+  return v
 }
-
-function array(value: JsonValue | undefined): JsonValue[] {
-  return Array.isArray(value) ? value : []
+function list(v: JsonValue | undefined): JsonValue[] {
+  if (!Array.isArray(v)) throw new Error('Expected array')
+  return v
 }
-
-function finite(value: JsonValue | undefined, fallback = 0): number {
-  return typeof value === 'number' && Number.isFinite(value) ? value : fallback
+function number(
+  v: JsonValue | undefined,
+  min = 0,
+  max = Infinity,
+  integer = false,
+): number {
+  if (
+    typeof v !== 'number' ||
+    !Number.isFinite(v) ||
+    v < min ||
+    v > max ||
+    (integer && !Number.isSafeInteger(v))
+  )
+    throw new Error('Invalid number')
+  return v
 }
-
+function bool(v: JsonValue | undefined): boolean {
+  if (typeof v !== 'boolean') throw new Error('Invalid boolean')
+  return v
+}
+function string(v: JsonValue | undefined): string {
+  if (typeof v !== 'string') throw new Error('Invalid string')
+  return v
+}
+function member<T extends string>(
+  v: JsonValue | undefined,
+  values: readonly T[],
+): T {
+  const result = values.find((id) => id === v)
+  if (!result) throw new Error('Invalid identifier')
+  return result
+}
+function cost(v: JsonValue | undefined): Cost {
+  const o = object(v),
+    result: Cost = {}
+  for (const key of Object.keys(o)) {
+    const r = member(key, RESOURCES)
+    result[r] = number(o[r])
+  }
+  return result
+}
+function project(v: JsonValue | undefined): Project {
+  const p = object(v),
+    kind = member(p.kind, ['research', 'expand', 'convert', 'equip'] as const)
+  if (kind === 'research') return { kind, id: member(p.id, RESEARCH_IDS) }
+  const id = member(p.id, BUILDING_IDS)
+  if (kind === 'equip')
+    return { kind, id, target: number(p.target, 1, Infinity, true) }
+  const form = number(p.form, 0, BUILDINGS[id].forms.length - 1, true)
+  if (kind === 'convert') return { kind, id, form }
+  return { kind, id, form, target: number(p.target, 1, Infinity, true) }
+}
+function entry(v: JsonValue | undefined): QueueEntry {
+  const e = object(v)
+  return {
+    sequence: number(e.sequence, 1, Infinity, true),
+    project: project(e.project),
+  }
+}
+function active(v: JsonValue | undefined): ActiveProject | null {
+  if (v === null) return null
+  const a = object(v),
+    total = number(a.total)
+  return {
+    ...entry(v),
+    paid: cost(a.paid),
+    total,
+    progress: number(a.progress, 0, total + 1e-7),
+  }
+}
+function queue(v: JsonValue | undefined): ProjectQueue {
+  const q = object(v)
+  return { active: active(q.active), waiting: list(q.waiting).map(entry) }
+}
 export function parseSave(serialized: string | null): GameState {
-  const state = createDefaultState()
   try {
-    const decoded: JsonValue = JSON.parse(serialized ?? 'null')
-    const parsed = record(decoded)
-    if (parsed.version !== state.version) return state
-    const savedSkills = record(parsed.skills)
-    for (const id of ACTION_IDS) {
-      const saved = record(savedSkills[id])
-      state.skills[id] = {
-        level: Math.max(1, Math.floor(finite(saved.level, 1))),
-        xp: Math.max(0, Math.floor(finite(saved.xp))),
+    const decoded: JsonValue = JSON.parse(serialized ?? 'null'),
+      p = object(decoded),
+      s = createDefaultState()
+    if (p.version !== s.version) return s
+    const resources = object(p.resources),
+      facilities = object(p.facilities),
+      research = object(p.research),
+      mastery = object(p.mastery),
+      discovered = object(p.discovered),
+      queues = object(p.queues),
+      legacy = object(p.legacy),
+      perks = object(legacy.perks)
+    s.resources = createRecord(RESOURCES, (r) => number(resources[r]))
+    s.research = createRecord(RESEARCH_IDS, (id) => bool(research[id]))
+    s.facilities = createRecord(BUILDING_IDS, (id) => {
+      const f = object(facilities[id]),
+        level = number(f.level, 0, BUILDINGS[id].unique ? 1 : Infinity, true),
+        form = number(f.form, 0, BUILDINGS[id].forms.length - 1, true),
+        equipment = number(f.equipment, 0, Infinity, true)
+      if ((!level && (form || equipment)) || (equipment && !BUILDINGS[id].job))
+        throw new Error('Invalid facility')
+      return { level, form, equipment }
+    })
+    s.mastery = createRecord(['food', 'wood', 'stone'] as const, (id) => {
+      const m = object(mastery[id])
+      return {
+        level: number(m.level, 1, Infinity, true),
+        xp: number(m.xp, 0, Infinity, true),
+      }
+    })
+    s.discovered = {
+      wood: bool(discovered.wood),
+      stone: bool(discovered.stone),
+    }
+    s.people = list(p.people).map((v) => {
+      const person = object(v)
+      return {
+        name: string(person.name),
+        health: number(person.health, 0, 5),
+        job: member(person.job, JOB_IDS),
+        progress: number(person.progress, 0, 1),
+      }
+    })
+    if (
+      !s.people.length ||
+      s.people.some((person) => !jobUnlocked(s, person.job))
+    )
+      throw new Error('Invalid people')
+    s.exploreUnlocked = bool(p.exploreUnlocked)
+    s.researchUnlocked = bool(p.researchUnlocked)
+    s.queues = {
+      research: queue(queues.research),
+      construction: queue(queues.construction),
+    }
+    s.nextSequence = number(p.nextSequence, 1, Infinity, true)
+    const sequences = new Set<number>()
+    for (const id of QUEUES) {
+      const q = s.queues[id]
+      for (const e of [...(q.active ? [q.active] : []), ...q.waiting]) {
+        if (
+          sequences.has(e.sequence) ||
+          e.sequence >= s.nextSequence ||
+          (e.project.kind === 'research') !== (id === 'research')
+        )
+          throw new Error('Invalid queue')
+        sequences.add(e.sequence)
       }
     }
-    const savedResearch = record(parsed.researchLevels)
-    const savedSeenResearch = record(parsed.seenResearchLevels)
-    for (const key of RESEARCH_ITEM_KEYS) {
-      state.researchLevels[key] = Math.min(
-        RESEARCH_CONFIG[key].levels.length,
-        Math.max(0, Math.floor(finite(savedResearch[key]))),
-      )
+    if (p.manual !== null) {
+      const m = object(p.manual)
+      s.manual = {
+        id: member(m.id, ACTION_IDS),
+        paid: cost(m.paid),
+        progress: number(m.progress, 0, 1),
+      }
     }
-    for (const id of RESOURCES) state[id] = roundResource(finite(parsed[id]))
-    const savedBuildings = record(parsed.buildings)
-    for (const id of BUILDING_IDS)
-      state.buildings[id] = Math.max(0, Math.floor(finite(savedBuildings[id])))
-    const choices = RESEARCH_ITEM_KEYS.filter(
-      (id) => RESEARCH_CONFIG[id].specialization?.kind === 'choice',
-    )
-    const chosen =
-      choices.find(
-        (id) =>
-          RESEARCH_CONFIG[id].specialization?.id === parsed.specialization,
-      ) ?? choices.find((id) => state.researchLevels[id] > 0)
-    state.specialization = chosen
-      ? (RESEARCH_CONFIG[chosen].specialization?.id ?? null)
-      : null
-    if (chosen) state.researchLevels[chosen] = 1
-    for (const id of RESEARCH_ITEM_KEYS) {
-      if (isResearchExcluded(state, id)) state.researchLevels[id] = 0
+    s.minuteProgress = number(p.minuteProgress, 0, 60)
+    s.arrivalProgress = number(p.arrivalProgress, 0, 1)
+    s.welcome = bool(p.welcome)
+    s.happiness = number(p.happiness, 0, 100)
+    s.era = number(p.era, 0, 7, true)
+    s.specialization =
+      p.specialization === null
+        ? null
+        : member(p.specialization, ['forestry', 'stonecraft'] as const)
+    s.savedAt = number(p.savedAt)
+    s.completedProjects = number(p.completedProjects, 0, Infinity, true)
+    s.notice = string(p.notice)
+    s.legacy = {
+      discovered: bool(legacy.discovered),
+      lifetime: number(legacy.lifetime, 0, Infinity, true),
+      points: number(legacy.points, 0, Infinity, true),
+      highestEra: number(legacy.highestEra, 0, 7, true),
+      perks: createRecord(PERK_IDS, (id) => bool(perks[id])),
     }
-    for (const key of RESEARCH_ITEM_KEYS) {
-      // Completed levels are always read; newly unlocked levels remain unread.
-      state.seenResearchLevels[key] = Math.min(
-        RESEARCH_CONFIG[key].levels.length,
-        Math.max(
-          state.researchLevels[key],
-          Math.floor(finite(savedSeenResearch[key])),
-        ),
-      )
+    if (p.absence !== null) {
+      const a = object(p.absence),
+        balances = object(a.resources)
+      s.absence = {
+        start: number(a.start, 0, s.savedAt),
+        windowHours: number(a.windowHours, 8),
+        settledSeconds: number(a.settledSeconds),
+        resources: createRecord(RESOURCES, (r) => number(balances[r])),
+        population: number(a.population, 1, Infinity, true),
+        completed: number(a.completed, 0, Infinity, true),
+      }
     }
-    state.savedAt = Math.max(0, finite(parsed.savedAt))
-    state.explored = parsed.explored === true
-    state.stoneFound = parsed.stoneFound === true
-    const people = array(parsed.people)
-    if (people.length) {
-      const playerIndex = Math.max(
-        0,
-        people.findIndex((value) => record(value).isPlayer === true),
-      )
-      state.people = people.map((value, index) => {
-        const person = record(value)
-        const maxHunger = Math.max(1, finite(person.maxHunger, MAX_HUNGER))
-        const requestedJob = person.job
-        let job: JobId = 'idle'
-        if (
-          typeof requestedJob === 'string' &&
-          isJobId(requestedJob) &&
-          isJobUnlocked(state, requestedJob)
-        )
-          job = requestedJob
-
-        return {
-          job,
-          isPlayer: index === playerIndex,
-          workElapsedMs:
-            job === 'idle'
-              ? 0
-              : Math.max(0, finite(person.workElapsedMs)) %
-                JOBS[job].durationMs,
-          name: typeof person.name === 'string' ? person.name : 'Person',
-          maxHunger,
-          hunger: Math.max(
-            0,
-            Math.min(maxHunger, finite(person.hunger, maxHunger)),
-          ),
-        }
-      })
-    }
-    state.actions = Math.max(0, Math.floor(finite(parsed.actions)))
-    state.exploreUnlocked = parsed.exploreUnlocked === true || state.explored
-    state.researchUnlocked = parsed.researchUnlocked === true
-    state.basicTools =
-      parsed.basicTools === true || state.researchLevels['sharpened-stick'] >= 1
-    state.foodElapsedMs = Math.max(
-      0,
-      finite(parsed.foodElapsedMs) % FOOD_TICK_MS,
-    )
-    return state
+    cancelManual(s)
+    return s
   } catch {
     return createDefaultState()
   }
 }
-
-export function loadState(): GameState {
+export function loadState() {
   try {
     return parseSave(localStorage.getItem(STORAGE_KEY))
   } catch {
     return createDefaultState()
   }
 }
-
-export function saveState(state: GameState): void {
+export function saveState(state: GameState) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
   } catch {
-    // Storage may be disabled or full; gameplay should still work for this session.
+    /* Storage can be unavailable; the current session remains playable. */
   }
 }

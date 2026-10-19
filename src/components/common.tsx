@@ -1,67 +1,52 @@
-import { type ReactNode, useEffect, useRef, useState } from 'react'
-import { formatCompactResource } from '../format'
+import type { ReactNode } from 'react'
+import { RESOURCE_INFO } from '../constants'
+import { formatCost } from '../format'
 import { RESOURCES } from '../ids'
-import type { Cost, GameState } from '../types'
-
-export function Costs({ cost, state }: { cost: Cost; state: GameState }) {
+import type { GameSession } from '../session'
+import type { Cost } from '../types'
+export type Confirm = (title: string, body: string, run: () => void) => void
+export interface ViewProps {
+  session: GameSession
+  confirm: Confirm
+}
+export function Button({
+  children,
+  onClick,
+  disabled = false,
+  title,
+}: {
+  children: ReactNode
+  onClick: () => void
+  disabled?: boolean
+  title?: string
+}) {
   return (
-    <span className="costs">
-      {RESOURCES.filter((id) => cost[id]).map((id) => {
-        const required = cost[id] ?? 0
-        return (
-          <span
-            key={id}
-            className={state[id] >= required ? 'cost-enough' : 'cost-missing'}
-          >
-            {formatCompactResource(required)} {id}
-          </span>
-        )
-      })}
-    </span>
+    <button
+      type="button"
+      className="btn btn-sm"
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+    >
+      {children}
+    </button>
   )
 }
-
-export function Disclosure({
-  id,
-  summaryId,
-  title,
-  children,
-  initiallyOpen = false,
-  collapseWhen = false,
-  className = '',
-}: {
-  id?: string
-  summaryId?: string
-  title: ReactNode
-  children: ReactNode
-  initiallyOpen?: boolean
-  collapseWhen?: boolean
-  className?: string
-}) {
-  const [open, setOpen] = useState(initiallyOpen)
-  const details = useRef<HTMLDetailsElement>(null)
-  useEffect(() => {
-    if (collapseWhen) {
-      if (details.current?.contains(document.activeElement))
-        details.current.querySelector('summary')?.focus()
-      setOpen(false)
-    }
-  }, [collapseWhen])
+export function Costs({ session, cost }: { session: GameSession; cost: Cost }) {
   return (
-    <details
-      ref={details}
-      id={id}
-      className={`collapse collapse-arrow rounded-none border-t border-base-300 mb-5 ${className}`}
-      open={open}
-      onToggle={(event) => setOpen(event.currentTarget.open)}
-    >
-      <summary
-        id={summaryId}
-        className="collapse-title pl-0 py-4 text-xs font-semibold"
-      >
-        {title}
-      </summary>
-      <div className="collapse-content px-0">{children}</div>
-    </details>
+    <p className="costs" title={formatCost(cost)}>
+      {RESOURCES.filter((r) => cost[r]).map((r) => (
+        <span
+          key={r}
+          className={
+            session.game.state.resources[r] + 1e-9 < (cost[r] ?? 0)
+              ? 'cost-missing'
+              : 'cost-enough'
+          }
+        >
+          {cost[r]} {RESOURCE_INFO[r].name.toLowerCase()}
+        </span>
+      ))}
+    </p>
   )
 }

@@ -1,108 +1,51 @@
-import { createActions } from './actions'
-import { createFood, getHungerEffects } from './food'
-import { roundResource } from './format'
-import { RESOURCES } from './ids'
-import { createResearch } from './research'
-import { createResources } from './resources'
-import { createSettlement } from './settlement'
-import { createSimulation } from './simulation'
-import { createSkills } from './skills'
-import type { GameState } from './types'
-
-export function createGame(
-  state: GameState,
-  saveState: (snapshot: GameState) => void = () => {},
-) {
-  const resources = createResources(state)
-  const research = createResearch(state, resources.canAfford, saveProgress)
-  const skills = createSkills(state, research.getResearchLevel)
-  const food = createFood(state, saveProgress)
-  const settlement = createSettlement(
-    state,
-    resources,
-    skills.getNextResourceGain,
-    saveProgress,
-  )
-  const actionSystem = createActions(
-    state,
-    research,
-    skills,
-    resources.pay,
-    saveProgress,
-  )
-  const simulation = createSimulation(
-    state,
-    resources,
-    settlement,
-    skills,
-    food,
-    actionSystem.syncUnlocks,
-    saveProgress,
-  )
-
-  function saveProgress() {
-    const snapshot = structuredClone(state)
-    // In-flight work is cancelled on reload. Save its reserved materials so
-    // interruption cannot spend resources without delivering the result.
-    for (const action of [
-      actionSystem.getActiveAction(),
-      actionSystem.getActiveResearch(),
-    ]) {
-      const cost = action?.cost?.()
-      for (const resource of RESOURCES) {
-        snapshot[resource] = roundResource(
-          snapshot[resource] + (cost?.[resource] ?? 0),
-        )
+import { startAction, syncUnlocks } from './actions'
+import { BUILDINGS } from './economy'
+import { feast } from './food'
+import {
+  cancelProject,
+  enqueue,
+  moveProject,
+  nextEquipment,
+  nextExpansion,
+} from './research'
+import { adjustWorkers, assignJob, fillWorkers } from './settlement'
+import { advanceTime } from './simulation'
+import type { BuildingId, GameState, JobId, Project, QueueId } from './types'
+export function removeFacility(state: GameState, id: BuildingId) {
+  const f = state.facilities[id],
+    active = state.queues.construction.active
+  if (!f.level || active?.project.id === id) return false
+  const job = BUILDINGS[id].job
+  if (job)
+    for (const p of state.people)
+      if (p.job === job) {
+        p.job = 'idle'
+        p.progress = 0
       }
-    }
-    saveState(snapshot)
-  }
-
+  state.facilities[id] = { level: 0, form: 0, equipment: 0 }
+  return true
+}
+export function createGame(state: GameState) {
+  syncUnlocks(state)
   return {
     state,
-    canAfford: resources.canAfford,
-    isBuildingUnlocked: settlement.isBuildingUnlocked,
-    getBuildingCost: settlement.getBuildingCost,
-    canBuild: settlement.canBuild,
-    build: settlement.build,
-    getJobCapacity: settlement.getJobCapacity,
-    adjustWorkers: settlement.adjustWorkers,
-    getJobInput: settlement.getJobInput,
-    canWork: settlement.canWork,
-    applyOffline: simulation.applyOffline,
-    saveProgress,
-    actions: actionSystem.actions,
-    syncUnlocks: actionSystem.syncUnlocks,
-    startAction: actionSystem.startAction,
-    finishAction: actionSystem.finishAction,
-    getActiveAction: actionSystem.getActiveAction,
-    getActiveResearch: actionSystem.getActiveResearch,
-    advanceTime: simulation.advanceTime,
-    getPopulationCapacity: settlement.getPopulationCapacity,
-    canRecruit: settlement.canRecruit,
-    recruitPerson: settlement.recruitPerson,
-    isJobUnlocked: settlement.isJobUnlocked,
-    assignJob: settlement.assignJob,
-    getWorkerGain: settlement.getWorkerGain,
-    consumeMeal: food.consumeMeal,
-    getMealCost: food.getMealCost,
-    getFeastCost: food.getFeastCost,
-    canFeast: food.canFeast,
-    feast: food.feast,
-    getSkill: skills.getSkill,
-    getResearchLevel: research.getResearchLevel,
-    getResearchDefinition: research.getResearchDefinition,
-    getResearchNextLevel: research.getResearchNextLevel,
-    getUnreadResearch: research.getUnreadResearch,
-    markResearchSeen: research.markResearchSeen,
-    getResearchEffect: research.getResearchEffect,
-    canAffordResearch: research.canAffordResearch,
-    getActionDuration: skills.getActionDuration,
-    getResourceGain: skills.getResourceGain,
-    getNextResourceGain: skills.getNextResourceGain,
-    getHungerEffects,
-    getResourceRates: simulation.getResourceRates,
+    advanceTime: (seconds: number, visible = false) =>
+      advanceTime(state, seconds, visible),
+    enqueue: (project: Project) => enqueue(state, project),
+    build: (id: BuildingId, form = state.facilities[id].form) =>
+      enqueue(state, nextExpansion(state, id, form)),
+    equip: (id: BuildingId) => enqueue(state, nextEquipment(state, id)),
+    convert: (id: BuildingId, form: number) =>
+      enqueue(state, { kind: 'convert', id, form }),
+    remove: (id: BuildingId) => removeFacility(state, id),
+    cancel: (id: QueueId, seq: number) => cancelProject(state, id, seq),
+    move: (id: QueueId, seq: number, direction: number) =>
+      moveProject(state, id, seq, direction),
+    assign: (index: number, job: JobId) => assignJob(state, index, job),
+    adjust: (job: JobId, n: number) => adjustWorkers(state, job, n),
+    fill: (job: JobId) => fillWorkers(state, job),
+    startAction: (id: import('./ids').ActionId) => startAction(state, id),
+    feast: () => feast(state),
   }
 }
-
 export type Game = ReturnType<typeof createGame>

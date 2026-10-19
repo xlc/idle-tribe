@@ -1,183 +1,99 @@
-import {
-  ACTION_SKILL_CONFIG,
-  EXPLORE_COST,
-  EXPLORE_DURATION_MS,
-  EXPLORE_FURTHER_COST,
-  EXPLORE_FURTHER_DURATION_MS,
-  EXPLORE_UNLOCK_FRUIT,
-  GATHER_DURATION_MS,
-  GATHER_STONE_DURATION_MS,
-  GATHER_WOOD_DURATION_MS,
-  RESEARCH_UNLOCK_WOOD,
-} from './constants'
-import { grantStartingBuildings } from './economy'
-import { formatResource, roundResource } from './format'
-import type { createResearch } from './research'
-import type { createResources } from './resources'
-import type { createSkills } from './skills'
-import type { Action, ActionId, ActionKey, GameState } from './types'
+import { canAfford, pay, refund, storageMultiplier } from './resources'
+import { awardMastery, masteryMultiplier } from './skills'
+import type { ActionId, Cost, GameState } from './types'
 
-export function createActions(
-  state: GameState,
-  research: Pick<
-    ReturnType<typeof createResearch>,
-    'getResearchLevel' | 'createResearchAction'
-  >,
-  skills: Pick<
-    ReturnType<typeof createSkills>,
-    'getResourceGain' | 'getSkill' | 'awardActionExperience'
-  >,
-  pay: ReturnType<typeof createResources>['pay'],
-  saveProgress: () => void,
-) {
-  let activeAction: Action | null = null
-  let activeResearch: Action | null = null
-  const { getResearchLevel, createResearchAction } = research
-  const { getResourceGain, getSkill, awardActionExperience } = skills
-  const actions: Record<ActionKey, Action> = {
-    gather: {
-      id: 'gather',
-      name: 'Gather fruit',
-      baseDurationMs: GATHER_DURATION_MS,
-      complete: () => completeGathering('gather'),
-    },
-    explore: {
-      id: 'explore',
-      name: 'Explore nearby',
-      discovery: true,
-      visible: () => !state.explored && state.exploreUnlocked,
-      baseDurationMs: EXPLORE_DURATION_MS,
-      canStart: () => !state.explored && state.fruit >= EXPLORE_COST,
-      cost: () => ({ fruit: EXPLORE_COST }),
-      complete: completeExplore,
-    },
-    exploreFurther: {
-      id: 'explore-further',
-      name: 'Explore farther',
-      discovery: true,
-      visible: () => !state.stoneFound && state.basicTools,
-      baseDurationMs: EXPLORE_FURTHER_DURATION_MS,
-      canStart: () =>
-        !state.stoneFound &&
-        getResearchLevel('sharpened-stick') > 0 &&
-        state.fruit >= EXPLORE_FURTHER_COST,
-      cost: () => ({ fruit: EXPLORE_FURTHER_COST }),
-      complete: completeExploreFurther,
-    },
-    sticks: {
-      id: 'sticks',
-      name: 'Gather sticks',
-      visible: () => state.explored,
-      baseDurationMs: GATHER_WOOD_DURATION_MS,
-      canStart: () => state.explored,
-      complete: () => completeGathering('sticks'),
-    },
-    stone: {
-      id: 'stone',
-      name: 'Gather stone',
-      visible: () => state.stoneFound,
-      baseDurationMs: GATHER_STONE_DURATION_MS,
-      canStart: () => state.stoneFound,
-      complete: () => completeGathering('stone'),
-    },
-    research: createResearchAction('sharpened-stick'),
-    researchForaging: createResearchAction('foraging-practice'),
-    researchStone: createResearchAction('stone-flakes'),
-    researchShelters: createResearchAction('shelters'),
-    researchAxes: createResearchAction('stone-axes'),
-    researchQuarrying: createResearchAction('quarrying'),
-    researchTeamwork: createResearchAction('teamwork'),
-    researchCarpentry: createResearchAction('carpentry'),
-    researchMasonry: createResearchAction('masonry'),
-    researchWriting: createResearchAction('writing'),
-    researchForestry: createResearchAction('forestry'),
-    researchStonecraft: createResearchAction('stonecraft'),
-    researchJoinery: createResearchAction('joinery'),
-    researchArchitecture: createResearchAction('architecture'),
-    researchAgriculture: createResearchAction('agriculture'),
-    researchEngineering: createResearchAction('engineering'),
+interface ActionDefinition {
+  name: string
+  description: string
+  seconds: number
+  cost: Cost
+  resource?: 'food' | 'wood' | 'stone'
+  discovery?: 'wood' | 'stone'
+  visible: (state: GameState) => boolean
+}
+export const ACTIONS: Record<ActionId, ActionDefinition> = {
+  gather: {
+    name: 'Gather food',
+    description:
+      'Investigate the bushes for something that counts as breakfast.',
+    seconds: 3,
+    cost: {},
+    resource: 'food',
+    visible: () => true,
+  },
+  sticks: {
+    name: 'Gather wood',
+    description: 'Find a branch with a promising future.',
+    seconds: 5,
+    cost: {},
+    resource: 'wood',
+    visible: (s) => s.discovered.wood,
+  },
+  stone: {
+    name: 'Gather stone',
+    description: 'Pick up a rock and call it the start of something.',
+    seconds: 5,
+    cost: {},
+    resource: 'stone',
+    visible: (s) => s.discovered.stone,
+  },
+  explore: {
+    name: 'Explore nearby',
+    description:
+      'The edge of the clearing is doing an excellent job of looking interesting.',
+    seconds: 20,
+    cost: { food: 10 },
+    discovery: 'wood',
+    visible: (s) => s.exploreUnlocked && !s.discovered.wood,
+  },
+  'explore-further': {
+    name: 'Explore farther',
+    description: 'Pack a snack and enlarge your definition of nearby.',
+    seconds: 30,
+    cost: { food: 20 },
+    discovery: 'stone',
+    visible: (s) => s.research['sharpened-stick'] && !s.discovered.stone,
+  },
+}
+export function syncUnlocks(state: GameState) {
+  if (state.resources.food >= 5) state.exploreUnlocked = true
+  if (state.resources.wood >= 2) state.researchUnlocked = true
+}
+export function startAction(state: GameState, id: ActionId) {
+  const def = ACTIONS[id]
+  if (state.manual || !def.visible(state) || !canAfford(state, def.cost))
+    return false
+  pay(state, def.cost)
+  state.manual = { id, paid: { ...def.cost }, progress: 0 }
+  return true
+}
+export function manualRate(state: GameState) {
+  if (!state.manual) return 0
+  const def = ACTIONS[state.manual.id],
+    r = def.resource
+  return (
+    (r
+      ? masteryMultiplier(state.mastery[r]) * storageMultiplier(state, r)
+      : 1) / def.seconds
+  )
+}
+export function finishManual(state: GameState) {
+  const active = state.manual
+  if (!active) return
+  const def = ACTIONS[active.id]
+  state.manual = null
+  if (def.resource) {
+    state.resources[def.resource]++
+    awardMastery(state, def.resource)
   }
-
-  function getActiveAction() {
-    return activeAction
+  if (def.discovery) {
+    state.discovered[def.discovery] = true
+    state.notice = `Discovered ${def.discovery}`
   }
-
-  function getActiveResearch() {
-    return activeResearch
-  }
-
-  function completeGathering(actionId: ActionId) {
-    const resource = ACTION_SKILL_CONFIG[actionId].resource
-    if (!resource) throw new Error(`Missing gathering resource for ${actionId}`)
-    const gain = getResourceGain(actionId)
-    state[resource] = roundResource(state[resource] + gain)
-    return `Gathered ${formatResource(gain)} ${resource}.`
-  }
-
-  function completeExplore() {
-    state.explored = true
-    return 'Exploration complete. Wood is nearby.'
-  }
-
-  function completeExploreFurther() {
-    state.stoneFound = true
-    grantStartingBuildings(state)
-    return 'Exploration complete. Stone is nearby.'
-  }
-
-  function syncUnlocks() {
-    let changed = false
-    if (
-      !state.researchUnlocked &&
-      state.explored &&
-      state.wood >= RESEARCH_UNLOCK_WOOD
-    ) {
-      state.researchUnlocked = true
-      changed = true
-    }
-    if (!state.exploreUnlocked && state.fruit >= EXPLORE_UNLOCK_FRUIT) {
-      state.exploreUnlocked = true
-      changed = true
-    }
-    state.basicTools = getResearchLevel('sharpened-stick') >= 1
-    if (changed) saveProgress()
-  }
-
-  function startAction(action: Action) {
-    if (!Object.values(actions).includes(action)) return false
-    const active = action.researchId ? activeResearch : activeAction
-    if (active || (action.canStart && !action.canStart())) return false
-    if (action.researchId) activeResearch = action
-    else activeAction = action
-    const cost = action.cost?.()
-    if (cost) {
-      pay(cost)
-      saveProgress()
-    }
-    return true
-  }
-
-  function finishAction(action: Action) {
-    const active = action.researchId ? activeResearch : activeAction
-    if (active !== action) return null
-    if (activeAction === action) activeAction = null
-    if (activeResearch === action) activeResearch = null
-    // Award XP first: a milestone reached by this action affects its yield.
-    const levelsGained = awardActionExperience(action.id)
-    const result = action.complete()
-    state.actions += 1
-    saveProgress()
-    return levelsGained > 0
-      ? `${result} ${action.name} reached level ${getSkill(action.id).level}.`
-      : result
-  }
-
-  return {
-    actions,
-    getActiveAction,
-    getActiveResearch,
-    syncUnlocks,
-    startAction,
-    finishAction,
-  }
+  syncUnlocks(state)
+}
+export function cancelManual(state: GameState) {
+  if (!state.manual) return
+  refund(state, state.manual.paid)
+  state.manual = null
 }

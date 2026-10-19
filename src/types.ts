@@ -1,91 +1,159 @@
-import type { ActionId, BuildingId, JobId, ResearchId, ResourceId } from './ids'
-
-export type {
+import type {
   ActionId,
-  ActionKey,
   BuildingId,
   JobId,
+  PerkId,
   ResearchId,
   ResourceId,
 } from './ids'
 
+export type {
+  ActionId,
+  BuildingId,
+  JobId,
+  PerkId,
+  ResearchId,
+  ResourceId,
+} from './ids'
 export type Cost = Partial<Record<ResourceId, number>>
 export type Specialization = 'forestry' | 'stonecraft'
-
-export interface Person {
-  job: JobId
-  isPlayer: boolean
-  workElapsedMs: number
-  name: string
-  hunger: number
-  maxHunger: number
+export interface Requirements {
+  research?: ResearchId[]
+  anyResearch?: ResearchId[]
+  discovery?: 'wood' | 'stone'
+  perk?: PerkId
+  facilities?: Partial<Record<BuildingId, number>>
 }
-
-export interface Skill {
+export interface Effects {
+  jobBonus?: Partial<Record<JobId, number>>
+  specialization?: Partial<Record<JobId, number>>
+  recipeMultiplier?: Partial<Record<JobId, number>>
+  recipeReduction?: Partial<Record<JobId, Cost>>
+  storage?: number
+  resourceStorage?: Cost
+  housing?: number
+  crew?: number
+  offlineHours?: number
+}
+export interface ResearchDefinition {
+  name: string
+  description: string
+  requires: Requirements
+  cost: Cost
+  minutes: number
+  effect: string
+  effects: Effects
+  branch?: Specialization
+  grant?: { building: BuildingId; job: JobId }
+  era?: number
+  unlockHappiness?: boolean
+  discoverTimeBox?: boolean
+}
+export interface FormDefinition {
+  name: string
+  description: string
+  requires: Requirements
+  cost: Cost
+  work: number
+  rate?: number
+  storage?: Cost
+  housing?: number
+  input?: Cost
+  offlineHours?: number
+}
+export interface BuildingDefinition {
+  forms: FormDefinition[]
+  effect: string
+  job?: JobId
+  unique?: boolean
+  crew?: number
+  leisure?: number
+  amenities?: number
+  offlineHours?: number
+  jobBonus?: Partial<Record<JobId, number>>
+}
+export interface JobDefinition {
+  name: string
+  description: string
+  output: ResourceId
+  input: Cost
+  mastery?: 'food' | 'wood' | 'stone'
+}
+export interface Person {
+  name: string
+  health: number
+  job: JobId
+  progress: number
+}
+export interface Facility {
+  level: number
+  form: number
+  equipment: number
+}
+export interface Mastery {
   level: number
   xp: number
 }
-
+export type Project =
+  | { kind: 'research'; id: ResearchId }
+  | { kind: 'expand'; id: BuildingId; target: number; form: number }
+  | { kind: 'convert'; id: BuildingId; form: number }
+  | { kind: 'equip'; id: BuildingId; target: number }
+export interface QueueEntry {
+  sequence: number
+  project: Project
+}
+export interface ActiveProject extends QueueEntry {
+  paid: Cost
+  progress: number
+  total: number
+}
+export interface ProjectQueue {
+  active: ActiveProject | null
+  waiting: QueueEntry[]
+}
+export type QueueId = 'research' | 'construction'
+export interface ManualAction {
+  id: ActionId
+  paid: Cost
+  progress: number
+}
+export interface Absence {
+  start: number
+  windowHours: number
+  settledSeconds: number
+  resources: Record<ResourceId, number>
+  population: number
+  completed: number
+}
 export interface GameState {
-  version: 4
-  fruit: number
-  planks: number
-  blocks: number
-  knowledge: number
-  buildings: Record<BuildingId, number>
+  version: 5
+  resources: Record<ResourceId, number>
+  facilities: Record<BuildingId, Facility>
+  research: Record<ResearchId, boolean>
+  mastery: Record<'food' | 'wood' | 'stone', Mastery>
+  people: Person[]
+  discovered: { wood: boolean; stone: boolean }
+  exploreUnlocked: boolean
+  researchUnlocked: boolean
+  queues: Record<QueueId, ProjectQueue>
+  nextSequence: number
+  manual: ManualAction | null
+  minuteProgress: number
+  arrivalProgress: number
+  welcome: boolean
+  happiness: number
+  era: number
   specialization: Specialization | null
   savedAt: number
-  wood: number
-  stone: number
-  people: Person[]
-  actions: number
-  explored: boolean
-  exploreUnlocked: boolean
-  stoneFound: boolean
-  researchUnlocked: boolean
-  basicTools: boolean
-  researchLevels: Record<ResearchId, number>
-  seenResearchLevels: Record<ResearchId, number>
-  skills: Record<ActionId, Skill>
-  foodElapsedMs: number
-}
-
-export interface ResearchCost extends Cost {
-  durationMs: number
-}
-
-export type ResearchGroupId =
-  | 'foundations'
-  | 'production'
-  | 'specialization'
-  | 'development'
-
-export type ResearchSpecialization =
-  | { kind: 'choice'; id: Specialization; description: string }
-  | { kind: 'requirement'; id: Specialization }
-
-export interface ResearchDefinition {
-  actionId: ActionId
-  name: string
-  prerequisite: (state: GameState) => boolean
-  effect: (level: number) => string
-  group: ResearchGroupId
-  requirement: string
-  specialization?: ResearchSpecialization
-  onFirstCompletion?: (state: GameState) => void
-  populationCapacity?: (level: number) => number
-  workerMultiplier?: (level: number) => number
-  levels: ResearchCost[]
-}
-
-export interface Action {
-  id: ActionId
-  name: string
-  researchId?: ResearchId
-  baseDurationMs: number | (() => number)
-  visible?: () => boolean
-  discovery?: boolean
-  canStart?: () => boolean
-  cost?: () => Cost | null
-  complete: () => string
+  absence: Absence | null
+  completedProjects: number
+  notice: string
+  legacy: {
+    discovered: boolean
+    lifetime: number
+    points: number
+    highestEra: number
+    perks: Record<PerkId, boolean>
+  }
 }

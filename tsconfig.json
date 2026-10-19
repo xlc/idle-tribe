@@ -21,6 +21,7 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     "tests/**/*.ts",
+    "scripts/**/*.ts",
     "playwright.config.ts",
     "build.ts",
     "styles-plugin.ts"

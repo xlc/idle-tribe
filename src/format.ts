@@ -1,41 +1,32 @@
-import { ACTION_IMMEDIATE_THRESHOLD_MS } from './constants'
+import { RESOURCE_INFO } from './constants'
 import { RESOURCES } from './ids'
-import type { ResearchCost } from './types'
-
-const compactResourceFormatter = new Intl.NumberFormat('en-US', {
-  notation: 'compact',
-  maximumFractionDigits: 1,
-})
-
-export function roundResource(value: number) {
-  // At this magnitude tenths cannot be represented; scaling can overflow.
-  if (value >= Number.MAX_SAFE_INTEGER / 10) return value
-  return Math.max(0, Math.round((value + Number.EPSILON) * 10) / 10)
-}
-
+import type { Cost } from './types'
 export function formatResource(value: number) {
-  const rounded = roundResource(value)
-  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1)
+  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 3 }).format(
+    value,
+  )
 }
-
 export function formatCompactResource(value: number) {
-  if (value >= 1e15) return value.toExponential(1).replace('e+', 'e')
-  return value < 1000
+  return Math.abs(value) < 10000
     ? formatResource(value)
-    : compactResourceFormatter.format(value)
+    : new Intl.NumberFormat('en-US', {
+        notation: 'compact',
+        maximumFractionDigits: 2,
+      }).format(value)
 }
-
-export function formatResearchCost(cost: ResearchCost | null | undefined) {
-  if (!cost) return 'Complete'
-  return RESOURCES.filter((id) => cost[id])
-    .map((id) => `${formatResource(cost[id] ?? 0)} ${id}`)
-    .join(' · ')
+export function formatCost(cost: Cost) {
+  return (
+    RESOURCES.filter((r) => cost[r])
+      .map(
+        (r) =>
+          `${formatResource(cost[r] ?? 0)} ${RESOURCE_INFO[r].name.toLowerCase()}`,
+      )
+      .join(' · ') || 'No materials'
+  )
 }
-
-export function formatDuration(durationMs: number) {
-  if (durationMs < ACTION_IMMEDIATE_THRESHOLD_MS) return 'now'
-  const seconds = durationMs / 1000
-  if (seconds < 1)
-    return `${seconds.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')} sec`
-  return `${Number.isInteger(seconds) ? seconds : seconds.toFixed(1)} sec`
+export function formatDuration(seconds: number) {
+  if (!Number.isFinite(seconds)) return 'Paused'
+  if (seconds < 60) return `${Math.ceil(seconds)}s`
+  if (seconds < 3600) return `${Math.ceil(seconds / 60)}m`
+  return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`
 }

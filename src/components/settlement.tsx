@@ -1,373 +1,506 @@
-import { useLayoutEffect, useRef } from 'react'
-import { JOBS, RECRUIT_COST } from '../constants'
-import { BUILDINGS, isAutomationUnlocked, JOB_BUILDING } from '../economy'
+import { useState } from 'react'
+import { ACTIONS } from '../actions'
+import { RESOURCE_INFO } from '../constants'
+import { BUILDINGS, isProductionJob, JOBS } from '../economy'
+import { feastCost } from '../food'
+import { formatCompactResource, formatCost, formatResource } from '../format'
+import { removeFacility } from '../game'
+import { ACTION_IDS, BUILDING_IDS, JOB_IDS, RESOURCES } from '../ids'
 import {
-  formatCompactResource,
-  formatResearchCost,
-  formatResource,
-} from '../format'
-import { BUILDING_IDS, isJobId, JOB_IDS, RESOURCES } from '../ids'
-import { RESOURCE_DEFINITIONS } from '../resources'
+  allEntries,
+  nextEquipment,
+  nextExpansion,
+  previewProject,
+  researchPlan,
+} from '../research'
+import { committed, storageMultiplier, threshold } from '../resources'
 import type { GameSession } from '../session'
-import type { BuildingId, Person } from '../types'
-import { Costs, Disclosure } from './common'
-
+import {
+  arrivalStatus,
+  assigned,
+  comfortablePlaces,
+  constructionSpeed,
+  equipmentMultiplier,
+  happinessTarget,
+  happinessUnlocked,
+  jobCapacity,
+  jobInput,
+  jobUnlocked,
+  requirementBlocker,
+  workerRate,
+} from '../settlement'
+import { resourceRates } from '../simulation'
+import type { BuildingId, JobId } from '../types'
+import { Button, Costs, type ViewProps } from './common'
 export function Stockpile({ session }: { session: GameSession }) {
-  const { game } = session
-  const rates = game.getResourceRates()
+  const s = session.game.state,
+    rates = resourceRates(s)
   return (
-    <section className="stockpile" id="resource-list" aria-label="Stockpile">
+    <section className="stockpile" aria-label="Stockpile">
       {RESOURCES.filter(
-        (id) =>
-          RESOURCE_DEFINITIONS[id].visible(game.state) || game.state[id] > 0,
-      ).map((id) => {
-        const value = game.state[id]
-        const rate = rates[id] * 60
+        (r) =>
+          ACTION_IDS.some(
+            (id) => ACTIONS[id].resource === r && ACTIONS[id].visible(s),
+          ) ||
+          s.resources[r] > 0 ||
+          BUILDING_IDS.some(
+            (id) =>
+              BUILDINGS[id].job &&
+              isProductionJob(BUILDINGS[id].job) &&
+              JOBS[BUILDINGS[id].job].output === r &&
+              !requirementBlocker(s, BUILDINGS[id].forms[0]?.requires ?? {}),
+          ),
+      ).map((r) => {
+        const k = threshold(s, r),
+          pressure = storageMultiplier(s, r),
+          reserved = committed(s, r)
         return (
-          <div key={id} className={`resource resource-${id}`}>
+          <div
+            className={`resource resource-${r}`}
+            key={r}
+            title={`${RESOURCE_INFO[r].description}\nComfortable storage ${formatResource(k)}; production ×${formatResource(pressure)}${reserved ? `\nCommitted ${formatResource(reserved)}` : ''}`}
+          >
             <span className="resource-name">
-              {RESOURCE_DEFINITIONS[id].name}
+              {RESOURCE_INFO[r].icon} {RESOURCE_INFO[r].name}
             </span>
-            <output
-              className="resource-value"
-              title={formatResource(value)}
-              aria-label={`${formatResource(value)} ${id}`}
-            >
-              {formatCompactResource(value)}
-            </output>
-            <span
-              className="resource-rate"
-              data-negative={rate < 0}
-              title="Current net production per minute, including processing and meals."
-            >
-              {Math.abs(rate) < 0.05
-                ? '—'
-                : `${rate > 0 ? '+' : '−'}${formatCompactResource(Math.abs(rate))}/min`}
+            <strong className="resource-value">
+              {formatCompactResource(s.resources[r])}
+            </strong>
+            <span className="resource-rate" data-negative={rates[r] < 0}>
+              {rates[r] >= 0 ? '+' : ''}
+              {formatCompactResource(rates[r])}/min
             </span>
+            <small className={pressure < 1 ? 'pressure' : ''}>
+              {formatCompactResource(k)} comfort
+              {reserved ? ` · ${formatCompactResource(reserved)} held` : ''}
+            </small>
           </div>
         )
       })}
     </section>
   )
 }
-
-export function Workforce({ session }: { session: GameSession }) {
-  const { game } = session
-  const { state } = game
-  const automated = isAutomationUnlocked(state)
-  const idle = state.people.filter((person) => person.job === 'idle').length
-  const capacity = game.getPopulationCapacity()
+export function WorkerControls({
+  session,
+  job,
+}: {
+  session: GameSession
+  job: JobId
+}) {
+  const s = session.game.state,
+    n = assigned(s, job),
+    cap = jobCapacity(s, job),
+    available = assigned(s, 'idle')
   return (
-    <section className="workforce-bar" aria-label="Workforce">
+    <fieldset className="worker-control" aria-label={`${job} staffing`}>
+      <Button
+        title="Release worker"
+        disabled={!n}
+        onClick={() => session.change(() => session.game.adjust(job, -1))}
+      >
+        −
+      </Button>
+      <span className="worker-count" title="Assigned / efficient staffing">
+        {n} / {cap}
+      </span>
+      <Button
+        title="Assign worker"
+        disabled={!available || !jobUnlocked(s, job)}
+        onClick={() => session.change(() => session.game.adjust(job, 1))}
+      >
+        +
+      </Button>
+      <Button
+        title="Assign available people up to efficient staffing"
+        disabled={!available || n >= cap || !jobUnlocked(s, job)}
+        onClick={() => session.change(() => session.game.fill(job))}
+      >
+        Fill
+      </Button>
+    </fieldset>
+  )
+}
+export function Workforce({ session }: { session: GameSession }) {
+  const s = session.game.state,
+    arrival = arrivalStatus(s)
+  return (
+    <section className="workforce-bar" aria-label="Population">
       <div>
-        <h2 id="population-count">
-          {state.people.length} / {capacity}{' '}
-          {state.people.length === 1 ? 'person' : 'people'}
+        <h2 title="Every new pair of hands arrives with a matching mouth.">
+          {s.people.length} people{' '}
+          <small>/ {comfortablePlaces(s)} comfortable places</small>
         </h2>
-        {automated && (
-          <p id="camp-summary">
-            {state.people.length - idle} working · {idle} available
-          </p>
+        <p>
+          {assigned(s, 'idle')} available
+          {happinessUnlocked(s)
+            ? ` · Happiness ${formatResource(s.happiness)} / 100`
+            : ''}
+        </p>
+        {happinessUnlocked(s) && (
+          <small title="Happiness moves up to two points per minute.">
+            Happiness target {formatResource(happinessTarget(s))}
+          </small>
         )}
       </div>
-      {automated && (
-        <div className="recruit-control">
-          <button
-            className="btn btn-primary btn-sm min-h-11"
-            id="recruit-button"
-            type="button"
-            disabled={!game.canRecruit()}
-            aria-label={`Invite a person. ${RECRUIT_COST} fruit`}
-            onClick={() =>
-              session.change(
-                game.recruitPerson,
-                Date.now(),
-                'A new person joined the tribe.',
-              )
+      <div className="arrival-control">
+        <label>
+          <input
+            className="checkbox checkbox-sm"
+            type="checkbox"
+            checked={s.welcome}
+            onChange={() =>
+              session.change(() => {
+                s.welcome = !s.welcome
+              })
             }
-          >
-            Invite a person{' '}
-            <span className="font-normal opacity-85">{RECRUIT_COST} fruit</span>
-          </button>
-          <span className="small-note" id="recruit-status">
-            {state.people.length >= capacity ? 'More shelter needed' : ''}
-          </span>
-        </div>
-      )}
+          />{' '}
+          Welcome arrivals
+        </label>
+        <small
+          title={`Sustainable food ${formatResource(arrival.foodOutput)} / ${formatResource(arrival.required)} per minute required`}
+        >
+          {arrival.blocker ||
+            `Next arrival · ${Math.ceil((1 - s.arrivalProgress) * arrival.interval)}m`}
+        </small>
+        <progress className="progress" value={s.arrivalProgress} max={1} />
+      </div>
     </section>
   )
 }
-
-function BuildingCard({
-  session,
-  id,
-}: {
-  session: GameSession
-  id: BuildingId
-}) {
-  const { game } = session
-  const { state } = game
-  const definition = BUILDINGS[id]
-  const level = state.buildings[id]
-  if (
-    (!game.isBuildingUnlocked(id) && !level) ||
-    (definition.milestone && level > 0)
+export function Builders({ session }: { session: GameSession }) {
+  const s = session.game.state,
+    speed = constructionSpeed(s)
+  return (
+    <section className="builders">
+      <div>
+        <h3 title="Turns everyone’s plans into things everyone can point at.">
+          Builders
+        </h3>
+        <p>
+          {formatResource(speed)} work/min ·{' '}
+          {s.queues.construction.active ? 'Building' : 'Waiting'}
+        </p>
+        <small>
+          Next healthy builder: +
+          {formatResource(constructionSpeed(s, 1) - speed)} work/min
+        </small>
+      </div>
+      <WorkerControls session={session} job="builder" />
+    </section>
   )
-    return null
-  const job = definition.job
-  const people = job ? state.people.filter((person) => person.job === job) : []
-  const worker = people[0] ?? { job: job ?? 'idle', hunger: 5, maxHunger: 5 }
-  const gain = game.getWorkerGain({ ...worker, hunger: worker.maxHunger }, true)
-  const input = job ? game.getJobInput(job) : {}
-  const recipe = job
-    ? `${Object.keys(input).length ? `${formatResearchCost({ ...input, durationMs: 0 })} → ` : '+'}${formatResource(gain)} ${JOBS[job].resource} / ${JOBS[job].durationMs / 1000}s per worker`
-    : (definition.description?.(state) ?? '')
-  const status = !job
-    ? level && definition.milestone
-      ? 'Established'
-      : ''
-    : !level
-      ? 'Build to assign workers'
-      : !people.length
-        ? 'No workers assigned'
-        : !people.some(game.canWork)
-          ? `Waiting for ${Object.keys(input).join(', ')}`
-          : people.some((person) => person.hunger <= 3)
-            ? 'Food shortage · reduced output'
-            : 'Producing'
-  const capacity = job ? game.getJobCapacity(job) : 0
-  const idle = state.people.some((person) => person.job === 'idle')
-  const maxed = level >= definition.maxLevel
+}
+function Facility({ session, confirm, id }: ViewProps & { id: BuildingId }) {
+  const s = session.game.state,
+    def = BUILDINGS[id],
+    f = s.facilities[id],
+    [selectedForm, setSelectedForm] = useState(f.form)
+  const form = def.forms[f.level ? f.form : selectedForm]
+  if (!form) return null
+  const expansion = nextExpansion(s, id, selectedForm),
+    quote = previewProject(s, expansion),
+    job = def.job,
+    n = job ? assigned(s, job) : 0
+  const production = job
+    ? s.people
+        .filter((p) => p.job === job)
+        .reduce((sum, p) => sum + workerRate(s, p), 0)
+    : 0
+  const input = job ? jobInput(s, job) : {},
+    output = job && isProductionJob(job) ? JOBS[job].output : null
+  const missingInputs =
+    job && n > 0 && RESOURCES.some((r) => (input[r] ?? 0) > s.resources[r])
+  const blocked = missingInputs
+    ? 'Missing inputs'
+    : output && storageMultiplier(s, output) < 1
+      ? 'Crowded storage'
+      : !f.level
+        ? 'Not built'
+        : job && !n
+          ? 'No workers'
+          : ''
+  const active = s.queues.construction.active?.project.id === id
+  const equipment = nextEquipment(s, id),
+    equipmentQuote = previewProject(s, equipment)
+  const remove = () => {
+    const after = structuredClone(s)
+    removeFacility(after, id)
+    const losses = RESOURCES.filter(
+      (r) => threshold(s, r) !== threshold(after, r),
+    ).map(
+      (r) =>
+        `${RESOURCE_INFO[r].name} comfort ${threshold(s, r)} → ${threshold(after, r)}; production pressure ×${formatResource(storageMultiplier(s, r))} → ×${formatResource(storageMultiplier(after, r))}`,
+    )
+    const beforeRates = resourceRates(s),
+      afterRates = resourceRates(after)
+    const rateChanges = RESOURCES.filter(
+      (r) => Math.abs(beforeRates[r] - afterRates[r]) > 0.0005,
+    )
+      .map(
+        (r) =>
+          `${RESOURCE_INFO[r].name} net ${formatResource(beforeRates[r])} → ${formatResource(afterRates[r])}/min`,
+      )
+      .join('; ')
+    const housing =
+      comfortablePlaces(s) !== comfortablePlaces(after)
+        ? `Housing comfort ${comfortablePlaces(s)} → ${comfortablePlaces(after)}. `
+        : ''
+    confirm(
+      `Remove ${form.name}?`,
+      `${housing}${losses.join('; ')}${losses.length ? '. ' : ''}${job ? `${n} workers become available; ${formatResource(production)} ${output ? RESOURCE_INFO[output].name.toLowerCase() : ''}/min production removed. ` : ''}${rateChanges ? `${rateChanges}. ` : ''}Levels and equipment are lost with no refund. People and stockpiles remain.`,
+      () => session.game.remove(id),
+    )
+  }
   return (
     <article
-      id={`building-${id}`}
-      className="building-card card card-border border-base-300 bg-base-100 min-w-0 p-4"
-      data-built={level > 0}
+      className="building-card card"
+      data-built={f.level > 0}
+      aria-label={form.name}
     >
-      <div className="card-title justify-between items-baseline text-sm">
-        <h3>{definition.name}</h3>
-        <span className="level-label">
-          {level ? `Lv ${level}` : 'Not built'}
+      <div className="section-heading">
+        <h3>{form.name}</h3>
+        <span>
+          Level {f.level}
+          {f.equipment ? ` · tools ${f.equipment}` : ''}
         </span>
       </div>
-      <p className="building-recipe">{recipe}</p>
-      <p className="building-status">{status}</p>
-      {job && people.length > 0 && (
-        <progress
-          className="progress progress-accent h-1 mt-2 mb-3"
-          max={100}
-          value={
-            (Math.max(...people.map((person) => person.workElapsedMs)) /
-              JOBS[job].durationMs) *
-            100
-          }
-          aria-label={`${definition.name} production cycle`}
-        />
+      <p className="flavor">{form.description}</p>
+      {job ? (
+        <>
+          <p className="building-recipe">
+            {formatResource(production)}{' '}
+            {output ? RESOURCE_INFO[output].name.toLowerCase() : ''}/min
+            {RESOURCES.filter((r) => input[r]).map((r) => (
+              <span key={r}>
+                {' '}
+                · −{formatResource(production * (input[r] ?? 0))}{' '}
+                {RESOURCE_INFO[r].name.toLowerCase()}/min
+              </span>
+            ))}
+          </p>
+          {f.level > 0 && <WorkerControls session={session} job={job} />}
+        </>
+      ) : (
+        <p className="building-recipe">
+          {form.housing
+            ? `Base housing: ${form.housing} places per level`
+            : form.storage
+              ? RESOURCES.filter((r) => form.storage?.[r])
+                  .map(
+                    (r) =>
+                      `+${form.storage?.[r]} ${RESOURCE_INFO[r].name.toLowerCase()} base storage`,
+                  )
+                  .join(' · ')
+              : def.effect}
+        </p>
       )}
-      <div className="building-controls">
-        {job && (
-          <div className="worker-control">
-            <button
-              type="button"
-              className="btn btn-sm btn-square min-h-11 min-w-11 sm:min-h-9 sm:min-w-9 text-lg"
-              aria-label={`Remove worker from ${definition.name}`}
-              disabled={!people.length}
+      <p className="building-status">
+        {blocked || (job ? 'Producing' : 'In use')}
+      </p>
+      {!(def.unique && f.level > 0) && (
+        <>
+          <Costs session={session} cost={quote.cost} />
+          <div className="building-controls">
+            <Button
               onClick={() =>
-                session.change(() => game.adjustWorkers(job, -1), Date.now())
+                session.change(() => session.game.build(id, selectedForm))
               }
             >
-              −
-            </button>
-            <output
-              className="worker-count"
-              aria-label={`${people.length} workers, capacity ${capacity}`}
+              {f.level ? 'Queue expansion' : 'Queue build'}
+              {expansion.kind === 'expand' ? ` · ${expansion.target}` : ''}
+            </Button>
+            <small>{formatResource(quote.total)} work</small>
+          </div>
+        </>
+      )}
+      <details className="facility-detail">
+        <summary>Details & upgrades</summary>
+        {job && output && (
+          <p>
+            Recipe: {formatCost(input)} → 1{' '}
+            {RESOURCE_INFO[output].name.toLowerCase()}
+          </p>
+        )}
+        <p>
+          {form.rate
+            ? `${form.rate}/min per healthy worker before bonuses. `
+            : ''}
+          {job
+            ? `Installed tools ×${formatResource(equipmentMultiplier(f.equipment))}. `
+            : ''}
+          {quote.blocker}
+        </p>
+        {!f.level && def.forms.length > 1 && (
+          <label>
+            Build form{' '}
+            <select
+              className="select select-sm"
+              value={selectedForm}
+              onChange={(e) => setSelectedForm(Number(e.target.value))}
             >
-              {people.length} / {capacity}
-            </output>
-            <button
-              type="button"
-              className="btn btn-sm btn-square min-h-11 min-w-11 sm:min-h-9 sm:min-w-9 text-lg"
-              aria-label={`Assign worker to ${definition.name}`}
-              disabled={
-                !idle || !game.isJobUnlocked(job) || people.length >= capacity
-              }
-              onClick={() =>
-                session.change(() => game.adjustWorkers(job, 1), Date.now())
-              }
+              {def.forms.map(
+                (v, i) =>
+                  !requirementBlocker(researchPlan(s), v.requires) && (
+                    <option key={v.name} value={i}>
+                      {v.name}
+                    </option>
+                  ),
+              )}
+            </select>
+          </label>
+        )}
+        {f.level > 0 &&
+          def.forms.map(
+            (v, i) =>
+              i > f.form &&
+              !requirementBlocker(researchPlan(s), v.requires) && (
+                <div key={v.name}>
+                  <p>
+                    {v.name} · {v.description}
+                  </p>
+                  <p>
+                    {v.rate ? `${v.rate}/min per worker before bonuses. ` : ''}
+                    {v.housing ? `${v.housing} base places per level. ` : ''}
+                    {v.storage
+                      ? `Base storage: ${formatCost(v.storage)}. `
+                      : ''}
+                    {v.offlineHours
+                      ? `Offline window +${v.offlineHours} × √level hours. `
+                      : ''}
+                    {job && output
+                      ? `Recipe: ${formatCost(jobInput({ ...s, facilities: { ...s.facilities, [id]: { ...f, form: i } } }, job))} → 1 ${RESOURCE_INFO[output].name.toLowerCase()}.`
+                      : ''}
+                  </p>
+                  <Costs
+                    session={session}
+                    cost={
+                      previewProject(s, { kind: 'convert', id, form: i }).cost
+                    }
+                  />
+                  <Button
+                    disabled={allEntries(s).some(
+                      (e) =>
+                        e.project.kind === 'convert' &&
+                        e.project.id === id &&
+                        e.project.form === i,
+                    )}
+                    onClick={() =>
+                      session.change(() => session.game.convert(id, i))
+                    }
+                  >
+                    Convert to {v.name}
+                  </Button>
+                </div>
+              ),
+          )}
+        {job && f.level > 0 && s.research.toolmaking && (
+          <div>
+            <Costs session={session} cost={equipmentQuote.cost} />
+            <small>
+              {equipmentQuote.blocker ||
+                `${formatResource(equipmentQuote.total)} work`}
+            </small>
+            <Button
+              onClick={() => session.change(() => session.game.equip(id))}
             >
-              +
-            </button>
+              Queue tools {equipment.kind === 'equip' ? equipment.target : ''}
+            </Button>
           </div>
         )}
-        {!maxed && (
-          <button
-            type="button"
-            className="btn btn-primary btn-soft btn-sm min-h-11 sm:min-h-9"
-            aria-label={`${level ? 'Expand' : 'Build'} ${definition.name}`}
-            disabled={!game.canBuild(id)}
-            onClick={() =>
-              session.change(
-                () => game.build(id),
-                Date.now(),
-                definition.milestone?.message ??
-                  `${definition.name} ${level ? 'expanded' : 'built'}.`,
-              )
-            }
-          >
-            {level ? 'Expand' : 'Build'}
-          </button>
+        {f.level > 0 && (
+          <Button disabled={active} onClick={remove}>
+            Remove facility
+          </Button>
         )}
-      </div>
-      {!maxed && <Costs cost={game.getBuildingCost(id)} state={state} />}
+      </details>
     </article>
   )
 }
-
-export function Production({ session }: { session: GameSession }) {
+export function Production(props: ViewProps) {
+  const s = props.session.game.state
+  const [filter, setFilter] = useState('All')
+  const planned = researchPlan(s)
   return (
-    <section
-      id="production-section"
-      aria-labelledby="production-heading"
-      hidden={!isAutomationUnlocked(session.game.state)}
-    >
+    <section>
       <div className="section-heading">
-        <h2 id="production-heading">Production</h2>
+        <h2>Facilities</h2>
+        <span>One settlement, room to grow</span>
       </div>
-      <div className="building-grid" id="building-list">
-        {BUILDING_IDS.map((id) => (
-          <BuildingCard key={id} session={session} id={id} />
-        ))}
-      </div>
-    </section>
-  )
-}
-
-function PersonRow({
-  session,
-  person,
-}: {
-  session: GameSession
-  person: Person
-}) {
-  const { game } = session
-  return (
-    <div className="person-row">
-      <span>{person.name}</span>
-      <span
-        className="person-health"
-        data-hungry={person.hunger <= 3}
-        title={`${person.hunger <= 3 ? 'Hungry · reduced output' : 'Fed'} · 1 fruit per person each minute when fed`}
-      >
-        {formatResource(person.hunger)}/{formatResource(person.maxHunger)}
-      </span>
-      {isAutomationUnlocked(game.state) && (
-        <select
-          className="select select-sm col-span-full w-full min-h-11 sm:min-h-9"
-          aria-label={`Workplace for ${person.name}`}
-          value={person.job}
-          onChange={(event) => {
-            const job = event.currentTarget.value
-            if (isJobId(job))
-              session.change(() => game.assignJob(person, job), Date.now())
-          }}
-        >
-          {JOB_IDS.map((job) => (
-            <option
-              key={job}
-              value={job}
-              disabled={
-                !game.isJobUnlocked(job) ||
-                (job !== 'idle' &&
-                  job !== person.job &&
-                  game.state.people.filter((candidate) => candidate.job === job)
-                    .length >= game.getJobCapacity(job))
-              }
-            >
-              {job === 'idle' ? 'Available' : BUILDINGS[JOB_BUILDING[job]].name}
-            </option>
-          ))}
-        </select>
-      )}
-    </div>
-  )
-}
-
-export function People({ session }: { session: GameSession }) {
-  const { game } = session
-  const hungry = game.state.people.filter((person) => person.hunger <= 3).length
-  const cost = game.getFeastCost()
-  return (
-    <Disclosure
-      id="people-details"
-      title={
-        <>
-          People{' '}
-          <span
-            className="float-right text-[10px] text-neutral font-normal"
-            id="food-summary"
+      <fieldset className="facility-filters" aria-label="Facility filters">
+        {['All', 'Production', 'Storage', 'Housing & support'].map((value) => (
+          <button
+            type="button"
+            key={value}
+            aria-pressed={filter === value}
+            className="btn btn-sm"
+            onClick={() => setFilter(value)}
           >
-            {hungry ? `${hungry} hungry` : 'Fed'}
-          </span>
-        </>
-      }
-    >
-      <div id="tribe-list">
-        {game.state.people.map((person, index) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: People are append-only and never reordered during a session.
-          <PersonRow key={index} session={session} person={person} />
+            {value}
+          </button>
+        ))}
+      </fieldset>
+      <div className="building-grid">
+        {BUILDING_IDS.filter(
+          (id) =>
+            (filter === 'All' ||
+              (filter === 'Production'
+                ? BUILDINGS[id].job
+                : filter === 'Storage'
+                  ? BUILDINGS[id].forms.some((form) => form.storage)
+                  : !BUILDINGS[id].job &&
+                    !BUILDINGS[id].forms.some((form) => form.storage))) &&
+            (s.facilities[id].level > 0 ||
+              BUILDINGS[id].forms.some(
+                (f) => !requirementBlocker(planned, f.requires),
+              )),
+        ).map((id) => (
+          <Facility key={id} {...props} id={id} />
         ))}
       </div>
-      <div className="feast-row">
-        <button
-          className="btn btn-sm btn-ghost min-h-11 sm:min-h-9"
-          id="feast-button"
-          type="button"
-          disabled={!game.canFeast()}
-          onClick={() =>
-            session.change(game.feast, Date.now(), 'The tribe shared a feast.')
-          }
-        >
-          Feast
-        </button>
-        <span className="small-note" id="feast-cost">
-          {cost ? `${cost} fruit · restore everyone` : 'Everyone is fed'}
-        </span>
-      </div>
-    </Disclosure>
+    </section>
   )
 }
-
-export function Milestone({
-  session,
-  id,
-}: {
-  session: GameSession
-  id: BuildingId
-}) {
-  const milestone = BUILDINGS[id].milestone
-  const built = session.game.state.buildings[id] > 0
-  const section = useRef<HTMLElement>(null)
-  const wasBuilt = useRef(built)
-  useLayoutEffect(() => {
-    if (built && !wasBuilt.current) {
-      section.current?.scrollIntoView({ block: 'start' })
-      section.current?.focus({ preventScroll: true })
-    }
-    wasBuilt.current = built
-  }, [built])
-  if (!milestone) return null
+export function People({ session }: { session: GameSession }) {
+  const s = session.game.state,
+    cost = feastCost(s)
   return (
-    <section
-      ref={section}
-      className="village-complete card bg-success/10 p-5"
-      id={milestone.target}
-      tabIndex={-1}
-      aria-labelledby={`${milestone.target}-title`}
-      hidden={!built}
-    >
-      <span className="eyebrow">{BUILDINGS[id].name} complete</span>
-      <h2 id={`${milestone.target}-title`}>A village of your own.</h2>
-      <p>Your workshops keep working. Your tribe keeps growing.</p>
-    </section>
+    <details>
+      <summary>People · {s.people.length}</summary>
+      {cost > 0 && (
+        <div className="feast-row">
+          <Button
+            title="An entire settlement briefly agrees on what to do next."
+            disabled={s.resources.food < cost}
+            onClick={() => session.change(() => session.game.feast())}
+          >
+            Feast · {cost} food
+          </Button>
+        </div>
+      )}
+      {s.people.map((p, i) => (
+        <div className="person-row" key={p.name}>
+          <label>
+            {p.name} <span className="person-health">♥ {p.health}/5</span>
+            <select
+              className="select select-sm"
+              value={p.job}
+              onChange={(e) => {
+                const job = JOB_IDS.find((id) => id === e.target.value)
+                if (job) session.change(() => session.game.assign(i, job))
+              }}
+            >
+              {JOB_IDS.filter((job) => jobUnlocked(s, job)).map((job) => (
+                <option key={job} value={job}>
+                  {job === 'idle'
+                    ? 'Available'
+                    : job === 'builder'
+                      ? 'Builder'
+                      : JOBS[job].name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      ))}
+    </details>
   )
 }

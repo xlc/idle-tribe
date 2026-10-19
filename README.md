@@ -1,46 +1,60 @@
 # Primitive Tribe
 
-A browser-based incremental game about turning a small tribe into an automated village. Assign workers, build production chains, and develop a permanent technology specialization.
+A browser-based incremental settlement game. Grow from a lone forager through agricultural and town economies through industrial, digital, space, quantum, and beyond-quantum eras. Assign workers, plan construction and research, and choose a permanent technology specialization.
 
-Coding agents should also read [AGENTS.md](AGENTS.md) for change and validation guidance.
+This is a proof of concept (PoC). Breaking changes and lost saves are expected; backward compatibility is not supported.
+
+Coding agents should read [AGENTS.md](AGENTS.md) for design, change, and validation guidance.
 
 ## Run locally
 
-Install [Bun](https://bun.sh/) 1.3 or newer, then run from the repository root. Bun is intentionally not pinned; CI uses the latest stable release. Automatic peer installation is disabled so the Tailwind plugin uses the installed Bun runtime; add any needed peer packages explicitly.
+Install [Bun](https://bun.sh/) 1.3 or newer, then run from the repository root:
 
 ```sh
 bun install --frozen-lockfile
 bun run dev
 ```
 
-Open the local URL printed by Bun. The development server bundles the TypeScript and CSS from source and reloads changes. Stop it with `Ctrl+C`.
+Open the printed local URL. The server bundles TypeScript and CSS from source and reloads changes; stop it with `Ctrl+C`. No environment variables or external services are required to play locally.
 
-Progress is saved in your browser's local storage under the existing `primitive-tribe-v1` key. Saves are local to the browser and origin; changing the hostname or port uses a different save. If browser storage is unavailable, gameplay still works but progress will not persist.
+Bun is not pinned; CI uses the latest stable release. Automatic peer installation is disabled so the Tailwind plugin uses the installed Bun runtime. Add needed peers explicitly with `bun add` or `bun add --dev`, and commit both `package.json` and `bun.lock`.
 
-Reloading cancels unfinished actions and research and returns their reserved materials. Completed discoveries, upgrades, skill progress, job assignments, and partial worker gathering cycles remain saved. Older saves migrate automatically without losing people or progress.
+## Current gameplay
 
-## Growing your tribe
+The playable catalog covers **all eight eras**, through Causal synthesis. The first three eras follow [the detailed design](docs/GAME_DESIGN_DETAILS.md); [the later-era addendum](docs/LATER_ERAS.md) defines the remaining costs, unlocks, recipes, branch upgrades, and time-box discovery. [Implementation and playtest results](docs/IMPLEMENTATION_RESULTS.md) record coverage and pacing evidence.
 
-Gather fruit, explore for wood, and collect 2 wood to open Technology. Research a sharpened stick, then **Shelters** to start automation. Your first shelters include a foraging camp and lumber camp, and put you to work gathering fruit. Invite people for 15 fruit and assign available workers with each building's + and − buttons. Individual assignments are also available under People.
+Explore to discover wood and stone. Research **Shelters** to receive the first Foraging camp and unlock builders and automatic arrivals. Housing and other facilities require construction. Workers gather **food**, wood, and stone, then process planks, blocks, tools, and knowledge. Processing pauses without inputs and spends one recipe per completed unit.
 
-Discovering stone adds a quarry. **Carpentry** unlocks a sawmill and houses; **Masonry** unlocks stoneworks. Sawmills convert 3 wood into planks, and stoneworks convert 3 stone into blocks. Production pauses when inputs run out. Move workers between gathering and processing to manage supply. Building expansions add two worker places and increase output by 50% of the original yield. Houses increase population capacity.
+Each workplace has **−**, **+**, and **Fill** controls. Fill assigns available people up to efficient staffing once. Extra workers remain useful with diminishing returns; they are never automatically reassigned. Comfortable housing slows crowding rather than imposing a population limit. Arrivals require a food buffer and sustainable production, arrive unassigned, and can be paused with **Welcome arrivals**.
 
-**Writing** unlocks the study, where scholars turn fruit into knowledge, and the specialization choice:
+Construction and research have separate ordered queues. Waiting plans reserve nothing; an eligible head pays when it starts. Builders advance construction, while research uses a fixed timer. Reorder or remove waiting plans freely. Cancelling active work refunds its exact committed materials and discards progress. Completed facilities retain their effects during expansion and conversion. Conversion retains levels, assignments, partial cycles, and equipment; removal loses completed investment while preserving people and stock.
 
-- **Forestry:** +60% wood and plank output. Precision joinery reduces both processing recipes to 2 raw materials.
-- **Stonecraft:** +60% stone and block output. Architecture improves block output and doubles the capacity added by houses.
+Repeatable buildings and equipment refinements have no gameplay level cap. Storage thresholds reduce production gradually above comfortable amounts; all stock remains spendable. Costs committed to unfinished projects still count toward storage pressure. Toolmaking, Organized work, and Civic engineering unlock equipment tiers; Civic engineering also opens unlimited refinements.
 
-A specialization is permanent for the run. Both paths retain all essential workplaces and can research Cultivation and Engineering, then construct the **Great Hall** to establish a village. Production and construction continue after that milestone. A reset or prestige system is not implemented.
+**Agriculture** unlocks farms, cottages, and granaries. **Writing** introduces towns, gradual happiness, schools, libraries, and permanent specialization:
 
-Each fed person eats 1 fruit per minute. Food shortages reduce output to 80% at 3/5 health and 50% at 2/5 or below; nobody dies or permanently stops working. Meals feed the hungriest first. Foragers can recover the economy without manual gathering. A feast restores everyone's missing health immediately for 1 fruit per health point, rounded up.
+- **Forestry:** wood and plank workplace rates ×1.40; Precision joinery reduces wood and stone processing inputs from 3 to 2.
+- **Stonecraft:** stone and block workplace rates ×1.40; Architecture adds +50% block production technology and +25% housing contribution.
 
-Work continues while the game is hidden or closed, with up to **24 hours** of production and meals per absence. The return summary shows net resource gains. Catch-up uses the same recipes, worker assignments, food effects, and partial cycles as visible play; it does not buy buildings, recruit people, or choose research automatically. Manual actions and research pause while the page is hidden. Unfinished manual actions and research still cancel and refund their reserved materials on reload.
+Both branches reach every era. Industry adds ore, metal, and machinery; digital production adds charge, circuits, and data; space adds exotic material; quantum engineering adds quantum components; causal engineering adds causal models and a second metal source. Later conversions and research improve earlier supply chains. Forestry gains manufacturing input efficiency; Stonecraft gains housing and storage headroom. Facility filters keep production, storage, and housing/support one step away. The unique **Great Hall** remains optional.
 
-Existing saves migrate automatically to version 4. Resources, people, research and skills remain; existing workers receive enough workplace capacity to retain their jobs. Saves without a reliable timestamp begin offline accounting from their first load in this version.
+**Precision instruments → Chronometry**, available after Mechanization, discovers the mysterious time box. It permits an optional reset for permanent legacy points and perks; the confirmation lists losses and gains. The time box remains available after resetting, but each repeat reset requires reaching Writing again. Optional Early astronomy unlocks a town Observatory; the common space route instead offers the Deep-space array. Causal synthesis is the last finite research, with continued facility investment and prestige beyond it.
 
-## Development checks
+Fed people eat 1 food per minute. Shortages reduce individual output to 80% at 3/5 health and 50% at 2/5 or below; nobody dies or leaves. Meals feed the hungriest first. A feast restores missing health for 1 food per point, rounded up. Town happiness changes by at most two points per simulated minute and affects workers, builders, and arrival speed.
 
-Run the same checks as CI before submitting changes:
+## Saves and offline progress
+
+Progress saves automatically in browser local storage under `primitive-tribe-v1`, with current-format schema version 5. Prototype saves from previous schemas reset; there are no migrations. Saves belong to the browser and origin. If storage is unavailable, the current session remains playable but progress will not persist.
+
+Current-format reloads preserve queued research and construction, recorded payments, partial worker cycles, assignments, and absence accounting. Unfinished manual actions alone cancel and refund on reload. Manual actions pause while hidden; workers, meals, immigration, happiness, construction, and research share the same simulation timeline.
+
+The initial **8 hours** away run at full speed. Longer absences continue with diminishing effective time: 24 hours gives about 19.71 simulated hours, and a week gives about 65.32. Supply posts and record technologies extend the full-speed window. Its duration is snapshotted at departure; hidden callbacks and reloads settle only time not already accounted for. Improvements completed away benefit the next absence.
+
+The return report shows wall and simulated time, signed resource changes, arrivals, completed plans, and current blockers. No choices, assignments, or new purchases are added automatically beyond the plans you queued.
+
+## Development
+
+Run the same checks as CI before submitting code or tooling changes:
 
 ```sh
 bun run check
@@ -50,54 +64,39 @@ bun run check
 | --- | --- |
 | `bun run dev` | Start the development server with hot reload. |
 | `bun run lint` | Check Biome formatting, lint rules, and import organization. |
-| `bun run lint:fix` | Apply Biome formatting, import organization, and safe lint fixes. |
+| `bun run lint:fix` | Apply formatting, import organization, and safe lint fixes. |
 | `bun run format` | Format files with Biome. |
-| `bun run typecheck` | Check strict TypeScript types, unused code, and switch fallthrough. |
-| `bun run test` | Run the unit tests. |
+| `bun run typecheck` | Check TypeScript types. |
+| `bun run test` | Run unit tests. |
 | `bun run test:browser` | Build and test the production UI in Chromium at desktop and phone widths. |
+| `bun run balance` | Simulate scheduled visits through Mechanization; add `--full` for all eras and `--branch=forestry` or `--branch=stonecraft` for one path. |
 | `bun run build` | Check types and generate the production bundle in `dist/`. |
-| `bun run preview` | Build and serve the static site locally using Cloudflare's runtime. |
-| `bun run deploy` | Build and publish the static site to Cloudflare Workers. |
-| `bun run check` | Run lint/format checks, type checking, the build, and tests. |
+| `bun run preview` | Build and serve locally using Cloudflare's runtime. |
+| `bun run deploy` | Build and publish to Cloudflare Workers. |
+| `bun run check` | Run lint, build (including type checking), and tests. |
 
 Before the first browser test, install Chromium with `bunx playwright install chromium`. The browser checks use isolated saves and start their own local server.
 
-[Biome](https://biomejs.dev/reference/configuration/) checks TypeScript, CSS, and JSON with two-space indentation, single quotes, and no optional semicolons in TypeScript. Its configuration respects `.gitignore`; `.editorconfig` and `.gitattributes` keep editor settings and line endings consistent. Use your editor's Biome integration for formatting on save. HTML, Markdown, and YAML are edited manually; experimental HTML support is not enabled.
-
-GitHub Actions runs `bun run check` for pushes and pull requests, using a frozen lockfile and read-only repository permissions.
-
-## Production build
-
-`bun run build` first runs strict TypeScript checking, then bundles `index.html`, TypeScript, and CSS into `dist/` using Bun with the Tailwind plugin. The development server uses the same plugin for hot reload.
+Code conventions live in `biome.json`, `tsconfig.json`, and `.editorconfig`; `.gitattributes` controls repository line endings. Biome checks TypeScript, CSS, and JSON. HTML, Markdown, and YAML are maintained manually. GitHub Actions runs `bun run check` on pushes and pull requests with a frozen lockfile and read-only repository permissions.
 
 Development and production share a Tailwind build plugin that flattens generated CSS with Lightning CSS before Bun bundles it. This preserves daisyUI pseudo-elements and nested color rules affected by [Bun's CSS nesting issue](https://github.com/oven-sh/bun/issues/45258). React components render the interface with daisyUI components and a custom `tribe` theme; custom CSS covers game layout and gameplay states. Game rules and session clocks remain independent of React and the DOM. Keep utility class names complete in HTML and TSX so Tailwind detects them.
 
-`dist/` is generated and ignored by Git. Deploy its contents to a static web host **after running the build**; it is no longer checked in. Deployment must install dependencies and run `bun run build` before publishing. Serve the output over HTTP rather than opening the HTML directly from disk.
-
-Dependencies, build output, caches, test coverage, logs, and local environment/editor files are ignored. No environment variables or external services are required. Never commit secrets or browser saves.
-
-Use `bun add` / `bun add --dev` to add dependencies and commit both `package.json` and `bun.lock`. Use `bun install --frozen-lockfile` for fresh checkouts and CI so installation fails if the manifest and lockfile disagree.
+`dist/` is generated and ignored by Git. Install dependencies and build before publishing its contents to a static host; serve over HTTP rather than opening HTML from disk. Never commit secrets or browser saves.
 
 ## Cloudflare deployment
 
-The site uses [Cloudflare Workers Static Assets](https://developers.cloudflare.com/workers/static-assets/) to publish `dist/`. `wrangler.jsonc` sets the Worker name to `idle-tribe`; no server code or runtime bindings are needed.
+[Cloudflare Workers Static Assets](https://developers.cloudflare.com/workers/static-assets/) serves `dist/`. `wrangler.jsonc` names the Worker `idle-tribe`; no server code or runtime bindings are needed.
 
-After installing dependencies, preview the production build locally:
-
-```sh
-bun run preview
-```
-
-To publish from your machine, authenticate with your Cloudflare account once, then deploy:
+Use `bun run preview` to inspect the production build locally. To publish, authenticate once and deploy:
 
 ```sh
 bunx wrangler login
 bun run deploy
 ```
 
-The deploy command builds first and prints the public `workers.dev` URL after publishing. To validate the build and deployment configuration without publishing, run `bun run deploy --dry-run`.
+Deployment builds first and prints the public `workers.dev` URL. Use `bun run deploy --dry-run` to validate the build and deployment configuration without publishing.
 
-[Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/) is connected to `xlc/idle-tribe` and automatically deploys pushes to `master`. The Cloudflare build configuration uses these settings:
+For automatic deployment from `xlc/idle-tribe`, connect the repository in **Workers & Pages** using these [Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/) settings:
 
 | Setting | Value |
 | --- | --- |
@@ -106,10 +105,10 @@ The deploy command builds first and prints the public `workers.dev` URL after pu
 | Root directory | Repository root |
 | Build command | `bun install --frozen-lockfile && bun run check` |
 | Deploy command | `bun run deploy` |
-| Build variable `BUN_VERSION` | `latest` (must be Bun 1.3 or newer) |
-| Build variable `SKIP_DEPENDENCY_INSTALL` | `true` (the build command installs with the frozen lockfile) |
+| Build variable `BUN_VERSION` | `latest` (Bun 1.3 or newer) |
+| Build variable `SKIP_DEPENDENCY_INSTALL` | `true` (the build command installs dependencies) |
 
-If recreating the Cloudflare project, connect the repository in **Workers & Pages** and set the build variables before the first build: Cloudflare's [default Bun version](https://developers.cloudflare.com/workers/ci-cd/builds/build-image/) may be older than this project requires. For deployment from another CI service, provide `CLOUDFLARE_API_TOKEN` with Workers deployment permissions and `CLOUDFLARE_ACCOUNT_ID` through that service's secret settings. Do not commit credentials.
+Set the build variables before the first build. These dashboard settings are managed outside the repository. For deployment from another CI service, supply `CLOUDFLARE_API_TOKEN` with Workers deployment permissions and `CLOUDFLARE_ACCOUNT_ID` through its secret settings.
 
 ## Origin
 

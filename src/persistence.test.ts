@@ -1,377 +1,58 @@
-import { describe, expect, test } from 'bun:test'
-import { createGame } from './game'
+import { expect, test } from 'bun:test'
+import { startAction } from './actions'
 import { parseSave } from './persistence'
+import { enqueue, nextExpansion } from './research'
+import { advanceTime } from './simulation'
 import { createDefaultState } from './state'
-import { itemAt } from './test-helpers'
-import type { BuildingId, GameState, JobId } from './types'
+import { people, settlement } from './test-helpers'
 
-describe('browser saves', () => {
-  test('missing or invalid saves start a fresh game', () => {
-    for (const value of [null, '{', 'null', '[]', 'true', '42', '"text"']) {
-      expect(parseSave(value)).toEqual(createDefaultState())
-    }
-    const first = parseSave(null)
-    first.skills.gather.level = 20
-    expect(parseSave(null).skills.gather.level).toBe(1)
-  })
-
-  test('incompatible save versions reset instead of migrating progress', () => {
-    for (const version of [undefined, null, 1, 2, 3, 5, '4', {}, []]) {
-      const saved = { ...createDefaultState(), version, fruit: 42 }
-      expect(parseSave(JSON.stringify(saved))).toEqual(createDefaultState())
-    }
-  })
-
-  test('current saves round-trip', () => {
-    const state = createDefaultState()
-    state.fruit = 12.3
-    state.skills.gather = { level: 4, xp: 2 }
-    state.foodElapsedMs = 1234
-    expect(parseSave(JSON.stringify(state))).toEqual(state)
-  })
-
-  test('large finite resources survive normalization and repeated saves', () => {
-    const state = createDefaultState()
-    state.fruit = Number.MAX_VALUE
-    state.wood = 1e307
-    const restored = parseSave(JSON.stringify(state))
-    expect(restored.fruit).toBe(state.fruit)
-    expect(restored.wood).toBe(state.wood)
-    expect(parseSave(JSON.stringify(restored))).toEqual(restored)
-  })
-
-  test('malformed fields are normalized', () => {
-    const state = parseSave(
-      JSON.stringify({
-        ...createDefaultState(),
-        fruit: -10,
-        wood: '12',
-        skills: { gather: { level: -2, xp: 2.9 } },
-        researchLevels: { 'sharpened-stick': 99 },
-        people: [null, { name: 'You', maxHunger: 5, hunger: 12 }],
-        foodElapsedMs: 60042,
-      }),
-    )
-    expect(state.fruit).toBe(0)
-    expect(state.wood).toBe(0)
-    expect(state.skills.gather).toEqual({ level: 1, xp: 2 })
-    expect(state.researchLevels['sharpened-stick']).toBe(3)
-    expect(state.people.map((person) => person.hunger)).toEqual([5, 5])
-    expect(state.foodElapsedMs).toBe(42)
-  })
-
-  test('read research stays read after reloading', () => {
-    const state = createDefaultState()
-    state.researchUnlocked = true
-    state.researchLevels['sharpened-stick'] = 1
-    state.basicTools = true
-    createGame(state).markResearchSeen()
-    const restored = parseSave(JSON.stringify(state))
-    expect(restored).toEqual(state)
-    expect(createGame(restored).getUnreadResearch()).toEqual([])
-    restored.stoneFound = true
-    expect(createGame(restored).getUnreadResearch()).toEqual(['stone-flakes'])
-  })
-
-  test('completed research is read and next unlocks remain unread', () => {
-    const restored = parseSave(
-      JSON.stringify({
-        ...createDefaultState(),
-        fruit: 42,
-        researchUnlocked: true,
-        basicTools: true,
-        researchLevels: { 'sharpened-stick': 2 },
-      }),
-    )
-    expect(restored.fruit).toBe(42)
-    expect(restored.researchLevels['sharpened-stick']).toBe(2)
-    expect(restored.seenResearchLevels['sharpened-stick']).toBe(2)
-    expect(createGame(restored).getUnreadResearch()).toEqual([
-      'sharpened-stick',
-      'foraging-practice',
-      'shelters',
-    ])
-  })
-
-  test('invalid read status is normalized without hiding newly unlocked research', () => {
-    const restored = parseSave(
-      JSON.stringify({
-        ...createDefaultState(),
-        researchUnlocked: true,
-        seenResearchLevels: {
-          'sharpened-stick': '3',
-          'foraging-practice': -10,
-          'stone-flakes': 99,
-        },
-      }),
-    )
-    expect(restored.seenResearchLevels).toEqual({
-      ...createDefaultState().seenResearchLevels,
-      'sharpened-stick': 0,
-      'foraging-practice': 0,
-      'stone-flakes': 3,
-    })
-    expect(createGame(restored).getUnreadResearch()).toEqual([
-      'sharpened-stick',
-    ])
-  })
+test('current saves preserve active paid projects and queued ordering without refunding', () => {
+  const s = settlement()
+  people(s, 'builder', 'sawyer')
+  s.research['record-keeping'] = false
+  enqueue(s, nextExpansion(s, 'housing'))
+  enqueue(s, nextExpansion(s, 'housing'))
+  enqueue(s, { kind: 'research', id: 'record-keeping' })
+  advanceTime(s, 30)
+  s.savedAt = 12345
+  const loaded = parseSave(JSON.stringify(s))
+  expect(loaded).toEqual(s)
+  const direct = structuredClone(s)
+  advanceTime(loaded, 4000)
+  advanceTime(direct, 4000)
+  expect(loaded).toEqual(direct)
 })
 
-test('jobs normalize invalid or locked assignments without removing existing people', () => {
-  const state = createDefaultState()
-  state.people = Array.from({ length: 10 }, (_, i) => ({
-    ...itemAt(state.people, 0),
-    name: `Person ${i}`,
-    job: 'stoneworker',
-    workElapsedMs: 13000,
-  }))
-  let restored = parseSave(JSON.stringify(state))
-  expect(restored.people).toHaveLength(10)
-  expect(restored.people.every((person) => person.job === 'idle')).toBe(true)
-  state.researchLevels.shelters = 1
-  state.stoneFound = true
-  state.buildings.quarry = 5
-  restored = parseSave(JSON.stringify(state))
-  const worker = itemAt(restored.people, 0)
-  expect(worker.job).toBe('stoneworker')
-  expect(worker.workElapsedMs).toBe(1000)
-  const invalid = {
-    ...state,
-    people: [
-      { ...itemAt(state.people, 0), job: 'unknown', workElapsedMs: -10 },
-    ],
-  }
-  const unassigned = itemAt(parseSave(JSON.stringify(invalid)).people, 0)
-  expect(unassigned.job).toBe('idle')
-  expect(unassigned.workElapsedMs).toBe(0)
+test('reloading cancels only manual work and refunds its exact commitment once', () => {
+  const s = createDefaultState()
+  s.exploreUnlocked = true
+  s.resources.food = 20
+  startAction(s, 'explore')
+  advanceTime(s, 5, true)
+  const loaded = parseSave(JSON.stringify(s))
+  expect(loaded.resources.food).toBe(20)
+  expect(loaded.manual).toBeNull()
+  expect(parseSave(JSON.stringify(loaded)).resources.food).toBe(20)
 })
 
-test('current saves preserve explicit player identity and normalize duplicate or missing markers', () => {
-  const state = createDefaultState()
-  const player = itemAt(state.people, 0)
-  player.name = 'Renamed player'
-  state.people.unshift({
-    ...player,
-    name: 'You',
-    isPlayer: false,
-  })
-  expect(parseSave(JSON.stringify(state))).toEqual(state)
-  for (const markers of [
-    [true, true],
-    [false, false],
-    ['true', null],
-  ]) {
-    const restored = parseSave(
-      JSON.stringify({
-        ...state,
-        people: state.people.map((person, index) => ({
-          ...person,
-          isPlayer: markers[index],
-        })),
-      }),
-    )
-    expect(restored.people.map((person) => person.isPlayer)).toEqual([
-      true,
-      false,
-    ])
-  }
+test('incompatible and incomplete saves reset projects and absence timestamps together', () => {
+  expect(
+    parseSave(JSON.stringify({ version: 4, fruit: 900, savedAt: 123 })),
+  ).toEqual(createDefaultState())
+  const s = settlement()
+  s.savedAt = 1000
+  const malformed = { ...s, queues: { research: null, construction: null } }
+  expect(parseSave(JSON.stringify(malformed))).toEqual(createDefaultState())
 })
 
-test('new economy state round-trips and malformed choices cannot unlock both paths', () => {
-  const state = createDefaultState()
-  state.planks = 42.3
-  state.blocks = 12
-  state.knowledge = 10
-  state.specialization = 'forestry'
-  state.researchLevels.forestry = 1
-  state.seenResearchLevels.forestry = 1
-  state.buildings.sawmill = 3
-  state.savedAt = 123456
-  expect(parseSave(JSON.stringify(state))).toEqual(state)
-  const corrupt = {
-    ...state,
-    researchLevels: { ...state.researchLevels, stonecraft: 1, architecture: 1 },
-    buildings: { ...state.buildings, study: -1 },
-    savedAt: -10,
-  }
-  const restored = parseSave(JSON.stringify(corrupt))
-  expect(restored.specialization).toBe('forestry')
-  expect(restored.researchLevels.stonecraft).toBe(0)
-  expect(restored.researchLevels.architecture).toBe(0)
-  expect(restored.buildings.study).toBe(0)
-  expect(restored.savedAt).toBe(0)
-})
-
-test('untrusted job values cannot become assignments or discard valid progress', () => {
-  const state = createDefaultState()
-  state.fruit = 42
-  state.explored = true
-  state.researchLevels.shelters = 1
-  state.buildings['foraging-camp'] = 2
-  state.buildings['lumber-camp'] = 2
-  const person = itemAt(state.people, 0)
-  for (const job of [
-    'constructor',
-    '__proto__',
-    'toString',
-    '',
-    null,
-    7,
-    {},
-    [],
-  ]) {
-    const restored = parseSave(
-      JSON.stringify({
-        ...state,
-        people: [
-          { ...person, job, workElapsedMs: 1234 },
-          {
-            ...person,
-            name: 'Mira',
-            isPlayer: false,
-            job: 'woodcutter',
-            workElapsedMs: 2345,
-          },
-        ],
-      }),
-    )
-    expect(restored.fruit).toBe(42)
-    expect(restored.people).toHaveLength(2)
-    const unassigned = itemAt(restored.people, 0)
-    const worker = itemAt(restored.people, 1)
-    expect(unassigned.job).toBe('idle')
-    expect(unassigned.workElapsedMs).toBe(0)
-    expect(worker.job).toBe('woodcutter')
-    expect(worker.workElapsedMs).toBe(2345)
-  }
-})
-
-test('malformed nested records preserve unrelated resources and valid people', () => {
-  const restored = parseSave(
-    JSON.stringify({
-      version: 4,
-      fruit: 42,
-      wood: 12,
-      skills: { gather: [], sticks: { level: 3, xp: 2 } },
-      researchLevels: [],
-      buildings: false,
-      people: [[], { name: 'Mira', hunger: 3, maxHunger: 5 }],
-    }),
-  )
-  expect(restored.fruit).toBe(42)
-  expect(restored.wood).toBe(12)
-  expect(restored.skills.gather).toEqual({ level: 1, xp: 0 })
-  expect(restored.skills.sticks).toEqual({ level: 3, xp: 2 })
-  expect(restored.people.map(({ name, hunger }) => ({ name, hunger }))).toEqual(
-    [
-      { name: 'Person', hunger: 5 },
-      { name: 'Mira', hunger: 3 },
-    ],
-  )
-  expect(parseSave(JSON.stringify(restored))).toEqual(restored)
-})
-
-test('saved workers follow live unlocks and resume their unfinished cycles', () => {
-  const cases: {
-    job: Exclude<JobId, 'idle'>
-    building: BuildingId
-    prepare: (state: GameState) => void
-  }[] = [
-    { job: 'forager', building: 'foraging-camp', prepare: () => {} },
-    {
-      job: 'woodcutter',
-      building: 'lumber-camp',
-      prepare: (state) => {
-        state.explored = true
-      },
-    },
-    {
-      job: 'stoneworker',
-      building: 'quarry',
-      prepare: (state) => {
-        state.stoneFound = true
-      },
-    },
-    {
-      job: 'sawyer',
-      building: 'sawmill',
-      prepare: (state) => {
-        state.researchLevels.carpentry = 1
-      },
-    },
-    {
-      job: 'mason',
-      building: 'stoneworks',
-      prepare: (state) => {
-        state.researchLevels.masonry = 1
-      },
-    },
-    {
-      job: 'scholar',
-      building: 'study',
-      prepare: (state) => {
-        state.researchLevels.writing = 1
-      },
-    },
-  ]
-  for (const { job, building, prepare } of cases) {
-    const state = createDefaultState()
-    const game = createGame(state)
-    const person = itemAt(state.people, 0)
-    state.buildings[building] = 1
-    const loadAssignment = () =>
-      itemAt(
-        parseSave(
-          JSON.stringify({
-            ...state,
-            people: [{ ...person, job, workElapsedMs: 1234 }],
-          }),
-        ).people,
-        0,
-      )
-    expect(game.assignJob(person, job)).toBe(false)
-    expect(loadAssignment().job).toBe('idle')
-    state.researchLevels.shelters = 1
-    // A built workplace alone does not bypass its discovery or technology.
-    expect(loadAssignment().job).toBe(game.isJobUnlocked(job) ? job : 'idle')
-    prepare(state)
-    expect(game.assignJob(person, job)).toBe(true)
-    expect(loadAssignment()).toMatchObject({ job, workElapsedMs: 1234 })
-    state.buildings[building] = 0
-    expect(loadAssignment()).toMatchObject({ job: 'idle', workElapsedMs: 0 })
-    state.buildings[building] = 1
-    expect(loadAssignment()).toMatchObject({ job, workElapsedMs: 1234 })
-  }
-})
-
-test('job validation uses normalized research before accepting an assignment', () => {
-  const state = createDefaultState()
-  state.researchLevels.shelters = 0.5
-  state.buildings['foraging-camp'] = 1
-  itemAt(state.people, 0).job = 'forager'
-  const restored = parseSave(JSON.stringify(state))
-  expect(restored.researchLevels.shelters).toBe(0)
-  expect(itemAt(restored.people, 0).job).toBe('idle')
-  const game = createGame(restored)
-  restored.researchLevels.shelters = 1
-  expect(game.assignJob(itemAt(restored.people, 0), 'forager')).toBe(true)
-})
-
-test('a saved specialization repairs its completed research and read status in one load', () => {
-  for (const specialization of ['forestry', 'stonecraft'] as const) {
-    const state = createDefaultState()
-    state.specialization = specialization
-    state.researchUnlocked = true
-    state.researchLevels.writing = 1
-    const restored = parseSave(JSON.stringify(state))
-    expect(restored.specialization).toBe(specialization)
-    expect(restored.researchLevels[specialization]).toBe(1)
-    expect(restored.seenResearchLevels[specialization]).toBe(1)
-    expect(parseSave(JSON.stringify(restored))).toEqual(restored)
-    const game = createGame(restored)
-    const branchResearch =
-      specialization === 'forestry' ? 'joinery' : 'architecture'
-    expect(game.getResearchDefinition(branchResearch).prerequisite()).toBe(true)
-    expect(game.getUnreadResearch()).toContain(branchResearch)
-  }
+test('current saves preserve unlimited levels and overstaffing', () => {
+  const s = settlement()
+  s.facilities.housing.level = 100
+  s.facilities.lumber.level = 1
+  s.facilities.lumber.equipment = 20
+  people(s, ...Array.from({ length: 10 }, () => 'woodcutter' as const))
+  const loaded = parseSave(JSON.stringify(s))
+  expect(loaded.facilities.housing.level).toBe(100)
+  expect(loaded.facilities.lumber.equipment).toBe(20)
+  expect(loaded.people.every((p) => p.job === 'woodcutter')).toBe(true)
 })
