@@ -13,66 +13,30 @@ import type { GameState, JobId } from './types'
 
 export const STORAGE_KEY = 'primitive-tribe-v1'
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+// JSON.parse produces only JSON values; missing object properties add undefined.
+type JsonValue = string | number | boolean | null | JsonObject | JsonValue[]
+type JsonObject = { [key: string]: JsonValue }
+
+function record(value: JsonValue | undefined): JsonObject {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? value
+    : {}
 }
 
-function record(value: unknown): Record<string, unknown> {
-  return isRecord(value) ? value : {}
-}
-
-function array(value: unknown): unknown[] {
+function array(value: JsonValue | undefined): JsonValue[] {
   return Array.isArray(value) ? value : []
 }
 
-function finite(value: unknown, fallback = 0): number {
+function finite(value: JsonValue | undefined, fallback = 0): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback
-}
-
-function migrateSave(parsed: Record<string, unknown>): Record<string, unknown> {
-  if (parsed.version === 4) return parsed
-  const people = array(parsed.people).map((value) => {
-    const person = record(value)
-    return parsed.version === 2 || parsed.version === 3
-      ? person
-      : { ...person, job: 'idle', workElapsedMs: 0 }
-  })
-  const playerIndex = Math.max(
-    0,
-    people.findIndex((person) =>
-      parsed.version === 3 ? person.isPlayer === true : person.name === 'You',
-    ),
-  )
-  const levels = record(parsed.researchLevels)
-  const buildings = { ...createDefaultState().buildings }
-  if (finite(levels.shelters) > 0) {
-    buildings['foraging-camp'] = 1
-    buildings['lumber-camp'] = 1
-    if (parsed.stoneFound === true) buildings.quarry = 1
-    for (const job of ['forager', 'woodcutter', 'stoneworker'] as const) {
-      buildings[JOB_BUILDING[job]] = Math.max(
-        buildings[JOB_BUILDING[job]],
-        Math.ceil(people.filter((p) => p.job === job).length / 2),
-      )
-    }
-  }
-  return {
-    ...parsed,
-    version: 4,
-    savedAt: 0,
-    buildings,
-    people: people.map((person, index) => ({
-      ...person,
-      isPlayer: index === playerIndex,
-    })),
-  }
 }
 
 export function parseSave(serialized: string | null): GameState {
   const state = createDefaultState()
   try {
-    const decoded: unknown = JSON.parse(serialized ?? 'null')
-    const parsed = migrateSave(record(decoded))
+    const decoded: JsonValue = JSON.parse(serialized ?? 'null')
+    const parsed = record(decoded)
+    if (parsed.version !== state.version) return state
     const savedSkills = record(parsed.skills)
     for (const id of ACTION_IDS) {
       const saved = record(savedSkills[id])
@@ -84,8 +48,6 @@ export function parseSave(serialized: string | null): GameState {
     const savedResearch = record(parsed.researchLevels)
     const savedSeenResearch = record(parsed.seenResearchLevels)
     for (const key of RESEARCH_ITEM_KEYS) {
-      const legacyLevel =
-        key === 'sharpened-stick' && parsed.basicTools === true ? 1 : 0
       state.researchLevels[key] = Math.min(
         [
           'sharpened-stick',
@@ -98,9 +60,9 @@ export function parseSave(serialized: string | null): GameState {
         ].includes(key)
           ? 3
           : 1,
-        Math.max(legacyLevel, Math.floor(finite(savedResearch[key]))),
+        Math.max(0, Math.floor(finite(savedResearch[key]))),
       )
-      // Older saves have seen completed levels; their next unlock is unread.
+      // Completed levels are always read; newly unlocked levels remain unread.
       state.seenResearchLevels[key] = Math.min(
         3,
         Math.max(
@@ -143,6 +105,7 @@ export function parseSave(serialized: string | null): GameState {
         const requestedJob = person.job
         let job: JobId = 'idle'
         if (
+          typeof requestedJob === 'string' &&
           isJobId(requestedJob) &&
           requestedJob !== 'idle' &&
           finite(savedResearch.shelters) > 0

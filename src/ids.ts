@@ -101,6 +101,6 @@ export const BUILDING_IDS = [
 ] as const
 export type BuildingId = (typeof BUILDING_IDS)[number]
 
-export function isJobId(value: unknown): value is JobId {
+export function isJobId(value: string): value is JobId {
   return JOB_IDS.some((id) => id === value)
 }

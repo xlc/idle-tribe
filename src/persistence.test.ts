@@ -6,12 +6,19 @@ import { itemAt } from './test-helpers'
 
 describe('browser saves', () => {
   test('missing or invalid saves start a fresh game', () => {
-    for (const value of [null, '{', 'null', '[]']) {
+    for (const value of [null, '{', 'null', '[]', 'true', '42', '"text"']) {
       expect(parseSave(value)).toEqual(createDefaultState())
     }
     const first = parseSave(null)
     first.skills.gather.level = 20
     expect(parseSave(null).skills.gather.level).toBe(1)
+  })
+
+  test('incompatible save versions reset instead of migrating progress', () => {
+    for (const version of [undefined, null, 1, 2, 3, 5, '4', {}, []]) {
+      const saved = { ...createDefaultState(), version, fruit: 42 }
+      expect(parseSave(JSON.stringify(saved))).toEqual(createDefaultState())
+    }
   })
 
   test('current saves round-trip', () => {
@@ -32,18 +39,10 @@ describe('browser saves', () => {
     expect(parseSave(JSON.stringify(restored))).toEqual(restored)
   })
 
-  test('legacy tools and exploration remain unlocked', () => {
-    const state = parseSave(
-      JSON.stringify({ basicTools: true, explored: true }),
-    )
-    expect(state.researchLevels['sharpened-stick']).toBe(1)
-    expect(state.basicTools).toBe(true)
-    expect(state.exploreUnlocked).toBe(true)
-  })
-
   test('malformed fields are normalized', () => {
     const state = parseSave(
       JSON.stringify({
+        ...createDefaultState(),
         fruit: -10,
         wood: '12',
         skills: { gather: { level: -2, xp: 2.9 } },
@@ -73,9 +72,10 @@ describe('browser saves', () => {
     expect(createGame(restored).getUnreadResearch()).toEqual(['stone-flakes'])
   })
 
-  test('saves predating unread indicators preserve progress and notify about next unlocks', () => {
+  test('completed research is read and next unlocks remain unread', () => {
     const restored = parseSave(
       JSON.stringify({
+        ...createDefaultState(),
         fruit: 42,
         researchUnlocked: true,
         basicTools: true,
@@ -95,6 +95,7 @@ describe('browser saves', () => {
   test('invalid read status is normalized without hiding newly unlocked research', () => {
     const restored = parseSave(
       JSON.stringify({
+        ...createDefaultState(),
         researchUnlocked: true,
         seenResearchLevels: {
           'sharpened-stick': '3',
@@ -113,51 +114,6 @@ describe('browser saves', () => {
       'sharpened-stick',
     ])
   })
-})
-
-test('version 1 migration preserves every person and progress while initializing jobs', () => {
-  const old = {
-    fruit: 52,
-    wood: 18,
-    stone: 3,
-    explored: true,
-    stoneFound: true,
-    basicTools: true,
-    actions: 123,
-    foodElapsedMs: 45000,
-    researchLevels: { 'foraging-practice': 2 },
-    skills: { sticks: { level: 8, xp: 4 } },
-    people: [
-      { name: 'You', hunger: 4, maxHunger: 5 },
-      { name: '<b>Mira</b>', hunger: 3, maxHunger: 5 },
-    ],
-  }
-  const restored = parseSave(JSON.stringify(old))
-  expect(restored.version).toBe(4)
-  expect(
-    restored.people.map(
-      ({ job, workElapsedMs, isPlayer, ...person }) => person,
-    ),
-  ).toEqual(old.people)
-  expect(restored.people.map((person) => person.isPlayer)).toEqual([
-    true,
-    false,
-  ])
-  expect(
-    restored.people.every(
-      (person) => person.job === 'idle' && person.workElapsedMs === 0,
-    ),
-  ).toBe(true)
-  expect(restored.skills.sticks).toEqual(old.skills.sticks)
-  expect([
-    restored.fruit,
-    restored.wood,
-    restored.stone,
-    restored.actions,
-    restored.foodElapsedMs,
-  ]).toEqual([52, 18, 3, 123, 45000])
-  expect(restored.researchLevels['foraging-practice']).toBe(2)
-  expect(parseSave(JSON.stringify(restored))).toEqual(restored)
 })
 
 test('jobs normalize invalid or locked assignments without removing existing people', () => {
@@ -189,41 +145,6 @@ test('jobs normalize invalid or locked assignments without removing existing peo
   expect(unassigned.workElapsedMs).toBe(0)
 })
 
-test('version 2 migration identifies the player and preserves jobs, hunger and work', () => {
-  const state = createDefaultState()
-  const player = itemAt(state.people, 0)
-  state.researchLevels.shelters = 1
-  state.buildings['foraging-camp'] = state.buildings['lumber-camp'] = 1
-  state.seenResearchLevels.shelters = 1
-  player.job = 'forager'
-  player.hunger = 2
-  player.workElapsedMs = 2345
-  state.people.unshift({
-    ...player,
-    name: 'Mira',
-    isPlayer: false,
-  })
-  const old = {
-    ...state,
-    version: 2,
-    people: state.people.map(({ isPlayer, ...person }) => person),
-  }
-  const restored = parseSave(JSON.stringify(old))
-  expect(restored).toEqual(state)
-  expect(parseSave(JSON.stringify(restored))).toEqual(restored)
-})
-
-test('migration protects an existing survivor if the original player was already lost', () => {
-  const state = createDefaultState()
-  const player = itemAt(state.people, 0)
-  state.fruit = 12.3
-  player.name = 'Tribe member 2'
-  player.hunger = 1
-  const restored = parseSave(JSON.stringify({ ...state, version: 2 }))
-  expect(restored).toEqual(state)
-  expect(restored.people).toHaveLength(1)
-})
-
 test('current saves preserve explicit player identity and normalize duplicate or missing markers', () => {
   const state = createDefaultState()
   const player = itemAt(state.people, 0)
@@ -253,29 +174,6 @@ test('current saves preserve explicit player identity and normalize duplicate or
       false,
     ])
   }
-})
-
-test('version 3 workplaces preserve existing jobs and grant enough seats without changing people', () => {
-  const state = createDefaultState()
-  state.researchLevels.shelters = 2
-  state.explored = state.stoneFound = true
-  state.fruit = 123
-  state.people = Array.from({ length: 8 }, (_, i) => ({
-    ...itemAt(state.people, 0),
-    name: `Person ${i}`,
-    isPlayer: i === 0,
-    job: 'woodcutter',
-    workElapsedMs: 4321,
-    hunger: 3,
-  }))
-  const old = { ...state, version: 3 }
-  const migrated = parseSave(JSON.stringify(old))
-  expect(migrated.people).toEqual(state.people)
-  expect(migrated.buildings['lumber-camp']).toBe(4)
-  expect(migrated.fruit).toBe(123)
-  expect(migrated.researchLevels.shelters).toBe(2)
-  expect(migrated.savedAt).toBe(0)
-  expect(parseSave(JSON.stringify(migrated))).toEqual(migrated)
 })
 
 test('new economy state round-trips and malformed choices cannot unlock both paths', () => {
