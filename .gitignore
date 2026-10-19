@@ -12,4 +12,21 @@ Thumbs.db
 .env.*
 !.env.example
 
-# dist/ is intentionally versioned: it contains the runnable game.
+# Dependencies (commit bun.lock for reproducible installs)
+node_modules/
+
+# Build output and TypeScript caches
+/dist/
+*.tsbuildinfo
+.cache/
+
+# Test output
+coverage/
+.nyc_output/
+
+# Logs
+*.log
+
+# Local editor settings
+.idea/
+.vscode/

@@ -4,30 +4,40 @@ A browser-based incremental idle game. Gather resources, explore nearby areas, a
 
 ## Run locally
 
-The self-contained game in `dist/index.html` requires no dependency installation or build step. Open that file directly in a browser, or serve it over HTTP with Python 3 from the repository root:
+Install [Bun](https://bun.sh/) 1.3 or newer, then run from the repository root:
 
 ```sh
-python3 -m http.server 8000 --directory dist
+bun install
+bun run dev
 ```
 
-Then visit http://localhost:8000. Stop the server with `Ctrl+C`.
+Open the local URL printed by Bun. The development server bundles the TypeScript and CSS from source and reloads changes. Stop it with `Ctrl+C`.
 
-Progress is saved in your browser's local storage. Saves are local to the browser and origin, so opening the file directly and serving it over HTTP may use different saves.
+Progress is saved in your browser's local storage under the existing `primitive-tribe-v1` key. Saves are local to the browser and origin; changing the hostname or port uses a different save. If browser storage is unavailable, gameplay still works but progress will not persist.
+
+## Build and check
+
+```sh
+bun run test
+bun run build
+```
+
+The build first runs strict TypeScript checking, then bundles `index.html`, TypeScript, and CSS into `dist/` using Bun. Run `bun run typecheck` to check types without building.
+
+`dist/` is generated and ignored by Git. Deploy its contents to a static web host **after running the build**; it is no longer checked in. The existing `.openai/hosting.json` still points to `dist/`, so deployment must install dependencies and run `bun run build` before publishing. Serve the output over HTTP rather than opening the HTML directly from disk.
+
+Dependencies, build output, caches, test coverage, logs, and local environment/editor files are ignored. Keep the Bun lockfile versioned for reproducible installs; use `bun install --frozen-lockfile` in automation once it is present.
 
 ## Repository layout
 
-- `dist/index.html` — runnable game with inline HTML, CSS, and JavaScript; also the static deployment content.
-- `index.html` — separate HTML entry point referencing `/src/main.ts`, which is not currently included.
-- `src/` — TypeScript modules for game rules, state, rendering, formatting, constants, and types, plus styles.
+- `index.html` — HTML entry point for development and production builds.
+- `src/main.ts` — browser startup, event handlers, action progress, and the food clock.
+- `src/persistence.ts` — browser-local save loading and writing, including legacy save normalization.
+- `src/` — game rules, state, rendering, formatting, constants, types, styles, and tests.
+- `package.json` — Bun development, build, typecheck, and test commands.
+- `tsconfig.json` — strict TypeScript configuration.
+- `dist/` — generated static deployment output (not versioned).
 - `.openai/hosting.json` — existing ChatGPT Sites configuration, serving `dist/`.
-
-## Development notes
-
-The repository currently has no package manifest, build configuration, or automated test setup. The TypeScript modules are not wired into a runnable entry point, and there is no configured command to rebuild `dist/index.html` from them. Use the checked-in `dist/index.html` to run the game; serving the root `index.html` is not a working development setup.
-
-Changes to `src/` do not automatically update the runnable game. When modifying `dist/index.html`, reload the locally served page and manually check the affected gameplay and save behavior.
-
-`dist/` is intentionally versioned and is not ignored by `.gitignore`.
 
 ## Origin
 

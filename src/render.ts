@@ -310,7 +310,7 @@ function render() {
   setHidden(stoneRow, !state.stoneFound);
   setHidden(stoneButton, !state.stoneFound);
 
-  const researching = getActiveAction()?.id?.startsWith("research");
+  const researching = getActiveAction()?.id?.startsWith("research") ?? false;
   RESEARCH_ITEM_KEYS.forEach(renderResearchItem);
   const anyResearchVisible = RESEARCH_ITEM_KEYS.some((researchId) => getResearchDefinition(researchId).prerequisite());
   setHidden(researchEmpty, anyResearchVisible || researching);
