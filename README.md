@@ -24,7 +24,7 @@ bun run build
 
 The build first runs strict TypeScript checking, then bundles `index.html`, TypeScript, and CSS into `dist/` using Bun. Run `bun run typecheck` to check types without building.
 
-`dist/` is generated and ignored by Git. Deploy its contents to a static web host **after running the build**; it is no longer checked in. The existing `.openai/hosting.json` still points to `dist/`, so deployment must install dependencies and run `bun run build` before publishing. Serve the output over HTTP rather than opening the HTML directly from disk.
+`dist/` is generated and ignored by Git. Deploy its contents to a static web host **after running the build**; it is no longer checked in. Deployment must install dependencies and run `bun run build` before publishing. Serve the output over HTTP rather than opening the HTML directly from disk.
 
 Dependencies, build output, caches, test coverage, logs, and local environment/editor files are ignored. Keep the Bun lockfile versioned for reproducible installs; use `bun install --frozen-lockfile` in automation once it is present.
 
@@ -37,7 +37,6 @@ Dependencies, build output, caches, test coverage, logs, and local environment/e
 - `package.json` — Bun development, build, typecheck, and test commands.
 - `tsconfig.json` — strict TypeScript configuration.
 - `dist/` — generated static deployment output (not versioned).
-- `.openai/hosting.json` — existing ChatGPT Sites configuration, serving `dist/`.
 
 ## Origin
 

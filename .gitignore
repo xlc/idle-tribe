@@ -15,6 +15,9 @@ Thumbs.db
 # Dependencies (commit bun.lock for reproducible installs)
 node_modules/
 
+# Local hosting configuration
+/.openai/
+
 # Build output and TypeScript caches
 /dist/
 *.tsbuildinfo
