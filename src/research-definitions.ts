@@ -40,14 +40,14 @@ export const RESEARCH_CONFIG: Record<ResearchId, ResearchDefinition> = {
   forestry: {
     group: 'specialization',
     requirement: 'Writing',
-    effect: (level) => (level ? '+60% wood & planks' : 'Not researched'),
+    effect: (level) => (level ? '+60% worker wood & planks' : 'Not researched'),
     actionId: 'research-forestry',
     name: 'Forestry',
     specialization: {
       kind: 'choice',
       id: 'forestry',
       description:
-        'Wood and planks +60%. Unlocks Precision joinery: processors use 2 raw materials.',
+        'Worker wood and planks +60%. Unlocks Precision joinery: processors use 2 raw materials.',
     },
     prerequisite: (state) => state.researchLevels.writing > 0,
     levels: [{ knowledge: 12, planks: 10, durationMs: 12000 }],
@@ -55,14 +55,15 @@ export const RESEARCH_CONFIG: Record<ResearchId, ResearchDefinition> = {
   stonecraft: {
     group: 'specialization',
     requirement: 'Writing',
-    effect: (level) => (level ? '+60% stone & blocks' : 'Not researched'),
+    effect: (level) =>
+      level ? '+60% worker stone & blocks' : 'Not researched',
     actionId: 'research-stonecraft',
     name: 'Stonecraft',
     specialization: {
       kind: 'choice',
       id: 'stonecraft',
       description:
-        'Stone and blocks +60%. Unlocks Architecture: more housing capacity and +50% block output.',
+        'Worker stone and blocks +60%. Unlocks Architecture: more housing capacity and +50% block output.',
     },
     prerequisite: (state) => state.researchLevels.writing > 0,
     levels: [{ knowledge: 12, blocks: 10, durationMs: 12000 }],
@@ -102,7 +103,7 @@ export const RESEARCH_CONFIG: Record<ResearchId, ResearchDefinition> = {
     group: 'development',
     requirement: 'Cultivation + your path technology',
     effect: (level) =>
-      level ? '+25% all output · Great Hall' : 'Not researched',
+      level ? '+25% worker output · Great Hall' : 'Not researched',
     actionId: 'research-engineering',
     name: 'Engineering',
     workerMultiplier: (level) => (level > 0 ? 1.25 : 1),
