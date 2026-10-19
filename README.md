@@ -34,6 +34,8 @@ bun run check
 | `bun run typecheck` | Check strict TypeScript types, unused code, and switch fallthrough. |
 | `bun test` | Run the unit tests. |
 | `bun run build` | Check types and generate the production bundle in `dist/`. |
+| `bun run preview` | Build and serve the static site locally using Cloudflare's runtime. |
+| `bun run deploy` | Build and publish the static site to Cloudflare Workers. |
 | `bun run check` | Run lint/format checks, type checking, the build, and tests. |
 
 [Biome](https://biomejs.dev/reference/configuration/) checks TypeScript, CSS, and JSON with two-space indentation, single quotes, and no optional semicolons in TypeScript. Its configuration respects `.gitignore`; `.editorconfig` and `.gitattributes` keep editor settings and line endings consistent. Use your editor's Biome integration for formatting on save. HTML, Markdown, and YAML are edited manually; experimental HTML support is not enabled.
@@ -49,6 +51,39 @@ GitHub Actions runs `bun run check` for pushes and pull requests, using a frozen
 Dependencies, build output, caches, test coverage, logs, and local environment/editor files are ignored. No environment variables or external services are required. Never commit secrets or browser saves.
 
 Use `bun add` / `bun add --dev` to add dependencies and commit both `package.json` and `bun.lock`. Use `bun install --frozen-lockfile` for fresh checkouts and CI so installation fails if the manifest and lockfile disagree.
+
+## Cloudflare deployment
+
+The site uses [Cloudflare Workers Static Assets](https://developers.cloudflare.com/workers/static-assets/) to publish `dist/`. `wrangler.jsonc` sets the Worker name to `idle-tribe`; no server code or runtime bindings are needed.
+
+After installing dependencies, preview the production build locally:
+
+```sh
+bun run preview
+```
+
+To publish from your machine, authenticate with your Cloudflare account once, then deploy:
+
+```sh
+bunx wrangler login
+bun run deploy
+```
+
+The deploy command builds first and prints the public `workers.dev` URL after publishing. To validate the build and deployment configuration without publishing, run `bun run deploy --dry-run`.
+
+[Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/) is connected to `xlc/idle-tribe` and automatically deploys pushes to `master`. The Cloudflare build configuration uses these settings:
+
+| Setting | Value |
+| --- | --- |
+| Worker name | `idle-tribe` |
+| Production branch | `master` |
+| Root directory | Repository root |
+| Build command | `bun install --frozen-lockfile && bun run check` |
+| Deploy command | `bun run deploy` |
+| Build variable `BUN_VERSION` | `latest` (must be Bun 1.3 or newer) |
+| Build variable `SKIP_DEPENDENCY_INSTALL` | `true` (the build command installs with the frozen lockfile) |
+
+If recreating the Cloudflare project, connect the repository in **Workers & Pages** and set the build variables before the first build: Cloudflare's [default Bun version](https://developers.cloudflare.com/workers/ci-cd/builds/build-image/) may be older than this project requires. For deployment from another CI service, provide `CLOUDFLARE_API_TOKEN` with Workers deployment permissions and `CLOUDFLARE_ACCOUNT_ID` through that service's secret settings. Do not commit credentials.
 
 ## Origin
 
