@@ -33,12 +33,21 @@ export function parseSave(serialized: string | null): GameState {
       }
     }
     const savedResearch = record(parsed.researchLevels)
+    const savedSeenResearch = record(parsed.seenResearchLevels)
     for (const key of RESEARCH_ITEM_KEYS) {
       const legacyLevel =
         key === 'sharpened-stick' && parsed.basicTools === true ? 1 : 0
       state.researchLevels[key] = Math.min(
         3,
         Math.max(legacyLevel, Math.floor(finite(savedResearch[key]))),
+      )
+      // Older saves have seen completed levels; their next unlock is unread.
+      state.seenResearchLevels[key] = Math.min(
+        3,
+        Math.max(
+          state.researchLevels[key],
+          Math.floor(finite(savedSeenResearch[key])),
+        ),
       )
     }
     state.fruit = roundResource(finite(parsed.fruit))

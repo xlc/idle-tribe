@@ -2,12 +2,24 @@ import { ACTION_IMMEDIATE_THRESHOLD_MS } from './constants'
 import type { ResearchCost } from './types'
 
 export function roundResource(value: number) {
+  // At this magnitude tenths cannot be represented; scaling can overflow.
+  if (value >= Number.MAX_SAFE_INTEGER / 10) return value
   return Math.max(0, Math.round((value + Number.EPSILON) * 10) / 10)
 }
 
 export function formatResource(value: number) {
   const rounded = roundResource(value)
   return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1)
+}
+
+export function formatResourceRate(value: number) {
+  if (value === 0) return '0/s'
+  const magnitude = Math.abs(value)
+  const amount =
+    magnitude < 0.01
+      ? String(Number(magnitude.toPrecision(2)))
+      : String(Number(magnitude.toFixed(2)))
+  return `${value > 0 ? '+' : '-'}${amount}/s`
 }
 
 export function formatResearchCost(cost: ResearchCost | null | undefined) {

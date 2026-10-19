@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test'
+import { createGame } from './game'
 import { parseSave } from './persistence'
 import { createDefaultState } from './state'
 
@@ -18,6 +19,16 @@ describe('browser saves', () => {
     state.skills.gather = { level: 4, xp: 2 }
     state.foodElapsedMs = 1234
     expect(parseSave(JSON.stringify(state))).toEqual(state)
+  })
+
+  test('large finite resources survive normalization and repeated saves', () => {
+    const state = createDefaultState()
+    state.fruit = Number.MAX_VALUE
+    state.wood = 1e307
+    const restored = parseSave(JSON.stringify(state))
+    expect(restored.fruit).toBe(state.fruit)
+    expect(restored.wood).toBe(state.wood)
+    expect(parseSave(JSON.stringify(restored))).toEqual(restored)
   })
 
   test('legacy tools and exploration remain unlocked', () => {
@@ -46,5 +57,57 @@ describe('browser saves', () => {
     expect(state.researchLevels['sharpened-stick']).toBe(3)
     expect(state.people.map((person) => person.hunger)).toEqual([5, 5])
     expect(state.foodElapsedMs).toBe(42)
+  })
+
+  test('read research stays read after reloading', () => {
+    const state = createDefaultState()
+    state.researchUnlocked = true
+    state.researchLevels['sharpened-stick'] = 1
+    state.basicTools = true
+    createGame(state).markResearchSeen()
+    const restored = parseSave(JSON.stringify(state))
+    expect(restored).toEqual(state)
+    expect(createGame(restored).getUnreadResearch()).toEqual([])
+    restored.stoneFound = true
+    expect(createGame(restored).getUnreadResearch()).toEqual(['stone-flakes'])
+  })
+
+  test('saves predating unread indicators preserve progress and notify about next unlocks', () => {
+    const restored = parseSave(
+      JSON.stringify({
+        fruit: 42,
+        researchUnlocked: true,
+        basicTools: true,
+        researchLevels: { 'sharpened-stick': 2 },
+      }),
+    )
+    expect(restored.fruit).toBe(42)
+    expect(restored.researchLevels['sharpened-stick']).toBe(2)
+    expect(restored.seenResearchLevels['sharpened-stick']).toBe(2)
+    expect(createGame(restored).getUnreadResearch()).toEqual([
+      'sharpened-stick',
+      'foraging-practice',
+    ])
+  })
+
+  test('invalid read status is normalized without hiding newly unlocked research', () => {
+    const restored = parseSave(
+      JSON.stringify({
+        researchUnlocked: true,
+        seenResearchLevels: {
+          'sharpened-stick': '3',
+          'foraging-practice': -10,
+          'stone-flakes': 99,
+        },
+      }),
+    )
+    expect(restored.seenResearchLevels).toEqual({
+      'sharpened-stick': 0,
+      'foraging-practice': 0,
+      'stone-flakes': 3,
+    })
+    expect(createGame(restored).getUnreadResearch()).toEqual([
+      'sharpened-stick',
+    ])
   })
 })

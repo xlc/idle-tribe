@@ -7,19 +7,24 @@ import { createRenderer } from './render'
 import type { Action, ActionKey } from './types'
 
 const state = loadState()
-const game = createGame(state, () => saveState(state))
-let activeAction: Action | null = null
-const renderer = createRenderer(game, () => activeAction)
+const game = createGame(state, saveState)
+const renderer = createRenderer(game)
 const { render, feedback, actionViews, resetActionView } = renderer
 
 function finishAction(action: Action) {
-  feedback.textContent = game.finishAction(action)
+  const result = game.finishAction(action)
+  if (result === null) return
+  feedback.textContent = result
   render()
 }
 
 function startAction(action: Action, view: ActionView) {
-  if (activeAction) return
-  if (action.canStart && !action.canStart()) {
+  const getActive = action.researchId
+    ? game.getActiveResearch
+    : game.getActiveAction
+  if (getActive()) return
+  const durationMs = game.getActionDuration(action)
+  if (!game.startAction(action)) {
     feedback.textContent =
       typeof action.unavailableMessage === 'function'
         ? action.unavailableMessage()
@@ -27,37 +32,33 @@ function startAction(action: Action, view: ActionView) {
     return
   }
 
-  const durationMs = game.getActionDuration(action)
   if (durationMs < ACTION_IMMEDIATE_THRESHOLD_MS) {
-    action.onStart?.()
     finishAction(action)
     return
   }
 
   const startedAt = performance.now()
-  activeAction = action
-  action.onStart?.()
-  view.button.disabled = true
+  view.button.setAttribute('aria-disabled', 'true')
   view.button.setAttribute('aria-busy', 'true')
   view.button.classList.add('is-working')
-  view.button.setAttribute('aria-label', view.workingLabel)
-  view.subtitle.textContent = view.workingSubtitle
+  view.button.setAttribute(
+    'aria-label',
+    `${action.name}. ${action.workingFeedback}`,
+  )
   view.progressWrap.hidden = false
-  view.progressWrap.style.display = ''
   view.progressBar.style.width = '0%'
   view.progressLabel.textContent = '0%'
   feedback.textContent = action.workingFeedback
   render()
 
   const updateProgress = () => {
-    if (activeAction !== action) return
+    if (getActive() !== action) return
     const fraction = Math.min(1, (performance.now() - startedAt) / durationMs)
     const percent = Math.round(fraction * 100)
     view.progressBar.style.width = `${percent}%`
     view.progressLabel.textContent = `${percent}%`
     if (fraction >= 1) {
       resetActionView(view)
-      activeAction = null
       finishAction(action)
       return
     }
@@ -70,6 +71,24 @@ renderer.actionsTab.addEventListener('click', () => renderer.setView('camp'))
 renderer.researchTab.addEventListener('click', () =>
   renderer.setView('research'),
 )
+const tabs = [renderer.actionsTab, renderer.researchTab]
+for (const tab of tabs) {
+  tab.addEventListener('keydown', (event) => {
+    const available = tabs.filter((candidate) => !candidate.disabled)
+    const index = available.indexOf(tab)
+    let next: HTMLButtonElement | undefined
+    if (event.key === 'ArrowRight')
+      next = available[(index + 1) % available.length]
+    else if (event.key === 'ArrowLeft')
+      next = available[(index - 1 + available.length) % available.length]
+    else if (event.key === 'Home') next = available[0]
+    else if (event.key === 'End') next = available.at(-1)
+    if (!next) return
+    event.preventDefault()
+    next.click()
+    next.focus()
+  })
+}
 for (const key of Object.keys(game.actions) as ActionKey[]) {
   actionViews[key].button.addEventListener('click', () =>
     startAction(game.actions[key], actionViews[key]),
@@ -88,11 +107,12 @@ function consumeFood() {
 document.addEventListener('visibilitychange', () => {
   consumeFood()
   foodClockVisible = !document.hidden
+  if (foodClockVisible) render()
 })
 window.addEventListener('pagehide', () => {
   consumeFood()
   foodClockVisible = false
-  saveState(state)
+  game.saveProgress()
 })
 window.addEventListener('pageshow', () => {
   foodClockAt = performance.now()

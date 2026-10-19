@@ -20,6 +20,9 @@ export function createDefaultState(): GameState {
     researchLevels: Object.fromEntries(
       RESEARCH_ITEM_KEYS.map((key) => [key, 0]),
     ) as GameState['researchLevels'],
+    seenResearchLevels: Object.fromEntries(
+      RESEARCH_ITEM_KEYS.map((key) => [key, 0]),
+    ) as GameState['seenResearchLevels'],
     skills: Object.fromEntries(
       Object.entries(ACTION_SKILL_CONFIG).map(([id]) => [
         id,

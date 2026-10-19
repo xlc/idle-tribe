@@ -1,4 +1,5 @@
 import {
+  ACTION_IMMEDIATE_THRESHOLD_MS,
   ACTION_SKILL_CONFIG,
   ACTION_XP_GROWTH,
   ACTION_XP_PER_COMPLETION,
@@ -13,6 +14,7 @@ import {
   GATHER_DURATION_MS,
   GATHER_STONE_DURATION_MS,
   GATHER_WOOD_DURATION_MS,
+  RESEARCH_ITEM_KEYS,
   RESEARCH_UNLOCK_WOOD,
 } from './constants'
 import {
@@ -31,7 +33,36 @@ import type {
   ResearchId,
 } from './types'
 
-export function createGame(state: GameState, saveState: () => void = () => {}) {
+export function createGame(
+  state: GameState,
+  saveState: (snapshot: GameState) => void = () => {},
+) {
+  let activeAction: Action | null = null
+  let activeResearch: Action | null = null
+
+  function saveProgress() {
+    const snapshot = { ...state }
+    // In-flight work is cancelled on reload. Save its reserved materials so
+    // interruption cannot spend resources without delivering the result.
+    for (const action of [activeAction, activeResearch]) {
+      const cost = action?.cost?.()
+      for (const resource of ['fruit', 'wood', 'stone'] as const) {
+        snapshot[resource] = roundResource(
+          snapshot[resource] + (cost?.[resource] ?? 0),
+        )
+      }
+    }
+    saveState(snapshot)
+  }
+
+  function getActiveAction() {
+    return activeAction
+  }
+
+  function getActiveResearch() {
+    return activeResearch
+  }
+
   const RESEARCH_CONFIG: Record<ResearchId, ResearchDefinition> = {
     'sharpened-stick': {
       actionId: 'research',
@@ -86,6 +117,25 @@ export function createGame(state: GameState, saveState: () => void = () => {}) {
     return definition && level < definition.maxLevel
       ? definition.levels[level]
       : null
+  }
+
+  function getUnreadResearch() {
+    if (!state.researchUnlocked) return []
+    return RESEARCH_ITEM_KEYS.filter(
+      (id) =>
+        getResearchDefinition(id).prerequisite() &&
+        getResearchNextLevel(id) &&
+        state.seenResearchLevels[id] < getResearchLevel(id) + 1,
+    )
+  }
+
+  function markResearchSeen() {
+    const unread = getUnreadResearch()
+    if (!unread.length) return
+    for (const id of unread) {
+      state.seenResearchLevels[id] = getResearchLevel(id) + 1
+    }
+    saveProgress()
   }
 
   function getResearchEffect(researchId: ResearchId, level: number) {
@@ -145,13 +195,9 @@ export function createGame(state: GameState, saveState: () => void = () => {}) {
     return `Lv ${level}/${definition.maxLevel}`
   }
 
-  function getRequiredXp(actionId: ActionId) {
-    const skill = getSkill(actionId)
+  function getRequiredXp(actionId: ActionId, level = getSkill(actionId).level) {
     const baseXp = ACTION_SKILL_CONFIG[actionId]?.baseXp ?? 4
-    return Math.max(
-      1,
-      Math.ceil(baseXp * ACTION_XP_GROWTH ** (skill.level - 1)),
-    )
+    return Math.max(1, Math.ceil(baseXp * ACTION_XP_GROWTH ** (level - 1)))
   }
 
   function getActionDuration(action: Action) {
@@ -164,21 +210,51 @@ export function createGame(state: GameState, saveState: () => void = () => {}) {
     return Math.max(1, Math.round(baseDurationMs * (1 - reduction)))
   }
 
-  function getResourceMilestoneBonus(actionId: ActionId) {
+  function getResourceMilestoneBonus(
+    actionId: ActionId,
+    level = getSkill(actionId).level,
+  ) {
     const resourceAction = ['gather', 'sticks', 'stone'].includes(actionId)
     if (!resourceAction) return 0
-    return Math.floor(getSkill(actionId).level / ACTION_YIELD_MILESTONE) * 0.1
+    return Math.floor(level / ACTION_YIELD_MILESTONE) * 0.1
+  }
+
+  function getResourceGain(
+    actionId: ActionId,
+    level = getSkill(actionId).level,
+  ) {
+    if (actionId === 'gather')
+      return (
+        1 + getFruitResearchBonus() + getResourceMilestoneBonus(actionId, level)
+      )
+    if (actionId === 'sticks')
+      return 1 + getResourceMilestoneBonus(actionId, level)
+    if (actionId === 'stone')
+      return (
+        1 + getStoneResearchBonus() + getResourceMilestoneBonus(actionId, level)
+      )
+    return 0
+  }
+
+  function getNextResourceGain(actionId: ActionId) {
+    return getResourceGain(actionId, getSkillAfterCompletion(actionId).level)
+  }
+
+  function getSkillAfterCompletion(actionId: ActionId) {
+    const skill = { ...getSkill(actionId) }
+    skill.xp += getActionXpGain(actionId)
+    while (skill.xp >= getRequiredXp(actionId, skill.level)) {
+      skill.xp -= getRequiredXp(actionId, skill.level)
+      skill.level += 1
+    }
+    return skill
   }
 
   function awardActionExperience(actionId: ActionId) {
     const skill = getSkill(actionId)
-    skill.xp += getActionXpGain(actionId)
-    let levelsGained = 0
-    while (skill.xp >= getRequiredXp(actionId)) {
-      skill.xp -= getRequiredXp(actionId)
-      skill.level += 1
-      levelsGained += 1
-    }
+    const next = getSkillAfterCompletion(actionId)
+    const levelsGained = next.level - skill.level
+    Object.assign(skill, next)
     return levelsGained
   }
   function getHungerEffects(person: Person) {
@@ -186,6 +262,32 @@ export function createGame(state: GameState, saveState: () => void = () => {}) {
     if (ratio <= 0.4) return { portion: 0.1, outputMultiplier: 0 }
     if (ratio <= 0.6) return { portion: 0.5, outputMultiplier: 0.8 }
     return { portion: 1, outputMultiplier: 1 }
+  }
+  function getResourceRates(activeAction: Action | null) {
+    const rates = {
+      fruit:
+        -state.people.reduce(
+          (sum, person) => sum + getHungerEffects(person).portion,
+          0,
+        ) /
+        (FOOD_TICK_MS / 1000),
+      wood: 0,
+      stone: 0,
+    }
+    if (!activeAction) return rates
+    const duration = getActionDuration(activeAction)
+    if (duration < ACTION_IMMEDIATE_THRESHOLD_MS) return rates
+    const seconds = duration / 1000
+    // XP is awarded before the yield, including any milestone this action earns.
+    const gain = getNextResourceGain(activeAction.id)
+    if (activeAction.id === 'gather') {
+      rates.fruit += gain / seconds
+    } else if (activeAction.id === 'sticks') {
+      rates.wood = gain / seconds
+    } else if (activeAction.id === 'stone') {
+      rates.stone = gain / seconds
+    }
+    return rates
   }
   function consumeMeal() {
     // Resolve meals in tribe order; the last remaining person cannot die.
@@ -203,8 +305,7 @@ export function createGame(state: GameState, saveState: () => void = () => {}) {
     }
   }
   function completeGather() {
-    const fruitGain =
-      1 + getFruitResearchBonus() + getResourceMilestoneBonus('gather')
+    const fruitGain = getResourceGain('gather')
     state.fruit = roundResource(state.fruit + fruitGain)
     return `Gathered ${formatResource(fruitGain)} fruit.`
   }
@@ -220,14 +321,13 @@ export function createGame(state: GameState, saveState: () => void = () => {}) {
   }
 
   function completeSticks() {
-    const woodGain = 1 + getResourceMilestoneBonus('sticks')
+    const woodGain = getResourceGain('sticks')
     state.wood = roundResource(state.wood + woodGain)
     return `Gathered ${formatResource(woodGain)} wood.`
   }
 
   function completeStone() {
-    const stoneGain =
-      1 + getStoneResearchBonus() + getResourceMilestoneBonus('stone')
+    const stoneGain = getResourceGain('stone')
     state.stone = roundResource(state.stone + stoneGain)
     return `Gathered ${formatResource(stoneGain)} stone.`
   }
@@ -263,14 +363,7 @@ export function createGame(state: GameState, saveState: () => void = () => {}) {
           ? `Need ${formatResearchCost(next)} to continue researching.`
           : 'This research is complete.'
       },
-      onStart: () => {
-        const next = getResearchNextLevel(researchId)
-        if (!next) return
-        state.fruit = roundResource(state.fruit - (next.fruit || 0))
-        state.wood = roundResource(state.wood - (next.wood || 0))
-        state.stone = roundResource(state.stone - (next.stone || 0))
-        saveState()
-      },
+      cost: () => getResearchNextLevel(researchId),
       complete: () => completeResearch(researchId),
     }
   }
@@ -290,10 +383,7 @@ export function createGame(state: GameState, saveState: () => void = () => {}) {
       workingFeedback: 'Exploring nearby...',
       canStart: () => state.fruit >= EXPLORE_COST,
       unavailableMessage: 'Gather 10 fruit before exploring.',
-      onStart: () => {
-        state.fruit = roundResource(state.fruit - EXPLORE_COST)
-        saveState()
-      },
+      cost: () => ({ fruit: EXPLORE_COST }),
       complete: completeExplore,
     },
     exploreFurther: {
@@ -303,10 +393,7 @@ export function createGame(state: GameState, saveState: () => void = () => {}) {
       workingFeedback: 'Exploring farther...',
       canStart: () => state.fruit >= EXPLORE_FURTHER_COST,
       unavailableMessage: 'Gather 10 fruit before exploring farther.',
-      onStart: () => {
-        state.fruit = roundResource(state.fruit - EXPLORE_FURTHER_COST)
-        saveState()
-      },
+      cost: () => ({ fruit: EXPLORE_FURTHER_COST }),
       complete: completeExploreFurther,
     },
     sticks: {
@@ -346,15 +433,55 @@ export function createGame(state: GameState, saveState: () => void = () => {}) {
       changed = true
     }
     state.basicTools = getResearchLevel('sharpened-stick') >= 1
-    if (changed) saveState()
+    if (changed) saveProgress()
+  }
+
+  function getNextGoal() {
+    if (!state.explored) {
+      return state.fruit < EXPLORE_COST && activeAction !== actions.explore
+        ? `Gather ${EXPLORE_COST} fruit to explore nearby.`
+        : 'Explore nearby to discover wood.'
+    }
+    if (!state.researchUnlocked)
+      return `Gather ${RESEARCH_UNLOCK_WOOD} wood to unlock research.`
+    if (!state.basicTools)
+      return 'Research a sharpened stick to gather more fruit.'
+    if (!state.stoneFound) {
+      return state.fruit < EXPLORE_FURTHER_COST &&
+        activeAction !== actions.exploreFurther
+        ? `Gather ${EXPLORE_FURTHER_COST} fruit to explore farther.`
+        : 'Explore farther to discover stone.'
+    }
+    return RESEARCH_ITEM_KEYS.some((id) => getResearchNextLevel(id))
+      ? 'Upgrade your tools in Research to improve gathering.'
+      : 'All tools mastered. Keep gathering to level your skills.'
+  }
+
+  function startAction(action: Action) {
+    const active = action.researchId ? activeResearch : activeAction
+    if (active || (action.canStart && !action.canStart())) return false
+    if (action.researchId) activeResearch = action
+    else activeAction = action
+    const cost = action.cost?.()
+    if (cost) {
+      for (const resource of ['fruit', 'wood', 'stone'] as const) {
+        state[resource] = roundResource(state[resource] - (cost[resource] ?? 0))
+      }
+      saveProgress()
+    }
+    return true
   }
 
   function finishAction(action: Action) {
+    const active = action.researchId ? activeResearch : activeAction
+    if (active !== action) return null
+    if (activeAction === action) activeAction = null
+    if (activeResearch === action) activeResearch = null
     // Award XP first: a milestone reached by this action affects its yield.
     const levelsGained = awardActionExperience(action.id)
     const result = action.complete()
     state.actions += 1
-    saveState()
+    saveProgress()
     return levelsGained > 0
       ? `${result} ${action.name} reached level ${getSkill(action.id).level}.`
       : result
@@ -368,21 +495,28 @@ export function createGame(state: GameState, saveState: () => void = () => {}) {
       consumeMeal()
       changed = true
     }
-    if (elapsed > 0) saveState()
+    if (elapsed > 0) saveProgress()
     return changed
   }
 
   return {
     state,
+    saveProgress,
     actions,
     syncUnlocks,
+    getNextGoal,
+    startAction,
     finishAction,
+    getActiveAction,
+    getActiveResearch,
     advanceFood,
     consumeMeal,
     getSkill,
     getResearchLevel,
     getResearchDefinition,
     getResearchNextLevel,
+    getUnreadResearch,
+    markResearchSeen,
     getResearchEffect,
     getResearchSubtitle,
     getResearchCostLabel,
@@ -394,7 +528,10 @@ export function createGame(state: GameState, saveState: () => void = () => {}) {
     getRequiredXp,
     getActionDuration,
     getResourceMilestoneBonus,
+    getResourceGain,
+    getNextResourceGain,
     getHungerEffects,
+    getResourceRates,
   }
 }
 

@@ -46,6 +46,7 @@ export interface GameState {
   researchUnlocked: boolean
   basicTools: boolean
   researchLevels: Record<ResearchId, number>
+  seenResearchLevels: Record<ResearchId, number>
   skills: Record<ActionId, Skill>
   foodElapsedMs: number
 }
@@ -73,6 +74,6 @@ export interface Action {
   workingFeedback: string
   canStart?: () => boolean
   unavailableMessage?: string | (() => string)
-  onStart?: () => void
+  cost?: () => Pick<ResearchCost, 'fruit' | 'wood' | 'stone'> | null
   complete: () => string
 }

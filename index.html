@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#f4f3ef" />
   <title>Primitive Tribe</title>
 </head>
@@ -17,14 +17,12 @@
     <main>
       <nav class="view-tabs" id="view-tabs" role="tablist" aria-label="Game views">
         <button class="tab-button is-active" id="actions-tab" type="button" role="tab" aria-selected="true" aria-controls="camp-view">Actions</button>
-        <button class="tab-button" id="research-tab" type="button" role="tab" aria-selected="false" aria-controls="research-view">Research</button>
+        <button class="tab-button" id="research-tab" type="button" role="tab" aria-selected="false" aria-controls="research-view"><span class="tab-label">Research<span class="unread-dot" id="research-unread" hidden aria-hidden="true"></span></span></button>
       </nav>
 
-      <div id="camp-view">
         <section class="section" aria-labelledby="resources-heading">
         <div class="section-heading">
           <h2 id="resources-heading">Resources</h2>
-          <span id="rate-label">1 fruit / min</span>
         </div>
         <div class="list" id="resource-list" aria-label="Current resources">
           <div class="row" role="group" aria-label="Fruit resource">
@@ -33,7 +31,10 @@
               <p class="row-title">Fruit</p>
               <p class="row-subtitle">Food for the tribe</p>
             </div>
-            <strong class="row-value" id="fruit-value">0</strong>
+            <div class="resource-values">
+              <strong class="row-value" id="fruit-value">0</strong>
+              <span class="resource-rate" id="fruit-rate" hidden></span>
+            </div>
           </div>
           <div class="row" id="wood-row" role="group" aria-label="Wood resource" hidden>
             <span class="wood-dot" aria-hidden="true">●</span>
@@ -41,7 +42,10 @@
               <p class="row-title">Wood</p>
               <p class="row-subtitle">Useful material</p>
             </div>
-            <strong class="row-value" id="wood-value">0</strong>
+            <div class="resource-values">
+              <strong class="row-value" id="wood-value">0</strong>
+              <span class="resource-rate" id="wood-rate" hidden></span>
+            </div>
           </div>
           <div class="row" id="stone-row" role="group" aria-label="Stone resource" hidden>
             <span class="stone-dot" aria-hidden="true">●</span>
@@ -49,15 +53,22 @@
               <p class="row-title">Stone</p>
               <p class="row-subtitle">Hard material</p>
             </div>
-            <strong class="row-value" id="stone-value">0</strong>
+            <div class="resource-values">
+              <strong class="row-value" id="stone-value">0</strong>
+              <span class="resource-rate" id="stone-rate" hidden></span>
+            </div>
           </div>
         </div>
         </section>
 
+      <p class="action-feedback" role="status" aria-live="polite" aria-atomic="true" id="feedback"></p>
+
+      <div id="camp-view" role="tabpanel" aria-labelledby="actions-tab" tabindex="0">
         <section class="section" aria-labelledby="actions-heading">
         <div class="section-heading">
           <h2 id="actions-heading">Actions</h2>
         </div>
+        <p class="next-step" id="next-step"></p>
         <div class="list">
           <button class="row action-row action-card" id="gather-button" type="button" aria-label="Gather fruit. Collect one fruit by hand. Takes 1 second. Gain one fruit.">
             <span class="fruit-dot" aria-hidden="true">●</span>
@@ -120,7 +131,6 @@
             <span class="row-value" aria-label="Gain one stone" id="stone-action-value">+1</span>
           </button>
         </div>
-        <div class="sr-only" role="status" aria-live="polite" id="feedback"></div>
         </section>
 
         <section class="section" aria-labelledby="tribe-heading">
@@ -131,7 +141,7 @@
         </section>
       </div>
 
-      <section class="section" id="research-view" aria-labelledby="research-heading" hidden>
+      <section class="section" id="research-view" role="tabpanel" aria-labelledby="research-tab" tabindex="0" hidden>
         <div class="section-heading">
           <h2 id="research-heading">Research</h2>
           <span>Tools</span>
@@ -142,6 +152,7 @@
             <span class="row-copy">
               <span class="row-title action-title-line"><span>Sharpened stick</span><span class="action-level" id="research-level">Lv 0/3</span></span>
               <span class="row-subtitle" id="research-subtitle">2 wood + 10 fruit · 5 sec</span>
+              <span class="research-costs" id="research-costs"></span>
               <span class="action-progress-wrap" id="research-progress-wrap" hidden aria-hidden="true">
                 <span class="action-progress"><span id="research-progress-bar"></span></span>
                 <span class="action-progress-label" id="research-progress-label">0%</span>
@@ -162,7 +173,8 @@
             <span class="fruit-dot" aria-hidden="true">●</span>
             <span class="row-copy">
               <span class="row-title action-title-line"><span>Woven baskets</span><span class="action-level" id="foraging-practice-level">Lv 0/3</span></span>
-              <span class="row-subtitle" id="foraging-practice-subtitle">1 wood + 20 fruit · 7 sec</span>
+              <span class="row-subtitle" id="foraging-practice-subtitle">2 wood + 20 fruit · 8 sec</span>
+              <span class="research-costs" id="foraging-practice-costs"></span>
               <span class="action-progress-wrap" id="foraging-practice-progress-wrap" hidden aria-hidden="true">
                 <span class="action-progress"><span id="foraging-practice-progress-bar"></span></span>
                 <span class="action-progress-label" id="foraging-practice-progress-label">0%</span>
@@ -183,7 +195,8 @@
             <span class="stone-dot" aria-hidden="true">●</span>
             <span class="row-copy">
               <span class="row-title action-title-line"><span>Flint knapping</span><span class="action-level" id="stone-flakes-level">Lv 0/3</span></span>
-              <span class="row-subtitle" id="stone-flakes-subtitle">2 wood + 2 stone + 10 fruit · 9 sec</span>
+              <span class="row-subtitle" id="stone-flakes-subtitle">2 wood + 3 stone + 10 fruit · 10 sec</span>
+              <span class="research-costs" id="stone-flakes-costs"></span>
               <span class="action-progress-wrap" id="stone-flakes-progress-wrap" hidden aria-hidden="true">
                 <span class="action-progress"><span id="stone-flakes-progress-bar"></span></span>
                 <span class="action-progress-label" id="stone-flakes-progress-label">0%</span>

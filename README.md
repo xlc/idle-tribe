@@ -17,6 +17,8 @@ Open the local URL printed by Bun. The development server bundles the TypeScript
 
 Progress is saved in your browser's local storage under the existing `primitive-tribe-v1` key. Saves are local to the browser and origin; changing the hostname or port uses a different save. If browser storage is unavailable, gameplay still works but progress will not persist.
 
+Reloading cancels unfinished actions and research and returns their reserved materials. Completed discoveries, upgrades, and skill progress remain saved.
+
 ## Development checks
 
 Run the same checks as CI before submitting changes:
