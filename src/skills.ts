@@ -13,7 +13,6 @@ export function createSkills(
   getResearchLevel: ReturnType<typeof createResearch>['getResearchLevel'],
 ) {
   function getSkill(actionId: ActionId) {
-    if (!state.skills[actionId]) state.skills[actionId] = { level: 1, xp: 0 }
     return state.skills[actionId]
   }
 
@@ -36,7 +35,7 @@ export function createSkills(
   }
 
   function getRequiredXp(actionId: ActionId, level = getSkill(actionId).level) {
-    const baseXp = ACTION_SKILL_CONFIG[actionId]?.baseXp ?? 4
+    const baseXp = ACTION_SKILL_CONFIG[actionId].baseXp
     return Math.max(1, Math.ceil(baseXp * ACTION_XP_GROWTH ** (level - 1)))
   }
 

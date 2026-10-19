@@ -139,7 +139,10 @@ export function createSettlement(
     )
   }
 
-  function getWorkerGain(person: Person, preview = false) {
+  function getWorkerGain(
+    person: Pick<Person, 'job' | 'hunger' | 'maxHunger'>,
+    preview = false,
+  ) {
     if (person.job === 'idle' || (!preview && !isJobUnlocked(person.job)))
       return 0
     const job = JOBS[person.job]

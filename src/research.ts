@@ -1,7 +1,13 @@
 import { RESEARCH_ITEM_KEYS } from './constants'
 import { formatDuration, formatResearchCost, formatResource } from './format'
 import type { createResources } from './resources'
-import type { GameState, ResearchDefinition, ResearchId } from './types'
+import type {
+  Action,
+  GameState,
+  ResearchCost,
+  ResearchDefinition,
+  ResearchId,
+} from './types'
 
 export function createResearch(
   state: GameState,
@@ -160,18 +166,18 @@ export function createResearch(
   }
 
   function getResearchLevel(researchId: ResearchId) {
-    return Math.max(0, Math.floor(state.researchLevels?.[researchId] ?? 0))
+    return Math.max(0, Math.floor(state.researchLevels[researchId]))
   }
 
   function getResearchDefinition(researchId: ResearchId) {
     return RESEARCH_CONFIG[researchId]
   }
 
-  function getResearchNextLevel(researchId: ResearchId) {
+  function getResearchNextLevel(researchId: ResearchId): ResearchCost | null {
     const definition = getResearchDefinition(researchId)
     const level = getResearchLevel(researchId)
-    return definition && level < definition.maxLevel
-      ? definition.levels[level]
+    return level < definition.maxLevel
+      ? (definition.levels[level] ?? null)
       : null
   }
 
@@ -211,7 +217,7 @@ export function createResearch(
     if (researchId === 'quarrying')
       return `+${formatResource(level * 0.5)} stone`
     if (researchId === 'teamwork') return `+${level * 25}% worker output`
-    const effects: Partial<Record<ResearchId, string>> = {
+    const effects = {
       carpentry: 'Sawmill · houses',
       masonry: 'Stoneworks',
       writing: 'Study · specializations',
@@ -222,15 +228,13 @@ export function createResearch(
       architecture: '+2 places per house · +50% blocks',
       engineering: '+25% all output · Great Hall',
     }
-    return level ? (effects[researchId] ?? '') : 'Not researched'
+    return level ? effects[researchId] : 'Not researched'
   }
 
   function getResearchSubtitle(researchId: ResearchId) {
-    const definition = getResearchDefinition(researchId)
     const level = getResearchLevel(researchId)
     const next = getResearchNextLevel(researchId)
-    if (!definition || !next)
-      return `${getResearchEffect(researchId, level)} · Max level`
+    if (!next) return `${getResearchEffect(researchId, level)} · Max level`
     return `${formatResearchCost(next)} · ${formatDuration(next.durationMs)} · ${getResearchEffect(researchId, level)} → ${getResearchEffect(researchId, level + 1)}`
   }
 
@@ -282,7 +286,7 @@ export function createResearch(
   function createResearchAction(
     researchId: ResearchId,
     workingFeedback: string,
-  ) {
+  ): Action {
     const definition = getResearchDefinition(researchId)
     return {
       id: definition.actionId,

@@ -2,7 +2,7 @@ import { FEAST_FRUIT_PER_HEART, FED_MEAL_FRUIT } from './constants'
 import { roundResource } from './format'
 import type { GameState, Person } from './types'
 
-export function getHungerEffects(person: Person) {
+export function getHungerEffects(person: Pick<Person, 'hunger' | 'maxHunger'>) {
   const ratio = person.hunger / person.maxHunger
   if (ratio <= 0.4) return { portion: 0.1, outputMultiplier: 0.5 }
   if (ratio <= 0.6) return { portion: 0.5, outputMultiplier: 0.8 }

@@ -7,6 +7,7 @@ import {
 } from './constants'
 import type { createFood } from './food'
 import { roundResource } from './format'
+import { createRecord } from './records'
 import type { createResources } from './resources'
 import type { createSettlement } from './settlement'
 import type { createSkills } from './skills'
@@ -112,21 +113,16 @@ export function createSimulation(
       state.savedAt > 0
         ? Math.min(OFFLINE_CAP_MS, Math.max(0, now - state.savedAt))
         : 0
-    const before = Object.fromEntries(RESOURCES.map((id) => [id, state[id]]))
+    const before = createRecord(RESOURCES, (id) => state[id])
     advanceTime(elapsed)
     state.savedAt = now
     saveProgress()
     return {
       elapsed,
-      gains: Object.fromEntries(
-        RESOURCES.map((id) => {
-          const difference = state[id] - before[id]
-          return [
-            id,
-            Math.sign(difference) * roundResource(Math.abs(difference)),
-          ]
-        }),
-      ) as Record<(typeof RESOURCES)[number], number>,
+      gains: createRecord(RESOURCES, (id) => {
+        const difference = state[id] - before[id]
+        return Math.sign(difference) * roundResource(Math.abs(difference))
+      }),
     }
   }
 

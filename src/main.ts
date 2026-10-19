@@ -3,25 +3,28 @@ import { createActivityTimer, createClock } from './clock'
 import { RESOURCES } from './constants'
 import { formatResource } from './format'
 import { createGame } from './game'
+import { ACTION_KEYS, isJobId } from './ids'
 import { loadState, saveState } from './persistence'
+import { createRecord } from './records'
 import { createRenderer, element } from './render'
-import type { Action, JobId } from './types'
+import type { Action, ResourceId } from './types'
 
-let clock: ReturnType<typeof createClock>
+let settledAt = Date.now
 const state = loadState()
 const game = createGame(state, (snapshot) =>
-  saveState({ ...snapshot, savedAt: clock?.settledAt() ?? Date.now() }),
+  saveState({ ...snapshot, savedAt: settledAt() }),
 )
 const offline = game.applyOffline(Date.now())
 const renderer = createRenderer(game, () => clock.tick(Date.now()))
 const { render, feedback, actionViews } = renderer
-clock = createClock(
+const clock = createClock(
   (elapsed) => game.advanceTime(elapsed),
   Date.now(),
   !document.hidden,
 )
+settledAt = clock.settledAt
 
-function showAway(elapsed: number, gains: Record<string, number>) {
+function showAway(elapsed: number, gains: Record<ResourceId, number>) {
   if (elapsed < 60000 || !state.researchLevels.shelters) return
   const minutes = Math.floor(elapsed / 60000)
   const duration =
@@ -86,9 +89,10 @@ function startAction(action: Action) {
   requestAnimationFrame(progress)
 }
 let pendingChoice: Action | null = null
-const dialog = element<HTMLDialogElement>('specialization-dialog')
-for (const [key, item] of Object.entries(actionViews)) {
-  const action = game.actions[key as keyof typeof game.actions]
+const dialog = element('specialization-dialog', HTMLDialogElement)
+for (const key of ACTION_KEYS) {
+  const item = actionViews[key]
+  const action = game.actions[key]
   item.button.onclick = () => {
     if (
       action.researchId === 'forestry' ||
@@ -148,20 +152,19 @@ renderer.tribeList.onchange = (event) => {
   if (!(event.target instanceof HTMLSelectElement)) return
   clock.tick(Date.now())
   const person = renderer.getPersonForJobControl(event.target)
-  if (person) game.assignJob(person, event.target.value as JobId)
+  const job = event.target.value
+  if (person && isJobId(job)) game.assignJob(person, job)
   render()
 }
 function setVisible(visible: boolean) {
   for (const timer of activityTimers)
     timer.setVisible(visible, performance.now())
-  const before = Object.fromEntries(RESOURCES.map((id) => [id, state[id]]))
+  const before = createRecord(RESOURCES, (id) => state[id])
   const elapsed = clock.setVisible(visible, Date.now())
   if (elapsed)
     showAway(
       elapsed,
-      Object.fromEntries(
-        RESOURCES.map((id) => [id, Math.max(0, state[id] - before[id])]),
-      ),
+      createRecord(RESOURCES, (id) => Math.max(0, state[id] - before[id])),
     )
   game.saveProgress()
   render()

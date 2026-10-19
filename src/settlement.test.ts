@@ -4,6 +4,7 @@ import { FOOD_TICK_MS, OFFLINE_CAP_MS, RESOURCES } from './constants'
 import { createGame } from './game'
 import { parseSave } from './persistence'
 import { createDefaultState } from './state'
+import { itemAt } from './test-helpers'
 import type { ActionKey, JobId, Specialization } from './types'
 
 function workshop() {
@@ -43,10 +44,10 @@ describe('settlement production', () => {
 
   test('processors wait for inputs, convert exactly once, and resume partial cycles', () => {
     const game = workshop()
-    game.assignJob(game.state.people[0], 'sawyer')
+    game.assignJob(itemAt(game.state.people, 0), 'sawyer')
     game.advanceTime(4000)
     expect(game.state.planks).toBe(0)
-    expect(game.state.people[0].workElapsedMs).toBe(0)
+    expect(itemAt(game.state.people, 0).workElapsedMs).toBe(0)
     game.state.wood = 3
     game.advanceTime(4500)
     const restored = createGame(parseSave(JSON.stringify(game.state)))
@@ -134,7 +135,7 @@ describe('offline simulation and page clock', () => {
     const game = workshop()
     game.state.wood = 30
     game.state.savedAt = 1000
-    game.assignJob(game.state.people[0], 'sawyer')
+    game.assignJob(itemAt(game.state.people, 0), 'sawyer')
     const before = structuredClone(game.state)
     const away = game.applyOffline(1000 + FOOD_TICK_MS)
     expect(away.gains.fruit).toBe(-1)
@@ -161,7 +162,7 @@ describe('offline simulation and page clock', () => {
       'scholar',
     ]
     game.state.people.forEach((person, i) => {
-      game.assignJob(person, jobs[i])
+      game.assignJob(person, itemAt(jobs, i))
     })
     game.state.fruit = 0
     game.state.foodElapsedMs = FOOD_TICK_MS - 500
@@ -182,7 +183,7 @@ describe('offline simulation and page clock', () => {
 
   test('missing and future timestamps never award invented progress', () => {
     const game = workshop()
-    game.assignJob(game.state.people[0], 'forager')
+    game.assignJob(itemAt(game.state.people, 0), 'forager')
     expect(game.applyOffline(10000).elapsed).toBe(0)
     game.state.savedAt = 20000
     expect(game.applyOffline(10000).elapsed).toBe(0)
@@ -253,7 +254,12 @@ export function playChapter(path: Specialization) {
   function recruit(job: Exclude<JobId, 'idle'>) {
     waitUntil(game.canRecruit)
     game.recruitPerson()
-    if (!game.assignJob(game.state.people[game.state.people.length - 1], job))
+    if (
+      !game.assignJob(
+        itemAt(game.state.people, game.state.people.length - 1),
+        job,
+      )
+    )
       throw new Error(`Cannot assign ${job}`)
   }
   recruit('woodcutter')

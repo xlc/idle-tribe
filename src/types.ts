@@ -1,92 +1,15 @@
-export type ActionId =
-  | 'gather'
-  | 'explore'
-  | 'sticks'
-  | 'explore-further'
-  | 'stone'
-  | 'research'
-  | 'research-foraging'
-  | 'research-stone-flakes'
-  | 'research-shelters'
-  | 'research-axes'
-  | 'research-quarrying'
-  | 'research-teamwork'
-  | 'research-carpentry'
-  | 'research-masonry'
-  | 'research-writing'
-  | 'research-forestry'
-  | 'research-stonecraft'
-  | 'research-joinery'
-  | 'research-architecture'
-  | 'research-agriculture'
-  | 'research-engineering'
+import type { ActionId, BuildingId, JobId, ResearchId, ResourceId } from './ids'
 
-export type ActionKey =
-  | 'gather'
-  | 'explore'
-  | 'sticks'
-  | 'exploreFurther'
-  | 'stone'
-  | 'research'
-  | 'researchForaging'
-  | 'researchStone'
-  | 'researchShelters'
-  | 'researchAxes'
-  | 'researchQuarrying'
-  | 'researchTeamwork'
-  | 'researchCarpentry'
-  | 'researchMasonry'
-  | 'researchWriting'
-  | 'researchForestry'
-  | 'researchStonecraft'
-  | 'researchJoinery'
-  | 'researchArchitecture'
-  | 'researchAgriculture'
-  | 'researchEngineering'
+export type {
+  ActionId,
+  ActionKey,
+  BuildingId,
+  JobId,
+  ResearchId,
+  ResourceId,
+} from './ids'
 
-export type ResearchId =
-  | 'sharpened-stick'
-  | 'foraging-practice'
-  | 'stone-flakes'
-  | 'shelters'
-  | 'stone-axes'
-  | 'quarrying'
-  | 'teamwork'
-  | 'carpentry'
-  | 'masonry'
-  | 'writing'
-  | 'forestry'
-  | 'stonecraft'
-  | 'joinery'
-  | 'architecture'
-  | 'agriculture'
-  | 'engineering'
-
-export type JobId =
-  | 'idle'
-  | 'forager'
-  | 'woodcutter'
-  | 'stoneworker'
-  | 'sawyer'
-  | 'mason'
-  | 'scholar'
-export type ResourceId =
-  | 'fruit'
-  | 'wood'
-  | 'stone'
-  | 'planks'
-  | 'blocks'
-  | 'knowledge'
 export type Cost = Partial<Record<ResourceId, number>>
-export type BuildingId =
-  | 'foraging-camp'
-  | 'lumber-camp'
-  | 'quarry'
-  | 'sawmill'
-  | 'stoneworks'
-  | 'study'
-  | 'houses'
-  | 'great-hall'
 export type Specialization = 'forestry' | 'stonecraft'
 
 export interface Person {

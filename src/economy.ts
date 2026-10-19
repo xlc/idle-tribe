@@ -62,7 +62,7 @@ export const BUILDINGS: Record<BuildingId, BuildingDefinition> = {
   },
 }
 
-export const BUILDING_IDS = Object.keys(BUILDINGS) as BuildingId[]
+export { BUILDING_IDS } from './ids'
 export const JOB_BUILDING: Record<Exclude<JobId, 'idle'>, BuildingId> = {
   forager: 'foraging-camp',
   woodcutter: 'lumber-camp',

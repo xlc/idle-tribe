@@ -1,4 +1,4 @@
-import type { ActionId, JobId, ResearchId } from './types'
+import type { ActionId, JobId, ResourceId } from './types'
 
 export const ACTION_IMMEDIATE_THRESHOLD_MS = 100
 export const FOOD_TICK_MS = 60000
@@ -16,18 +16,11 @@ export const GATHER_STONE_DURATION_MS = 3000
 export const RESEARCH_UNLOCK_WOOD = 2
 export const ACTION_XP_PER_COMPLETION = 1
 export const OFFLINE_CAP_MS = 24 * 60 * 60 * 1000
-export const RESOURCES = [
-  'fruit',
-  'wood',
-  'stone',
-  'planks',
-  'blocks',
-  'knowledge',
-] as const
+export { RESEARCH_ITEM_KEYS, RESOURCES } from './ids'
 export const ACTION_XP_SPEED_REDUCTION = 0.03
 export const ACTION_XP_GROWTH = 1.2
 export const ACTION_YIELD_MILESTONE = 5
-export const ACTION_SKILL_CONFIG = {
+export const ACTION_SKILL_CONFIG: Record<ActionId, { baseXp: number }> = {
   gather: { baseXp: 4 },
   explore: { baseXp: 1 },
   sticks: { baseXp: 3 },
@@ -50,31 +43,13 @@ export const ACTION_SKILL_CONFIG = {
   'research-agriculture': { baseXp: 4 },
   'research-engineering': { baseXp: 4 },
 }
-export const RESEARCH_ITEM_KEYS: ResearchId[] = [
-  'sharpened-stick',
-  'foraging-practice',
-  'stone-flakes',
-  'shelters',
-  'stone-axes',
-  'quarrying',
-  'teamwork',
-  'carpentry',
-  'masonry',
-  'writing',
-  'forestry',
-  'stonecraft',
-  'joinery',
-  'architecture',
-  'agriculture',
-  'engineering',
-]
 
 export const RECRUIT_COST = 15
 export const JOBS: Record<
   Exclude<JobId, 'idle'>,
   {
     name: string
-    resource: 'fruit' | 'wood' | 'stone' | 'planks' | 'blocks' | 'knowledge'
+    resource: ResourceId
     actionId: ActionId | null
     durationMs: number
   }

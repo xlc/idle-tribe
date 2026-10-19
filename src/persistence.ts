@@ -1,5 +1,4 @@
 import {
-  ACTION_SKILL_CONFIG,
   FOOD_TICK_MS,
   JOBS,
   MAX_HUNGER,
@@ -8,31 +7,36 @@ import {
 } from './constants'
 import { BUILDING_IDS, BUILDINGS, JOB_BUILDING } from './economy'
 import { roundResource } from './format'
+import { ACTION_IDS, isJobId } from './ids'
 import { createDefaultState } from './state'
-import type { ActionId, GameState, JobId } from './types'
+import type { GameState, JobId } from './types'
 
 export const STORAGE_KEY = 'primitive-tribe-v1'
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+}
+
 function record(value: unknown): Record<string, unknown> {
-  return value !== null && typeof value === 'object'
-    ? (value as Record<string, unknown>)
-    : {}
+  return isRecord(value) ? value : {}
+}
+
+function array(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : []
 }
 
 function finite(value: unknown, fallback = 0): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback
 }
 
-function migrateSave(parsed: Record<string, unknown>) {
+function migrateSave(parsed: Record<string, unknown>): Record<string, unknown> {
   if (parsed.version === 4) return parsed
-  const people = Array.isArray(parsed.people)
-    ? parsed.people.map((value: unknown) => {
-        const person = record(value)
-        return parsed.version === 2 || parsed.version === 3
-          ? person
-          : { ...person, job: 'idle', workElapsedMs: 0 }
-      })
-    : []
+  const people = array(parsed.people).map((value) => {
+    const person = record(value)
+    return parsed.version === 2 || parsed.version === 3
+      ? person
+      : { ...person, job: 'idle', workElapsedMs: 0 }
+  })
   const playerIndex = Math.max(
     0,
     people.findIndex((person) =>
@@ -67,9 +71,10 @@ function migrateSave(parsed: Record<string, unknown>) {
 export function parseSave(serialized: string | null): GameState {
   const state = createDefaultState()
   try {
-    const parsed = migrateSave(record(JSON.parse(serialized ?? 'null')))
+    const decoded: unknown = JSON.parse(serialized ?? 'null')
+    const parsed = migrateSave(record(decoded))
     const savedSkills = record(parsed.skills)
-    for (const id of Object.keys(ACTION_SKILL_CONFIG) as ActionId[]) {
+    for (const id of ACTION_IDS) {
       const saved = record(savedSkills[id])
       state.skills[id] = {
         level: Math.max(1, Math.floor(finite(saved.level, 1))),
@@ -126,33 +131,31 @@ export function parseSave(serialized: string | null): GameState {
         0
     }
     state.savedAt = Math.max(0, finite(parsed.savedAt))
-    if (Array.isArray(parsed.people) && parsed.people.length) {
+    const people = array(parsed.people)
+    if (people.length) {
       const playerIndex = Math.max(
         0,
-        parsed.people.findIndex(
-          (value: unknown) => record(value).isPlayer === true,
-        ),
+        people.findIndex((value) => record(value).isPlayer === true),
       )
-      state.people = parsed.people.map((value: unknown, index: number) => {
+      state.people = people.map((value, index) => {
         const person = record(value)
         const maxHunger = Math.max(1, finite(person.maxHunger, MAX_HUNGER))
         const requestedJob = person.job
         let job: JobId = 'idle'
         if (
-          typeof requestedJob === 'string' &&
-          Object.hasOwn(JOBS, requestedJob) &&
+          isJobId(requestedJob) &&
+          requestedJob !== 'idle' &&
           finite(savedResearch.shelters) > 0
         ) {
-          const candidate = requestedJob as Exclude<JobId, 'idle'>
-          const building = JOB_BUILDING[candidate]
+          const building = JOB_BUILDING[requestedJob]
           const tech = BUILDINGS[building].technology
           if (
             state.buildings[building] > 0 &&
             (!tech || state.researchLevels[tech] > 0) &&
-            (candidate !== 'woodcutter' || parsed.explored === true) &&
-            (candidate !== 'stoneworker' || parsed.stoneFound === true)
+            (requestedJob !== 'woodcutter' || parsed.explored === true) &&
+            (requestedJob !== 'stoneworker' || parsed.stoneFound === true)
           )
-            job = candidate
+            job = requestedJob
         }
 
         return {

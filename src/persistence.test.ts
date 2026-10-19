@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { createGame } from './game'
 import { parseSave } from './persistence'
 import { createDefaultState } from './state'
+import { itemAt } from './test-helpers'
 
 describe('browser saves', () => {
   test('missing or invalid saves start a fresh game', () => {
@@ -162,7 +163,7 @@ test('version 1 migration preserves every person and progress while initializing
 test('jobs normalize invalid or locked assignments without removing existing people', () => {
   const state = createDefaultState()
   state.people = Array.from({ length: 10 }, (_, i) => ({
-    ...state.people[0],
+    ...itemAt(state.people, 0),
     name: `Person ${i}`,
     job: 'stoneworker',
     workElapsedMs: 13000,
@@ -174,14 +175,18 @@ test('jobs normalize invalid or locked assignments without removing existing peo
   state.stoneFound = true
   state.buildings.quarry = 5
   restored = parseSave(JSON.stringify(state))
-  expect(restored.people[0].job).toBe('stoneworker')
-  expect(restored.people[0].workElapsedMs).toBe(1000)
+  expect(itemAt(restored.people, 0).job).toBe('stoneworker')
+  expect(itemAt(restored.people, 0).workElapsedMs).toBe(1000)
   const invalid = {
     ...state,
-    people: [{ ...state.people[0], job: 'unknown', workElapsedMs: -10 }],
+    people: [
+      { ...itemAt(state.people, 0), job: 'unknown', workElapsedMs: -10 },
+    ],
   }
-  expect(parseSave(JSON.stringify(invalid)).people[0].job).toBe('idle')
-  expect(parseSave(JSON.stringify(invalid)).people[0].workElapsedMs).toBe(0)
+  expect(itemAt(parseSave(JSON.stringify(invalid)).people, 0).job).toBe('idle')
+  expect(
+    itemAt(parseSave(JSON.stringify(invalid)).people, 0).workElapsedMs,
+  ).toBe(0)
 })
 
 test('version 2 migration identifies the player and preserves jobs, hunger and work', () => {
@@ -189,10 +194,14 @@ test('version 2 migration identifies the player and preserves jobs, hunger and w
   state.researchLevels.shelters = 1
   state.buildings['foraging-camp'] = state.buildings['lumber-camp'] = 1
   state.seenResearchLevels.shelters = 1
-  state.people[0].job = 'forager'
-  state.people[0].hunger = 2
-  state.people[0].workElapsedMs = 2345
-  state.people.unshift({ ...state.people[0], name: 'Mira', isPlayer: false })
+  itemAt(state.people, 0).job = 'forager'
+  itemAt(state.people, 0).hunger = 2
+  itemAt(state.people, 0).workElapsedMs = 2345
+  state.people.unshift({
+    ...itemAt(state.people, 0),
+    name: 'Mira',
+    isPlayer: false,
+  })
   const old = {
     ...state,
     version: 2,
@@ -206,8 +215,8 @@ test('version 2 migration identifies the player and preserves jobs, hunger and w
 test('migration protects an existing survivor if the original player was already lost', () => {
   const state = createDefaultState()
   state.fruit = 12.3
-  state.people[0].name = 'Tribe member 2'
-  state.people[0].hunger = 1
+  itemAt(state.people, 0).name = 'Tribe member 2'
+  itemAt(state.people, 0).hunger = 1
   const restored = parseSave(JSON.stringify({ ...state, version: 2 }))
   expect(restored).toEqual(state)
   expect(restored.people).toHaveLength(1)
@@ -215,8 +224,12 @@ test('migration protects an existing survivor if the original player was already
 
 test('current saves preserve explicit player identity and normalize duplicate or missing markers', () => {
   const state = createDefaultState()
-  state.people[0].name = 'Renamed player'
-  state.people.unshift({ ...state.people[0], name: 'You', isPlayer: false })
+  itemAt(state.people, 0).name = 'Renamed player'
+  state.people.unshift({
+    ...itemAt(state.people, 0),
+    name: 'You',
+    isPlayer: false,
+  })
   expect(parseSave(JSON.stringify(state))).toEqual(state)
   for (const markers of [
     [true, true],
@@ -245,7 +258,7 @@ test('version 3 workplaces preserve existing jobs and grant enough seats without
   state.explored = state.stoneFound = true
   state.fruit = 123
   state.people = Array.from({ length: 8 }, (_, i) => ({
-    ...state.people[0],
+    ...itemAt(state.people, 0),
     name: `Person ${i}`,
     isPlayer: i === 0,
     job: 'woodcutter',
@@ -285,4 +298,71 @@ test('new economy state round-trips and malformed choices cannot unlock both pat
   expect(restored.researchLevels.architecture).toBe(0)
   expect(restored.buildings.study).toBe(0)
   expect(restored.savedAt).toBe(0)
+})
+
+test('untrusted job values cannot become assignments or discard valid progress', () => {
+  const state = createDefaultState()
+  state.fruit = 42
+  state.explored = true
+  state.researchLevels.shelters = 1
+  state.buildings['foraging-camp'] = 2
+  state.buildings['lumber-camp'] = 2
+  const person = itemAt(state.people, 0)
+  for (const job of [
+    'constructor',
+    '__proto__',
+    'toString',
+    '',
+    null,
+    7,
+    {},
+    [],
+  ]) {
+    const restored = parseSave(
+      JSON.stringify({
+        ...state,
+        people: [
+          { ...person, job, workElapsedMs: 1234 },
+          {
+            ...person,
+            name: 'Mira',
+            isPlayer: false,
+            job: 'woodcutter',
+            workElapsedMs: 2345,
+          },
+        ],
+      }),
+    )
+    expect(restored.fruit).toBe(42)
+    expect(restored.people).toHaveLength(2)
+    expect(itemAt(restored.people, 0).job).toBe('idle')
+    expect(itemAt(restored.people, 0).workElapsedMs).toBe(0)
+    expect(itemAt(restored.people, 1).job).toBe('woodcutter')
+    expect(itemAt(restored.people, 1).workElapsedMs).toBe(2345)
+  }
+})
+
+test('malformed nested records preserve unrelated resources and valid people', () => {
+  const restored = parseSave(
+    JSON.stringify({
+      version: 4,
+      fruit: 42,
+      wood: 12,
+      skills: { gather: [], sticks: { level: 3, xp: 2 } },
+      researchLevels: [],
+      buildings: false,
+      people: [[], { name: 'Mira', hunger: 3, maxHunger: 5 }],
+    }),
+  )
+  expect(restored.fruit).toBe(42)
+  expect(restored.wood).toBe(12)
+  expect(restored.skills.gather).toEqual({ level: 1, xp: 0 })
+  expect(restored.skills.sticks).toEqual({ level: 3, xp: 2 })
+  expect(restored.people.map(({ name, hunger }) => ({ name, hunger }))).toEqual(
+    [
+      { name: 'Person', hunger: 5 },
+      { name: 'Mira', hunger: 3 },
+    ],
+  )
+  expect(parseSave(JSON.stringify(restored))).toEqual(restored)
 })

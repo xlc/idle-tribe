@@ -14,14 +14,9 @@ import {
   formatResource,
 } from './format'
 import type { Game } from './game'
-import type {
-  ActionKey,
-  Cost,
-  JobId,
-  Person,
-  ResearchId,
-  ResourceId,
-} from './types'
+import { ACTION_KEYS, isJobId, JOB_IDS } from './ids'
+import { createRecord } from './records'
+import type { Cost, Person, ResearchId, ResourceId } from './types'
 
 export interface ActionView {
   button: HTMLButtonElement
@@ -32,10 +27,20 @@ export interface ActionView {
   progressLabel: HTMLElement
 }
 
-export function element<T extends HTMLElement = HTMLElement>(id: string): T {
+export function element(id: string): HTMLElement
+export function element<T extends HTMLElement>(
+  id: string,
+  elementType: { new (): T },
+): T
+export function element(
+  id: string,
+  elementType: { new (): HTMLElement } = HTMLElement,
+): HTMLElement {
   const found = document.getElementById(id)
   if (!found) throw new Error(`Missing element: ${id}`)
-  return found as T
+  if (!(found instanceof elementType))
+    throw new Error(`Unexpected element type: ${id}`)
+  return found
 }
 function node<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -77,15 +82,15 @@ const REQUIREMENTS: Record<ResearchId, string> = {
 export function createRenderer(game: Game, beforeChange: () => void) {
   const { state } = game
   const feedback = element('feedback')
-  const actionsTab = element<HTMLButtonElement>('actions-tab')
-  const researchTab = element<HTMLButtonElement>('research-tab')
-  const recruitButton = element<HTMLButtonElement>('recruit-button')
-  const feastButton = element<HTMLButtonElement>('feast-button')
+  const actionsTab = element('actions-tab', HTMLButtonElement)
+  const researchTab = element('research-tab', HTMLButtonElement)
+  const recruitButton = element('recruit-button', HTMLButtonElement)
+  const feastButton = element('feast-button', HTMLButtonElement)
   const tribeList = element('tribe-list')
   let view: 'camp' | 'research' = 'camp'
   let wasAutomated = state.researchLevels.shelters > 0
   let wasWriting = state.researchLevels.writing > 0
-  element<HTMLDetailsElement>('manual-work').open = !wasAutomated
+  element('manual-work', HTMLDetailsElement).open = !wasAutomated
   const resourceViews = RESOURCES.map((id) => {
     const row = node('div', `resource resource-${id}`)
     const title = node('span', 'resource-name', RESOURCE_NAMES[id])
@@ -124,7 +129,6 @@ export function createRenderer(game: Game, beforeChange: () => void) {
     element('research-groups').append(section)
     return { ...group, section, list }
   })
-  const actionViews = {} as Record<ActionKey, ActionView>
   const researchViews = new Map<
     ResearchId,
     {
@@ -134,7 +138,7 @@ export function createRenderer(game: Game, beforeChange: () => void) {
       requirement: HTMLElement
     }
   >()
-  for (const key of Object.keys(game.actions) as ActionKey[]) {
+  const actionViews = createRecord(ACTION_KEYS, (key): ActionView => {
     const action = game.actions[key]
     const research = action.researchId
     const button = node('button', research ? 'tech-card' : 'manual-action')
@@ -154,7 +158,7 @@ export function createRenderer(game: Game, beforeChange: () => void) {
     const actionStatus = node('span', 'action-status')
     actionStatus.append(subtitle, progressWrap)
     button.append(top, actionStatus)
-    actionViews[key] = {
+    const item = {
       button,
       levelLabel,
       subtitle,
@@ -175,7 +179,8 @@ export function createRenderer(game: Game, beforeChange: () => void) {
           ? 'discovery-list'
           : 'manual-list',
       ).append(button)
-  }
+    return item
+  })
   function change(run: () => boolean, message: string) {
     beforeChange()
     if (run()) feedback.textContent = message
@@ -202,18 +207,11 @@ export function createRenderer(game: Game, beforeChange: () => void) {
     for (const button of [minus, plus]) button.type = 'button'
     minus.setAttribute('aria-label', `Remove worker from ${definition.name}`)
     plus.setAttribute('aria-label', `Assign worker to ${definition.name}`)
-    minus.onclick = () =>
-      definition.job &&
-      change(
-        () => game.adjustWorkers(definition.job as Exclude<JobId, 'idle'>, -1),
-        '',
-      )
-    plus.onclick = () =>
-      definition.job &&
-      change(
-        () => game.adjustWorkers(definition.job as Exclude<JobId, 'idle'>, 1),
-        '',
-      )
+    const job = definition.job
+    if (job) {
+      minus.onclick = () => change(() => game.adjustWorkers(job, -1), '')
+      plus.onclick = () => change(() => game.adjustWorkers(job, 1), '')
+    }
     workers.append(minus, count, plus)
     workers.hidden = !definition.job
     const build = node('button', 'build-button')
@@ -301,7 +299,7 @@ export function createRenderer(game: Game, beforeChange: () => void) {
     wasWriting = state.researchLevels.writing > 0
     const automated = game.getResearchLevel('shelters') > 0
     if (automated && !wasAutomated)
-      element<HTMLDetailsElement>('manual-work').open = false
+      element('manual-work', HTMLDetailsElement).open = false
     wasAutomated = automated
     const rates = game.getResourceRates(null)
     for (const { id, row, value, rate } of resourceViews) {
@@ -371,7 +369,6 @@ export function createRenderer(game: Game, beforeChange: () => void) {
         ? state.people.filter((person) => person.job === definition.job)
         : []
       const worker = people[0] ?? {
-        ...state.people[0],
         job: definition.job ?? 'idle',
         hunger: 5,
         maxHunger: 5,
@@ -429,7 +426,7 @@ export function createRenderer(game: Game, beforeChange: () => void) {
       renderCosts(item.costs, game.getBuildingCost(id))
     }
     let completed = 0
-    for (const key of Object.keys(game.actions) as ActionKey[]) {
+    for (const key of ACTION_KEYS) {
       const action = game.actions[key]
       const item = actionViews[key]
       const active = action.researchId
@@ -536,7 +533,7 @@ export function createRenderer(game: Game, beforeChange: () => void) {
       actionViews.exploreFurther.button.hidden
     for (const group of groups)
       group.section.hidden = !Array.from(group.list.children).some(
-        (child) => !(child as HTMLElement).hidden,
+        (child) => child instanceof HTMLElement && !child.hidden,
       )
     element('completed-research').hidden = completed === 0
     element('completed-count').textContent = `Completed · ${completed}`
@@ -553,7 +550,7 @@ export function createRenderer(game: Game, beforeChange: () => void) {
         const name = node('span')
         const health = node('span', 'person-health')
         const select = node('select')
-        for (const job of ['idle', ...Object.keys(JOBS)] as JobId[]) {
+        for (const job of JOB_IDS) {
           const option = node(
             'option',
             '',
@@ -577,13 +574,16 @@ export function createRenderer(game: Game, beforeChange: () => void) {
       )
       personView.select.hidden = !automated
       personView.select.value = person.job
-      for (const option of Array.from(personView.select.options))
+      for (const option of Array.from(personView.select.options)) {
+        const job = option.value
         option.disabled =
-          !game.isJobUnlocked(option.value as JobId) ||
-          (option.value !== 'idle' &&
-            option.value !== person.job &&
-            state.people.filter((p) => p.job === option.value).length >=
-              game.getJobCapacity(option.value as JobId))
+          !isJobId(job) ||
+          !game.isJobUnlocked(job) ||
+          (job !== 'idle' &&
+            job !== person.job &&
+            state.people.filter((p) => p.job === job).length >=
+              game.getJobCapacity(job))
+      }
     }
     feastButton.disabled = !game.canFeast()
     element('feast-cost').textContent = game.getFeastCost()
