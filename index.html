@@ -7,32 +7,8 @@
   <meta name="description" content="Grow a small tribe into an automated village. Gather, craft, build, and choose your technology." />
   <title>Primitive Tribe</title>
 </head>
-<body>
-  <main class="game-shell">
-    <header class="game-header"><h1>Tribe<span class="chapter" id="chapter">A small beginning</span></h1><div class="header-meta"><span class="path-name" id="path-name"></span><button class="away-trigger" id="away-trigger" type="button" popovertarget="away-notice" hidden></button></div></header>
-    <section class="away-notice" id="away-notice" popover aria-label="Offline progress"><div><strong id="away-title"></strong><p id="away-gains"></p></div><button class="quiet-button" id="dismiss-away" type="button" popovertarget="away-notice" popovertargetaction="hide" aria-label="Close offline progress">×</button></section>
-    <section class="stockpile" id="resource-list" aria-label="Stockpile"></section>
-    <div class="tab-bar" role="tablist" aria-label="Game views">
-      <button id="actions-tab" role="tab" aria-selected="true" aria-controls="camp-view" type="button">Settlement</button>
-      <button id="research-tab" role="tab" aria-selected="false" aria-controls="research-view" tabindex="-1" type="button">Technology<span class="new-dot" id="research-unread" hidden aria-label="New technology"></span></button>
-    </div>
-    <p class="feedback" id="feedback" role="status" aria-live="polite" aria-atomic="true"></p>
-    <section id="camp-view" role="tabpanel" aria-labelledby="actions-tab" tabindex="0">
-      <section class="village-complete" id="village-complete" tabindex="-1" aria-labelledby="village-title" hidden><span class="eyebrow">Great Hall complete</span><h2 id="village-title">A village of your own.</h2><p>Your workshops keep working. Your tribe keeps growing.</p></section>
-      <section class="workforce-bar" aria-label="Workforce"><div><h2 id="population-count"></h2><p id="camp-summary"></p></div><div class="recruit-control"><button class="primary-button" id="recruit-button" type="button">Invite a person <span>15 fruit</span></button><span class="small-note" id="recruit-status"></span></div></section>
-      <section id="discovery-section" aria-labelledby="discovery-heading" hidden><h2 id="discovery-heading">Explore</h2><div id="discovery-list"></div></section>
-      <div class="settlement-layout">
-        <section id="production-section" aria-labelledby="production-heading" hidden><div class="section-heading"><h2 id="production-heading">Production</h2></div><div class="building-grid" id="building-list"></div></section>
-        <aside class="camp-aside">
-          <details id="manual-work" open><summary>Manual work</summary><div class="manual-list" id="manual-list"></div></details>
-          <details id="people-details"><summary>People <span id="food-summary"></span></summary><div id="tribe-list"></div><div class="feast-row"><button class="quiet-button" id="feast-button" type="button">Feast</button><span class="small-note" id="feast-cost"></span></div></details>
-        </aside>
-      </div>
-    </section>
-    <section id="research-view" role="tabpanel" aria-labelledby="research-tab" tabindex="0" hidden><div class="technology-heading"><h2>Technology</h2><span id="technology-count"></span></div><div id="research-groups"></div><details id="completed-research"><summary id="completed-count">Completed</summary><div class="tech-grid" id="completed-list"></div></details></section>
-    <footer>Progress saves automatically · Up to 24 hours offline</footer>
-    <dialog id="specialization-dialog" aria-labelledby="specialization-title"><form method="dialog"><span class="eyebrow">Choose your path</span><h2 id="specialization-title"></h2><p id="specialization-effect"></p><p class="choice-warning">This choice lasts for this run. The other path will be locked.</p><div class="dialog-actions"><button class="quiet-button" value="cancel">Keep deciding</button><button class="primary-button" id="confirm-specialization" value="confirm">Choose this path</button></div></form></dialog>
-  </main>
-  <script type="module" src="/src/main.ts"></script>
+<body class="min-h-screen bg-base-200">
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
 </body>
 </html>

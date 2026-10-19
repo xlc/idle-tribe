@@ -53,11 +53,14 @@ bun run check
 | `bun run lint:fix` | Apply Biome formatting, import organization, and safe lint fixes. |
 | `bun run format` | Format files with Biome. |
 | `bun run typecheck` | Check strict TypeScript types, unused code, and switch fallthrough. |
-| `bun test` | Run the unit tests. |
+| `bun run test` | Run the unit tests. |
+| `bun run test:browser` | Build and test the production UI in Chromium at desktop and phone widths. |
 | `bun run build` | Check types and generate the production bundle in `dist/`. |
 | `bun run preview` | Build and serve the static site locally using Cloudflare's runtime. |
 | `bun run deploy` | Build and publish the static site to Cloudflare Workers. |
 | `bun run check` | Run lint/format checks, type checking, the build, and tests. |
+
+Before the first browser test, install Chromium with `bunx playwright install chromium`. The browser checks use isolated saves and start their own local server.
 
 [Biome](https://biomejs.dev/reference/configuration/) checks TypeScript, CSS, and JSON with two-space indentation, single quotes, and no optional semicolons in TypeScript. Its configuration respects `.gitignore`; `.editorconfig` and `.gitattributes` keep editor settings and line endings consistent. Use your editor's Biome integration for formatting on save. HTML, Markdown, and YAML are edited manually; experimental HTML support is not enabled.
 
@@ -67,7 +70,7 @@ GitHub Actions runs `bun run check` for pushes and pull requests, using a frozen
 
 `bun run build` first runs strict TypeScript checking, then bundles `index.html`, TypeScript, and CSS into `dist/` using Bun with the Tailwind plugin. The development server uses the same plugin for hot reload.
 
-The UI uses [Tailwind CSS](https://tailwindcss.com/) for layout and spacing and [daisyUI](https://daisyui.com/) for controls. The custom `tribe` theme and shared game action states live in the stylesheet. Keep utility class names complete in HTML and renderer strings so Tailwind can detect them at build time.
+Development and production share a Tailwind build plugin that flattens generated CSS with Lightning CSS before Bun bundles it. This preserves daisyUI pseudo-elements and nested color rules affected by [Bun's CSS nesting issue](https://github.com/oven-sh/bun/issues/45258). React components render the interface with daisyUI components and a custom `tribe` theme; custom CSS covers game layout and gameplay states. Game rules and session clocks remain independent of React and the DOM. Keep utility class names complete in HTML and TSX so Tailwind detects them.
 
 `dist/` is generated and ignored by Git. Deploy its contents to a static web host **after running the build**; it is no longer checked in. Deployment must install dependencies and run `bun run build` before publishing. Serve the output over HTTP rather than opening the HTML directly from disk.
 

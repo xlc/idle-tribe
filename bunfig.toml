@@ -1,5 +1,5 @@
 [serve.static]
-plugins = ["bun-plugin-tailwind"]
+plugins = ["./styles-plugin.ts"]
 
 [install]
 # Use the installed Bun runtime instead of downloading the plugin's bun peer.

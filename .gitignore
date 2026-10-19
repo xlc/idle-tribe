@@ -29,6 +29,8 @@ node_modules/
 # Test output
 coverage/
 .nyc_output/
+test-results/
+playwright-report/
 
 # Logs
 *.log
