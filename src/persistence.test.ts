@@ -3,6 +3,7 @@ import { createGame } from './game'
 import { parseSave } from './persistence'
 import { createDefaultState } from './state'
 import { itemAt } from './test-helpers'
+import type { BuildingId, GameState, JobId } from './types'
 
 describe('browser saves', () => {
   test('missing or invalid saves start a fresh game', () => {
@@ -268,4 +269,109 @@ test('malformed nested records preserve unrelated resources and valid people', (
     ],
   )
   expect(parseSave(JSON.stringify(restored))).toEqual(restored)
+})
+
+test('saved workers follow live unlocks and resume their unfinished cycles', () => {
+  const cases: {
+    job: Exclude<JobId, 'idle'>
+    building: BuildingId
+    prepare: (state: GameState) => void
+  }[] = [
+    { job: 'forager', building: 'foraging-camp', prepare: () => {} },
+    {
+      job: 'woodcutter',
+      building: 'lumber-camp',
+      prepare: (state) => {
+        state.explored = true
+      },
+    },
+    {
+      job: 'stoneworker',
+      building: 'quarry',
+      prepare: (state) => {
+        state.stoneFound = true
+      },
+    },
+    {
+      job: 'sawyer',
+      building: 'sawmill',
+      prepare: (state) => {
+        state.researchLevels.carpentry = 1
+      },
+    },
+    {
+      job: 'mason',
+      building: 'stoneworks',
+      prepare: (state) => {
+        state.researchLevels.masonry = 1
+      },
+    },
+    {
+      job: 'scholar',
+      building: 'study',
+      prepare: (state) => {
+        state.researchLevels.writing = 1
+      },
+    },
+  ]
+  for (const { job, building, prepare } of cases) {
+    const state = createDefaultState()
+    const game = createGame(state)
+    const person = itemAt(state.people, 0)
+    state.buildings[building] = 1
+    const loadAssignment = () =>
+      itemAt(
+        parseSave(
+          JSON.stringify({
+            ...state,
+            people: [{ ...person, job, workElapsedMs: 1234 }],
+          }),
+        ).people,
+        0,
+      )
+    expect(game.assignJob(person, job)).toBe(false)
+    expect(loadAssignment().job).toBe('idle')
+    state.researchLevels.shelters = 1
+    // A built workplace alone does not bypass its discovery or technology.
+    expect(loadAssignment().job).toBe(game.isJobUnlocked(job) ? job : 'idle')
+    prepare(state)
+    expect(game.assignJob(person, job)).toBe(true)
+    expect(loadAssignment()).toMatchObject({ job, workElapsedMs: 1234 })
+    state.buildings[building] = 0
+    expect(loadAssignment()).toMatchObject({ job: 'idle', workElapsedMs: 0 })
+    state.buildings[building] = 1
+    expect(loadAssignment()).toMatchObject({ job, workElapsedMs: 1234 })
+  }
+})
+
+test('job validation uses normalized research before accepting an assignment', () => {
+  const state = createDefaultState()
+  state.researchLevels.shelters = 0.5
+  state.buildings['foraging-camp'] = 1
+  itemAt(state.people, 0).job = 'forager'
+  const restored = parseSave(JSON.stringify(state))
+  expect(restored.researchLevels.shelters).toBe(0)
+  expect(itemAt(restored.people, 0).job).toBe('idle')
+  const game = createGame(restored)
+  restored.researchLevels.shelters = 1
+  expect(game.assignJob(itemAt(restored.people, 0), 'forager')).toBe(true)
+})
+
+test('a saved specialization repairs its completed research and read status in one load', () => {
+  for (const specialization of ['forestry', 'stonecraft'] as const) {
+    const state = createDefaultState()
+    state.specialization = specialization
+    state.researchUnlocked = true
+    state.researchLevels.writing = 1
+    const restored = parseSave(JSON.stringify(state))
+    expect(restored.specialization).toBe(specialization)
+    expect(restored.researchLevels[specialization]).toBe(1)
+    expect(restored.seenResearchLevels[specialization]).toBe(1)
+    expect(parseSave(JSON.stringify(restored))).toEqual(restored)
+    const game = createGame(restored)
+    const branchResearch =
+      specialization === 'forestry' ? 'joinery' : 'architecture'
+    expect(game.getResearchDefinition(branchResearch).prerequisite()).toBe(true)
+    expect(game.getUnreadResearch()).toContain(branchResearch)
+  }
 })

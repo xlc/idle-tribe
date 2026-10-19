@@ -1,5 +1,5 @@
 import { FOOD_TICK_MS, JOBS, MAX_HUNGER } from './constants'
-import { BUILDINGS, JOB_BUILDING } from './economy'
+import { isJobUnlocked } from './economy'
 import { roundResource } from './format'
 import {
   ACTION_IDS,
@@ -8,6 +8,7 @@ import {
   RESEARCH_ITEM_KEYS,
   RESOURCES,
 } from './ids'
+import { isResearchExcluded, RESEARCH_CONFIG } from './research-definitions'
 import { createDefaultState } from './state'
 import type { GameState, JobId } from './types'
 
@@ -49,50 +50,42 @@ export function parseSave(serialized: string | null): GameState {
     const savedSeenResearch = record(parsed.seenResearchLevels)
     for (const key of RESEARCH_ITEM_KEYS) {
       state.researchLevels[key] = Math.min(
-        [
-          'sharpened-stick',
-          'foraging-practice',
-          'stone-flakes',
-          'shelters',
-          'stone-axes',
-          'quarrying',
-          'teamwork',
-        ].includes(key)
-          ? 3
-          : 1,
+        RESEARCH_CONFIG[key].levels.length,
         Math.max(0, Math.floor(finite(savedResearch[key]))),
-      )
-      // Completed levels are always read; newly unlocked levels remain unread.
-      state.seenResearchLevels[key] = Math.min(
-        3,
-        Math.max(
-          state.researchLevels[key],
-          Math.floor(finite(savedSeenResearch[key])),
-        ),
       )
     }
     for (const id of RESOURCES) state[id] = roundResource(finite(parsed[id]))
     const savedBuildings = record(parsed.buildings)
     for (const id of BUILDING_IDS)
       state.buildings[id] = Math.max(0, Math.floor(finite(savedBuildings[id])))
+    const choices = RESEARCH_ITEM_KEYS.filter(
+      (id) => RESEARCH_CONFIG[id].specialization?.kind === 'choice',
+    )
     const chosen =
-      parsed.specialization === 'forestry' ||
-      parsed.specialization === 'stonecraft'
-        ? parsed.specialization
-        : state.researchLevels.forestry
-          ? 'forestry'
-          : state.researchLevels.stonecraft
-            ? 'stonecraft'
-            : null
+      choices.find(
+        (id) =>
+          RESEARCH_CONFIG[id].specialization?.id === parsed.specialization,
+      ) ?? choices.find((id) => state.researchLevels[id] > 0)
     state.specialization = chosen
-    if (chosen) {
-      state.researchLevels[chosen] = 1
-      const other = chosen === 'forestry' ? 'stonecraft' : 'forestry'
-      state.researchLevels[other] = 0
-      state.researchLevels[chosen === 'forestry' ? 'architecture' : 'joinery'] =
-        0
+      ? (RESEARCH_CONFIG[chosen].specialization?.id ?? null)
+      : null
+    if (chosen) state.researchLevels[chosen] = 1
+    for (const id of RESEARCH_ITEM_KEYS) {
+      if (isResearchExcluded(state, id)) state.researchLevels[id] = 0
+    }
+    for (const key of RESEARCH_ITEM_KEYS) {
+      // Completed levels are always read; newly unlocked levels remain unread.
+      state.seenResearchLevels[key] = Math.min(
+        RESEARCH_CONFIG[key].levels.length,
+        Math.max(
+          state.researchLevels[key],
+          Math.floor(finite(savedSeenResearch[key])),
+        ),
+      )
     }
     state.savedAt = Math.max(0, finite(parsed.savedAt))
+    state.explored = parsed.explored === true
+    state.stoneFound = parsed.stoneFound === true
     const people = array(parsed.people)
     if (people.length) {
       const playerIndex = Math.max(
@@ -107,19 +100,9 @@ export function parseSave(serialized: string | null): GameState {
         if (
           typeof requestedJob === 'string' &&
           isJobId(requestedJob) &&
-          requestedJob !== 'idle' &&
-          finite(savedResearch.shelters) > 0
-        ) {
-          const building = JOB_BUILDING[requestedJob]
-          const tech = BUILDINGS[building].technology
-          if (
-            state.buildings[building] > 0 &&
-            (!tech || state.researchLevels[tech] > 0) &&
-            (requestedJob !== 'woodcutter' || parsed.explored === true) &&
-            (requestedJob !== 'stoneworker' || parsed.stoneFound === true)
-          )
-            job = requestedJob
-        }
+          isJobUnlocked(state, requestedJob)
+        )
+          job = requestedJob
 
         return {
           job,
@@ -139,9 +122,7 @@ export function parseSave(serialized: string | null): GameState {
       })
     }
     state.actions = Math.max(0, Math.floor(finite(parsed.actions)))
-    state.explored = parsed.explored === true
     state.exploreUnlocked = parsed.exploreUnlocked === true || state.explored
-    state.stoneFound = parsed.stoneFound === true
     state.researchUnlocked = parsed.researchUnlocked === true
     state.basicTools =
       parsed.basicTools === true || state.researchLevels['sharpened-stick'] >= 1

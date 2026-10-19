@@ -10,6 +10,7 @@ This file applies to the entire repository. Read [README.md](README.md) for setu
 - Keep player-facing copy brief. This is a game: let players discover mechanics through play; avoid next-step coaching, repeated instructions, and text walls.
 - Use concrete types instead of `unknown`. Reserve `unknown` for rare boundaries where the input cannot be modeled more precisely, and explain the exception locally. Do not substitute `any` or unchecked assertions.
 - Keep game rules independent of the DOM so they can be tested without browser setup.
+- Shared logic must operate on typed definitions, not chains of special cases for named jobs, buildings, resources, actions, or research. Put prerequisites, costs, effects, and other item-specific behavior in their owning definitions; use small shared evaluators across gameplay, save normalization, and rendering. Adding an item must not require extending ID comparisons in those consumers. Do not merely hide the same branch chain in a helper or build a generic framework for hypothetical rules.
 - When changing state, update default initialization and save normalization together. Preserve existing saves through explicit migrations rather than silently resetting progress.
 - When adding or changing actions or research, check the shared types, configuration, game rules, renderer, and HTML bindings together. Keep their identifiers consistent.
 - Preserve the distinction between elapsed gameplay time and time spent in a hidden page. Changes to timers must account for visibility changes and page restoration.

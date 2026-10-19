@@ -1,5 +1,6 @@
 import {
   ACTION_IMMEDIATE_THRESHOLD_MS,
+  ACTION_SKILL_CONFIG,
   FOOD_TICK_MS,
   JOBS,
   OFFLINE_CAP_MS,
@@ -35,14 +36,8 @@ export function createSimulation(
   const { getMealCost, consumeMeal } = food
 
   function getResourceRates(activeAction: Action | null) {
-    const rates = {
-      fruit: -getMealCost() / (FOOD_TICK_MS / 1000),
-      wood: 0,
-      stone: 0,
-      planks: 0,
-      blocks: 0,
-      knowledge: 0,
-    }
+    const rates = createRecord(RESOURCES, () => 0)
+    rates.fruit = -getMealCost() / (FOOD_TICK_MS / 1000)
     for (const person of state.people) {
       if (person.job === 'idle' || !canWork(person)) continue
       const job = JOBS[person.job]
@@ -57,13 +52,8 @@ export function createSimulation(
     const seconds = duration / 1000
     // XP is awarded before the yield, including any milestone this action earns.
     const gain = getNextResourceGain(activeAction.id)
-    if (activeAction.id === 'gather') {
-      rates.fruit += gain / seconds
-    } else if (activeAction.id === 'sticks') {
-      rates.wood += gain / seconds
-    } else if (activeAction.id === 'stone') {
-      rates.stone += gain / seconds
-    }
+    const resource = ACTION_SKILL_CONFIG[activeAction.id].resource
+    if (resource) rates[resource] += gain / seconds
     return rates
   }
 

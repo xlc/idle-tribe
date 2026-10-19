@@ -20,7 +20,6 @@ export function createGame(
   const settlement = createSettlement(
     state,
     resources,
-    research.getResearchLevel,
     skills.getNextResourceGain,
     saveProgress,
   )

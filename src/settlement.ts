@@ -1,9 +1,14 @@
 import { JOBS, MAX_HUNGER, RECRUIT_COST } from './constants'
-import { BUILDINGS, JOB_BUILDING } from './economy'
+import {
+  BUILDINGS,
+  isBuildingUnlocked as buildingUnlocked,
+  JOB_BUILDING,
+  isJobUnlocked as jobUnlocked,
+} from './economy'
 import { getHungerEffects } from './food'
 import { roundResource } from './format'
-import { RESOURCES } from './ids'
-import type { createResearch } from './research'
+import { BUILDING_IDS, RESEARCH_ITEM_KEYS, RESOURCES } from './ids'
+import { RESEARCH_CONFIG } from './research-definitions'
 import type { createResources } from './resources'
 import type { createSkills } from './skills'
 import type { BuildingId, Cost, GameState, JobId, Person } from './types'
@@ -11,7 +16,6 @@ import type { BuildingId, Cost, GameState, JobId, Person } from './types'
 export function createSettlement(
   state: GameState,
   resources: ReturnType<typeof createResources>,
-  getResearchLevel: ReturnType<typeof createResearch>['getResearchLevel'],
   getNextResourceGain: ReturnType<typeof createSkills>['getNextResourceGain'],
   saveProgress: () => void,
 ) {
@@ -21,8 +25,21 @@ export function createSettlement(
     return Math.max(
       state.people.length,
       1 +
-        getResearchLevel('shelters') * 2 +
-        state.buildings.houses * (getResearchLevel('architecture') ? 4 : 2),
+        RESEARCH_ITEM_KEYS.reduce(
+          (capacity, id) =>
+            capacity +
+            (RESEARCH_CONFIG[id].populationCapacity?.(
+              state.researchLevels[id],
+            ) ?? 0),
+          0,
+        ) +
+        BUILDING_IDS.reduce(
+          (capacity, id) =>
+            capacity +
+            state.buildings[id] *
+              (BUILDINGS[id].populationCapacity?.(state) ?? 0),
+          0,
+        ),
     )
   }
 
@@ -54,11 +71,7 @@ export function createSettlement(
   }
 
   function isBuildingUnlocked(id: BuildingId) {
-    if (!getResearchLevel('shelters')) return false
-    const definition = BUILDINGS[id]
-    if (id === 'quarry' && !state.stoneFound) return false
-    if (id === 'lumber-camp' && !state.explored) return false
-    return !definition.technology || getResearchLevel(definition.technology) > 0
+    return buildingUnlocked(state, id)
   }
 
   function getBuildingCost(id: BuildingId): Cost {
@@ -66,11 +79,10 @@ export function createSettlement(
     const cost: Cost = {}
     for (const resource of RESOURCES) {
       const base = BUILDINGS[id].cost[resource]
-      if (base) cost[resource] = Math.ceil(base * 1.65 ** level)
-    }
-    if (level > 0 && BUILDINGS[id].job) {
-      cost.planks = (cost.planks ?? 0) + level * 4
-      cost.blocks = (cost.blocks ?? 0) + level * 2
+      const expansion = BUILDINGS[id].expansionCost?.[resource] ?? 0
+      if (base || expansion)
+        cost[resource] =
+          Math.ceil((base ?? 0) * 1.65 ** level) + expansion * level
     }
     return cost
   }
@@ -98,8 +110,7 @@ export function createSettlement(
   }
 
   function isJobUnlocked(job: JobId) {
-    if (job === 'idle') return true
-    return isBuildingUnlocked(JOB_BUILDING[job]) && getJobCapacity(job) > 0
+    return jobUnlocked(state, job)
   }
 
   function assignJob(person: Person, job: JobId) {
@@ -125,11 +136,7 @@ export function createSettlement(
   }
 
   function getJobInput(job: JobId): Cost {
-    const rawCost = getResearchLevel('joinery') ? 2 : 3
-    if (job === 'sawyer') return { wood: rawCost }
-    if (job === 'mason') return { stone: rawCost }
-    if (job === 'scholar') return { fruit: 1 }
-    return {}
+    return job === 'idle' ? {} : (JOBS[job].input?.(state) ?? {})
   }
 
   function canWork(person: Person) {
@@ -150,24 +157,18 @@ export function createSettlement(
     let gain = job.actionId ? getNextResourceGain(job.actionId) * 2 : 1
     gain *=
       1 + (Math.max(1, state.buildings[JOB_BUILDING[person.job]]) - 1) * 0.5
-    if (
-      state.specialization === 'forestry' &&
-      (person.job === 'woodcutter' || person.job === 'sawyer')
-    )
+    if (job.specialization && state.specialization === job.specialization)
       gain *= 1.6
-    if (
-      state.specialization === 'stonecraft' &&
-      (person.job === 'stoneworker' || person.job === 'mason')
+    for (const multiplier of job.outputMultipliers?.(state) ?? [])
+      gain *= multiplier
+    // Combine settlement-wide bonuses before applying them to preserve yield rounding.
+    const researchMultiplier = RESEARCH_ITEM_KEYS.reduce(
+      (multiplier, id) =>
+        multiplier *
+        (RESEARCH_CONFIG[id].workerMultiplier?.(state.researchLevels[id]) ?? 1),
+      1,
     )
-      gain *= 1.6
-    if (person.job === 'mason' && getResearchLevel('architecture')) gain *= 1.5
-    if (person.job === 'forager') {
-      gain *= 1 + getResearchLevel('foraging-practice') * 0.25
-      if (getResearchLevel('agriculture')) gain *= 2
-    }
-    gain *=
-      (1 + getResearchLevel('teamwork') * 0.25) *
-      (getResearchLevel('engineering') ? 1.25 : 1)
+    gain *= researchMultiplier
     return roundResource(gain * getHungerEffects(person).outputMultiplier)
   }
 

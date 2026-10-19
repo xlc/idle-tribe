@@ -1,4 +1,5 @@
 import {
+  ACTION_SKILL_CONFIG,
   EXPLORE_COST,
   EXPLORE_DURATION_MS,
   EXPLORE_FURTHER_COST,
@@ -9,11 +10,12 @@ import {
   GATHER_WOOD_DURATION_MS,
   RESEARCH_UNLOCK_WOOD,
 } from './constants'
+import { grantStartingBuildings } from './economy'
 import { formatResource, roundResource } from './format'
 import type { createResearch } from './research'
 import type { createResources } from './resources'
 import type { createSkills } from './skills'
-import type { Action, ActionKey, GameState } from './types'
+import type { Action, ActionId, ActionKey, GameState } from './types'
 
 export function createActions(
   state: GameState,
@@ -37,11 +39,13 @@ export function createActions(
       id: 'gather',
       name: 'Gather fruit',
       baseDurationMs: GATHER_DURATION_MS,
-      complete: completeGather,
+      complete: () => completeGathering('gather'),
     },
     explore: {
       id: 'explore',
       name: 'Explore nearby',
+      discovery: true,
+      visible: () => !state.explored && state.exploreUnlocked,
       baseDurationMs: EXPLORE_DURATION_MS,
       canStart: () => !state.explored && state.fruit >= EXPLORE_COST,
       cost: () => ({ fruit: EXPLORE_COST }),
@@ -50,6 +54,8 @@ export function createActions(
     exploreFurther: {
       id: 'explore-further',
       name: 'Explore farther',
+      discovery: true,
+      visible: () => !state.stoneFound && state.basicTools,
       baseDurationMs: EXPLORE_FURTHER_DURATION_MS,
       canStart: () =>
         !state.stoneFound &&
@@ -61,16 +67,18 @@ export function createActions(
     sticks: {
       id: 'sticks',
       name: 'Gather sticks',
+      visible: () => state.explored,
       baseDurationMs: GATHER_WOOD_DURATION_MS,
       canStart: () => state.explored,
-      complete: completeSticks,
+      complete: () => completeGathering('sticks'),
     },
     stone: {
       id: 'stone',
       name: 'Gather stone',
+      visible: () => state.stoneFound,
       baseDurationMs: GATHER_STONE_DURATION_MS,
       canStart: () => state.stoneFound,
-      complete: completeStone,
+      complete: () => completeGathering('stone'),
     },
     research: createResearchAction('sharpened-stick'),
     researchForaging: createResearchAction('foraging-practice'),
@@ -98,10 +106,12 @@ export function createActions(
     return activeResearch
   }
 
-  function completeGather() {
-    const fruitGain = getResourceGain('gather')
-    state.fruit = roundResource(state.fruit + fruitGain)
-    return `Gathered ${formatResource(fruitGain)} fruit.`
+  function completeGathering(actionId: ActionId) {
+    const resource = ACTION_SKILL_CONFIG[actionId].resource
+    if (!resource) throw new Error(`Missing gathering resource for ${actionId}`)
+    const gain = getResourceGain(actionId)
+    state[resource] = roundResource(state[resource] + gain)
+    return `Gathered ${formatResource(gain)} ${resource}.`
   }
 
   function completeExplore() {
@@ -111,21 +121,8 @@ export function createActions(
 
   function completeExploreFurther() {
     state.stoneFound = true
-    if (getResearchLevel('shelters') > 0)
-      state.buildings.quarry = Math.max(1, state.buildings.quarry)
+    grantStartingBuildings(state)
     return 'Exploration complete. Stone is nearby.'
-  }
-
-  function completeSticks() {
-    const woodGain = getResourceGain('sticks')
-    state.wood = roundResource(state.wood + woodGain)
-    return `Gathered ${formatResource(woodGain)} wood.`
-  }
-
-  function completeStone() {
-    const stoneGain = getResourceGain('stone')
-    state.stone = roundResource(state.stone + stoneGain)
-    return `Gathered ${formatResource(stoneGain)} stone.`
   }
 
   function syncUnlocks() {

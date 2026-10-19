@@ -1,10 +1,9 @@
-import { JOBS, RECRUIT_COST } from './constants'
+import { ACTION_SKILL_CONFIG, JOBS, RECRUIT_COST } from './constants'
 import {
   BUILDINGS,
-  DEVELOPMENT_TECH,
+  getSettlementChapter,
+  isAutomationUnlocked,
   JOB_BUILDING,
-  PRODUCTION_TECH,
-  SPECIALIZATION_TECH,
 } from './economy'
 import {
   formatCompactResource,
@@ -22,7 +21,9 @@ import {
   RESOURCES,
 } from './ids'
 import { createRecord } from './records'
-import type { Cost, Person, ResearchId, ResourceId } from './types'
+import { isResearchExcluded, RESEARCH_GROUPS } from './research-definitions'
+import { RESOURCE_DEFINITIONS } from './resources'
+import type { Cost, Person, ResearchId } from './types'
 
 export interface ActionView {
   button: HTMLButtonElement
@@ -58,33 +59,6 @@ function node<K extends keyof HTMLElementTagNameMap>(
   result.textContent = text
   return result
 }
-const RESOURCE_NAMES: Record<ResourceId, string> = {
-  fruit: 'Fruit',
-  wood: 'Wood',
-  stone: 'Stone',
-  planks: 'Planks',
-  blocks: 'Blocks',
-  knowledge: 'Knowledge',
-}
-const REQUIREMENTS: Record<ResearchId, string> = {
-  'sharpened-stick': '2 wood',
-  'foraging-practice': 'Sharpened stick',
-  shelters: 'Sharpened stick',
-  'stone-flakes': 'Discover stone',
-  'stone-axes': 'Flint knapping',
-  quarrying: 'Stone axes',
-  teamwork: 'Shelters',
-  carpentry: 'Shelters · discover stone',
-  masonry: 'Flint knapping',
-  writing: 'Carpentry + Masonry',
-  forestry: 'Writing',
-  stonecraft: 'Writing',
-  agriculture: 'Writing',
-  joinery: 'Forestry',
-  architecture: 'Stonecraft',
-  engineering: 'Cultivation + your path technology',
-}
-
 export function createRenderer(game: Game, beforeChange: () => void) {
   const { state } = game
   const feedback = element('feedback')
@@ -94,46 +68,28 @@ export function createRenderer(game: Game, beforeChange: () => void) {
   const feastButton = element('feast-button', HTMLButtonElement)
   const tribeList = element('tribe-list')
   let view: 'camp' | 'research' = 'camp'
-  let wasAutomated = state.researchLevels.shelters > 0
-  let wasWriting = state.researchLevels.writing > 0
+  let wasAutomated = isAutomationUnlocked(state)
   element('manual-work', HTMLDetailsElement).open = !wasAutomated
   const resourceViews = RESOURCES.map((id) => {
     const row = node('div', `resource resource-${id}`)
-    const title = node('span', 'resource-name', RESOURCE_NAMES[id])
+    const title = node('span', 'resource-name', RESOURCE_DEFINITIONS[id].name)
     const value = node('strong', 'resource-value')
     const rate = node('span', 'resource-rate')
     row.append(title, value, rate)
     element('resource-list').append(row)
     return { id, row, value, rate }
   })
-  const groups = [
-    {
-      name: 'Foundations',
-      ids: RESEARCH_ITEM_KEYS.filter(
-        (id) =>
-          ![
-            ...PRODUCTION_TECH,
-            ...SPECIALIZATION_TECH,
-            ...DEVELOPMENT_TECH,
-          ].includes(id),
-      ),
-    },
-    { name: 'Workshops', ids: PRODUCTION_TECH },
-    { name: 'Choose a specialization', ids: SPECIALIZATION_TECH },
-    { name: 'A growing village', ids: DEVELOPMENT_TECH },
-  ].map((group) => {
-    const section =
-      group.name === 'Foundations'
-        ? node('details', 'tech-section foundation-section')
-        : node('section', 'tech-section')
-    if (section instanceof HTMLDetailsElement) section.open = !wasWriting
-    section.append(
-      node(group.name === 'Foundations' ? 'summary' : 'h3', '', group.name),
-    )
+  const groups = RESEARCH_GROUPS.map((group) => {
+    const collapsed = group.collapseWhen?.(state) ?? false
+    const section = group.collapseWhen
+      ? node('details', 'tech-section foundation-section')
+      : node('section', 'tech-section')
+    if (section instanceof HTMLDetailsElement) section.open = !collapsed
+    section.append(node(group.collapseWhen ? 'summary' : 'h3', '', group.name))
     const list = node('div', 'tech-grid')
     section.append(list)
     element('research-groups').append(section)
-    return { ...group, section, list }
+    return { ...group, section, list, collapsed }
   })
   const researchViews = new Map<
     ResearchId,
@@ -177,14 +133,16 @@ export function createRenderer(game: Game, beforeChange: () => void) {
       const requirement = node('span', 'requirement')
       const effect = node('span', 'tech-effect')
       button.append(effect, costs, requirement)
-      groups.find((group) => group.ids.includes(research))?.list.append(button)
+      groups
+        .find(
+          (group) => group.id === game.getResearchDefinition(research).group,
+        )
+        ?.list.append(button)
       researchViews.set(research, { card: button, costs, effect, requirement })
     } else
-      element(
-        key === 'explore' || key === 'exploreFurther'
-          ? 'discovery-list'
-          : 'manual-list',
-      ).append(button)
+      element(action.discovery ? 'discovery-list' : 'manual-list').append(
+        button,
+      )
     return item
   })
   function change(run: () => boolean, message: string) {
@@ -226,12 +184,11 @@ export function createRenderer(game: Game, beforeChange: () => void) {
       const existed = state.buildings[id] > 0
       change(
         () => game.build(id),
-        id === 'great-hall'
-          ? 'The Great Hall is complete.'
-          : `${definition.name} ${existed ? 'expanded' : 'built'}.`,
+        definition.milestone?.message ??
+          `${definition.name} ${existed ? 'expanded' : 'built'}.`,
       )
-      if (id === 'great-hall' && state.buildings[id] > 0) {
-        const milestone = element('village-complete')
+      if (definition.milestone && state.buildings[id] > 0) {
+        const milestone = element(definition.milestone.target)
         milestone.scrollIntoView({ block: 'start' })
         milestone.focus({ preventScroll: true })
       }
@@ -296,27 +253,23 @@ export function createRenderer(game: Game, beforeChange: () => void) {
   function render() {
     const focused = document.activeElement
     game.syncUnlocks()
-    if (!wasWriting && state.researchLevels.writing > 0) {
-      const foundation = groups.find(
-        (group) => group.name === 'Foundations',
-      )?.section
-      if (foundation instanceof HTMLDetailsElement) foundation.open = false
+    for (const group of groups) {
+      const collapsed = group.collapseWhen?.(state) ?? false
+      if (
+        collapsed &&
+        !group.collapsed &&
+        group.section instanceof HTMLDetailsElement
+      )
+        group.section.open = false
+      group.collapsed = collapsed
     }
-    wasWriting = state.researchLevels.writing > 0
-    const automated = game.getResearchLevel('shelters') > 0
+    const automated = isAutomationUnlocked(state)
     if (automated && !wasAutomated)
       element('manual-work', HTMLDetailsElement).open = false
     wasAutomated = automated
     const rates = game.getResourceRates(null)
     for (const { id, row, value, rate } of resourceViews) {
-      const visible =
-        id === 'fruit' ||
-        (id === 'wood' && state.explored) ||
-        (id === 'stone' && state.stoneFound) ||
-        (id === 'planks' && game.getResearchLevel('carpentry') > 0) ||
-        (id === 'blocks' && game.getResearchLevel('masonry') > 0) ||
-        (id === 'knowledge' && game.getResearchLevel('writing') > 0) ||
-        state[id] > 0
+      const visible = RESOURCE_DEFINITIONS[id].visible(state) || state[id] > 0
       row.hidden = !visible
       value.textContent = formatCompactResource(state[id])
       value.title = formatResource(state[id])
@@ -330,22 +283,15 @@ export function createRenderer(game: Game, beforeChange: () => void) {
       rate.title =
         'Current net production per minute, including processing and meals.'
     }
-    element('chapter').textContent = state.buildings['great-hall']
-      ? 'Village established'
-      : state.specialization
-        ? 'A growing village'
-        : game.getResearchLevel('carpentry')
-          ? 'The workshop age'
-          : automated
-            ? 'A working settlement'
-            : 'A small beginning'
-    element('path-name').textContent =
-      state.specialization === 'forestry'
-        ? 'Forestry'
-        : state.specialization === 'stonecraft'
-          ? 'Stonecraft'
-          : ''
-    element('village-complete').hidden = !state.buildings['great-hall']
+    element('chapter').textContent = getSettlementChapter(state)
+    element('path-name').textContent = state.specialization
+      ? game.getResearchDefinition(state.specialization).name
+      : ''
+    for (const id of BUILDING_IDS) {
+      const milestone = BUILDINGS[id].milestone
+      if (milestone)
+        element(milestone.target).hidden = state.buildings[id] === 0
+    }
     const idle = state.people.filter((person) => person.job === 'idle').length
     element('population-count').textContent =
       `${state.people.length} / ${game.getPopulationCapacity()} ${state.people.length === 1 ? 'person' : 'people'}`
@@ -367,7 +313,7 @@ export function createRenderer(game: Game, beforeChange: () => void) {
       const level = state.buildings[id]
       const unlocked = game.isBuildingUnlocked(id)
       item.card.hidden =
-        (!unlocked && !level) || (id === 'great-hall' && level > 0)
+        (!unlocked && !level) || Boolean(definition.milestone && level > 0)
       if (item.card.hidden) continue
       item.level.textContent = level ? `Lv ${level}` : 'Not built'
       item.card.dataset.built = String(level > 0)
@@ -386,11 +332,9 @@ export function createRenderer(game: Game, beforeChange: () => void) {
       const input = definition.job ? game.getJobInput(definition.job) : {}
       item.recipe.textContent = definition.job
         ? `${Object.keys(input).length ? `${formatResearchCost({ ...input, durationMs: 0 })} → ` : '+'}${formatResource(gain)} ${JOBS[definition.job].resource} / ${JOBS[definition.job].durationMs / 1000}s per worker`
-        : id === 'houses'
-          ? `+${game.getResearchLevel('architecture') ? 4 : 2} places per level`
-          : 'Complete the village'
+        : (definition.description?.(state) ?? '')
       item.status.textContent = !definition.job
-        ? level && id === 'great-hall'
+        ? level && definition.milestone
           ? 'Established'
           : ''
         : !level
@@ -443,19 +387,17 @@ export function createRenderer(game: Game, beforeChange: () => void) {
       item.button.setAttribute('aria-busy', String(working))
       const duration = game.getActionDuration(action)
       if (!action.researchId) {
-        item.button.hidden =
-          key === 'explore'
-            ? state.explored || !state.exploreUnlocked
-            : key === 'sticks'
-              ? !state.explored
-              : key === 'exploreFurther'
-                ? state.stoneFound || !state.basicTools
-                : key === 'stone'
-                  ? !state.stoneFound
-                  : false
+        item.button.hidden = action.visible ? !action.visible() : false
         item.levelLabel.textContent = `Lv ${game.getSkill(action.id).level}`
         const gain = game.getNextResourceGain(action.id)
-        item.subtitle.textContent = `${gain ? `+${formatResource(gain)} ${JOBS[key === 'gather' ? 'forager' : key === 'sticks' ? 'woodcutter' : 'stoneworker'].resource}` : '10 fruit'} · ${formatDuration(duration)}`
+        const resource = ACTION_SKILL_CONFIG[action.id].resource
+        const cost = action.cost?.()
+        const summary = resource
+          ? `+${formatResource(gain)} ${resource}`
+          : cost
+            ? formatResearchCost({ ...cost, durationMs: 0 })
+            : ''
+        item.subtitle.textContent = `${summary} · ${formatDuration(duration)}`
         item.button.disabled =
           !working &&
           (Boolean(active) || Boolean(action.canStart && !action.canStart()))
@@ -475,29 +417,19 @@ export function createRenderer(game: Game, beforeChange: () => void) {
       const definition = game.getResearchDefinition(id)
       const level = game.getResearchLevel(id)
       const maxed = !game.getResearchNextLevel(id)
-      const otherPath =
-        ((id === 'forestry' || id === 'joinery') &&
-          state.specialization === 'stonecraft') ||
-        ((id === 'stonecraft' || id === 'architecture') &&
-          state.specialization === 'forestry')
+      const otherPath = isResearchExcluded(state, id)
       const ready = definition.prerequisite()
-      const group = groups.find((candidate) => candidate.ids.includes(id))
-      const visible =
-        maxed ||
-        (group?.name === 'Foundations'
-          ? state.researchUnlocked
-          : group?.ids === PRODUCTION_TECH
-            ? automated && state.stoneFound
-            : group?.ids === SPECIALIZATION_TECH
-              ? game.getResearchLevel('writing') > 0
-              : game.getResearchLevel('writing') > 0)
+      const group = groups.find(
+        (candidate) => candidate.id === definition.group,
+      )
+      const visible = maxed || Boolean(group?.visible(state))
       item.button.hidden = !visible || otherPath
       item.button.dataset.locked = String(!ready || otherPath)
       item.button.dataset.complete = String(maxed)
       item.levelLabel.textContent = maxed
         ? 'Complete'
-        : definition.maxLevel > 1
-          ? `${level}/${definition.maxLevel}`
+        : definition.levels.length > 1
+          ? `${level}/${definition.levels.length}`
           : ''
       item.subtitle.textContent = maxed
         ? game.getResearchEffect(id, level)
@@ -509,8 +441,8 @@ export function createRenderer(game: Game, beforeChange: () => void) {
       research.requirement.textContent = otherPath
         ? 'Other path locked'
         : !ready && !maxed
-          ? `Requires ${REQUIREMENTS[id]}`
-          : (id === 'forestry' || id === 'stonecraft') && !maxed
+          ? `Requires ${definition.requirement}`
+          : definition.specialization?.kind === 'choice' && !maxed
             ? 'Choose for this run'
             : ''
       research.requirement.hidden = !research.requirement.textContent
@@ -527,16 +459,16 @@ export function createRenderer(game: Game, beforeChange: () => void) {
       )
       item.button.setAttribute(
         'aria-label',
-        `${action.name}. ${otherPath ? 'Other path locked' : maxed ? 'Complete' : !ready ? `Requires ${REQUIREMENTS[id]}` : next ? formatResearchCost(next) : ''}. ${item.subtitle.textContent}`,
+        `${action.name}. ${otherPath ? 'Other path locked' : maxed ? 'Complete' : !ready ? `Requires ${definition.requirement}` : next ? formatResearchCost(next) : ''}. ${item.subtitle.textContent}`,
       )
       const parent = maxed ? element('completed-list') : group?.list
       if (parent && item.button.parentElement !== parent)
         parent.append(item.button)
       if (maxed) completed++
     }
-    element('discovery-section').hidden =
-      actionViews.explore.button.hidden &&
-      actionViews.exploreFurther.button.hidden
+    element('discovery-section').hidden = !ACTION_KEYS.some(
+      (key) => game.actions[key].discovery && !actionViews[key].button.hidden,
+    )
     for (const group of groups)
       group.section.hidden = !Array.from(group.list.children).some(
         (child) => child instanceof HTMLElement && !child.hidden,

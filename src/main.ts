@@ -1,5 +1,6 @@
 import './styles.css'
 import { createActivityTimer, createClock } from './clock'
+import { isAutomationUnlocked } from './economy'
 import { formatResource } from './format'
 import { createGame } from './game'
 import { ACTION_KEYS, isJobId, RESOURCES } from './ids'
@@ -24,7 +25,7 @@ const clock = createClock(
 settledAt = clock.settledAt
 
 function showAway(elapsed: number, gains: Record<ResourceId, number>) {
-  if (elapsed < 60000 || !state.researchLevels.shelters) return
+  if (elapsed < 60000 || !isAutomationUnlocked(state)) return
   const minutes = Math.floor(elapsed / 60000)
   const duration =
     minutes >= 60
@@ -70,11 +71,7 @@ function startAction(action: Action) {
       activityTimers.delete(timer)
       item.progressWrap.hidden = true
       const result = game.finishAction(action)
-      if (
-        action.researchId ||
-        action.id === 'explore' ||
-        action.id === 'explore-further'
-      )
+      if (action.researchId || action.discovery)
         feedback.textContent = action.researchId
           ? `${action.name} · level ${game.getResearchLevel(action.researchId)}`
           : result
@@ -93,18 +90,15 @@ for (const key of ACTION_KEYS) {
   const item = actionViews[key]
   const action = game.actions[key]
   item.button.onclick = () => {
-    if (
-      action.researchId === 'forestry' ||
-      action.researchId === 'stonecraft'
-    ) {
+    const specialization = action.researchId
+      ? game.getResearchDefinition(action.researchId).specialization
+      : undefined
+    if (specialization?.kind === 'choice') {
       clock.tick(Date.now())
       if (state.specialization || !action.canStart?.()) return
       pendingChoice = action
       element('specialization-title').textContent = action.name
-      element('specialization-effect').textContent =
-        action.researchId === 'forestry'
-          ? 'Wood and planks +60%. Unlocks Precision joinery: processors use 2 raw materials.'
-          : 'Stone and blocks +60%. Unlocks Architecture: more housing capacity and +50% block output.'
+      element('specialization-effect').textContent = specialization.description
       dialog.showModal()
     } else startAction(action)
   }

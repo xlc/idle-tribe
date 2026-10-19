@@ -318,3 +318,76 @@ test('manual activity pauses while hidden and resumes without banking hidden tim
   expect(timer.sample(20500)).toBe(1000)
   expect(timer.sample(50000)).toBe(1000)
 })
+
+test('processor recipes and stacked bonuses survive saves on both specialization paths', () => {
+  for (const path of ['forestry', 'stonecraft'] as const) {
+    const game = workshop()
+    const state = game.state
+    state.specialization = path
+    state.researchLevels[path] = 1
+    state.researchLevels.teamwork = 2
+    state.researchLevels.engineering = 1
+    state.researchLevels.joinery = path === 'forestry' ? 1 : 0
+    state.researchLevels.architecture = path === 'stonecraft' ? 1 : 0
+    state.buildings.sawmill = state.buildings.stoneworks = 2
+    state.wood = state.stone = 10
+    game.recruitPerson()
+    game.adjustWorkers('sawyer', 1)
+    game.adjustWorkers('mason', 1)
+    for (const person of state.people) person.hunger = 3
+    const restored = createGame(parseSave(JSON.stringify(state)))
+    restored.advanceTime(10000)
+    expect(restored.state.wood).toBe(path === 'forestry' ? 8 : 7)
+    expect(restored.state.stone).toBe(path === 'forestry' ? 8 : 7)
+    expect(restored.state.planks).toBe(path === 'forestry' ? 3.6 : 2.3)
+    expect(restored.state.blocks).toBe(path === 'forestry' ? 2.3 : 5.4)
+    restored.state.planks = 8
+    restored.state.blocks = 4
+    expect(restored.build('houses')).toBe(true)
+    expect(restored.getPopulationCapacity()).toBe(path === 'forestry' ? 5 : 7)
+  }
+})
+
+test('discovering stone before or after Shelters grants the same usable workplaces', () => {
+  for (const discoveryFirst of [true, false]) {
+    const state = createDefaultState()
+    state.explored = state.researchUnlocked = state.basicTools = true
+    state.researchLevels['sharpened-stick'] = state.seenResearchLevels[
+      'sharpened-stick'
+    ] = 1
+    state.fruit = state.wood = 100
+    const game = createGame(state)
+    const first = discoveryFirst
+      ? game.actions.exploreFurther
+      : game.actions.researchShelters
+    const second = discoveryFirst
+      ? game.actions.researchShelters
+      : game.actions.exploreFurther
+    expect(game.startAction(first)).toBe(true)
+    game.finishAction(first)
+    expect(game.startAction(second)).toBe(true)
+    game.finishAction(second)
+    expect(game.isJobUnlocked('forager')).toBe(true)
+    expect(game.isJobUnlocked('woodcutter')).toBe(true)
+    expect(game.isJobUnlocked('stoneworker')).toBe(true)
+    expect(state.buildings.quarry).toBe(1)
+    expect(itemAt(state.people, 0).job).toBe('forager')
+    expect(game.recruitPerson()).toBe(true)
+    expect(game.adjustWorkers('stoneworker', 1)).toBe(true)
+    game.advanceTime(12000)
+    expect(state.stone).toBe(2)
+    expect(parseSave(JSON.stringify(state))).toEqual(state)
+  }
+})
+
+test('upgraded worker production and displayed rates retain rounding at a half-tenth', () => {
+  const game = workshop()
+  game.state.researchLevels['stone-flakes'] = 3
+  game.state.researchLevels.quarrying = 3
+  game.state.researchLevels.teamwork = 3
+  game.state.researchLevels.engineering = 1
+  expect(game.adjustWorkers('stoneworker', 1)).toBe(true)
+  expect(game.getResourceRates(null).stone).toBeCloseTo(12.3 / 12)
+  game.advanceTime(12000)
+  expect(game.state.stone).toBe(12.3)
+})

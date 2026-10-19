@@ -54,11 +54,27 @@ export interface ResearchCost extends Cost {
   durationMs: number
 }
 
+export type ResearchGroupId =
+  | 'foundations'
+  | 'production'
+  | 'specialization'
+  | 'development'
+
+export type ResearchSpecialization =
+  | { kind: 'choice'; id: Specialization; description: string }
+  | { kind: 'requirement'; id: Specialization }
+
 export interface ResearchDefinition {
   actionId: ActionId
   name: string
-  maxLevel: number
-  prerequisite: () => boolean
+  prerequisite: (state: GameState) => boolean
+  effect: (level: number) => string
+  group: ResearchGroupId
+  requirement: string
+  specialization?: ResearchSpecialization
+  onFirstCompletion?: (state: GameState) => void
+  populationCapacity?: (level: number) => number
+  workerMultiplier?: (level: number) => number
   levels: ResearchCost[]
 }
 
@@ -67,6 +83,8 @@ export interface Action {
   name: string
   researchId?: ResearchId
   baseDurationMs: number | (() => number)
+  visible?: () => boolean
+  discovery?: boolean
   canStart?: () => boolean
   cost?: () => Cost | null
   complete: () => string
