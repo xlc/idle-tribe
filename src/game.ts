@@ -14,6 +14,9 @@ import {
   GATHER_DURATION_MS,
   GATHER_STONE_DURATION_MS,
   GATHER_WOOD_DURATION_MS,
+  JOBS,
+  MAX_HUNGER,
+  RECRUIT_COST,
   RESEARCH_ITEM_KEYS,
   RESEARCH_UNLOCK_WOOD,
 } from './constants'
@@ -28,6 +31,7 @@ import type {
   ActionId,
   ActionKey,
   GameState,
+  JobId,
   Person,
   ResearchDefinition,
   ResearchId,
@@ -97,6 +101,50 @@ export function createGame(
         { wood: 10, stone: 25, fruit: 50, durationMs: 30000 },
       ],
     },
+    shelters: {
+      actionId: 'research-shelters',
+      name: 'Communal shelters',
+      maxLevel: 3,
+      prerequisite: () => getResearchLevel('sharpened-stick') >= 1,
+      levels: [
+        { wood: 6, fruit: 15, durationMs: 8000 },
+        { wood: 20, stone: 5, fruit: 30, durationMs: 15000 },
+        { wood: 50, stone: 20, fruit: 60, durationMs: 25000 },
+      ],
+    },
+    'stone-axes': {
+      actionId: 'research-axes',
+      name: 'Stone axes',
+      maxLevel: 3,
+      prerequisite: () => getResearchLevel('stone-flakes') >= 1,
+      levels: [
+        { wood: 5, stone: 5, durationMs: 10000 },
+        { wood: 15, stone: 15, durationMs: 18000 },
+        { wood: 30, stone: 35, durationMs: 30000 },
+      ],
+    },
+    quarrying: {
+      actionId: 'research-quarrying',
+      name: 'Quarrying',
+      maxLevel: 3,
+      prerequisite: () => getResearchLevel('stone-axes') >= 1,
+      levels: [
+        { wood: 10, stone: 8, fruit: 10, durationMs: 12000 },
+        { wood: 25, stone: 20, fruit: 25, durationMs: 20000 },
+        { wood: 50, stone: 40, fruit: 50, durationMs: 30000 },
+      ],
+    },
+    teamwork: {
+      actionId: 'research-teamwork',
+      name: 'Teamwork',
+      maxLevel: 3,
+      prerequisite: () => getResearchLevel('shelters') >= 1,
+      levels: [
+        { wood: 8, fruit: 25, durationMs: 12000 },
+        { wood: 20, stone: 10, fruit: 50, durationMs: 20000 },
+        { wood: 40, stone: 25, fruit: 100, durationMs: 30000 },
+      ],
+    },
   }
   function getSkill(actionId: ActionId) {
     if (!state.skills[actionId]) state.skills[actionId] = { level: 1, xp: 0 }
@@ -147,6 +195,13 @@ export function createGame(
     if (researchId === 'foraging-practice') return `+${level} fruit XP`
     if (researchId === 'stone-flakes')
       return `+${formatResource(level * 0.1)} stone`
+    if (researchId === 'shelters')
+      return level > 0 ? `${1 + level * 2} people · gathering jobs` : '1 person'
+    if (researchId === 'stone-axes')
+      return `+${formatResource(level * 0.5)} wood`
+    if (researchId === 'quarrying')
+      return `+${formatResource(level * 0.5)} stone`
+    if (researchId === 'teamwork') return `+${level * 25}% worker output`
     return ''
   }
 
@@ -186,7 +241,10 @@ export function createGame(
   }
 
   function getStoneResearchBonus() {
-    return getResearchLevel('stone-flakes') * 0.1
+    return (
+      getResearchLevel('stone-flakes') * 0.1 +
+      getResearchLevel('quarrying') * 0.5
+    )
   }
 
   function getResearchRowLabel(researchId: ResearchId) {
@@ -228,7 +286,11 @@ export function createGame(
         1 + getFruitResearchBonus() + getResourceMilestoneBonus(actionId, level)
       )
     if (actionId === 'sticks')
-      return 1 + getResourceMilestoneBonus(actionId, level)
+      return (
+        1 +
+        getResearchLevel('stone-axes') * 0.5 +
+        getResourceMilestoneBonus(actionId, level)
+      )
     if (actionId === 'stone')
       return (
         1 + getStoneResearchBonus() + getResourceMilestoneBonus(actionId, level)
@@ -274,6 +336,11 @@ export function createGame(
       wood: 0,
       stone: 0,
     }
+    for (const person of state.people) {
+      if (person.job === 'idle' || !isJobUnlocked(person.job)) continue
+      const job = JOBS[person.job]
+      rates[job.resource] += getWorkerGain(person) / (job.durationMs / 1000)
+    }
     if (!activeAction) return rates
     const duration = getActionDuration(activeAction)
     if (duration < ACTION_IMMEDIATE_THRESHOLD_MS) return rates
@@ -283,9 +350,9 @@ export function createGame(
     if (activeAction.id === 'gather') {
       rates.fruit += gain / seconds
     } else if (activeAction.id === 'sticks') {
-      rates.wood = gain / seconds
+      rates.wood += gain / seconds
     } else if (activeAction.id === 'stone') {
-      rates.stone = gain / seconds
+      rates.stone += gain / seconds
     }
     return rates
   }
@@ -416,6 +483,13 @@ export function createGame(
       'Weaving baskets...',
     ),
     researchStone: createResearchAction('stone-flakes', 'Knapping flint...'),
+    researchShelters: createResearchAction('shelters', 'Building shelters...'),
+    researchAxes: createResearchAction('stone-axes', 'Crafting axes...'),
+    researchQuarrying: createResearchAction(
+      'quarrying',
+      'Studying quarrying...',
+    ),
+    researchTeamwork: createResearchAction('teamwork', 'Organizing work...'),
   }
 
   function syncUnlocks() {
@@ -434,27 +508,6 @@ export function createGame(
     }
     state.basicTools = getResearchLevel('sharpened-stick') >= 1
     if (changed) saveProgress()
-  }
-
-  function getNextGoal() {
-    if (!state.explored) {
-      return state.fruit < EXPLORE_COST && activeAction !== actions.explore
-        ? `Gather ${EXPLORE_COST} fruit to explore nearby.`
-        : 'Explore nearby to discover wood.'
-    }
-    if (!state.researchUnlocked)
-      return `Gather ${RESEARCH_UNLOCK_WOOD} wood to unlock research.`
-    if (!state.basicTools)
-      return 'Research a sharpened stick to gather more fruit.'
-    if (!state.stoneFound) {
-      return state.fruit < EXPLORE_FURTHER_COST &&
-        activeAction !== actions.exploreFurther
-        ? `Gather ${EXPLORE_FURTHER_COST} fruit to explore farther.`
-        : 'Explore farther to discover stone.'
-    }
-    return RESEARCH_ITEM_KEYS.some((id) => getResearchNextLevel(id))
-      ? 'Upgrade your tools in Research to improve gathering.'
-      : 'All tools mastered. Keep gathering to level your skills.'
   }
 
   function startAction(action: Action) {
@@ -487,15 +540,106 @@ export function createGame(
       : result
   }
 
-  function advanceFood(elapsed: number) {
-    state.foodElapsedMs += Math.max(0, elapsed)
+  function getPopulationCapacity() {
+    return 1 + getResearchLevel('shelters') * 2
+  }
+
+  function canRecruit() {
+    return (
+      state.people.length < getPopulationCapacity() &&
+      state.fruit >= RECRUIT_COST
+    )
+  }
+
+  function recruitPerson() {
+    if (!canRecruit()) return false
+    let number = 1
+    while (
+      state.people.some((person) => person.name === `Tribe member ${number}`)
+    )
+      number++
+    state.fruit = roundResource(state.fruit - RECRUIT_COST)
+    state.people.push({
+      name: `Tribe member ${number}`,
+      hunger: MAX_HUNGER,
+      maxHunger: MAX_HUNGER,
+      job: 'idle',
+      workElapsedMs: 0,
+    })
+    saveProgress()
+    return true
+  }
+
+  function isJobUnlocked(job: JobId) {
+    if (job === 'idle') return true
+    if (!getResearchLevel('shelters')) return false
+    if (job === 'forager') return true
+    if (job === 'woodcutter') return state.explored
+    if (job === 'stoneworker') return state.stoneFound
+    return false
+  }
+
+  function assignJob(person: Person, job: JobId) {
+    if (!state.people.includes(person) || !isJobUnlocked(job)) return false
+    if (person.job === job) return true
+    person.job = job
+    person.workElapsedMs = 0
+    saveProgress()
+    return true
+  }
+
+  function getWorkerGain(person: Person) {
+    if (person.job === 'idle' || !isJobUnlocked(person.job)) return 0
+    return roundResource(
+      getNextResourceGain(JOBS[person.job].actionId) *
+        (1 + getResearchLevel('teamwork') * 0.25) *
+        getHungerEffects(person).outputMultiplier,
+    )
+  }
+
+  // Advance to each work/meal boundary in order, so long frames and reloads
+  // produce the same result as small ticks. Only visible gameplay calls this.
+  function advanceTime(elapsed: number) {
+    if (!Number.isFinite(elapsed) || elapsed <= 0) return false
+    let remaining = elapsed
     let changed = false
-    while (state.foodElapsedMs >= FOOD_TICK_MS) {
-      state.foodElapsedMs -= FOOD_TICK_MS
-      consumeMeal()
-      changed = true
+    while (remaining > 0) {
+      const workers = state.people.filter(
+        (person) =>
+          person.job !== 'idle' &&
+          isJobUnlocked(person.job) &&
+          getHungerEffects(person).outputMultiplier > 0,
+      )
+      let step = Math.min(remaining, FOOD_TICK_MS - state.foodElapsedMs)
+      for (const person of workers) {
+        if (person.job !== 'idle')
+          step = Math.min(
+            step,
+            JOBS[person.job].durationMs - person.workElapsedMs,
+          )
+      }
+      state.foodElapsedMs += step
+      for (const person of workers) person.workElapsedMs += step
+      remaining -= step
+      for (const person of workers) {
+        if (person.job === 'idle') continue
+        const job = JOBS[person.job]
+        if (person.workElapsedMs < job.durationMs) continue
+        person.workElapsedMs -= job.durationMs
+        const gain = getWorkerGain(person)
+        awardActionExperience(job.actionId)
+        state[job.resource] = roundResource(state[job.resource] + gain)
+        changed = true
+      }
+      // Workers deliver food before a meal at the same boundary.
+      if (state.foodElapsedMs >= FOOD_TICK_MS) {
+        state.foodElapsedMs -= FOOD_TICK_MS
+        consumeMeal()
+        changed = true
+      }
     }
-    if (elapsed > 0) saveProgress()
+    syncUnlocks()
+    saveProgress()
     return changed
   }
 
@@ -504,12 +648,17 @@ export function createGame(
     saveProgress,
     actions,
     syncUnlocks,
-    getNextGoal,
     startAction,
     finishAction,
     getActiveAction,
     getActiveResearch,
-    advanceFood,
+    advanceTime,
+    getPopulationCapacity,
+    canRecruit,
+    recruitPerson,
+    isJobUnlocked,
+    assignJob,
+    getWorkerGain,
     consumeMeal,
     getSkill,
     getResearchLevel,

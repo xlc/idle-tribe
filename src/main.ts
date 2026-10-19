@@ -12,6 +12,7 @@ const renderer = createRenderer(game)
 const { render, feedback, actionViews, resetActionView } = renderer
 
 function finishAction(action: Action) {
+  advanceGameplay()
   const result = game.finishAction(action)
   if (result === null) return
   feedback.textContent = result
@@ -19,6 +20,7 @@ function finishAction(action: Action) {
 }
 
 function startAction(action: Action, view: ActionView) {
+  advanceGameplay()
   const getActive = action.researchId
     ? game.getActiveResearch
     : game.getActiveAction
@@ -40,14 +42,13 @@ function startAction(action: Action, view: ActionView) {
   const startedAt = performance.now()
   view.button.setAttribute('aria-disabled', 'true')
   view.button.setAttribute('aria-busy', 'true')
-  view.button.classList.add('is-working')
   view.button.setAttribute(
     'aria-label',
     `${action.name}. ${action.workingFeedback}`,
   )
   view.progressWrap.hidden = false
-  view.progressBar.style.width = '0%'
-  view.progressLabel.textContent = '0%'
+  view.progressBar.value = 0
+  view.progressLabel.textContent = `${(Math.ceil(durationMs / 100) / 10).toFixed(1)}s left`
   feedback.textContent = action.workingFeedback
   render()
 
@@ -55,8 +56,9 @@ function startAction(action: Action, view: ActionView) {
     if (getActive() !== action) return
     const fraction = Math.min(1, (performance.now() - startedAt) / durationMs)
     const percent = Math.round(fraction * 100)
-    view.progressBar.style.width = `${percent}%`
-    view.progressLabel.textContent = `${percent}%`
+    view.progressBar.value = percent
+    const remaining = Math.ceil(((1 - fraction) * durationMs) / 100) / 10
+    view.progressLabel.textContent = `${remaining.toFixed(1)}s left`
     if (fraction >= 1) {
       resetActionView(view)
       finishAction(action)
@@ -95,30 +97,55 @@ for (const key of Object.keys(game.actions) as ActionKey[]) {
   )
 }
 
-let foodClockAt = performance.now()
-let foodClockVisible = !document.hidden
-function consumeFood() {
+renderer.recruitButton.addEventListener('click', () => {
+  advanceGameplay()
+  if (game.recruitPerson()) feedback.textContent = 'Person recruited.'
+  render()
+})
+renderer.tribeList.addEventListener('focusin', advanceGameplay)
+renderer.tribeList.addEventListener('change', (event) => {
+  const select = event.target
+  if (!(select instanceof HTMLSelectElement)) return
+  const job = select.value
+  advanceGameplay()
+  const person = renderer.getPersonForJobControl(select)
+  if (!person) return
+  if (
+    job !== 'idle' &&
+    job !== 'forager' &&
+    job !== 'woodcutter' &&
+    job !== 'stoneworker'
+  )
+    return
+  if (game.assignJob(person, job))
+    feedback.textContent = `${person.name}: ${job === 'idle' ? 'resting' : `working as a ${job}`}.`
+  render()
+})
+
+let gameClockAt = performance.now()
+let gameClockVisible = !document.hidden
+function advanceGameplay() {
   const now = performance.now()
-  const elapsed = foodClockVisible ? Math.max(0, now - foodClockAt) : 0
-  foodClockAt = now
-  if (game.advanceFood(elapsed)) render()
+  const elapsed = gameClockVisible ? Math.max(0, now - gameClockAt) : 0
+  gameClockAt = now
+  if (game.advanceTime(elapsed)) render()
 }
 
 document.addEventListener('visibilitychange', () => {
-  consumeFood()
-  foodClockVisible = !document.hidden
-  if (foodClockVisible) render()
+  advanceGameplay()
+  gameClockVisible = !document.hidden
+  if (gameClockVisible) render()
 })
 window.addEventListener('pagehide', () => {
-  consumeFood()
-  foodClockVisible = false
+  advanceGameplay()
+  gameClockVisible = false
   game.saveProgress()
 })
 window.addEventListener('pageshow', () => {
-  foodClockAt = performance.now()
-  foodClockVisible = !document.hidden
+  gameClockAt = performance.now()
+  gameClockVisible = !document.hidden
 })
-setInterval(consumeFood, 1000)
+setInterval(advanceGameplay, 1000)
 
 Object.values(actionViews).forEach(resetActionView)
 render()

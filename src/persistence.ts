@@ -1,12 +1,13 @@
 import {
   ACTION_SKILL_CONFIG,
   FOOD_TICK_MS,
+  JOBS,
   MAX_HUNGER,
   RESEARCH_ITEM_KEYS,
 } from './constants'
 import { roundResource } from './format'
 import { createDefaultState } from './state'
-import type { ActionId, GameState } from './types'
+import type { ActionId, GameState, JobId } from './types'
 
 export const STORAGE_KEY = 'primitive-tribe-v1'
 
@@ -20,10 +21,27 @@ function finite(value: unknown, fallback = 0): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback
 }
 
+// Version 1 had no job assignments. Give every existing person an idle job
+// without changing population, hunger, discoveries, resources, or skills.
+function migrateSave(parsed: Record<string, unknown>) {
+  if (parsed.version === 2) return parsed
+  return {
+    ...parsed,
+    version: 2,
+    people: Array.isArray(parsed.people)
+      ? parsed.people.map((value: unknown) => ({
+          ...record(value),
+          job: 'idle',
+          workElapsedMs: 0,
+        }))
+      : parsed.people,
+  }
+}
+
 export function parseSave(serialized: string | null): GameState {
   const state = createDefaultState()
   try {
-    const parsed = record(JSON.parse(serialized ?? 'null'))
+    const parsed = migrateSave(record(JSON.parse(serialized ?? 'null')))
     const savedSkills = record(parsed.skills)
     for (const id of Object.keys(ACTION_SKILL_CONFIG) as ActionId[]) {
       const saved = record(savedSkills[id])
@@ -57,7 +75,22 @@ export function parseSave(serialized: string | null): GameState {
       state.people = parsed.people.map((value: unknown) => {
         const person = record(value)
         const maxHunger = Math.max(1, finite(person.maxHunger, MAX_HUNGER))
+        const requestedJob = person.job
+        let job: JobId = 'idle'
+        if (state.researchLevels.shelters > 0) {
+          if (requestedJob === 'forager') job = requestedJob
+          if (requestedJob === 'woodcutter' && parsed.explored === true)
+            job = requestedJob
+          if (requestedJob === 'stoneworker' && parsed.stoneFound === true)
+            job = requestedJob
+        }
         return {
+          job,
+          workElapsedMs:
+            job === 'idle'
+              ? 0
+              : Math.max(0, finite(person.workElapsedMs)) %
+                JOBS[job].durationMs,
           name: typeof person.name === 'string' ? person.name : 'Person',
           maxHunger,
           hunger: Math.max(

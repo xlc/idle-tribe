@@ -7,6 +7,10 @@ export type ActionId =
   | 'research'
   | 'research-foraging'
   | 'research-stone-flakes'
+  | 'research-shelters'
+  | 'research-axes'
+  | 'research-quarrying'
+  | 'research-teamwork'
 
 export type ActionKey =
   | 'gather'
@@ -17,13 +21,25 @@ export type ActionKey =
   | 'research'
   | 'researchForaging'
   | 'researchStone'
+  | 'researchShelters'
+  | 'researchAxes'
+  | 'researchQuarrying'
+  | 'researchTeamwork'
 
 export type ResearchId =
   | 'sharpened-stick'
   | 'foraging-practice'
   | 'stone-flakes'
+  | 'shelters'
+  | 'stone-axes'
+  | 'quarrying'
+  | 'teamwork'
+
+export type JobId = 'idle' | 'forager' | 'woodcutter' | 'stoneworker'
 
 export interface Person {
+  job: JobId
+  workElapsedMs: number
   name: string
   hunger: number
   maxHunger: number
@@ -35,6 +51,7 @@ export interface Skill {
 }
 
 export interface GameState {
+  version: 2
   fruit: number
   wood: number
   stone: number

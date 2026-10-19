@@ -7,10 +7,19 @@ import type { GameState } from './types'
 
 export function createDefaultState(): GameState {
   return {
+    version: 2,
     fruit: 0,
     wood: 0,
     stone: 0,
-    people: [{ name: 'You', hunger: MAX_HUNGER, maxHunger: MAX_HUNGER }],
+    people: [
+      {
+        name: 'You',
+        hunger: MAX_HUNGER,
+        maxHunger: MAX_HUNGER,
+        job: 'idle',
+        workElapsedMs: 0,
+      },
+    ],
     actions: 0,
     explored: false,
     exploreUnlocked: false,

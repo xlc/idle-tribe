@@ -1,219 +1,314 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="tribe">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#f4f3ef" />
+  <meta name="theme-color" content="#f3f1ea" />
   <title>Primitive Tribe</title>
 </head>
-<body>
-  <div class="app-shell">
-    <header class="topbar" aria-label="Tribe status">
-      <div class="brand">
-        <h1>Tribe</h1>
+<body class="min-h-screen bg-base-200 text-base-content">
+  <div class="mx-auto w-full max-w-[1160px] px-4 pb-[calc(40px+env(safe-area-inset-bottom))] min-[421px]:px-5 min-[761px]:px-8">
+    <header class="flex min-h-20 items-center justify-between gap-4 border-b border-base-300 min-[761px]:min-h-25" aria-label="Tribe status">
+      <div>
+        <h1 class="font-serif text-[32px] font-medium tracking-[-1.5px] min-[421px]:text-[38px]">Tribe</h1>
       </div>
+      <div class="text-[13px] text-muted tabular-nums"><span id="camp-summary">1 person</span></div>
     </header>
 
-    <main>
-      <nav class="view-tabs" id="view-tabs" role="tablist" aria-label="Game views">
-        <button class="tab-button is-active" id="actions-tab" type="button" role="tab" aria-selected="true" aria-controls="camp-view">Actions</button>
-        <button class="tab-button" id="research-tab" type="button" role="tab" aria-selected="false" aria-controls="research-view"><span class="tab-label">Research<span class="unread-dot" id="research-unread" hidden aria-hidden="true"></span></span></button>
+    <main class="pt-[26px]">
+      <section class="mb-6" aria-labelledby="resources-heading">
+        <h2 class="sr-only" id="resources-heading">Stockpile</h2>
+        <div class="flex gap-2 min-[421px]:gap-3.5" id="resource-list" aria-label="Current resources">
+          <div class="stat min-w-0 flex-1 content-start gap-0 rounded-[10px] border border-solid border-base-300 border-t-[3px] border-t-error/80 bg-base-100 px-2.5 py-3 min-[421px]:px-[22px] min-[421px]:py-[18px]" role="group" aria-label="Fruit resource">
+            <div class="min-w-0">
+              <p class="stat-title font-semibold text-muted">Fruit</p>
+            </div>
+            <div class="mt-1 flex min-w-0 flex-col gap-0.5 min-[421px]:flex-row min-[421px]:flex-wrap min-[421px]:items-baseline min-[421px]:gap-x-4 min-[421px]:gap-y-2">
+              <strong class="stat-value text-[26px] leading-[1.3] font-semibold whitespace-normal tracking-[-1px] tabular-nums [overflow-wrap:anywhere] min-[421px]:text-[34px]" id="fruit-value">0</strong>
+              <span class="text-xs whitespace-nowrap text-muted tabular-nums data-[direction=gain]:text-primary data-[direction=loss]:text-error" id="fruit-rate" hidden></span>
+            </div>
+          </div>
+          <div class="stat min-w-0 flex-1 content-start gap-0 rounded-[10px] border border-solid border-base-300 border-t-[3px] border-t-secondary bg-base-100 px-2.5 py-3 min-[421px]:px-[22px] min-[421px]:py-[18px]" id="wood-row" role="group" aria-label="Wood resource" hidden>
+            <div class="min-w-0">
+              <p class="stat-title font-semibold text-muted">Wood</p>
+            </div>
+            <div class="mt-1 flex min-w-0 flex-col gap-0.5 min-[421px]:flex-row min-[421px]:flex-wrap min-[421px]:items-baseline min-[421px]:gap-x-4 min-[421px]:gap-y-2">
+              <strong class="stat-value text-[26px] leading-[1.3] font-semibold whitespace-normal tracking-[-1px] tabular-nums [overflow-wrap:anywhere] min-[421px]:text-[34px]" id="wood-value">0</strong>
+              <span class="text-xs whitespace-nowrap text-muted tabular-nums data-[direction=gain]:text-primary data-[direction=loss]:text-error" id="wood-rate" hidden></span>
+            </div>
+          </div>
+          <div class="stat min-w-0 flex-1 content-start gap-0 rounded-[10px] border border-solid border-base-300 border-t-[3px] border-t-info bg-base-100 px-2.5 py-3 min-[421px]:px-[22px] min-[421px]:py-[18px]" id="stone-row" role="group" aria-label="Stone resource" hidden>
+            <div class="min-w-0">
+              <p class="stat-title font-semibold text-muted">Stone</p>
+            </div>
+            <div class="mt-1 flex min-w-0 flex-col gap-0.5 min-[421px]:flex-row min-[421px]:flex-wrap min-[421px]:items-baseline min-[421px]:gap-x-4 min-[421px]:gap-y-2">
+              <strong class="stat-value text-[26px] leading-[1.3] font-semibold whitespace-normal tracking-[-1px] tabular-nums [overflow-wrap:anywhere] min-[421px]:text-[34px]" id="stone-value">0</strong>
+              <span class="text-xs whitespace-nowrap text-muted tabular-nums data-[direction=gain]:text-primary data-[direction=loss]:text-error" id="stone-rate" hidden></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <nav class="tabs tabs-border mb-6 gap-7 border-b border-base-300" id="view-tabs" role="tablist" aria-label="Game views">
+        <button class="tab tab-active px-1 font-semibold text-muted aria-selected:text-primary [--tab-border:3px]" id="actions-tab" type="button" role="tab" aria-selected="true" aria-controls="camp-view">Camp</button>
+        <button class="tab px-1 font-semibold text-muted aria-selected:text-primary [--tab-border:3px]" id="research-tab" type="button" role="tab" aria-selected="false" aria-controls="research-view"><span class="relative">Research<span class="badge badge-error absolute -top-0.5 -right-2.5 size-1.5 border-0 p-0" id="research-unread" hidden aria-hidden="true"></span></span></button>
       </nav>
 
-        <section class="section" aria-labelledby="resources-heading">
-        <div class="section-heading">
-          <h2 id="resources-heading">Resources</h2>
-        </div>
-        <div class="list" id="resource-list" aria-label="Current resources">
-          <div class="row" role="group" aria-label="Fruit resource">
-            <span class="fruit-dot" aria-hidden="true">●</span>
-            <div class="row-copy">
-              <p class="row-title">Fruit</p>
-              <p class="row-subtitle">Food for the tribe</p>
-            </div>
-            <div class="resource-values">
-              <strong class="row-value" id="fruit-value">0</strong>
-              <span class="resource-rate" id="fruit-rate" hidden></span>
-            </div>
+      <div class="grid items-start gap-7 min-[761px]:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] min-[761px]:gap-8" id="camp-view" role="tabpanel" aria-labelledby="actions-tab" tabindex="0">
+        <section class="min-w-0" aria-labelledby="actions-heading">
+          <div class="mb-4 flex items-center justify-between gap-4">
+            <h2 class="text-lg font-semibold tracking-tight" id="actions-heading">Gather</h2>
           </div>
-          <div class="row" id="wood-row" role="group" aria-label="Wood resource" hidden>
-            <span class="wood-dot" aria-hidden="true">●</span>
-            <div class="row-copy">
-              <p class="row-title">Wood</p>
-              <p class="row-subtitle">Useful material</p>
-            </div>
-            <div class="resource-values">
-              <strong class="row-value" id="wood-value">0</strong>
-              <span class="resource-rate" id="wood-rate" hidden></span>
-            </div>
+          <div class="list rounded-box border border-base-300 bg-base-100">
+            <button class="list-row action-card min-h-24 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-4 p-4 text-left min-[421px]:p-5" id="gather-button" type="button" aria-label="Gather fruit. Collect one fruit by hand. Takes 1 second. Gain one fruit.">
+              <span class="list-col-grow min-w-0">
+                <span class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1.5 text-[15px] leading-snug font-semibold"><span>Gather fruit</span><span class="text-[11px] font-normal text-muted tabular-nums" id="gather-level">Lv 1 · 0/4 XP</span></span>
+                <span class="action-status">
+                  <span class="action-subtitle text-xs leading-normal text-muted" id="gather-subtitle">By hand · 1 sec</span>
+                  <span class="action-progress" id="gather-progress-wrap" hidden aria-hidden="true">
+                    <progress class="progress progress-primary h-2 min-w-0 flex-1" id="gather-progress-bar" value="0" max="100"></progress>
+                    <span class="w-[8ch] shrink-0 text-right text-xs font-medium text-primary tabular-nums" id="gather-progress-label"></span>
+                  </span>
+                </span>
+              </span>
+              <span class="shrink-0 text-[23px] font-semibold text-primary tabular-nums" data-action-value aria-label="Gain one fruit" id="gather-value">+1</span>
+            </button>
+            <button class="list-row action-card min-h-24 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-4 p-4 text-left min-[421px]:p-5" id="explore-button" type="button" hidden aria-label="Explore nearby. Spend 10 fruit. Takes 2 seconds.">
+              <span class="list-col-grow min-w-0">
+                <span class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1.5 text-[15px] leading-snug font-semibold"><span>Explore nearby</span><span class="text-[11px] font-normal text-muted tabular-nums" id="explore-level">Lv 1 · 0/1 XP</span></span>
+                <span class="action-status">
+                  <span class="action-subtitle text-xs leading-normal text-muted" id="explore-subtitle">Search nearby · 2 sec</span>
+                  <span class="action-progress" id="explore-progress-wrap" hidden aria-hidden="true">
+                    <progress class="progress progress-primary h-2 min-w-0 flex-1" id="explore-progress-bar" value="0" max="100"></progress>
+                    <span class="w-[8ch] shrink-0 text-right text-xs font-medium text-primary tabular-nums" id="explore-progress-label"></span>
+                  </span>
+                </span>
+              </span>
+              <span class="shrink-0 text-[23px] font-semibold text-primary tabular-nums" data-action-value aria-label="Costs ten fruit">-10</span>
+            </button>
+            <button class="list-row action-card min-h-24 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-4 p-4 text-left min-[421px]:p-5" id="sticks-button" type="button" hidden aria-label="Gather sticks. Collect one bundle by hand. Takes 2 seconds. Gain one wood.">
+              <span class="list-col-grow min-w-0">
+                <span class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1.5 text-[15px] leading-snug font-semibold"><span>Gather sticks</span><span class="text-[11px] font-normal text-muted tabular-nums" id="sticks-level">Lv 1 · 0/3 XP</span></span>
+                <span class="action-status">
+                  <span class="action-subtitle text-xs leading-normal text-muted" id="sticks-subtitle">By hand · 2 sec</span>
+                  <span class="action-progress" id="sticks-progress-wrap" hidden aria-hidden="true">
+                    <progress class="progress progress-primary h-2 min-w-0 flex-1" id="sticks-progress-bar" value="0" max="100"></progress>
+                    <span class="w-[8ch] shrink-0 text-right text-xs font-medium text-primary tabular-nums" id="sticks-progress-label"></span>
+                  </span>
+                </span>
+              </span>
+              <span class="shrink-0 text-[23px] font-semibold text-primary tabular-nums" data-action-value aria-label="Gain one wood" id="sticks-value">+1</span>
+            </button>
+            <button class="list-row action-card min-h-24 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-4 p-4 text-left min-[421px]:p-5" id="explore-further-button" type="button" hidden aria-label="Explore farther. Spend 10 fruit. Takes 3 seconds.">
+              <span class="list-col-grow min-w-0">
+                <span class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1.5 text-[15px] leading-snug font-semibold"><span>Explore farther</span><span class="text-[11px] font-normal text-muted tabular-nums" id="explore-further-level">Lv 1 · 0/2 XP</span></span>
+                <span class="action-status">
+                  <span class="action-subtitle text-xs leading-normal text-muted" id="explore-further-subtitle">Search beyond the trees · 3 sec</span>
+                  <span class="action-progress" id="explore-further-progress-wrap" hidden aria-hidden="true">
+                    <progress class="progress progress-primary h-2 min-w-0 flex-1" id="explore-further-progress-bar" value="0" max="100"></progress>
+                    <span class="w-[8ch] shrink-0 text-right text-xs font-medium text-primary tabular-nums" id="explore-further-progress-label"></span>
+                  </span>
+                </span>
+              </span>
+              <span class="shrink-0 text-[23px] font-semibold text-primary tabular-nums" data-action-value aria-label="Costs ten fruit">-10</span>
+            </button>
+            <button class="list-row action-card min-h-24 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-4 p-4 text-left min-[421px]:p-5" id="stone-button" type="button" hidden aria-label="Gather stone. Collect one stone by hand. Takes 3 seconds. Gain one stone.">
+              <span class="list-col-grow min-w-0">
+                <span class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1.5 text-[15px] leading-snug font-semibold"><span>Gather stone</span><span class="text-[11px] font-normal text-muted tabular-nums" id="stone-level">Lv 1 · 0/5 XP</span></span>
+                <span class="action-status">
+                  <span class="action-subtitle text-xs leading-normal text-muted" id="stone-subtitle">By hand · 3 sec</span>
+                  <span class="action-progress" id="stone-progress-wrap" hidden aria-hidden="true">
+                    <progress class="progress progress-primary h-2 min-w-0 flex-1" id="stone-progress-bar" value="0" max="100"></progress>
+                    <span class="w-[8ch] shrink-0 text-right text-xs font-medium text-primary tabular-nums" id="stone-progress-label"></span>
+                  </span>
+                </span>
+              </span>
+              <span class="shrink-0 text-[23px] font-semibold text-primary tabular-nums" data-action-value aria-label="Gain one stone" id="stone-action-value">+1</span>
+            </button>
           </div>
-          <div class="row" id="stone-row" role="group" aria-label="Stone resource" hidden>
-            <span class="stone-dot" aria-hidden="true">●</span>
-            <div class="row-copy">
-              <p class="row-title">Stone</p>
-              <p class="row-subtitle">Hard material</p>
-            </div>
-            <div class="resource-values">
-              <strong class="row-value" id="stone-value">0</strong>
-              <span class="resource-rate" id="stone-rate" hidden></span>
-            </div>
-          </div>
-        </div>
         </section>
 
-      <p class="action-feedback" role="status" aria-live="polite" aria-atomic="true" id="feedback"></p>
+        <section class="min-w-0" aria-labelledby="tribe-heading">
+          <div class="mb-4 flex items-center justify-between gap-4">
+            <h2 class="text-lg font-semibold tracking-tight" id="tribe-heading">Your people</h2>
+            <span class="badge badge-primary badge-soft badge-sm font-semibold" id="population-count"></span>
+          </div>
+          <div class="list rounded-box border border-base-300 bg-base-100" id="tribe-list"></div>
+          <div class="mt-4">
+            <button class="btn btn-primary min-h-11 w-full justify-between text-[13px] aria-disabled:cursor-not-allowed aria-disabled:border-base-300 aria-disabled:bg-transparent aria-disabled:text-muted" id="recruit-button" type="button" hidden>Invite a person <span class="text-xs font-normal">15 fruit</span></button>
+            <p class="mt-2 text-xs leading-normal text-muted" id="recruit-status"></p>
+          </div>
 
-      <div id="camp-view" role="tabpanel" aria-labelledby="actions-tab" tabindex="0">
-        <section class="section" aria-labelledby="actions-heading">
-        <div class="section-heading">
-          <h2 id="actions-heading">Actions</h2>
-        </div>
-        <p class="next-step" id="next-step"></p>
-        <div class="list">
-          <button class="row action-row action-card" id="gather-button" type="button" aria-label="Gather fruit. Collect one fruit by hand. Takes 1 second. Gain one fruit.">
-            <span class="fruit-dot" aria-hidden="true">●</span>
-            <span class="row-copy">
-              <span class="row-title action-title-line"><span>Gather fruit</span><span class="action-level" id="gather-level">Lv 1 · 0/4 XP</span></span>
-              <span class="row-subtitle" id="gather-subtitle">By hand · 1 sec</span>
-              <span class="action-progress-wrap" id="gather-progress-wrap" hidden aria-hidden="true">
-                <span class="action-progress"><span id="gather-progress-bar"></span></span>
-                <span class="action-progress-label" id="gather-progress-label">0%</span>
-              </span>
-            </span>
-            <span class="row-value" aria-label="Gain one fruit" id="gather-value">+1</span>
-          </button>
-          <button class="row action-row action-card" id="explore-button" type="button" hidden aria-label="Explore nearby. Spend 10 fruit. Takes 2 seconds.">
-            <span class="explore-dot" aria-hidden="true">↗</span>
-            <span class="row-copy">
-              <span class="row-title action-title-line"><span>Explore nearby</span><span class="action-level" id="explore-level">Lv 1 · 0/1 XP</span></span>
-              <span class="row-subtitle" id="explore-subtitle">Search nearby · 2 sec</span>
-              <span class="action-progress-wrap" id="explore-progress-wrap" hidden aria-hidden="true">
-                <span class="action-progress"><span id="explore-progress-bar"></span></span>
-                <span class="action-progress-label" id="explore-progress-label">0%</span>
-              </span>
-            </span>
-            <span class="row-value" aria-label="Costs ten fruit">-10</span>
-          </button>
-          <button class="row action-row action-card" id="sticks-button" type="button" hidden aria-label="Gather sticks. Collect one bundle by hand. Takes 2 seconds. Gain one wood.">
-            <span class="wood-dot" aria-hidden="true">●</span>
-            <span class="row-copy">
-              <span class="row-title action-title-line"><span>Gather sticks</span><span class="action-level" id="sticks-level">Lv 1 · 0/3 XP</span></span>
-              <span class="row-subtitle" id="sticks-subtitle">By hand · 2 sec</span>
-              <span class="action-progress-wrap" id="sticks-progress-wrap" hidden aria-hidden="true">
-                <span class="action-progress"><span id="sticks-progress-bar"></span></span>
-                <span class="action-progress-label" id="sticks-progress-label">0%</span>
-              </span>
-            </span>
-            <span class="row-value" aria-label="Gain one wood" id="sticks-value">+1</span>
-          </button>
-          <button class="row action-row action-card" id="explore-further-button" type="button" hidden aria-label="Explore farther. Spend 10 fruit. Takes 3 seconds.">
-            <span class="explore-dot" aria-hidden="true">↗</span>
-            <span class="row-copy">
-              <span class="row-title action-title-line"><span>Explore farther</span><span class="action-level" id="explore-further-level">Lv 1 · 0/2 XP</span></span>
-              <span class="row-subtitle" id="explore-further-subtitle">Search beyond the trees · 3 sec</span>
-              <span class="action-progress-wrap" id="explore-further-progress-wrap" hidden aria-hidden="true">
-                <span class="action-progress"><span id="explore-further-progress-bar"></span></span>
-                <span class="action-progress-label" id="explore-further-progress-label">0%</span>
-              </span>
-            </span>
-            <span class="row-value" aria-label="Costs ten fruit">-10</span>
-          </button>
-          <button class="row action-row action-card" id="stone-button" type="button" hidden aria-label="Gather stone. Collect one stone by hand. Takes 3 seconds. Gain one stone.">
-            <span class="stone-dot" aria-hidden="true">●</span>
-            <span class="row-copy">
-              <span class="row-title action-title-line"><span>Gather stone</span><span class="action-level" id="stone-level">Lv 1 · 0/5 XP</span></span>
-              <span class="row-subtitle" id="stone-subtitle">By hand · 3 sec</span>
-              <span class="action-progress-wrap" id="stone-progress-wrap" hidden aria-hidden="true">
-                <span class="action-progress"><span id="stone-progress-bar"></span></span>
-                <span class="action-progress-label" id="stone-progress-label">0%</span>
-              </span>
-            </span>
-            <span class="row-value" aria-label="Gain one stone" id="stone-action-value">+1</span>
-          </button>
-        </div>
-        </section>
-
-        <section class="section" aria-labelledby="tribe-heading">
-        <div class="section-heading">
-          <h2 id="tribe-heading">Tribe</h2>
-        </div>
-        <div class="list" id="tribe-list"></div>
         </section>
       </div>
 
-      <section class="section" id="research-view" role="tabpanel" aria-labelledby="research-tab" tabindex="0" hidden>
-        <div class="section-heading">
-          <h2 id="research-heading">Research</h2>
-          <span>Tools</span>
-        </div>
+      <section id="research-view" role="tabpanel" aria-labelledby="research-tab" tabindex="0" hidden>
+        <h2 class="sr-only" id="research-heading">Research</h2>
         <div class="list" id="research-list">
-          <button class="row action-row action-card" id="basic-tools-button" type="button" hidden aria-label="Sharpened stick research.">
-            <span class="wood-dot" aria-hidden="true">●</span>
-            <span class="row-copy">
-              <span class="row-title action-title-line"><span>Sharpened stick</span><span class="action-level" id="research-level">Lv 0/3</span></span>
-              <span class="row-subtitle" id="research-subtitle">2 wood + 10 fruit · 5 sec</span>
-              <span class="research-costs" id="research-costs"></span>
-              <span class="action-progress-wrap" id="research-progress-wrap" hidden aria-hidden="true">
-                <span class="action-progress"><span id="research-progress-bar"></span></span>
-                <span class="action-progress-label" id="research-progress-label">0%</span>
+          <button class="list-row action-card w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-4 text-left min-[421px]:px-5 max-[479px]:grid-cols-1" id="basic-tools-button" type="button" hidden aria-label="Sharpened stick research.">
+            <span class="list-col-grow min-w-0">
+              <span class="flex flex-wrap items-baseline gap-x-3 gap-y-1.5 text-[15px] leading-snug font-semibold"><span>Sharpened stick</span><span class="text-[11px] font-normal text-muted tabular-nums" id="research-level">Lv 0/3</span></span>
+              <span class="mt-1 block text-xs leading-normal text-muted italic">Now with a point.</span>
+              <span class="action-status">
+                <span class="action-subtitle text-xs leading-normal text-muted" id="research-subtitle">2 wood + 10 fruit · 5 sec</span>
+                <span class="action-progress" id="research-progress-wrap" hidden aria-hidden="true">
+                  <progress class="progress progress-primary h-2 min-w-0 flex-1" id="research-progress-bar" value="0" max="100"></progress>
+                  <span class="w-[8ch] shrink-0 text-right text-xs font-medium text-primary tabular-nums" id="research-progress-label"></span>
+                </span>
               </span>
+              <span class="action-costs mt-2 flex flex-wrap gap-3" id="research-costs"></span>
             </span>
-            <span class="row-value" aria-label="Research level one">Lv 1</span>
+            <span class="min-h-4 w-[9ch] shrink-0 text-right text-xs text-muted max-[479px]:row-start-2 max-[479px]:text-left" data-action-value></span>
           </button>
-          <div class="row" id="basic-tools-complete" hidden>
-            <span class="wood-dot" aria-hidden="true">●</span>
-            <div class="row-copy">
-              <p class="row-title action-title-line"><span>Sharpened stick</span><span class="action-level" id="research-complete-level">Lv 3/3</span></p>
-              <p class="row-subtitle">Fruit gathering · +2 fruit</p>
+          <div class="list-row grid-cols-[minmax(0,1fr)] p-4 min-[421px]:px-5" id="basic-tools-complete" hidden>
+            <div class="list-col-grow min-w-0">
+              <p class="flex flex-wrap items-baseline gap-x-3 gap-y-1.5 text-[15px] leading-snug font-semibold"><span>Sharpened stick</span><span class="text-[11px] font-normal text-muted tabular-nums" id="research-complete-level">Lv 3/3</span></p>
+              <span class="mt-1 block text-xs leading-normal text-muted italic">Now with a point.</span>
+              <p class="mt-1.5 block text-xs leading-normal text-muted" data-research-effect>Fruit gathering · +2 fruit</p>
             </div>
-            <span class="row-value">Max</span>
           </div>
 
-          <button class="row action-row action-card" id="foraging-practice-button" type="button" hidden aria-label="Foraging practice research.">
-            <span class="fruit-dot" aria-hidden="true">●</span>
-            <span class="row-copy">
-              <span class="row-title action-title-line"><span>Woven baskets</span><span class="action-level" id="foraging-practice-level">Lv 0/3</span></span>
-              <span class="row-subtitle" id="foraging-practice-subtitle">2 wood + 20 fruit · 8 sec</span>
-              <span class="research-costs" id="foraging-practice-costs"></span>
-              <span class="action-progress-wrap" id="foraging-practice-progress-wrap" hidden aria-hidden="true">
-                <span class="action-progress"><span id="foraging-practice-progress-bar"></span></span>
-                <span class="action-progress-label" id="foraging-practice-progress-label">0%</span>
+          <button class="list-row action-card w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-4 text-left min-[421px]:px-5 max-[479px]:grid-cols-1" id="foraging-practice-button" type="button" hidden aria-label="Foraging practice research.">
+            <span class="list-col-grow min-w-0">
+              <span class="flex flex-wrap items-baseline gap-x-3 gap-y-1.5 text-[15px] leading-snug font-semibold"><span>Woven baskets</span><span class="text-[11px] font-normal text-muted tabular-nums" id="foraging-practice-level">Lv 0/3</span></span>
+              <span class="mt-1 block text-xs leading-normal text-muted italic">Your arms can clock out.</span>
+              <span class="action-status">
+                <span class="action-subtitle text-xs leading-normal text-muted" id="foraging-practice-subtitle">2 wood + 20 fruit · 8 sec</span>
+                <span class="action-progress" id="foraging-practice-progress-wrap" hidden aria-hidden="true">
+                  <progress class="progress progress-primary h-2 min-w-0 flex-1" id="foraging-practice-progress-bar" value="0" max="100"></progress>
+                  <span class="w-[8ch] shrink-0 text-right text-xs font-medium text-primary tabular-nums" id="foraging-practice-progress-label"></span>
+                </span>
               </span>
+              <span class="action-costs mt-2 flex flex-wrap gap-3" id="foraging-practice-costs"></span>
             </span>
-            <span class="row-value" aria-label="Research level one">Lv 1</span>
+            <span class="min-h-4 w-[9ch] shrink-0 text-right text-xs text-muted max-[479px]:row-start-2 max-[479px]:text-left" data-action-value></span>
           </button>
-          <div class="row" id="foraging-practice-complete" hidden>
-            <span class="fruit-dot" aria-hidden="true">●</span>
-            <div class="row-copy">
-              <p class="row-title action-title-line"><span>Woven baskets</span><span class="action-level" id="foraging-practice-complete-level">Lv 3/3</span></p>
-              <p class="row-subtitle">Gather fruit · +3 XP</p>
+          <div class="list-row grid-cols-[minmax(0,1fr)] p-4 min-[421px]:px-5" id="foraging-practice-complete" hidden>
+            <div class="list-col-grow min-w-0">
+              <p class="flex flex-wrap items-baseline gap-x-3 gap-y-1.5 text-[15px] leading-snug font-semibold"><span>Woven baskets</span><span class="text-[11px] font-normal text-muted tabular-nums" id="foraging-practice-complete-level">Lv 3/3</span></p>
+              <span class="mt-1 block text-xs leading-normal text-muted italic">Your arms can clock out.</span>
+              <p class="mt-1.5 block text-xs leading-normal text-muted" data-research-effect>Gather fruit · +3 XP</p>
             </div>
-            <span class="row-value">Max</span>
           </div>
 
-          <button class="row action-row action-card" id="stone-flakes-button" type="button" hidden aria-label="Stone flakes research.">
-            <span class="stone-dot" aria-hidden="true">●</span>
-            <span class="row-copy">
-              <span class="row-title action-title-line"><span>Flint knapping</span><span class="action-level" id="stone-flakes-level">Lv 0/3</span></span>
-              <span class="row-subtitle" id="stone-flakes-subtitle">2 wood + 3 stone + 10 fruit · 10 sec</span>
-              <span class="research-costs" id="stone-flakes-costs"></span>
-              <span class="action-progress-wrap" id="stone-flakes-progress-wrap" hidden aria-hidden="true">
-                <span class="action-progress"><span id="stone-flakes-progress-bar"></span></span>
-                <span class="action-progress-label" id="stone-flakes-progress-label">0%</span>
+          <button class="list-row action-card w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-4 text-left min-[421px]:px-5 max-[479px]:grid-cols-1" id="stone-flakes-button" type="button" hidden aria-label="Stone flakes research.">
+            <span class="list-col-grow min-w-0">
+              <span class="flex flex-wrap items-baseline gap-x-3 gap-y-1.5 text-[15px] leading-snug font-semibold"><span>Flint knapping</span><span class="text-[11px] font-normal text-muted tabular-nums" id="stone-flakes-level">Lv 0/3</span></span>
+              <span class="mt-1 block text-xs leading-normal text-muted italic">Rock meets rock. Sparks fly.</span>
+              <span class="action-status">
+                <span class="action-subtitle text-xs leading-normal text-muted" id="stone-flakes-subtitle">2 wood + 3 stone + 10 fruit · 10 sec</span>
+                <span class="action-progress" id="stone-flakes-progress-wrap" hidden aria-hidden="true">
+                  <progress class="progress progress-primary h-2 min-w-0 flex-1" id="stone-flakes-progress-bar" value="0" max="100"></progress>
+                  <span class="w-[8ch] shrink-0 text-right text-xs font-medium text-primary tabular-nums" id="stone-flakes-progress-label"></span>
+                </span>
               </span>
+              <span class="action-costs mt-2 flex flex-wrap gap-3" id="stone-flakes-costs"></span>
             </span>
-            <span class="row-value" aria-label="Research level one">Lv 1</span>
+            <span class="min-h-4 w-[9ch] shrink-0 text-right text-xs text-muted max-[479px]:row-start-2 max-[479px]:text-left" data-action-value></span>
           </button>
-          <div class="row" id="stone-flakes-complete" hidden>
-            <span class="stone-dot" aria-hidden="true">●</span>
-            <div class="row-copy">
-              <p class="row-title action-title-line"><span>Flint knapping</span><span class="action-level" id="stone-flakes-complete-level">Lv 3/3</span></p>
-              <p class="row-subtitle">Gather stone · +0.3 stone</p>
+          <div class="list-row grid-cols-[minmax(0,1fr)] p-4 min-[421px]:px-5" id="stone-flakes-complete" hidden>
+            <div class="list-col-grow min-w-0">
+              <p class="flex flex-wrap items-baseline gap-x-3 gap-y-1.5 text-[15px] leading-snug font-semibold"><span>Flint knapping</span><span class="text-[11px] font-normal text-muted tabular-nums" id="stone-flakes-complete-level">Lv 3/3</span></p>
+              <span class="mt-1 block text-xs leading-normal text-muted italic">Rock meets rock. Sparks fly.</span>
+              <p class="mt-1.5 block text-xs leading-normal text-muted" data-research-effect>Gather stone · +0.3 stone</p>
             </div>
-            <span class="row-value">Max</span>
+          </div>
+          <button class="list-row action-card w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-4 text-left min-[421px]:px-5 max-[479px]:grid-cols-1" id="shelters-button" type="button" hidden>
+            <span class="list-col-grow min-w-0">
+              <span class="flex flex-wrap items-baseline gap-x-3 gap-y-1.5 text-[15px] leading-snug font-semibold"><span>Communal shelters</span><span class="text-[11px] font-normal text-muted tabular-nums" id="shelters-level"></span></span>
+              <span class="mt-1 block text-xs leading-normal text-muted italic">Roommates, now with a roof.</span>
+              <span class="action-status">
+                <span class="action-subtitle text-xs leading-normal text-muted" id="shelters-subtitle"></span>
+                <span class="action-progress" id="shelters-progress-wrap" hidden aria-hidden="true">
+                  <progress class="progress progress-primary h-2 min-w-0 flex-1" id="shelters-progress-bar" value="0" max="100"></progress>
+                  <span class="w-[8ch] shrink-0 text-right text-xs font-medium text-primary tabular-nums" id="shelters-progress-label"></span>
+                </span>
+              </span>
+              <span class="action-costs mt-2 flex flex-wrap gap-3" id="shelters-costs"></span>
+            </span>
+            <span class="min-h-4 w-[9ch] shrink-0 text-right text-xs text-muted max-[479px]:row-start-2 max-[479px]:text-left" data-action-value></span>
+          </button>
+          <div class="list-row grid-cols-[minmax(0,1fr)] p-4 min-[421px]:px-5" id="shelters-complete" hidden>
+            <div class="list-col-grow min-w-0">
+              <p class="flex flex-wrap items-baseline gap-x-3 gap-y-1.5 text-[15px] leading-snug font-semibold"><span>Communal shelters</span><span class="text-[11px] font-normal text-muted tabular-nums" id="shelters-complete-level"></span></p>
+              <span class="mt-1 block text-xs leading-normal text-muted italic">Roommates, now with a roof.</span>
+              <p class="mt-1.5 block text-xs leading-normal text-muted" data-research-effect id="shelters-complete-effect"></p>
+            </div>
+          </div>
+          <button class="list-row action-card w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-4 text-left min-[421px]:px-5 max-[479px]:grid-cols-1" id="stone-axes-button" type="button" hidden>
+            <span class="list-col-grow min-w-0">
+              <span class="flex flex-wrap items-baseline gap-x-3 gap-y-1.5 text-[15px] leading-snug font-semibold"><span>Stone axes</span><span class="text-[11px] font-normal text-muted tabular-nums" id="stone-axes-level"></span></span>
+              <span class="mt-1 block text-xs leading-normal text-muted italic">Trees hate this one trick.</span>
+              <span class="action-status">
+                <span class="action-subtitle text-xs leading-normal text-muted" id="stone-axes-subtitle"></span>
+                <span class="action-progress" id="stone-axes-progress-wrap" hidden aria-hidden="true">
+                  <progress class="progress progress-primary h-2 min-w-0 flex-1" id="stone-axes-progress-bar" value="0" max="100"></progress>
+                  <span class="w-[8ch] shrink-0 text-right text-xs font-medium text-primary tabular-nums" id="stone-axes-progress-label"></span>
+                </span>
+              </span>
+              <span class="action-costs mt-2 flex flex-wrap gap-3" id="stone-axes-costs"></span>
+            </span>
+            <span class="min-h-4 w-[9ch] shrink-0 text-right text-xs text-muted max-[479px]:row-start-2 max-[479px]:text-left" data-action-value></span>
+          </button>
+          <div class="list-row grid-cols-[minmax(0,1fr)] p-4 min-[421px]:px-5" id="stone-axes-complete" hidden>
+            <div class="list-col-grow min-w-0">
+              <p class="flex flex-wrap items-baseline gap-x-3 gap-y-1.5 text-[15px] leading-snug font-semibold"><span>Stone axes</span><span class="text-[11px] font-normal text-muted tabular-nums" id="stone-axes-complete-level"></span></p>
+              <span class="mt-1 block text-xs leading-normal text-muted italic">Trees hate this one trick.</span>
+              <p class="mt-1.5 block text-xs leading-normal text-muted" data-research-effect id="stone-axes-complete-effect"></p>
+            </div>
+          </div>
+          <button class="list-row action-card w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-4 text-left min-[421px]:px-5 max-[479px]:grid-cols-1" id="quarrying-button" type="button" hidden>
+            <span class="list-col-grow min-w-0">
+              <span class="flex flex-wrap items-baseline gap-x-3 gap-y-1.5 text-[15px] leading-snug font-semibold"><span>Quarrying</span><span class="text-[11px] font-normal text-muted tabular-nums" id="quarrying-level"></span></span>
+              <span class="mt-1 block text-xs leading-normal text-muted italic">Big rocks. Smaller rocks. Progress.</span>
+              <span class="action-status">
+                <span class="action-subtitle text-xs leading-normal text-muted" id="quarrying-subtitle"></span>
+                <span class="action-progress" id="quarrying-progress-wrap" hidden aria-hidden="true">
+                  <progress class="progress progress-primary h-2 min-w-0 flex-1" id="quarrying-progress-bar" value="0" max="100"></progress>
+                  <span class="w-[8ch] shrink-0 text-right text-xs font-medium text-primary tabular-nums" id="quarrying-progress-label"></span>
+                </span>
+              </span>
+              <span class="action-costs mt-2 flex flex-wrap gap-3" id="quarrying-costs"></span>
+            </span>
+            <span class="min-h-4 w-[9ch] shrink-0 text-right text-xs text-muted max-[479px]:row-start-2 max-[479px]:text-left" data-action-value></span>
+          </button>
+          <div class="list-row grid-cols-[minmax(0,1fr)] p-4 min-[421px]:px-5" id="quarrying-complete" hidden>
+            <div class="list-col-grow min-w-0">
+              <p class="flex flex-wrap items-baseline gap-x-3 gap-y-1.5 text-[15px] leading-snug font-semibold"><span>Quarrying</span><span class="text-[11px] font-normal text-muted tabular-nums" id="quarrying-complete-level"></span></p>
+              <span class="mt-1 block text-xs leading-normal text-muted italic">Big rocks. Smaller rocks. Progress.</span>
+              <p class="mt-1.5 block text-xs leading-normal text-muted" data-research-effect id="quarrying-complete-effect"></p>
+            </div>
+          </div>
+          <button class="list-row action-card w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-4 text-left min-[421px]:px-5 max-[479px]:grid-cols-1" id="teamwork-button" type="button" hidden>
+            <span class="list-col-grow min-w-0">
+              <span class="flex flex-wrap items-baseline gap-x-3 gap-y-1.5 text-[15px] leading-snug font-semibold"><span>Teamwork</span><span class="text-[11px] font-normal text-muted tabular-nums" id="teamwork-level"></span></span>
+              <span class="mt-1 block text-xs leading-normal text-muted italic">More hands, fewer dropped rocks.</span>
+              <span class="action-status">
+                <span class="action-subtitle text-xs leading-normal text-muted" id="teamwork-subtitle"></span>
+                <span class="action-progress" id="teamwork-progress-wrap" hidden aria-hidden="true">
+                  <progress class="progress progress-primary h-2 min-w-0 flex-1" id="teamwork-progress-bar" value="0" max="100"></progress>
+                  <span class="w-[8ch] shrink-0 text-right text-xs font-medium text-primary tabular-nums" id="teamwork-progress-label"></span>
+                </span>
+              </span>
+              <span class="action-costs mt-2 flex flex-wrap gap-3" id="teamwork-costs"></span>
+            </span>
+            <span class="min-h-4 w-[9ch] shrink-0 text-right text-xs text-muted max-[479px]:row-start-2 max-[479px]:text-left" data-action-value></span>
+          </button>
+          <div class="list-row grid-cols-[minmax(0,1fr)] p-4 min-[421px]:px-5" id="teamwork-complete" hidden>
+            <div class="list-col-grow min-w-0">
+              <p class="flex flex-wrap items-baseline gap-x-3 gap-y-1.5 text-[15px] leading-snug font-semibold"><span>Teamwork</span><span class="text-[11px] font-normal text-muted tabular-nums" id="teamwork-complete-level"></span></p>
+              <span class="mt-1 block text-xs leading-normal text-muted italic">More hands, fewer dropped rocks.</span>
+              <p class="mt-1.5 block text-xs leading-normal text-muted" data-research-effect id="teamwork-complete-effect"></p>
+            </div>
           </div>
         </div>
-        <p class="empty-state" id="research-empty" hidden>No research ready.</p>
+        <p class="text-[13px] text-muted" id="research-empty" hidden>No research ready.</p>
+      </section>
+      <section class="mt-7 border-t border-base-300 pt-5" aria-labelledby="events-heading">
+        <div class="mb-4 flex items-center justify-between gap-4">
+          <h2 class="text-lg font-semibold tracking-tight" id="events-heading">Events</h2>
+        </div>
+        <p class="min-h-[1.4em] text-xs leading-snug text-muted" role="status" aria-live="polite" aria-atomic="true" id="feedback"></p>
       </section>
     </main>
   </div>

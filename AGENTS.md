@@ -7,6 +7,7 @@ This file applies to the entire repository. Read [README.md](README.md) for setu
 - Inspect the working tree before editing and preserve unrelated changes.
 - Keep changes focused on the requested behavior. Follow existing patterns and avoid adding dependencies or abstractions without a concrete need.
 - Treat `biome.json`, `tsconfig.json`, and `.editorconfig` as the sources of truth for code conventions; do not duplicate their settings in documentation.
+- Keep player-facing copy brief. This is a game: let players discover mechanics through play; avoid next-step coaching, repeated instructions, and text walls.
 - Keep game rules independent of the DOM so they can be tested without browser setup.
 - When changing state, update default initialization and save normalization together. Preserve existing saves through explicit migrations rather than silently resetting progress.
 - When adding or changing actions or research, check the shared types, configuration, game rules, renderer, and HTML bindings together. Keep their identifiers consistent.

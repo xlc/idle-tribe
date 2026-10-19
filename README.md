@@ -6,7 +6,7 @@ Coding agents should also read [AGENTS.md](AGENTS.md) for change and validation 
 
 ## Run locally
 
-Install [Bun](https://bun.sh/) 1.3 or newer, then run from the repository root. Bun is intentionally not pinned; CI uses the latest stable release.
+Install [Bun](https://bun.sh/) 1.3 or newer, then run from the repository root. Bun is intentionally not pinned; CI uses the latest stable release. Automatic peer installation is disabled so the Tailwind plugin uses the installed Bun runtime; add any needed peer packages explicitly.
 
 ```sh
 bun install --frozen-lockfile
@@ -17,7 +17,17 @@ Open the local URL printed by Bun. The development server bundles the TypeScript
 
 Progress is saved in your browser's local storage under the existing `primitive-tribe-v1` key. Saves are local to the browser and origin; changing the hostname or port uses a different save. If browser storage is unavailable, gameplay still works but progress will not persist.
 
-Reloading cancels unfinished actions and research and returns their reserved materials. Completed discoveries, upgrades, and skill progress remain saved.
+Reloading cancels unfinished actions and research and returns their reserved materials. Completed discoveries, upgrades, skill progress, job assignments, and partial worker gathering cycles remain saved. Older saves migrate automatically without losing people or progress.
+
+## Growing your tribe
+
+Gather fruit, explore for wood, and collect 2 wood to open Research. A sharpened stick unlocks **Communal shelters**: the first upgrade enables gathering jobs and room for 3 people; later upgrades raise capacity to 5 and 7. In Tribe, welcome a new person for 15 fruit and choose a job for each person, including yourself.
+
+Foragers collect fruit every 5 seconds, woodcutters collect wood every 8 seconds, and stoneworkers collect stone every 12 seconds. Wood and stone jobs require discovering those resources. Jobs run alongside manual actions and research, train the shared gathering skills, and benefit from tool upgrades. Switching jobs discards that person's unfinished gathering cycle.
+
+**Stone axes** improve wood yields, **Quarrying** improves stone yields, and **Teamwork** increases worker output. Discover stone and research flint knapping to open the axe and quarrying branch.
+
+Each healthy person eats 1 fruit per minute. Hungry workers produce less; very hungry workers pause until meals restore their hunger. Starvation can cost tribe members, but the final person survives and can gather fruit manually to recover. Work and meals advance only while the page is visible; closed or hidden pages do not earn resources or consume food.
 
 ## Development checks
 
@@ -46,7 +56,9 @@ GitHub Actions runs `bun run check` for pushes and pull requests, using a frozen
 
 ## Production build
 
-`bun run build` first runs strict TypeScript checking, then bundles `index.html`, TypeScript, and CSS into `dist/` using Bun.
+`bun run build` first runs strict TypeScript checking, then bundles `index.html`, TypeScript, and CSS into `dist/` using Bun with the Tailwind plugin. The development server uses the same plugin for hot reload.
+
+The UI uses [Tailwind CSS](https://tailwindcss.com/) for layout and spacing and [daisyUI](https://daisyui.com/) for controls. The custom `tribe` theme and shared game action states live in the stylesheet. Keep utility class names complete in HTML and renderer strings so Tailwind can detect them at build time.
 
 `dist/` is generated and ignored by Git. Deploy its contents to a static web host **after running the build**; it is no longer checked in. Deployment must install dependencies and run `bun run build` before publishing. Serve the output over HTTP rather than opening the HTML directly from disk.
 
