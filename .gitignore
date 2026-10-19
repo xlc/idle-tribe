@@ -1,0 +1,15 @@
+# Operating-system metadata
+.DS_Store
+Thumbs.db
+
+# Editor temporary files
+*.swp
+*.swo
+*~
+
+# Local environment files (keep shareable examples)
+.env
+.env.*
+!.env.example
+
+# dist/ is intentionally versioned: it contains the runnable game.
