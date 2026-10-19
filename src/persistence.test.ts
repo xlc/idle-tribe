@@ -21,26 +21,30 @@ describe('browser saves', () => {
   })
 
   test('legacy tools and exploration remain unlocked', () => {
-    const state = parseSave(JSON.stringify({ basicTools: true, explored: true }))
+    const state = parseSave(
+      JSON.stringify({ basicTools: true, explored: true }),
+    )
     expect(state.researchLevels['sharpened-stick']).toBe(1)
     expect(state.basicTools).toBe(true)
     expect(state.exploreUnlocked).toBe(true)
   })
 
   test('malformed fields are normalized', () => {
-    const state = parseSave(JSON.stringify({
-      fruit: -10,
-      wood: '12',
-      skills: { gather: { level: -2, xp: 2.9 } },
-      researchLevels: { 'sharpened-stick': 99 },
-      people: [null, { name: 'You', maxHunger: 5, hunger: 12 }],
-      foodElapsedMs: 60042,
-    }))
+    const state = parseSave(
+      JSON.stringify({
+        fruit: -10,
+        wood: '12',
+        skills: { gather: { level: -2, xp: 2.9 } },
+        researchLevels: { 'sharpened-stick': 99 },
+        people: [null, { name: 'You', maxHunger: 5, hunger: 12 }],
+        foodElapsedMs: 60042,
+      }),
+    )
     expect(state.fruit).toBe(0)
     expect(state.wood).toBe(0)
     expect(state.skills.gather).toEqual({ level: 1, xp: 2 })
     expect(state.researchLevels['sharpened-stick']).toBe(3)
-    expect(state.people.map(person => person.hunger)).toEqual([5, 5])
+    expect(state.people.map((person) => person.hunger)).toEqual([5, 5])
     expect(state.foodElapsedMs).toBe(42)
   })
 })

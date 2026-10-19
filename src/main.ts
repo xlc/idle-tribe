@@ -2,8 +2,8 @@ import './styles.css'
 import { ACTION_IMMEDIATE_THRESHOLD_MS } from './constants'
 import { createGame } from './game'
 import { loadState, saveState } from './persistence'
-import { createRenderer } from './render'
 import type { ActionView } from './render'
+import { createRenderer } from './render'
 import type { Action, ActionKey } from './types'
 
 const state = loadState()
@@ -20,9 +20,10 @@ function finishAction(action: Action) {
 function startAction(action: Action, view: ActionView) {
   if (activeAction) return
   if (action.canStart && !action.canStart()) {
-    feedback.textContent = typeof action.unavailableMessage === 'function'
-      ? action.unavailableMessage()
-      : action.unavailableMessage ?? ''
+    feedback.textContent =
+      typeof action.unavailableMessage === 'function'
+        ? action.unavailableMessage()
+        : (action.unavailableMessage ?? '')
     return
   }
 
@@ -66,9 +67,13 @@ function startAction(action: Action, view: ActionView) {
 }
 
 renderer.actionsTab.addEventListener('click', () => renderer.setView('camp'))
-renderer.researchTab.addEventListener('click', () => renderer.setView('research'))
+renderer.researchTab.addEventListener('click', () =>
+  renderer.setView('research'),
+)
 for (const key of Object.keys(game.actions) as ActionKey[]) {
-  actionViews[key].button.addEventListener('click', () => startAction(game.actions[key], actionViews[key]))
+  actionViews[key].button.addEventListener('click', () =>
+    startAction(game.actions[key], actionViews[key]),
+  )
 }
 
 let foodClockAt = performance.now()

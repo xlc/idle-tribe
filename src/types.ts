@@ -18,7 +18,10 @@ export type ActionKey =
   | 'researchForaging'
   | 'researchStone'
 
-export type ResearchId = 'sharpened-stick' | 'foraging-practice' | 'stone-flakes'
+export type ResearchId =
+  | 'sharpened-stick'
+  | 'foraging-practice'
+  | 'stone-flakes'
 
 export interface Person {
   name: string
