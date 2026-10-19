@@ -130,6 +130,24 @@ describe('settlement production', () => {
 })
 
 describe('offline simulation and page clock', () => {
+  test('offline resource changes include consumed inputs and meals', () => {
+    const game = workshop()
+    game.state.wood = 30
+    game.state.savedAt = 1000
+    game.assignJob(game.state.people[0], 'sawyer')
+    const before = structuredClone(game.state)
+    const away = game.applyOffline(1000 + FOOD_TICK_MS)
+    expect(away.gains.fruit).toBe(-1)
+    expect(away.gains.wood).toBe(-21)
+    expect(away.gains.planks).toBe(7)
+    for (const resource of RESOURCES)
+      expect(away.gains[resource]).toBeCloseTo(
+        game.state[resource] - before[resource],
+      )
+    const repeated = game.applyOffline(game.state.savedAt)
+    for (const resource of RESOURCES) expect(repeated.gains[resource]).toBe(0)
+  })
+
   test('24-hour catchup matches live ticks with processing, hunger, and competition', () => {
     const game = workshop()
     game.state.researchLevels.shelters = 3

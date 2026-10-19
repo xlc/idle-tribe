@@ -220,6 +220,31 @@ describe('concurrent actions and research', () => {
 })
 
 describe('interrupted work', () => {
+  test('saved snapshots retain their research, people, and skills after gameplay continues', () => {
+    const state = createDefaultState()
+    state.researchUnlocked = true
+    state.researchLevels['sharpened-stick'] = 1
+    state.seenResearchLevels['sharpened-stick'] = 1
+    state.basicTools = true
+    state.fruit = 100
+    state.wood = 100
+    const snapshots: GameState[] = []
+    const game = createGame(state, (snapshot) => snapshots.push(snapshot))
+    expect(game.startAction(game.actions.researchShelters)).toBe(true)
+    const reserved = snapshots[0]
+    const expected = structuredClone(reserved)
+
+    game.finishAction(game.actions.researchShelters)
+    game.advanceTime(5000)
+    game.recruitPerson()
+
+    expect(state.researchLevels.shelters).toBe(1)
+    expect(state.people).toHaveLength(2)
+    expect(state.skills.gather.xp).toBeGreaterThan(0)
+    expect(reserved).toEqual(expected)
+    expect(parseSave(JSON.stringify(reserved))).toEqual(expected)
+  })
+
   test('reloading returns reserved costs for exploration and each research tier', () => {
     for (const key of [
       'explore',
@@ -230,7 +255,8 @@ describe('interrupted work', () => {
     ] as const) {
       const state = createDefaultState()
       state.fruit = state.wood = state.stone = 100
-      state.researchUnlocked = state.stoneFound = true
+      state.researchUnlocked = true
+      state.stoneFound = key !== 'exploreFurther'
       state.researchLevels = {
         ...state.researchLevels,
         'sharpened-stick': 1,
@@ -417,6 +443,7 @@ describe('net resource rates', () => {
     ] as const) {
       const state = createDefaultState()
       state.fruit = 100
+      state.explored = state.stoneFound = true
       state.researchLevels['sharpened-stick'] = 3
       state.researchLevels['stone-flakes'] = 2
       state.skills[key].level = 5
@@ -474,6 +501,70 @@ describe('net resource rates', () => {
 })
 
 describe('action completion', () => {
+  test('actions from another game cannot spend resources or complete against the wrong state', () => {
+    const initial = createDefaultState()
+    initial.researchUnlocked = true
+    initial.fruit = initial.wood = 20
+    const source = createGame(structuredClone(initial))
+    let saves = 0
+    const target = createGame(structuredClone(initial), () => saves++)
+    for (const action of [source.actions.gather, source.actions.research]) {
+      expect(target.startAction(action)).toBe(false)
+      expect(target.finishAction(action)).toBeNull()
+    }
+    expect(source.state).toEqual(initial)
+    expect(target.state).toEqual(initial)
+    expect(target.getActiveAction()).toBeNull()
+    expect(target.getActiveResearch()).toBeNull()
+    expect(saves).toBe(0)
+
+    expect(target.startAction(target.actions.research)).toBe(true)
+    target.finishAction(target.actions.research)
+    expect(target.state.researchLevels['sharpened-stick']).toBe(1)
+    expect(source.state).toEqual(initial)
+  })
+
+  test('undiscovered resources and locked exploration cannot start or change progress', () => {
+    const state = createDefaultState()
+    state.fruit = 100
+    let saves = 0
+    const game = createGame(state, () => saves++)
+    const before = structuredClone(state)
+    for (const action of [
+      game.actions.sticks,
+      game.actions.stone,
+      game.actions.exploreFurther,
+    ]) {
+      expect(game.startAction(action)).toBe(false)
+      expect(game.finishAction(action)).toBeNull()
+      expect(game.getActiveAction()).toBeNull()
+      expect(state).toEqual(before)
+    }
+    expect(saves).toBe(0)
+  })
+
+  test('exploration unlocks gathering and cannot be purchased twice', () => {
+    const state = createDefaultState()
+    state.fruit = 100
+    const game = createGame(state)
+    for (const [exploration, gathering] of [
+      [game.actions.explore, game.actions.sticks],
+      [game.actions.exploreFurther, game.actions.stone],
+    ]) {
+      expect(game.startAction(exploration)).toBe(true)
+      game.finishAction(exploration)
+      const discovered = structuredClone(state)
+      expect(game.startAction(exploration)).toBe(false)
+      expect(game.finishAction(exploration)).toBeNull()
+      expect(state).toEqual(discovered)
+      expect(game.startAction(gathering)).toBe(true)
+      game.finishAction(gathering)
+      state.researchLevels['sharpened-stick'] = 1
+    }
+    expect(state.wood).toBeGreaterThan(0)
+    expect(state.stone).toBeGreaterThan(0)
+  })
+
   test('only started work can complete, and only once', () => {
     const state = createDefaultState()
     state.researchUnlocked = true

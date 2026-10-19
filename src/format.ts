@@ -1,6 +1,11 @@
 import { ACTION_IMMEDIATE_THRESHOLD_MS, RESOURCES } from './constants'
 import type { ResearchCost } from './types'
 
+const compactResourceFormatter = new Intl.NumberFormat('en-US', {
+  notation: 'compact',
+  maximumFractionDigits: 1,
+})
+
 export function roundResource(value: number) {
   // At this magnitude tenths cannot be represented; scaling can overflow.
   if (value >= Number.MAX_SAFE_INTEGER / 10) return value
@@ -16,10 +21,7 @@ export function formatCompactResource(value: number) {
   if (value >= 1e15) return value.toExponential(1).replace('e+', 'e')
   return value < 1000
     ? formatResource(value)
-    : new Intl.NumberFormat('en-US', {
-        notation: 'compact',
-        maximumFractionDigits: 1,
-      }).format(value)
+    : compactResourceFormatter.format(value)
 }
 
 export function formatResourceRate(value: number) {
