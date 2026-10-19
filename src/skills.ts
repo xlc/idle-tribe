@@ -103,12 +103,7 @@ export function createSkills(
 
   return {
     getSkill,
-    getActionXpGain,
-    getFruitResearchBonus,
-    getStoneResearchBonus,
-    getRequiredXp,
     getActionDuration,
-    getResourceMilestoneBonus,
     getResourceGain,
     getNextResourceGain,
     awardActionExperience,

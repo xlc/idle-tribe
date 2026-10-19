@@ -175,30 +175,31 @@ test('jobs normalize invalid or locked assignments without removing existing peo
   state.stoneFound = true
   state.buildings.quarry = 5
   restored = parseSave(JSON.stringify(state))
-  expect(itemAt(restored.people, 0).job).toBe('stoneworker')
-  expect(itemAt(restored.people, 0).workElapsedMs).toBe(1000)
+  const worker = itemAt(restored.people, 0)
+  expect(worker.job).toBe('stoneworker')
+  expect(worker.workElapsedMs).toBe(1000)
   const invalid = {
     ...state,
     people: [
       { ...itemAt(state.people, 0), job: 'unknown', workElapsedMs: -10 },
     ],
   }
-  expect(itemAt(parseSave(JSON.stringify(invalid)).people, 0).job).toBe('idle')
-  expect(
-    itemAt(parseSave(JSON.stringify(invalid)).people, 0).workElapsedMs,
-  ).toBe(0)
+  const unassigned = itemAt(parseSave(JSON.stringify(invalid)).people, 0)
+  expect(unassigned.job).toBe('idle')
+  expect(unassigned.workElapsedMs).toBe(0)
 })
 
 test('version 2 migration identifies the player and preserves jobs, hunger and work', () => {
   const state = createDefaultState()
+  const player = itemAt(state.people, 0)
   state.researchLevels.shelters = 1
   state.buildings['foraging-camp'] = state.buildings['lumber-camp'] = 1
   state.seenResearchLevels.shelters = 1
-  itemAt(state.people, 0).job = 'forager'
-  itemAt(state.people, 0).hunger = 2
-  itemAt(state.people, 0).workElapsedMs = 2345
+  player.job = 'forager'
+  player.hunger = 2
+  player.workElapsedMs = 2345
   state.people.unshift({
-    ...itemAt(state.people, 0),
+    ...player,
     name: 'Mira',
     isPlayer: false,
   })
@@ -214,9 +215,10 @@ test('version 2 migration identifies the player and preserves jobs, hunger and w
 
 test('migration protects an existing survivor if the original player was already lost', () => {
   const state = createDefaultState()
+  const player = itemAt(state.people, 0)
   state.fruit = 12.3
-  itemAt(state.people, 0).name = 'Tribe member 2'
-  itemAt(state.people, 0).hunger = 1
+  player.name = 'Tribe member 2'
+  player.hunger = 1
   const restored = parseSave(JSON.stringify({ ...state, version: 2 }))
   expect(restored).toEqual(state)
   expect(restored.people).toHaveLength(1)
@@ -224,9 +226,10 @@ test('migration protects an existing survivor if the original player was already
 
 test('current saves preserve explicit player identity and normalize duplicate or missing markers', () => {
   const state = createDefaultState()
-  itemAt(state.people, 0).name = 'Renamed player'
+  const player = itemAt(state.people, 0)
+  player.name = 'Renamed player'
   state.people.unshift({
-    ...itemAt(state.people, 0),
+    ...player,
     name: 'You',
     isPlayer: false,
   })
@@ -335,10 +338,12 @@ test('untrusted job values cannot become assignments or discard valid progress',
     )
     expect(restored.fruit).toBe(42)
     expect(restored.people).toHaveLength(2)
-    expect(itemAt(restored.people, 0).job).toBe('idle')
-    expect(itemAt(restored.people, 0).workElapsedMs).toBe(0)
-    expect(itemAt(restored.people, 1).job).toBe('woodcutter')
-    expect(itemAt(restored.people, 1).workElapsedMs).toBe(2345)
+    const unassigned = itemAt(restored.people, 0)
+    const worker = itemAt(restored.people, 1)
+    expect(unassigned.job).toBe('idle')
+    expect(unassigned.workElapsedMs).toBe(0)
+    expect(worker.job).toBe('woodcutter')
+    expect(worker.workElapsedMs).toBe(2345)
   }
 })
 

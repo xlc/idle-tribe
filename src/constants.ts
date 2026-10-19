@@ -16,7 +16,6 @@ export const GATHER_STONE_DURATION_MS = 3000
 export const RESEARCH_UNLOCK_WOOD = 2
 export const ACTION_XP_PER_COMPLETION = 1
 export const OFFLINE_CAP_MS = 24 * 60 * 60 * 1000
-export { RESEARCH_ITEM_KEYS, RESOURCES } from './ids'
 export const ACTION_XP_SPEED_REDUCTION = 0.03
 export const ACTION_XP_GROWTH = 1.2
 export const ACTION_YIELD_MILESTONE = 5

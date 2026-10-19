@@ -67,9 +67,7 @@ export interface Action {
   name: string
   researchId?: ResearchId
   baseDurationMs: number | (() => number)
-  workingFeedback: string
   canStart?: () => boolean
-  unavailableMessage?: string | (() => string)
   cost?: () => Cost | null
   complete: () => string
 }

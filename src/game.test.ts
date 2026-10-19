@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
-import { FOOD_TICK_MS, RESEARCH_ITEM_KEYS } from './constants'
+import { FOOD_TICK_MS } from './constants'
 import { createGame } from './game'
+import { RESEARCH_ITEM_KEYS } from './ids'
 import { parseSave } from './persistence'
 import { createDefaultState } from './state'
 import { itemAt } from './test-helpers'
@@ -9,10 +10,11 @@ import type { GameState } from './types'
 describe('feasts and survival', () => {
   test('a feast restores the whole tribe and only charges for missing hearts', () => {
     const state = createDefaultState()
-    itemAt(state.people, 0).hunger = 3
+    const player = itemAt(state.people, 0)
+    player.hunger = 3
     state.people.push(
-      { ...itemAt(state.people, 0), name: 'Mira', isPlayer: false, hunger: 1 },
-      { ...itemAt(state.people, 0), name: 'Sol', isPlayer: false, hunger: 5 },
+      { ...player, name: 'Mira', isPlayer: false, hunger: 1 },
+      { ...player, name: 'Sol', isPlayer: false, hunger: 5 },
     )
     state.fruit = 6
     const game = createGame(state)
@@ -29,7 +31,8 @@ describe('feasts and survival', () => {
 
   test('an unaffordable feast changes nothing and a solo player can recover before jobs unlock', () => {
     const state = createDefaultState()
-    itemAt(state.people, 0).hunger = 0
+    const player = itemAt(state.people, 0)
+    player.hunger = 0
     state.fruit = 4.9
     let saves = 0
     const game = createGame(state, () => saves++)
@@ -40,24 +43,26 @@ describe('feasts and survival', () => {
     expect(saves).toBe(0)
     state.fruit = 5
     expect(game.feast()).toBe(true)
-    expect(itemAt(state.people, 0).hunger).toBe(5)
+    expect(player.hunger).toBe(5)
     expect(saves).toBe(1)
   })
 
   test('fractional saved hearts are restored without a free or partial feast', () => {
     const state = createDefaultState()
-    itemAt(state.people, 0).maxHunger = 5.5
-    itemAt(state.people, 0).hunger = 3.2
+    const player = itemAt(state.people, 0)
+    player.maxHunger = 5.5
+    player.hunger = 3.2
     state.fruit = 3
     const game = createGame(state)
     expect(game.getFeastCost()).toBe(3)
     expect(game.feast()).toBe(true)
-    expect(itemAt(state.people, 0).hunger).toBe(5.5)
+    expect(player.hunger).toBe(5.5)
     expect(state.fruit).toBe(0)
   })
 
   test('feasts preserve concurrent work, meal timing, saved progress and reserved costs', () => {
     const state = createDefaultState()
+    const player = itemAt(state.people, 0)
     state.researchLevels.shelters = 1
     state.buildings['foraging-camp'] =
       state.buildings['lumber-camp'] =
@@ -66,12 +71,12 @@ describe('feasts and survival', () => {
     state.researchUnlocked = true
     state.fruit = 30
     state.wood = 2
-    itemAt(state.people, 0).hunger = 2
-    itemAt(state.people, 0).job = 'forager'
-    itemAt(state.people, 0).workElapsedMs = 4500
+    player.hunger = 2
+    player.job = 'forager'
+    player.workElapsedMs = 4500
     state.foodElapsedMs = FOOD_TICK_MS - 500
     state.people.push({
-      ...itemAt(state.people, 0),
+      ...player,
       name: 'Mira',
       isPlayer: false,
       hunger: 4,
@@ -87,11 +92,9 @@ describe('feasts and survival', () => {
     expect(game.feast()).toBe(true)
     expect(game.getActiveAction()).toBe(game.actions.gather)
     expect(game.getActiveResearch()).toBe(game.actions.research)
-    expect(itemAt(state.people, 0).workElapsedMs).toBe(4500)
+    expect(player.workElapsedMs).toBe(4500)
     expect(state.foodElapsedMs).toBe(FOOD_TICK_MS - 500)
-    expect(
-      game.getHungerEffects(itemAt(state.people, 0)).outputMultiplier,
-    ).toBe(1)
+    expect(game.getHungerEffects(player).outputMultiplier).toBe(1)
     const restored = parseSave(JSON.stringify(snapshots.at(-1)))
     expect(restored.people).toEqual(state.people)
     expect(restored.foodElapsedMs).toBe(state.foodElapsedMs)
@@ -102,7 +105,7 @@ describe('feasts and survival', () => {
     // The recovered forager delivers two fruit before the scheduled two-person meal.
     expect(state.fruit).toBe(beforeMeal + 2 - 2)
     expect(state.foodElapsedMs).toBe(0)
-    expect(itemAt(state.people, 0).workElapsedMs).toBe(0)
+    expect(player.workElapsedMs).toBe(0)
   })
 
   test('a due meal is resolved before quoting the next feast', () => {
@@ -657,10 +660,11 @@ describe('tribe growth and automated jobs', () => {
   test('all jobs gather and train skills alongside a manual action and research', () => {
     const game = camp()
     const state = game.state
+    const player = itemAt(state.people, 0)
     game.recruitPerson()
     game.recruitPerson()
     state.wood = 10
-    game.assignJob(itemAt(state.people, 0), 'forager')
+    game.assignJob(player, 'forager')
     game.assignJob(itemAt(state.people, 1), 'woodcutter')
     game.assignJob(itemAt(state.people, 2), 'stoneworker')
     expect(game.startAction(game.actions.gather)).toBe(true)
@@ -675,7 +679,7 @@ describe('tribe growth and automated jobs', () => {
     expect(game.getActiveAction()).toBe(game.actions.gather)
     expect(game.getActiveResearch()).toBe(game.actions.researchTeamwork)
     game.finishAction(game.actions.researchTeamwork)
-    expect(game.getWorkerGain(itemAt(state.people, 0))).toBe(2.5)
+    expect(game.getWorkerGain(player)).toBe(2.5)
     game.finishAction(game.actions.gather)
     expect(state.fruit).toBe(fruit + 5)
   })
@@ -683,15 +687,16 @@ describe('tribe growth and automated jobs', () => {
   test('tool research improves manual and worker yields and unlocks the next research', () => {
     const game = camp()
     const state = game.state
+    const player = itemAt(state.people, 0)
     state.wood = state.stone = 100
     expect(game.startAction(game.actions.researchAxes)).toBe(false)
     expect(game.startAction(game.actions.researchStone)).toBe(true)
     game.finishAction(game.actions.researchStone)
     expect(game.startAction(game.actions.researchAxes)).toBe(true)
     game.finishAction(game.actions.researchAxes)
-    game.assignJob(itemAt(state.people, 0), 'woodcutter')
+    game.assignJob(player, 'woodcutter')
     expect(game.getResourceGain('sticks')).toBe(1.5)
-    expect(game.getWorkerGain(itemAt(state.people, 0))).toBe(3)
+    expect(game.getWorkerGain(player)).toBe(3)
     expect(game.getUnreadResearch()).toContain('quarrying')
     expect(game.startAction(game.actions.researchQuarrying)).toBe(true)
     game.finishAction(game.actions.researchQuarrying)
@@ -716,9 +721,10 @@ describe('tribe growth and automated jobs', () => {
 
   test('long advances match short ticks, including hungry workers recovering at meals', () => {
     const whole = camp()
+    const player = itemAt(whole.state.people, 0)
     whole.recruitPerson()
-    itemAt(whole.state.people, 0).hunger = 2
-    whole.assignJob(itemAt(whole.state.people, 0), 'forager')
+    player.hunger = 2
+    whole.assignJob(player, 'forager')
     whole.assignJob(itemAt(whole.state.people, 1), 'woodcutter')
     whole.state.foodElapsedMs = 59500
     const split = createGame(structuredClone(whole.state))
@@ -726,7 +732,7 @@ describe('tribe growth and automated jobs', () => {
     for (let i = 0; i < 180; i++) split.advanceTime(1000)
     split.advanceTime(123)
     expect(whole.state).toEqual(split.state)
-    expect(itemAt(whole.state.people, 0).hunger).toBe(5)
+    expect(player.hunger).toBe(5)
     expect(whole.state.fruit).toBeGreaterThan(70)
   })
 

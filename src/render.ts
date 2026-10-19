@@ -1,6 +1,5 @@
-import { JOBS, RECRUIT_COST, RESEARCH_ITEM_KEYS, RESOURCES } from './constants'
+import { JOBS, RECRUIT_COST } from './constants'
 import {
-  BUILDING_IDS,
   BUILDINGS,
   DEVELOPMENT_TECH,
   JOB_BUILDING,
@@ -14,7 +13,14 @@ import {
   formatResource,
 } from './format'
 import type { Game } from './game'
-import { ACTION_KEYS, isJobId, JOB_IDS } from './ids'
+import {
+  ACTION_KEYS,
+  BUILDING_IDS,
+  isJobId,
+  JOB_IDS,
+  RESEARCH_ITEM_KEYS,
+  RESOURCES,
+} from './ids'
 import { createRecord } from './records'
 import type { Cost, Person, ResearchId, ResourceId } from './types'
 

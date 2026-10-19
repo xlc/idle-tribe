@@ -1,4 +1,5 @@
-import { ACTION_IMMEDIATE_THRESHOLD_MS, RESOURCES } from './constants'
+import { ACTION_IMMEDIATE_THRESHOLD_MS } from './constants'
+import { RESOURCES } from './ids'
 import type { ResearchCost } from './types'
 
 const compactResourceFormatter = new Intl.NumberFormat('en-US', {

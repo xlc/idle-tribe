@@ -3,10 +3,10 @@ import {
   FOOD_TICK_MS,
   JOBS,
   OFFLINE_CAP_MS,
-  RESOURCES,
 } from './constants'
 import type { createFood } from './food'
 import { roundResource } from './format'
+import { RESOURCES } from './ids'
 import { createRecord } from './records'
 import type { createResources } from './resources'
 import type { createSettlement } from './settlement'

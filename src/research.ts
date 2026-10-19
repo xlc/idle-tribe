@@ -1,5 +1,5 @@
-import { RESEARCH_ITEM_KEYS } from './constants'
-import { formatDuration, formatResearchCost, formatResource } from './format'
+import { formatResource } from './format'
+import { RESEARCH_ITEM_KEYS } from './ids'
 import type { createResources } from './resources'
 import type {
   Action,
@@ -231,27 +231,9 @@ export function createResearch(
     return level ? effects[researchId] : 'Not researched'
   }
 
-  function getResearchSubtitle(researchId: ResearchId) {
-    const level = getResearchLevel(researchId)
-    const next = getResearchNextLevel(researchId)
-    if (!next) return `${getResearchEffect(researchId, level)} · Max level`
-    return `${formatResearchCost(next)} · ${formatDuration(next.durationMs)} · ${getResearchEffect(researchId, level)} → ${getResearchEffect(researchId, level + 1)}`
-  }
-
-  function getResearchCostLabel(researchId: ResearchId) {
-    const next = getResearchNextLevel(researchId)
-    return next ? formatResearchCost(next) : 'Max level'
-  }
-
   function canAffordResearch(researchId: ResearchId) {
     const next = getResearchNextLevel(researchId)
     return Boolean(next && canAfford(next))
-  }
-
-  function getResearchRowLabel(researchId: ResearchId) {
-    const definition = getResearchDefinition(researchId)
-    const level = getResearchLevel(researchId)
-    return `Lv ${level}/${definition.maxLevel}`
   }
 
   function completeResearch(researchId: ResearchId) {
@@ -283,29 +265,19 @@ export function createResearch(
     return `${definition.name} reached level ${nextLevel}. ${effect} applied.`
   }
 
-  function createResearchAction(
-    researchId: ResearchId,
-    workingFeedback: string,
-  ): Action {
+  function createResearchAction(researchId: ResearchId): Action {
     const definition = getResearchDefinition(researchId)
     return {
       id: definition.actionId,
       name: definition.name,
       researchId,
       baseDurationMs: () => getResearchNextLevel(researchId)?.durationMs ?? 1,
-      workingFeedback,
       canStart: () =>
         Boolean(
           definition.prerequisite() &&
             getResearchNextLevel(researchId) &&
             canAffordResearch(researchId),
         ),
-      unavailableMessage: () => {
-        const next = getResearchNextLevel(researchId)
-        return next
-          ? `Need ${formatResearchCost(next)} to continue researching.`
-          : 'This research is complete.'
-      },
       cost: () => getResearchNextLevel(researchId),
       complete: () => completeResearch(researchId),
     }
@@ -318,10 +290,7 @@ export function createResearch(
     getUnreadResearch,
     markResearchSeen,
     getResearchEffect,
-    getResearchSubtitle,
-    getResearchCostLabel,
     canAffordResearch,
-    getResearchRowLabel,
     createResearchAction,
   }
 }

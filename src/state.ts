@@ -1,5 +1,5 @@
-import { MAX_HUNGER, RESEARCH_ITEM_KEYS } from './constants'
-import { ACTION_IDS, BUILDING_IDS } from './ids'
+import { MAX_HUNGER } from './constants'
+import { ACTION_IDS, BUILDING_IDS, RESEARCH_ITEM_KEYS } from './ids'
 import { createRecord } from './records'
 import type { GameState } from './types'
 

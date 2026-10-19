@@ -1,7 +1,7 @@
 import { createActions } from './actions'
-import { RESOURCES } from './constants'
 import { createFood, getHungerEffects } from './food'
 import { roundResource } from './format'
+import { RESOURCES } from './ids'
 import { createResearch } from './research'
 import { createResources } from './resources'
 import { createSettlement } from './settlement'
@@ -97,16 +97,8 @@ export function createGame(
     getUnreadResearch: research.getUnreadResearch,
     markResearchSeen: research.markResearchSeen,
     getResearchEffect: research.getResearchEffect,
-    getResearchSubtitle: research.getResearchSubtitle,
-    getResearchCostLabel: research.getResearchCostLabel,
     canAffordResearch: research.canAffordResearch,
-    getActionXpGain: skills.getActionXpGain,
-    getFruitResearchBonus: skills.getFruitResearchBonus,
-    getStoneResearchBonus: skills.getStoneResearchBonus,
-    getResearchRowLabel: research.getResearchRowLabel,
-    getRequiredXp: skills.getRequiredXp,
     getActionDuration: skills.getActionDuration,
-    getResourceMilestoneBonus: skills.getResourceMilestoneBonus,
     getResourceGain: skills.getResourceGain,
     getNextResourceGain: skills.getNextResourceGain,
     getHungerEffects,

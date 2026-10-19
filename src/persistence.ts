@@ -1,13 +1,13 @@
+import { FOOD_TICK_MS, JOBS, MAX_HUNGER } from './constants'
+import { BUILDINGS, JOB_BUILDING } from './economy'
+import { roundResource } from './format'
 import {
-  FOOD_TICK_MS,
-  JOBS,
-  MAX_HUNGER,
+  ACTION_IDS,
+  BUILDING_IDS,
+  isJobId,
   RESEARCH_ITEM_KEYS,
   RESOURCES,
-} from './constants'
-import { BUILDING_IDS, BUILDINGS, JOB_BUILDING } from './economy'
-import { roundResource } from './format'
-import { ACTION_IDS, isJobId } from './ids'
+} from './ids'
 import { createDefaultState } from './state'
 import type { GameState, JobId } from './types'
 

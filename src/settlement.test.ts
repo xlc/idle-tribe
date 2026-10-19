@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 import { createActivityTimer, createClock } from './clock'
-import { FOOD_TICK_MS, OFFLINE_CAP_MS, RESOURCES } from './constants'
+import { FOOD_TICK_MS, OFFLINE_CAP_MS } from './constants'
 import { createGame } from './game'
+import { RESOURCES } from './ids'
 import { parseSave } from './persistence'
 import { createDefaultState } from './state'
 import { itemAt } from './test-helpers'
@@ -44,10 +45,11 @@ describe('settlement production', () => {
 
   test('processors wait for inputs, convert exactly once, and resume partial cycles', () => {
     const game = workshop()
-    game.assignJob(itemAt(game.state.people, 0), 'sawyer')
+    const worker = itemAt(game.state.people, 0)
+    game.assignJob(worker, 'sawyer')
     game.advanceTime(4000)
     expect(game.state.planks).toBe(0)
-    expect(itemAt(game.state.people, 0).workElapsedMs).toBe(0)
+    expect(worker.workElapsedMs).toBe(0)
     game.state.wood = 3
     game.advanceTime(4500)
     const restored = createGame(parseSave(JSON.stringify(game.state)))

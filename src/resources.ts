@@ -1,5 +1,5 @@
-import { RESOURCES } from './constants'
 import { roundResource } from './format'
+import { RESOURCES } from './ids'
 import type { Cost, GameState } from './types'
 
 export function createResources(state: GameState) {
