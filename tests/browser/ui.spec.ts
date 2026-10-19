@@ -133,3 +133,95 @@ for (const width of [1280, 390, 320]) {
     expect(errors).toEqual([])
   })
 }
+
+for (const [width, path] of [
+  [1280, 'forestry'],
+  [390, 'stonecraft'],
+] as const) {
+  test(`${path} choices, processing recovery and village completion at ${width}px`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width, height: 900 })
+    await page.clock.install()
+    const state = discoveredState()
+    state.stoneFound = true
+    for (const id of [
+      'sharpened-stick',
+      'shelters',
+      'carpentry',
+      'masonry',
+      'writing',
+    ] as const)
+      state.researchLevels[id] = 1
+    for (const id of [
+      'foraging-camp',
+      'lumber-camp',
+      'quarry',
+      'sawmill',
+      'stoneworks',
+      'study',
+    ] as const)
+      state.buildings[id] = 1
+    state.fruit = state.planks = state.blocks = state.knowledge = 300
+    itemAt(state.people, 0).job = 'sawyer'
+    await openGame(page, state)
+    await expect(page.locator('#building-sawmill .building-status')).toHaveText(
+      'Waiting for wood',
+    )
+    await page.locator('#manual-work summary').click()
+    for (let i = 0; i < 3; i++) {
+      await page.locator('#sticks-button').click()
+      await page.clock.runFor(2100)
+    }
+    await expect(page.locator('#building-sawmill .building-status')).toHaveText(
+      'Producing',
+    )
+    await page.clock.runFor(8100)
+    await expect(page.locator('.resource-planks .resource-value')).toHaveText(
+      '301',
+    )
+    await page.getByRole('tab', { name: /Technology/ }).click()
+    const choice = page.locator(`#research-${path}-button`)
+    await choice.click()
+    await expect(page.getByRole('dialog')).toBeVisible()
+    await page.getByRole('button', { name: 'Keep deciding' }).click()
+    await expect(choice).toBeEnabled()
+    await choice.click()
+    await page.screenshot({
+      path: testInfo.outputPath('specialization.png'),
+      fullPage: true,
+    })
+    await page.getByRole('button', { name: 'Choose this path' }).click()
+    await page.clock.runFor(12500)
+    await expect(page.locator('#path-name')).toHaveText(
+      path === 'forestry' ? 'Forestry' : 'Stonecraft',
+    )
+    await page.reload()
+    await page.getByRole('tab', { name: /Technology/ }).click()
+    for (const [id, duration] of [
+      ['agriculture', 12000],
+      [path === 'forestry' ? 'joinery' : 'architecture', 18000],
+      ['engineering', 20000],
+    ] as const) {
+      await page.locator(`#research-${id}-button`).click()
+      await page.clock.runFor(duration + 500)
+    }
+    await page.getByRole('tab', { name: 'Settlement' }).click()
+    await page
+      .getByRole('button', { name: 'Build Great Hall', exact: true })
+      .click()
+    await expect(page.locator('#village-complete')).toBeFocused()
+    await expect(page.locator('#chapter')).toHaveText('Village established')
+    await page.screenshot({
+      path: testInfo.outputPath('village.png'),
+      fullPage: true,
+    })
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true)
+    await page.reload()
+    await expect(page.locator('#chapter')).toHaveText('Village established')
+  })
+}

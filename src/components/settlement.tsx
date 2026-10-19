@@ -14,7 +14,7 @@ import { Costs, Disclosure } from './common'
 
 export function Stockpile({ session }: { session: GameSession }) {
   const { game } = session
-  const rates = game.getResourceRates(null)
+  const rates = game.getResourceRates()
   return (
     <section className="stockpile" id="resource-list" aria-label="Stockpile">
       {RESOURCES.filter(

@@ -1,10 +1,4 @@
-import {
-  ACTION_IMMEDIATE_THRESHOLD_MS,
-  ACTION_SKILL_CONFIG,
-  FOOD_TICK_MS,
-  JOBS,
-  OFFLINE_CAP_MS,
-} from './constants'
+import { FOOD_TICK_MS, JOBS, OFFLINE_CAP_MS } from './constants'
 import type { createFood } from './food'
 import { roundResource } from './format'
 import { RESOURCES } from './ids'
@@ -12,7 +6,7 @@ import { createRecord } from './records'
 import type { createResources } from './resources'
 import type { createSettlement } from './settlement'
 import type { createSkills } from './skills'
-import type { Action, GameState } from './types'
+import type { GameState } from './types'
 
 export function createSimulation(
   state: GameState,
@@ -21,21 +15,17 @@ export function createSimulation(
     ReturnType<typeof createSettlement>,
     'canWork' | 'getJobInput' | 'getWorkerGain'
   >,
-  skills: Pick<
-    ReturnType<typeof createSkills>,
-    'getActionDuration' | 'getNextResourceGain' | 'awardActionExperience'
-  >,
+  skills: Pick<ReturnType<typeof createSkills>, 'awardActionExperience'>,
   food: Pick<ReturnType<typeof createFood>, 'getMealCost' | 'consumeMeal'>,
   syncUnlocks: () => void,
   saveProgress: () => void,
 ) {
   const { canAfford, pay } = resources
   const { canWork, getJobInput, getWorkerGain } = settlement
-  const { getActionDuration, getNextResourceGain, awardActionExperience } =
-    skills
+  const { awardActionExperience } = skills
   const { getMealCost, consumeMeal } = food
 
-  function getResourceRates(activeAction: Action | null) {
+  function getResourceRates() {
     const rates = createRecord(RESOURCES, () => 0)
     rates.fruit = -getMealCost() / (FOOD_TICK_MS / 1000)
     for (const person of state.people) {
@@ -46,14 +36,6 @@ export function createSimulation(
       for (const resource of RESOURCES)
         rates[resource] -= (input[resource] ?? 0) / (job.durationMs / 1000)
     }
-    if (!activeAction) return rates
-    const duration = getActionDuration(activeAction)
-    if (duration < ACTION_IMMEDIATE_THRESHOLD_MS) return rates
-    const seconds = duration / 1000
-    // XP is awarded before the yield, including any milestone this action earns.
-    const gain = getNextResourceGain(activeAction.id)
-    const resource = ACTION_SKILL_CONFIG[activeAction.id].resource
-    if (resource) rates[resource] += gain / seconds
     return rates
   }
 

@@ -421,7 +421,7 @@ describe('net resource rates', () => {
       },
     )
     const game = createGame(state)
-    const rates = game.getResourceRates(null)
+    const rates = game.getResourceRates()
     const before = state.fruit
     game.advanceTime(FOOD_TICK_MS)
     expect(rates.fruit * (FOOD_TICK_MS / 1000)).toBeCloseTo(
@@ -430,18 +430,18 @@ describe('net resource rates', () => {
     expect(rates.wood).toBe(0)
     expect(rates.stone).toBe(0)
     // The next meal uses the updated hunger levels.
-    expect(game.getResourceRates(null).fruit).toBeCloseTo(-2.5 / 60)
+    expect(game.getResourceRates().fruit).toBeCloseTo(-2.5 / 60)
   })
 
   test('food demand remains visible even when fruit has run out', () => {
     const game = createGame(createDefaultState())
-    expect(game.getResourceRates(null).fruit).toBeCloseTo(-1 / 60)
+    expect(game.getResourceRates().fruit).toBeCloseTo(-1 / 60)
     game.consumeMeal()
     expect(game.state.fruit).toBe(0)
-    expect(game.getResourceRates(null).fruit).toBeCloseTo(-1 / 60)
+    expect(game.getResourceRates().fruit).toBeCloseTo(-1 / 60)
   })
 
-  test('gathering rates match actual yields and durations with upgrades', () => {
+  test('gathering previews match actual yields with upgrades', () => {
     for (const [key, resource] of [
       ['gather', 'fruit'],
       ['sticks', 'wood'],
@@ -455,16 +455,13 @@ describe('net resource rates', () => {
       state.skills[key].level = 5
       const game = createGame(state)
       const action = game.actions[key]
-      const idle = game.getResourceRates(null)
-      const rates = game.getResourceRates(action)
-      const seconds = game.getActionDuration(action) / 1000
+      const idle = game.getResourceRates()
+      const gain = game.getNextResourceGain(action.id)
       const before = state[resource]
       expect(game.startAction(action)).toBe(true)
       game.finishAction(action)
-      expect((rates[resource] - idle[resource]) * seconds).toBeCloseTo(
-        state[resource] - before,
-      )
-      expect(game.getResourceRates(null)).toEqual(idle)
+      expect(gain).toBeCloseTo(state[resource] - before)
+      expect(game.getResourceRates()).toEqual(idle)
     }
   })
 
@@ -474,27 +471,26 @@ describe('net resource rates', () => {
     state.wood = 100
     state.researchUnlocked = true
     const game = createGame(state)
-    const idle = game.getResourceRates(null)
+    const idle = game.getResourceRates()
     for (const action of [game.actions.explore, game.actions.research]) {
       expect(game.startAction(action)).toBe(true)
-      expect(game.getResourceRates(action)).toEqual(idle)
+      expect(game.getResourceRates()).toEqual(idle)
     }
     expect(state.fruit).toBe(85)
     expect(state.wood).toBe(98)
   })
 
-  test('rates include a milestone earned on completion without awarding XP early', () => {
+  test('yield previews include the next milestone without awarding XP early', () => {
     const state = createDefaultState()
     state.skills.gather = { level: 4, xp: 6 }
     const game = createGame(state)
-    const rate = game.getResourceRates(game.actions.gather).fruit
+    const gain = game.getNextResourceGain('gather')
     expect(state.skills.gather).toEqual({ level: 4, xp: 6 })
-    const duration = game.getActionDuration(game.actions.gather) / 1000
     expect(game.getNextResourceGain('gather')).toBe(1.1)
     expect(game.startAction(game.actions.gather)).toBe(true)
     game.finishAction(game.actions.gather)
     expect(state.skills.gather.level).toBe(5)
-    expect((rate + 1 / 60) * duration).toBeCloseTo(state.fruit)
+    expect(gain).toBeCloseTo(state.fruit)
   })
 
   test('high skill keeps manual work bounded rather than turning into unlimited clicking', () => {
@@ -502,7 +498,9 @@ describe('net resource rates', () => {
     state.skills.gather.level = 40
     const game = createGame(state)
     expect(game.getActionDuration(game.actions.gather)).toBe(500)
-    expect(game.getResourceRates(game.actions.gather).fruit).toBeGreaterThan(0)
+    expect(game.startAction(game.actions.gather)).toBe(true)
+    game.finishAction(game.actions.gather)
+    expect(state.fruit).toBeGreaterThan(0)
   })
 })
 
@@ -711,12 +709,12 @@ describe('tribe growth and automated jobs', () => {
     game.state.researchLevels.teamwork = 2
     person.hunger = 3
     game.assignJob(person, 'woodcutter')
-    const rate = game.getResourceRates(null).wood
+    const rate = game.getResourceRates().wood
     game.advanceTime(8000)
     expect(game.state.wood).toBeCloseTo(rate * 8)
     expect(game.state.skills.sticks.level).toBe(5)
     expect(game.state.wood).toBe(3.8)
-    expect(game.getResourceRates(null).fruit).toBeCloseTo(-0.5 / 60)
+    expect(game.getResourceRates().fruit).toBeCloseTo(-0.5 / 60)
   })
 
   test('long advances match short ticks, including hungry workers recovering at meals', () => {

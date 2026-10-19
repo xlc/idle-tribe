@@ -25,16 +25,6 @@ export function formatCompactResource(value: number) {
     : compactResourceFormatter.format(value)
 }
 
-export function formatResourceRate(value: number) {
-  if (value === 0) return '0/s'
-  const magnitude = Math.abs(value)
-  const amount =
-    magnitude < 0.01
-      ? String(Number(magnitude.toPrecision(2)))
-      : String(Number(magnitude.toFixed(2)))
-  return `${value > 0 ? '+' : '-'}${amount}/s`
-}
-
 export function formatResearchCost(cost: ResearchCost | null | undefined) {
   if (!cost) return 'Complete'
   return RESOURCES.filter((id) => cost[id])

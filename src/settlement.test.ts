@@ -387,7 +387,7 @@ test('upgraded worker production and displayed rates retain rounding at a half-t
   game.state.researchLevels.teamwork = 3
   game.state.researchLevels.engineering = 1
   expect(game.adjustWorkers('stoneworker', 1)).toBe(true)
-  expect(game.getResourceRates(null).stone).toBeCloseTo(12.3 / 12)
+  expect(game.getResourceRates().stone).toBeCloseTo(12.3 / 12)
   game.advanceTime(12000)
   expect(game.state.stone).toBe(12.3)
 })
