@@ -11,6 +11,15 @@ export type ActionId =
   | 'research-axes'
   | 'research-quarrying'
   | 'research-teamwork'
+  | 'research-carpentry'
+  | 'research-masonry'
+  | 'research-writing'
+  | 'research-forestry'
+  | 'research-stonecraft'
+  | 'research-joinery'
+  | 'research-architecture'
+  | 'research-agriculture'
+  | 'research-engineering'
 
 export type ActionKey =
   | 'gather'
@@ -25,6 +34,15 @@ export type ActionKey =
   | 'researchAxes'
   | 'researchQuarrying'
   | 'researchTeamwork'
+  | 'researchCarpentry'
+  | 'researchMasonry'
+  | 'researchWriting'
+  | 'researchForestry'
+  | 'researchStonecraft'
+  | 'researchJoinery'
+  | 'researchArchitecture'
+  | 'researchAgriculture'
+  | 'researchEngineering'
 
 export type ResearchId =
   | 'sharpened-stick'
@@ -34,11 +52,46 @@ export type ResearchId =
   | 'stone-axes'
   | 'quarrying'
   | 'teamwork'
+  | 'carpentry'
+  | 'masonry'
+  | 'writing'
+  | 'forestry'
+  | 'stonecraft'
+  | 'joinery'
+  | 'architecture'
+  | 'agriculture'
+  | 'engineering'
 
-export type JobId = 'idle' | 'forager' | 'woodcutter' | 'stoneworker'
+export type JobId =
+  | 'idle'
+  | 'forager'
+  | 'woodcutter'
+  | 'stoneworker'
+  | 'sawyer'
+  | 'mason'
+  | 'scholar'
+export type ResourceId =
+  | 'fruit'
+  | 'wood'
+  | 'stone'
+  | 'planks'
+  | 'blocks'
+  | 'knowledge'
+export type Cost = Partial<Record<ResourceId, number>>
+export type BuildingId =
+  | 'foraging-camp'
+  | 'lumber-camp'
+  | 'quarry'
+  | 'sawmill'
+  | 'stoneworks'
+  | 'study'
+  | 'houses'
+  | 'great-hall'
+export type Specialization = 'forestry' | 'stonecraft'
 
 export interface Person {
   job: JobId
+  isPlayer: boolean
   workElapsedMs: number
   name: string
   hunger: number
@@ -51,8 +104,14 @@ export interface Skill {
 }
 
 export interface GameState {
-  version: 2
+  version: 4
   fruit: number
+  planks: number
+  blocks: number
+  knowledge: number
+  buildings: Record<BuildingId, number>
+  specialization: Specialization | null
+  savedAt: number
   wood: number
   stone: number
   people: Person[]
@@ -68,10 +127,7 @@ export interface GameState {
   foodElapsedMs: number
 }
 
-export interface ResearchCost {
-  wood?: number
-  fruit?: number
-  stone?: number
+export interface ResearchCost extends Cost {
   durationMs: number
 }
 
@@ -91,6 +147,6 @@ export interface Action {
   workingFeedback: string
   canStart?: () => boolean
   unavailableMessage?: string | (() => string)
-  cost?: () => Pick<ResearchCost, 'fruit' | 'wood' | 'stone'> | null
+  cost?: () => Cost | null
   complete: () => string
 }

@@ -7,13 +7,29 @@ import type { GameState } from './types'
 
 export function createDefaultState(): GameState {
   return {
-    version: 2,
+    version: 4,
     fruit: 0,
+    planks: 0,
+    blocks: 0,
+    knowledge: 0,
+    buildings: {
+      'foraging-camp': 0,
+      'lumber-camp': 0,
+      quarry: 0,
+      sawmill: 0,
+      stoneworks: 0,
+      study: 0,
+      houses: 0,
+      'great-hall': 0,
+    },
+    specialization: null,
+    savedAt: 0,
     wood: 0,
     stone: 0,
     people: [
       {
         name: 'You',
+        isPlayer: true,
         hunger: MAX_HUNGER,
         maxHunger: MAX_HUNGER,
         job: 'idle',

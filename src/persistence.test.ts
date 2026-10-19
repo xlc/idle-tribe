@@ -132,10 +132,16 @@ test('version 1 migration preserves every person and progress while initializing
     ],
   }
   const restored = parseSave(JSON.stringify(old))
-  expect(restored.version).toBe(2)
+  expect(restored.version).toBe(4)
   expect(
-    restored.people.map(({ job, workElapsedMs, ...person }) => person),
+    restored.people.map(
+      ({ job, workElapsedMs, isPlayer, ...person }) => person,
+    ),
   ).toEqual(old.people)
+  expect(restored.people.map((person) => person.isPlayer)).toEqual([
+    true,
+    false,
+  ])
   expect(
     restored.people.every(
       (person) => person.job === 'idle' && person.workElapsedMs === 0,
@@ -166,6 +172,7 @@ test('jobs normalize invalid or locked assignments without removing existing peo
   expect(restored.people.every((person) => person.job === 'idle')).toBe(true)
   state.researchLevels.shelters = 1
   state.stoneFound = true
+  state.buildings.quarry = 5
   restored = parseSave(JSON.stringify(state))
   expect(restored.people[0].job).toBe('stoneworker')
   expect(restored.people[0].workElapsedMs).toBe(1000)
@@ -175,4 +182,107 @@ test('jobs normalize invalid or locked assignments without removing existing peo
   }
   expect(parseSave(JSON.stringify(invalid)).people[0].job).toBe('idle')
   expect(parseSave(JSON.stringify(invalid)).people[0].workElapsedMs).toBe(0)
+})
+
+test('version 2 migration identifies the player and preserves jobs, hunger and work', () => {
+  const state = createDefaultState()
+  state.researchLevels.shelters = 1
+  state.buildings['foraging-camp'] = state.buildings['lumber-camp'] = 1
+  state.seenResearchLevels.shelters = 1
+  state.people[0].job = 'forager'
+  state.people[0].hunger = 2
+  state.people[0].workElapsedMs = 2345
+  state.people.unshift({ ...state.people[0], name: 'Mira', isPlayer: false })
+  const old = {
+    ...state,
+    version: 2,
+    people: state.people.map(({ isPlayer, ...person }) => person),
+  }
+  const restored = parseSave(JSON.stringify(old))
+  expect(restored).toEqual(state)
+  expect(parseSave(JSON.stringify(restored))).toEqual(restored)
+})
+
+test('migration protects an existing survivor if the original player was already lost', () => {
+  const state = createDefaultState()
+  state.fruit = 12.3
+  state.people[0].name = 'Tribe member 2'
+  state.people[0].hunger = 1
+  const restored = parseSave(JSON.stringify({ ...state, version: 2 }))
+  expect(restored).toEqual(state)
+  expect(restored.people).toHaveLength(1)
+})
+
+test('current saves preserve explicit player identity and normalize duplicate or missing markers', () => {
+  const state = createDefaultState()
+  state.people[0].name = 'Renamed player'
+  state.people.unshift({ ...state.people[0], name: 'You', isPlayer: false })
+  expect(parseSave(JSON.stringify(state))).toEqual(state)
+  for (const markers of [
+    [true, true],
+    [false, false],
+    ['true', null],
+  ]) {
+    const restored = parseSave(
+      JSON.stringify({
+        ...state,
+        people: state.people.map((person, index) => ({
+          ...person,
+          isPlayer: markers[index],
+        })),
+      }),
+    )
+    expect(restored.people.map((person) => person.isPlayer)).toEqual([
+      true,
+      false,
+    ])
+  }
+})
+
+test('version 3 workplaces preserve existing jobs and grant enough seats without changing people', () => {
+  const state = createDefaultState()
+  state.researchLevels.shelters = 2
+  state.explored = state.stoneFound = true
+  state.fruit = 123
+  state.people = Array.from({ length: 8 }, (_, i) => ({
+    ...state.people[0],
+    name: `Person ${i}`,
+    isPlayer: i === 0,
+    job: 'woodcutter',
+    workElapsedMs: 4321,
+    hunger: 3,
+  }))
+  const old = { ...state, version: 3 }
+  const migrated = parseSave(JSON.stringify(old))
+  expect(migrated.people).toEqual(state.people)
+  expect(migrated.buildings['lumber-camp']).toBe(4)
+  expect(migrated.fruit).toBe(123)
+  expect(migrated.researchLevels.shelters).toBe(2)
+  expect(migrated.savedAt).toBe(0)
+  expect(parseSave(JSON.stringify(migrated))).toEqual(migrated)
+})
+
+test('new economy state round-trips and malformed choices cannot unlock both paths', () => {
+  const state = createDefaultState()
+  state.planks = 42.3
+  state.blocks = 12
+  state.knowledge = 10
+  state.specialization = 'forestry'
+  state.researchLevels.forestry = 1
+  state.seenResearchLevels.forestry = 1
+  state.buildings.sawmill = 3
+  state.savedAt = 123456
+  expect(parseSave(JSON.stringify(state))).toEqual(state)
+  const corrupt = {
+    ...state,
+    researchLevels: { ...state.researchLevels, stonecraft: 1, architecture: 1 },
+    buildings: { ...state.buildings, study: -1 },
+    savedAt: -10,
+  }
+  const restored = parseSave(JSON.stringify(corrupt))
+  expect(restored.specialization).toBe('forestry')
+  expect(restored.researchLevels.stonecraft).toBe(0)
+  expect(restored.researchLevels.architecture).toBe(0)
+  expect(restored.buildings.study).toBe(0)
+  expect(restored.savedAt).toBe(0)
 })

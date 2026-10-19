@@ -1,4 +1,4 @@
-import { ACTION_IMMEDIATE_THRESHOLD_MS } from './constants'
+import { ACTION_IMMEDIATE_THRESHOLD_MS, RESOURCES } from './constants'
 import type { ResearchCost } from './types'
 
 export function roundResource(value: number) {
@@ -10,6 +10,16 @@ export function roundResource(value: number) {
 export function formatResource(value: number) {
   const rounded = roundResource(value)
   return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1)
+}
+
+export function formatCompactResource(value: number) {
+  if (value >= 1e15) return value.toExponential(1).replace('e+', 'e')
+  return value < 1000
+    ? formatResource(value)
+    : new Intl.NumberFormat('en-US', {
+        notation: 'compact',
+        maximumFractionDigits: 1,
+      }).format(value)
 }
 
 export function formatResourceRate(value: number) {
@@ -24,13 +34,9 @@ export function formatResourceRate(value: number) {
 
 export function formatResearchCost(cost: ResearchCost | null | undefined) {
   if (!cost) return 'Complete'
-  return [
-    cost.wood ? `${formatResource(cost.wood)} wood` : '',
-    cost.stone ? `${formatResource(cost.stone)} stone` : '',
-    cost.fruit ? `${formatResource(cost.fruit)} fruit` : '',
-  ]
-    .filter(Boolean)
-    .join(' + ')
+  return RESOURCES.filter((id) => cost[id])
+    .map((id) => `${formatResource(cost[id] ?? 0)} ${id}`)
+    .join(' · ')
 }
 
 export function formatDuration(durationMs: number) {

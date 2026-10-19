@@ -1,6 +1,6 @@
 # Primitive Tribe
 
-A browser-based incremental idle game. Gather resources, explore nearby areas, and research tools while keeping your tribe fed.
+A browser-based incremental game about turning a small tribe into an automated village. Assign workers, build production chains, and develop a permanent technology specialization.
 
 Coding agents should also read [AGENTS.md](AGENTS.md) for change and validation guidance.
 
@@ -21,13 +21,22 @@ Reloading cancels unfinished actions and research and returns their reserved mat
 
 ## Growing your tribe
 
-Gather fruit, explore for wood, and collect 2 wood to open Research. A sharpened stick unlocks **Communal shelters**: the first upgrade enables gathering jobs and room for 3 people; later upgrades raise capacity to 5 and 7. In Tribe, welcome a new person for 15 fruit and choose a job for each person, including yourself.
+Gather fruit, explore for wood, and collect 2 wood to open Technology. Research a sharpened stick, then **Shelters** to start automation. Your first shelters include a foraging camp and lumber camp, and put you to work gathering fruit. Invite people for 15 fruit and assign available workers with each building's + and − buttons. Individual assignments are also available under People.
 
-Foragers collect fruit every 5 seconds, woodcutters collect wood every 8 seconds, and stoneworkers collect stone every 12 seconds. Wood and stone jobs require discovering those resources. Jobs run alongside manual actions and research, train the shared gathering skills, and benefit from tool upgrades. Switching jobs discards that person's unfinished gathering cycle.
+Discovering stone adds a quarry. **Carpentry** unlocks a sawmill and houses; **Masonry** unlocks stoneworks. Sawmills convert 3 wood into planks, and stoneworks convert 3 stone into blocks. Production pauses when inputs run out. Move workers between gathering and processing to manage supply. Building expansions add two worker places and increase output by 50% of the original yield. Houses increase population capacity.
 
-**Stone axes** improve wood yields, **Quarrying** improves stone yields, and **Teamwork** increases worker output. Discover stone and research flint knapping to open the axe and quarrying branch.
+**Writing** unlocks the study, where scholars turn fruit into knowledge, and the specialization choice:
 
-Each healthy person eats 1 fruit per minute. Hungry workers produce less; very hungry workers pause until meals restore their hunger. Starvation can cost tribe members, but the final person survives and can gather fruit manually to recover. Work and meals advance only while the page is visible; closed or hidden pages do not earn resources or consume food.
+- **Forestry:** +60% wood and plank output. Precision joinery reduces both processing recipes to 2 raw materials.
+- **Stonecraft:** +60% stone and block output. Architecture improves block output and doubles the capacity added by houses.
+
+A specialization is permanent for the run. Both paths retain all essential workplaces and can research Cultivation and Engineering, then construct the **Great Hall** to establish a village. Production and construction continue after that milestone. A reset or prestige system is not implemented.
+
+Each fed person eats 1 fruit per minute. Food shortages reduce output to 80% at 3/5 health and 50% at 2/5 or below; nobody dies or permanently stops working. Meals feed the hungriest first. Foragers can recover the economy without manual gathering. A feast restores everyone's missing health immediately for 1 fruit per health point, rounded up.
+
+Work continues while the game is hidden or closed, with up to **24 hours** of production and meals per absence. The return summary shows net resource gains. Catch-up uses the same recipes, worker assignments, food effects, and partial cycles as visible play; it does not buy buildings, recruit people, or choose research automatically. Manual actions and research pause while the page is hidden. Unfinished manual actions and research still cancel and refund their reserved materials on reload.
+
+Existing saves migrate automatically to version 4. Resources, people, research and skills remain; existing workers receive enough workplace capacity to retain their jobs. Saves without a reliable timestamp begin offline accounting from their first load in this version.
 
 ## Development checks
 

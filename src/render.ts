@@ -1,622 +1,618 @@
-import { JOBS, RECRUIT_COST, RESEARCH_ITEM_KEYS } from './constants'
-import { formatDuration, formatResource, formatResourceRate } from './format'
+import { JOBS, RECRUIT_COST, RESEARCH_ITEM_KEYS, RESOURCES } from './constants'
+import {
+  BUILDING_IDS,
+  BUILDINGS,
+  DEVELOPMENT_TECH,
+  JOB_BUILDING,
+  PRODUCTION_TECH,
+  SPECIALIZATION_TECH,
+} from './economy'
+import {
+  formatCompactResource,
+  formatDuration,
+  formatResearchCost,
+  formatResource,
+} from './format'
 import type { Game } from './game'
-import type { Action, ActionKey, JobId, Person, ResearchId } from './types'
+import type {
+  ActionKey,
+  Cost,
+  JobId,
+  Person,
+  ResearchId,
+  ResourceId,
+} from './types'
 
-type View = 'camp' | 'research'
 export interface ActionView {
-  researchId?: ResearchId
   button: HTMLButtonElement
   levelLabel: HTMLElement
   subtitle: HTMLElement
   progressWrap: HTMLElement
   progressBar: HTMLProgressElement
   progressLabel: HTMLElement
-  idleSubtitle: () => string
 }
 
-function element<T extends HTMLElement>(selector: string): T {
-  const result = document.querySelector<T>(selector)
-  if (!result) throw new Error(`Missing application element: ${selector}`)
+export function element<T extends HTMLElement = HTMLElement>(id: string): T {
+  const found = document.getElementById(id)
+  if (!found) throw new Error(`Missing element: ${id}`)
+  return found as T
+}
+function node<K extends keyof HTMLElementTagNameMap>(
+  tag: K,
+  className = '',
+  text = '',
+) {
+  const result = document.createElement(tag)
+  result.className = className
+  result.textContent = text
   return result
 }
+const RESOURCE_NAMES: Record<ResourceId, string> = {
+  fruit: 'Fruit',
+  wood: 'Wood',
+  stone: 'Stone',
+  planks: 'Planks',
+  blocks: 'Blocks',
+  knowledge: 'Knowledge',
+}
+const REQUIREMENTS: Record<ResearchId, string> = {
+  'sharpened-stick': '2 wood',
+  'foraging-practice': 'Sharpened stick',
+  shelters: 'Sharpened stick',
+  'stone-flakes': 'Discover stone',
+  'stone-axes': 'Flint knapping',
+  quarrying: 'Stone axes',
+  teamwork: 'Shelters',
+  carpentry: 'Shelters · discover stone',
+  masonry: 'Flint knapping',
+  writing: 'Carpentry + Masonry',
+  forestry: 'Writing',
+  stonecraft: 'Writing',
+  agriculture: 'Writing',
+  joinery: 'Forestry',
+  architecture: 'Stonecraft',
+  engineering: 'Cultivation + your path technology',
+}
 
-export function createRenderer(game: Game) {
-  const {
-    state,
-    actions,
-    syncUnlocks,
-    getSkill,
-    getResearchLevel,
-    getResearchDefinition,
-    getResearchNextLevel,
-    getResearchEffect,
-    canAffordResearch,
-    getUnreadResearch,
-    markResearchSeen,
-    getResearchSubtitle,
-    getResearchCostLabel,
-    getResearchRowLabel,
-    getRequiredXp,
-    getActionDuration,
-    getNextResourceGain,
-    getHungerEffects,
-    getResourceRates,
-    getActiveAction,
-    getActiveResearch,
-  } = game
-  const fruitValue = element<HTMLElement>('#fruit-value')
-  const woodRow = element<HTMLElement>('#wood-row')
-  const woodValue = element<HTMLElement>('#wood-value')
-  const stoneRow = element<HTMLElement>('#stone-row')
-  const stoneValue = element<HTMLElement>('#stone-value')
-  const feedback = element<HTMLElement>('#feedback')
-  const tribeList = element<HTMLElement>('#tribe-list')
-  const recruitButton = element<HTMLButtonElement>('#recruit-button')
-  const populationCount = element<HTMLElement>('#population-count')
-  const campSummary = element<HTMLElement>('#camp-summary')
-  const recruitStatus = element<HTMLElement>('#recruit-status')
-  const resourceRates = {
-    fruit: element<HTMLElement>('#fruit-rate'),
-    wood: element<HTMLElement>('#wood-rate'),
-    stone: element<HTMLElement>('#stone-rate'),
-  }
-  const gatherButton = element<HTMLButtonElement>('#gather-button')
-  const gatherLevel = element<HTMLElement>('#gather-level')
-  const gatherSubtitle = element<HTMLElement>('#gather-subtitle')
-  const gatherProgressWrap = element<HTMLElement>('#gather-progress-wrap')
-  const gatherProgressBar = element<HTMLProgressElement>('#gather-progress-bar')
-  const gatherProgressLabel = element<HTMLElement>('#gather-progress-label')
-  const exploreButton = element<HTMLButtonElement>('#explore-button')
-  const exploreLevel = element<HTMLElement>('#explore-level')
-  const exploreSubtitle = element<HTMLElement>('#explore-subtitle')
-  const exploreProgressWrap = element<HTMLElement>('#explore-progress-wrap')
-  const exploreProgressBar = element<HTMLProgressElement>(
-    '#explore-progress-bar',
-  )
-  const exploreProgressLabel = element<HTMLElement>('#explore-progress-label')
-  const sticksButton = element<HTMLButtonElement>('#sticks-button')
-  const sticksLevel = element<HTMLElement>('#sticks-level')
-  const sticksSubtitle = element<HTMLElement>('#sticks-subtitle')
-  const sticksProgressWrap = element<HTMLElement>('#sticks-progress-wrap')
-  const sticksProgressBar = element<HTMLProgressElement>('#sticks-progress-bar')
-  const sticksProgressLabel = element<HTMLElement>('#sticks-progress-label')
-  const exploreFurtherButton = element<HTMLButtonElement>(
-    '#explore-further-button',
-  )
-  const exploreFurtherLevel = element<HTMLElement>('#explore-further-level')
-  const exploreFurtherSubtitle = element<HTMLElement>(
-    '#explore-further-subtitle',
-  )
-  const exploreFurtherProgressWrap = element<HTMLElement>(
-    '#explore-further-progress-wrap',
-  )
-  const exploreFurtherProgressBar = element<HTMLProgressElement>(
-    '#explore-further-progress-bar',
-  )
-  const exploreFurtherProgressLabel = element<HTMLElement>(
-    '#explore-further-progress-label',
-  )
-  const stoneButton = element<HTMLButtonElement>('#stone-button')
-  const stoneLevel = element<HTMLElement>('#stone-level')
-  const stoneSubtitle = element<HTMLElement>('#stone-subtitle')
-  const stoneProgressWrap = element<HTMLElement>('#stone-progress-wrap')
-  const stoneProgressBar = element<HTMLProgressElement>('#stone-progress-bar')
-  const stoneProgressLabel = element<HTMLElement>('#stone-progress-label')
-  const gatherValue = element<HTMLElement>('#gather-value')
-  const sticksValue = element<HTMLElement>('#sticks-value')
-  const stoneActionValue = element<HTMLElement>('#stone-action-value')
-  const actionsTab = element<HTMLButtonElement>('#actions-tab')
-  const researchTab = element<HTMLButtonElement>('#research-tab')
-  const researchUnread = element<HTMLElement>('#research-unread')
-  const campView = element<HTMLElement>('#camp-view')
-  const researchView = element<HTMLElement>('#research-view')
-  const researchEmpty = element<HTMLElement>('#research-empty')
-  function researchElements(id: string) {
-    return {
-      button: element<HTMLButtonElement>(`#${id}-button`),
-      levelLabel: element<HTMLElement>(`#${id}-level`),
-      subtitle: element<HTMLElement>(`#${id}-subtitle`),
-      costs: element<HTMLElement>(`#${id}-costs`),
-      progressWrap: element<HTMLElement>(`#${id}-progress-wrap`),
-      progressBar: element<HTMLProgressElement>(`#${id}-progress-bar`),
-      progressLabel: element<HTMLElement>(`#${id}-progress-label`),
-      value: element<HTMLElement>(`#${id}-button [data-action-value]`),
-      complete: element<HTMLElement>(`#${id}-complete`),
-      completeLevel: element<HTMLElement>(`#${id}-complete-level`),
-    }
-  }
-  const researchItemViews = {
-    shelters: researchElements('shelters'),
-    'stone-axes': researchElements('stone-axes'),
-    quarrying: researchElements('quarrying'),
-    teamwork: researchElements('teamwork'),
-    'sharpened-stick': {
-      button: element<HTMLButtonElement>('#basic-tools-button'),
-      levelLabel: element<HTMLElement>('#research-level'),
-      subtitle: element<HTMLElement>('#research-subtitle'),
-      costs: element<HTMLElement>('#research-costs'),
-      progressWrap: element<HTMLElement>('#research-progress-wrap'),
-      progressBar: element<HTMLProgressElement>('#research-progress-bar'),
-      progressLabel: element<HTMLElement>('#research-progress-label'),
-      value: element<HTMLElement>('#basic-tools-button [data-action-value]'),
-      complete: element<HTMLElement>('#basic-tools-complete'),
-      completeLevel: element<HTMLElement>('#research-complete-level'),
-    },
-    'foraging-practice': {
-      button: element<HTMLButtonElement>('#foraging-practice-button'),
-      levelLabel: element<HTMLElement>('#foraging-practice-level'),
-      subtitle: element<HTMLElement>('#foraging-practice-subtitle'),
-      costs: element<HTMLElement>('#foraging-practice-costs'),
-      progressWrap: element<HTMLElement>('#foraging-practice-progress-wrap'),
-      progressBar: element<HTMLProgressElement>(
-        '#foraging-practice-progress-bar',
+export function createRenderer(game: Game, beforeChange: () => void) {
+  const { state } = game
+  const feedback = element('feedback')
+  const actionsTab = element<HTMLButtonElement>('actions-tab')
+  const researchTab = element<HTMLButtonElement>('research-tab')
+  const recruitButton = element<HTMLButtonElement>('recruit-button')
+  const feastButton = element<HTMLButtonElement>('feast-button')
+  const tribeList = element('tribe-list')
+  let view: 'camp' | 'research' = 'camp'
+  let wasAutomated = state.researchLevels.shelters > 0
+  let wasWriting = state.researchLevels.writing > 0
+  element<HTMLDetailsElement>('manual-work').open = !wasAutomated
+  const resourceViews = RESOURCES.map((id) => {
+    const row = node('div', `resource resource-${id}`)
+    const title = node('span', 'resource-name', RESOURCE_NAMES[id])
+    const value = node('strong', 'resource-value')
+    const rate = node('span', 'resource-rate')
+    row.append(title, value, rate)
+    element('resource-list').append(row)
+    return { id, row, value, rate }
+  })
+  const groups = [
+    {
+      name: 'Foundations',
+      ids: RESEARCH_ITEM_KEYS.filter(
+        (id) =>
+          ![
+            ...PRODUCTION_TECH,
+            ...SPECIALIZATION_TECH,
+            ...DEVELOPMENT_TECH,
+          ].includes(id),
       ),
-      progressLabel: element<HTMLElement>('#foraging-practice-progress-label'),
-      value: element<HTMLElement>(
-        '#foraging-practice-button [data-action-value]',
-      ),
-      complete: element<HTMLElement>('#foraging-practice-complete'),
-      completeLevel: element<HTMLElement>('#foraging-practice-complete-level'),
     },
-    'stone-flakes': {
-      button: element<HTMLButtonElement>('#stone-flakes-button'),
-      levelLabel: element<HTMLElement>('#stone-flakes-level'),
-      subtitle: element<HTMLElement>('#stone-flakes-subtitle'),
-      costs: element<HTMLElement>('#stone-flakes-costs'),
-      progressWrap: element<HTMLElement>('#stone-flakes-progress-wrap'),
-      progressBar: element<HTMLProgressElement>('#stone-flakes-progress-bar'),
-      progressLabel: element<HTMLElement>('#stone-flakes-progress-label'),
-      value: element<HTMLElement>('#stone-flakes-button [data-action-value]'),
-      complete: element<HTMLElement>('#stone-flakes-complete'),
-      completeLevel: element<HTMLElement>('#stone-flakes-complete-level'),
-    },
-  }
-  let currentView: View = 'camp'
-
-  function researchActionView(researchId: ResearchId): ActionView {
-    return {
-      ...researchItemViews[researchId],
-      researchId,
-      idleSubtitle: () => getResearchSubtitle(researchId),
-    }
-  }
-  const actionViews: Record<ActionKey, ActionView> = {
-    researchShelters: researchActionView('shelters'),
-    researchAxes: researchActionView('stone-axes'),
-    researchQuarrying: researchActionView('quarrying'),
-    researchTeamwork: researchActionView('teamwork'),
-    gather: {
-      button: gatherButton,
-      levelLabel: gatherLevel,
-      subtitle: gatherSubtitle,
-      progressWrap: gatherProgressWrap,
-      progressBar: gatherProgressBar,
-      progressLabel: gatherProgressLabel,
-      idleSubtitle: () =>
-        `${formatDuration(getActionDuration(actions.gather))}`,
-    },
-    explore: {
-      button: exploreButton,
-      levelLabel: exploreLevel,
-      subtitle: exploreSubtitle,
-      progressWrap: exploreProgressWrap,
-      progressBar: exploreProgressBar,
-      progressLabel: exploreProgressLabel,
-      idleSubtitle: () =>
-        `Search nearby · ${formatDuration(getActionDuration(actions.explore))}`,
-    },
-    sticks: {
-      button: sticksButton,
-      levelLabel: sticksLevel,
-      subtitle: sticksSubtitle,
-      progressWrap: sticksProgressWrap,
-      progressBar: sticksProgressBar,
-      progressLabel: sticksProgressLabel,
-      idleSubtitle: () =>
-        `${formatDuration(getActionDuration(actions.sticks))}`,
-    },
-    exploreFurther: {
-      button: exploreFurtherButton,
-      levelLabel: exploreFurtherLevel,
-      subtitle: exploreFurtherSubtitle,
-      progressWrap: exploreFurtherProgressWrap,
-      progressBar: exploreFurtherProgressBar,
-      progressLabel: exploreFurtherProgressLabel,
-      idleSubtitle: () =>
-        `Search beyond the trees · ${formatDuration(getActionDuration(actions.exploreFurther))}`,
-    },
-    stone: {
-      button: stoneButton,
-      levelLabel: stoneLevel,
-      subtitle: stoneSubtitle,
-      progressWrap: stoneProgressWrap,
-      progressBar: stoneProgressBar,
-      progressLabel: stoneProgressLabel,
-      idleSubtitle: () => `${formatDuration(getActionDuration(actions.stone))}`,
-    },
-    research: {
-      researchId: 'sharpened-stick',
-      button: researchItemViews['sharpened-stick'].button,
-      levelLabel: researchItemViews['sharpened-stick'].levelLabel,
-      subtitle: researchItemViews['sharpened-stick'].subtitle,
-      progressWrap: researchItemViews['sharpened-stick'].progressWrap,
-      progressBar: researchItemViews['sharpened-stick'].progressBar,
-      progressLabel: researchItemViews['sharpened-stick'].progressLabel,
-      idleSubtitle: () => getResearchSubtitle('sharpened-stick'),
-    },
-    researchForaging: {
-      researchId: 'foraging-practice',
-      button: researchItemViews['foraging-practice'].button,
-      levelLabel: researchItemViews['foraging-practice'].levelLabel,
-      subtitle: researchItemViews['foraging-practice'].subtitle,
-      progressWrap: researchItemViews['foraging-practice'].progressWrap,
-      progressBar: researchItemViews['foraging-practice'].progressBar,
-      progressLabel: researchItemViews['foraging-practice'].progressLabel,
-      idleSubtitle: () => getResearchSubtitle('foraging-practice'),
-    },
-    researchStone: {
-      researchId: 'stone-flakes',
-      button: researchItemViews['stone-flakes'].button,
-      levelLabel: researchItemViews['stone-flakes'].levelLabel,
-      subtitle: researchItemViews['stone-flakes'].subtitle,
-      progressWrap: researchItemViews['stone-flakes'].progressWrap,
-      progressBar: researchItemViews['stone-flakes'].progressBar,
-      progressLabel: researchItemViews['stone-flakes'].progressLabel,
-      idleSubtitle: () => getResearchSubtitle('stone-flakes'),
-    },
-  }
-  function setHidden(element: HTMLElement, hidden: boolean) {
-    element.hidden = hidden
-  }
-
-  function setView(view: View) {
-    const nextView =
-      view === 'research' && state.researchUnlocked ? 'research' : 'camp'
-    currentView = nextView
-    const showingResearch = nextView === 'research'
-    setHidden(campView, showingResearch)
-    setHidden(researchView, !showingResearch)
-    actionsTab.classList.toggle('tab-active', !showingResearch)
-    researchTab.classList.toggle('tab-active', showingResearch)
-    actionsTab.setAttribute('aria-selected', String(!showingResearch))
-    researchTab.setAttribute('aria-selected', String(showingResearch))
-    actionsTab.tabIndex = showingResearch ? -1 : 0
-    researchTab.tabIndex = showingResearch ? 0 : -1
-    if (showingResearch && !document.hidden) markResearchSeen()
-    const hasUnreadResearch = getUnreadResearch().length > 0
-    setHidden(researchUnread, !hasUnreadResearch)
-    researchTab.setAttribute(
-      'aria-label',
-      hasUnreadResearch ? 'Research, new research available' : 'Research',
+    { name: 'Workshops', ids: PRODUCTION_TECH },
+    { name: 'Choose a specialization', ids: SPECIALIZATION_TECH },
+    { name: 'A growing village', ids: DEVELOPMENT_TECH },
+  ].map((group) => {
+    const section =
+      group.name === 'Foundations'
+        ? node('details', 'tech-section foundation-section')
+        : node('section', 'tech-section')
+    if (section instanceof HTMLDetailsElement) section.open = !wasWriting
+    section.append(
+      node(group.name === 'Foundations' ? 'summary' : 'h3', '', group.name),
     )
-  }
-
-  function syncActionView(action: Action, view: ActionView) {
-    const active = view.researchId ? getActiveResearch() : getActiveAction()
-    view.button.disabled = Boolean(active && active !== action)
-    view.button.setAttribute('aria-disabled', String(Boolean(active)))
-    if (view.researchId) {
-      view.levelLabel.textContent = getResearchRowLabel(view.researchId)
-    } else {
-      const skill = getSkill(action.id)
-      view.levelLabel.textContent = `Lv ${skill.level} · ${skill.xp}/${getRequiredXp(action.id)} XP`
+    const list = node('div', 'tech-grid')
+    section.append(list)
+    element('research-groups').append(section)
+    return { ...group, section, list }
+  })
+  const actionViews = {} as Record<ActionKey, ActionView>
+  const researchViews = new Map<
+    ResearchId,
+    {
+      card: HTMLElement
+      costs: HTMLElement
+      effect: HTMLElement
+      requirement: HTMLElement
     }
-    if (active === action) return
-    view.subtitle.textContent = view.researchId
-      ? getResearchSubtitle(view.researchId)
-      : view.idleSubtitle()
-    const duration = formatDuration(getActionDuration(action))
-    const labels = {
-      gather: `Gather fruit. Collect ${formatResource(getNextResourceGain('gather'))} fruit by hand. Takes ${duration}.`,
-      explore: `Explore nearby. Spend 10 fruit. Takes ${duration}.`,
-      sticks: `Gather sticks. Collect ${formatResource(getNextResourceGain('sticks'))} wood by hand. Takes ${duration}.`,
-      'explore-further': `Explore farther. Spend 10 fruit. Takes ${duration}.`,
-      stone: `Gather stone. Collect ${formatResource(getNextResourceGain('stone'))} stone by hand. Takes ${duration}.`,
-      research: `Sharpened stick. Research ${getResearchCostLabel('sharpened-stick')} next. Takes ${duration}.`,
-      'research-foraging': `Woven baskets. Research ${getResearchCostLabel('foraging-practice')} next. Takes ${duration}.`,
-      'research-stone-flakes': `Flint knapping. Research ${getResearchCostLabel('stone-flakes')} next. Takes ${duration}.`,
+  >()
+  for (const key of Object.keys(game.actions) as ActionKey[]) {
+    const action = game.actions[key]
+    const research = action.researchId
+    const button = node('button', research ? 'tech-card' : 'manual-action')
+    button.type = 'button'
+    button.id = `${action.id}-button`
+    const top = node('span', 'card-title')
+    const name = node('span', '', action.name)
+    const levelLabel = node('span', 'level-label')
+    top.append(name, levelLabel)
+    const subtitle = node('span', 'action-subtitle')
+    const progressWrap = node('span', 'action-progress')
+    progressWrap.hidden = true
+    const progressBar = node('progress')
+    progressBar.max = 100
+    const progressLabel = node('span')
+    progressWrap.append(progressBar, progressLabel)
+    const actionStatus = node('span', 'action-status')
+    actionStatus.append(subtitle, progressWrap)
+    button.append(top, actionStatus)
+    actionViews[key] = {
+      button,
+      levelLabel,
+      subtitle,
+      progressWrap,
+      progressBar,
+      progressLabel,
     }
-    view.button.setAttribute(
-      'aria-label',
-      action.researchId
-        ? `${action.name}. ${getResearchCostLabel(action.researchId)}. Takes ${duration}.`
-        : labels[action.id as keyof typeof labels],
-    )
+    if (research) {
+      const costs = node('span', 'costs')
+      const requirement = node('span', 'requirement')
+      const effect = node('span', 'tech-effect')
+      button.append(effect, costs, requirement)
+      groups.find((group) => group.ids.includes(research))?.list.append(button)
+      researchViews.set(research, { card: button, costs, effect, requirement })
+    } else
+      element(
+        key === 'explore' || key === 'exploreFurther'
+          ? 'discovery-list'
+          : 'manual-list',
+      ).append(button)
   }
-
-  function renderResearchItem(researchId: ResearchId) {
-    const definition = getResearchDefinition(researchId)
-    const itemView = researchItemViews[researchId]
-    const level = getResearchLevel(researchId)
-    const prerequisiteMet = Boolean(definition?.prerequisite())
-    const maxed = level >= definition.maxLevel
-    const visible = prerequisiteMet
-    setHidden(itemView.button, !visible || maxed)
-    setHidden(itemView.complete, !visible || !maxed)
-    itemView.levelLabel.textContent = getResearchRowLabel(researchId)
-    itemView.completeLevel.textContent = `Lv ${level}/${definition.maxLevel}`
-    const completedEffect = itemView.complete.querySelector(
-      '[data-research-effect]',
-    )
-    if (completedEffect)
-      completedEffect.textContent = getResearchEffect(researchId, level)
-    const next = getResearchNextLevel(researchId)
-    if (next) {
-      const action = Object.values(actions).find(
-        (candidate) => candidate.id === definition.actionId,
+  function change(run: () => boolean, message: string) {
+    beforeChange()
+    if (run()) feedback.textContent = message
+    render()
+  }
+  const buildingViews = BUILDING_IDS.map((id) => {
+    const definition = BUILDINGS[id]
+    const card = node('article', 'building-card')
+    card.id = `building-${id}`
+    const top = node('div', 'card-title')
+    const name = node('h3', '', definition.name)
+    const level = node('span', 'level-label')
+    top.append(name, level)
+    const recipe = node('p', 'building-recipe')
+    const status = node('p', 'building-status')
+    const progress = node('progress', 'work-progress')
+    progress.max = 100
+    progress.setAttribute('aria-label', `${definition.name} production cycle`)
+    const controls = node('div', 'building-controls')
+    const workers = node('div', 'worker-control')
+    const minus = node('button', 'worker-button', '−')
+    const count = node('span', 'worker-count')
+    const plus = node('button', 'worker-button', '+')
+    for (const button of [minus, plus]) button.type = 'button'
+    minus.setAttribute('aria-label', `Remove worker from ${definition.name}`)
+    plus.setAttribute('aria-label', `Assign worker to ${definition.name}`)
+    minus.onclick = () =>
+      definition.job &&
+      change(
+        () => game.adjustWorkers(definition.job as Exclude<JobId, 'idle'>, -1),
+        '',
       )
-      if (!action) return
-      const activeAction = getActiveResearch()
-      const working = activeAction === action
-      const affordable = canAffordResearch(researchId)
-      const availability = working
-        ? 'working'
-        : activeAction
-          ? 'busy'
-          : affordable
-            ? 'ready'
-            : 'missing'
-      const status = {
-        working: 'Upgrading',
-        busy: 'Busy',
-        ready: 'Upgrade',
-        missing: '',
-      }[availability]
-      itemView.button.dataset.availability = availability
-      itemView.button.disabled = Boolean(activeAction && !working)
-      itemView.button.setAttribute(
-        'aria-disabled',
-        String(Boolean(activeAction) || !affordable),
+    plus.onclick = () =>
+      definition.job &&
+      change(
+        () => game.adjustWorkers(definition.job as Exclude<JobId, 'idle'>, 1),
+        '',
       )
-      itemView.subtitle.textContent = `${getResearchEffect(researchId, level)} → ${getResearchEffect(researchId, level + 1)} · ${formatDuration(getActionDuration(action))}`
-
-      const costLabels: string[] = []
-      const costs = []
-      for (const resource of ['wood', 'stone', 'fruit'] as const) {
-        const required = next[resource]
-        if (!required) continue
-        const enough = state[resource] >= required
-        const chip = document.createElement('span')
-        chip.className = `inline-flex items-center gap-1 text-xs leading-normal font-medium whitespace-nowrap tabular-nums ${enough ? 'text-success' : 'text-error'}`
-        const icon = document.createElement('span')
-        icon.setAttribute('aria-hidden', 'true')
-        icon.textContent = { wood: '🪵', stone: '🪨', fruit: '🍎' }[resource]
-        const label = document.createElement('span')
-        label.className = 'sr-only'
-        label.textContent = `${resource}: `
-        chip.append(
-          icon,
-          label,
-          ` ${formatResource(state[resource])}/${formatResource(required)}`,
-        )
-        costLabels.push(
-          `${resource}: ${formatResource(state[resource])} of ${formatResource(required)} required${enough ? ', enough' : ', missing'}`,
-        )
-        costs.push(chip)
+    workers.append(minus, count, plus)
+    workers.hidden = !definition.job
+    const build = node('button', 'build-button')
+    build.type = 'button'
+    build.onclick = () => {
+      const existed = state.buildings[id] > 0
+      change(
+        () => game.build(id),
+        id === 'great-hall'
+          ? 'The Great Hall is complete.'
+          : `${definition.name} ${existed ? 'expanded' : 'built'}.`,
+      )
+      if (id === 'great-hall' && state.buildings[id] > 0) {
+        const milestone = element('village-complete')
+        milestone.scrollIntoView({ block: 'start' })
+        milestone.focus({ preventScroll: true })
       }
-      // Retain the measured cost layout while reserved materials are hidden.
-      if (!working) itemView.costs.replaceChildren(...costs)
-
-      itemView.value.removeAttribute('aria-label')
-      itemView.value.textContent = status
-      itemView.button.setAttribute(
-        'aria-label',
-        `${definition.name}. ${status ? `${status}${availability === 'ready' ? ' available' : ''}. ` : ''}Level ${level} of ${definition.maxLevel}, upgrading to level ${level + 1}. ${working ? 'Resources reserved until complete.' : `${costLabels.join('. ')}.`} Takes ${formatDuration(getActionDuration(action))}.`,
-      )
     }
-  }
-
-  function render() {
-    const focusedAction = Object.values(actionViews).find(
-      (view) => view.button === document.activeElement,
-    )
-    syncUnlocks()
-    fruitValue.textContent = formatResource(state.fruit)
-    woodValue.textContent = formatResource(state.wood)
-    stoneValue.textContent = formatResource(state.stone)
-    const rates = getResourceRates(getActiveAction())
-    for (const resource of ['fruit', 'wood', 'stone'] as const) {
-      const rate = rates[resource]
-      const label = resourceRates[resource]
-      label.hidden = rate === 0
-      label.textContent = formatResourceRate(rate)
-      label.dataset.direction =
-        rate > 0 ? 'gain' : rate < 0 ? 'loss' : 'neutral'
-      label.title =
-        'Net rate from assigned jobs and manual gathering, minus food consumption. Action costs are paid once. Food is consumed each minute.'
-      label.setAttribute(
-        'aria-label',
-        `${resource}: ${rate === 0 ? 'no net change' : `${rate > 0 ? 'gain' : 'loss'} of ${Math.abs(rate).toLocaleString('en-US', { maximumFractionDigits: 4 })} per second`}`,
-      )
+    controls.append(workers, build)
+    const costs = node('p', 'costs')
+    card.append(top, recipe, status, progress, controls, costs)
+    element('building-list').append(card)
+    return {
+      id,
+      definition,
+      card,
+      level,
+      recipe,
+      status,
+      progress,
+      workers,
+      count,
+      minus,
+      plus,
+      build,
+      costs,
     }
-    const totalFruitGain = getNextResourceGain('gather')
-    const woodGain = getNextResourceGain('sticks')
-    const stoneGain = getNextResourceGain('stone')
-    gatherValue.textContent = `+${formatResource(totalFruitGain)}`
-    gatherValue.setAttribute(
-      'aria-label',
-      `Gain ${formatResource(totalFruitGain)} fruit`,
-    )
-    sticksValue.textContent = `+${formatResource(woodGain)}`
-    sticksValue.setAttribute(
-      'aria-label',
-      `Gain ${formatResource(woodGain)} wood`,
-    )
-    stoneActionValue.textContent = `+${formatResource(stoneGain)}`
-    stoneActionValue.setAttribute(
-      'aria-label',
-      `Gain ${formatResource(stoneGain)} stone`,
-    )
-    for (const key of Object.keys(actions) as ActionKey[]) {
-      syncActionView(actions[key], actionViews[key])
-    }
-    setHidden(woodRow, !state.explored)
-    const exploring = getActiveAction()?.id === 'explore'
-
-    setHidden(
-      exploreButton,
-      state.explored || (!exploring && !state.exploreUnlocked),
-    )
-    setHidden(sticksButton, !state.explored)
-    const exploringFurther = getActiveAction()?.id === 'explore-further'
-    setHidden(
-      exploreFurtherButton,
-      state.stoneFound || (!state.basicTools && !exploringFurther),
-    )
-    setHidden(stoneRow, !state.stoneFound)
-    setHidden(stoneButton, !state.stoneFound)
-
-    const researching = Boolean(getActiveResearch())
-    RESEARCH_ITEM_KEYS.forEach(renderResearchItem)
-    const anyResearchVisible = RESEARCH_ITEM_KEYS.some((researchId) =>
-      getResearchDefinition(researchId).prerequisite(),
-    )
-    setHidden(researchEmpty, anyResearchVisible || researching)
-    researchTab.disabled = !state.researchUnlocked
-    researchTab.setAttribute('aria-disabled', String(researchTab.disabled))
-    if (!state.researchUnlocked) currentView = 'camp'
-    setView(currentView)
-
-    renderHunger()
-    if (focusedAction?.button.hidden) {
-      const panel = currentView === 'camp' ? campView : researchView
-      const nextAction = panel.querySelector<HTMLButtonElement>(
-        'button:not([hidden]):not(:disabled)',
-      )
-      const focusTarget =
-        nextAction ?? (currentView === 'camp' ? actionsTab : researchTab)
-      focusTarget.focus()
-    }
-  }
-  // Keep controls mounted while resources tick so keyboard focus and open
-  // native menus survive background rendering.
+  })
   const peopleViews = new Map<
     Person,
     {
       row: HTMLElement
       name: HTMLElement
-      hunger: HTMLElement
+      health: HTMLElement
       select: HTMLSelectElement
-      status: HTMLElement
     }
   >()
   function getPersonForJobControl(select: HTMLSelectElement) {
-    return [...peopleViews].find(([, view]) => view.select === select)?.[0]
+    return [...peopleViews].find(([, person]) => person.select === select)?.[0]
   }
-  function renderHunger() {
-    const jobsUnlocked = getResearchLevel('shelters') > 0
-    populationCount.textContent = `${state.people.length} / ${game.getPopulationCapacity()}`
-    populationCount.title = 'People / shelter capacity'
-    populationCount.setAttribute(
-      'aria-label',
-      `${state.people.length} people, capacity ${game.getPopulationCapacity()}`,
-    )
-    const working = state.people.filter(
-      (person) =>
-        person.job !== 'idle' && getHungerEffects(person).outputMultiplier > 0,
-    ).length
-    campSummary.textContent = `${state.people.length} ${state.people.length === 1 ? 'person' : 'people'} · ${working} working`
-    recruitButton.hidden = !jobsUnlocked
-    recruitButton.setAttribute('aria-disabled', String(!game.canRecruit()))
-    recruitStatus.textContent = !jobsUnlocked
+  function setView(next: 'camp' | 'research') {
+    view = next === 'research' && state.researchUnlocked ? next : 'camp'
+    const researching = view === 'research'
+    element('camp-view').hidden = researching
+    element('research-view').hidden = !researching
+    actionsTab.setAttribute('aria-selected', String(!researching))
+    researchTab.setAttribute('aria-selected', String(researching))
+    actionsTab.tabIndex = researching ? -1 : 0
+    researchTab.tabIndex = researching ? 0 : -1
+    if (researching && !document.hidden) game.markResearchSeen()
+    element('research-unread').hidden = game.getUnreadResearch().length === 0
+  }
+  function renderCosts(target: HTMLElement, cost: Cost) {
+    // Update text nodes in place: production ticks never replace focused controls.
+    const labels = RESOURCES.filter((id) => cost[id]).map((id) => {
+      const required = cost[id] ?? 0
+      const chip = node(
+        'span',
+        state[id] >= required ? 'cost-enough' : 'cost-missing',
+        `${formatCompactResource(required)} ${id}`,
+      )
+      return chip
+    })
+    target.replaceChildren(...labels)
+  }
+  function render() {
+    const focused = document.activeElement
+    game.syncUnlocks()
+    if (!wasWriting && state.researchLevels.writing > 0) {
+      const foundation = groups.find(
+        (group) => group.name === 'Foundations',
+      )?.section
+      if (foundation instanceof HTMLDetailsElement) foundation.open = false
+    }
+    wasWriting = state.researchLevels.writing > 0
+    const automated = game.getResearchLevel('shelters') > 0
+    if (automated && !wasAutomated)
+      element<HTMLDetailsElement>('manual-work').open = false
+    wasAutomated = automated
+    const rates = game.getResourceRates(null)
+    for (const { id, row, value, rate } of resourceViews) {
+      const visible =
+        id === 'fruit' ||
+        (id === 'wood' && state.explored) ||
+        (id === 'stone' && state.stoneFound) ||
+        (id === 'planks' && game.getResearchLevel('carpentry') > 0) ||
+        (id === 'blocks' && game.getResearchLevel('masonry') > 0) ||
+        (id === 'knowledge' && game.getResearchLevel('writing') > 0) ||
+        state[id] > 0
+      row.hidden = !visible
+      value.textContent = formatCompactResource(state[id])
+      value.title = formatResource(state[id])
+      value.setAttribute('aria-label', `${formatResource(state[id])} ${id}`)
+      const perMinute = rates[id] * 60
+      rate.textContent =
+        Math.abs(perMinute) < 0.05
+          ? '—'
+          : `${perMinute > 0 ? '+' : '−'}${formatCompactResource(Math.abs(perMinute))}/min`
+      rate.dataset.negative = String(perMinute < 0)
+      rate.title =
+        'Current net production per minute, including processing and meals.'
+    }
+    element('chapter').textContent = state.buildings['great-hall']
+      ? 'Village established'
+      : state.specialization
+        ? 'A growing village'
+        : game.getResearchLevel('carpentry')
+          ? 'The workshop age'
+          : automated
+            ? 'A working settlement'
+            : 'A small beginning'
+    element('path-name').textContent =
+      state.specialization === 'forestry'
+        ? 'Forestry'
+        : state.specialization === 'stonecraft'
+          ? 'Stonecraft'
+          : ''
+    element('village-complete').hidden = !state.buildings['great-hall']
+    const idle = state.people.filter((person) => person.job === 'idle').length
+    element('population-count').textContent =
+      `${state.people.length} / ${game.getPopulationCapacity()} ${state.people.length === 1 ? 'person' : 'people'}`
+    element('camp-summary').hidden = !automated
+    element('camp-summary').textContent = automated
+      ? `${state.people.length - idle} working · ${idle} available`
+      : 'A tribe of one'
+    recruitButton.hidden = !automated
+    recruitButton.disabled = !game.canRecruit()
+    element('recruit-status').textContent = !automated
       ? ''
       : state.people.length >= game.getPopulationCapacity()
-        ? 'Shelters full.'
-        : state.fruit < RECRUIT_COST
-          ? `Need ${formatResource(RECRUIT_COST - state.fruit)} more fruit.`
+        ? 'More shelter needed'
+        : ''
+    element('production-section').hidden = !automated
+
+    for (const item of buildingViews) {
+      const { id, definition } = item
+      const level = state.buildings[id]
+      const unlocked = game.isBuildingUnlocked(id)
+      item.card.hidden =
+        (!unlocked && !level) || (id === 'great-hall' && level > 0)
+      if (item.card.hidden) continue
+      item.level.textContent = level ? `Lv ${level}` : 'Not built'
+      item.card.dataset.built = String(level > 0)
+      const people = definition.job
+        ? state.people.filter((person) => person.job === definition.job)
+        : []
+      const worker = people[0] ?? {
+        ...state.people[0],
+        job: definition.job ?? 'idle',
+        hunger: 5,
+        maxHunger: 5,
+      }
+      const gain = game.getWorkerGain(
+        { ...worker, hunger: worker.maxHunger },
+        true,
+      )
+      const input = definition.job ? game.getJobInput(definition.job) : {}
+      item.recipe.textContent = definition.job
+        ? `${Object.keys(input).length ? `${formatResearchCost({ ...input, durationMs: 0 })} → ` : '+'}${formatResource(gain)} ${JOBS[definition.job].resource} / ${JOBS[definition.job].durationMs / 1000}s per worker`
+        : id === 'houses'
+          ? `+${game.getResearchLevel('architecture') ? 4 : 2} places per level`
+          : 'Complete the village'
+      item.status.textContent = !definition.job
+        ? level && id === 'great-hall'
+          ? 'Established'
           : ''
-    for (const [person, view] of peopleViews) {
-      if (state.people.includes(person)) continue
-      const hadFocus = view.row.contains(document.activeElement)
-      view.row.remove()
-      peopleViews.delete(person)
-      if (hadFocus) recruitButton.focus()
+        : !level
+          ? 'Build to assign workers'
+          : !people.length
+            ? 'No workers assigned'
+            : !people.some(game.canWork)
+              ? `Waiting for ${Object.keys(input).join(', ')}`
+              : people.some((person) => person.hunger <= 3)
+                ? 'Food shortage · reduced output'
+                : 'Producing'
+      item.progress.hidden = !definition.job || !people.length
+      item.progress.value =
+        definition.job && people.length
+          ? (Math.max(...people.map((p) => p.workElapsedMs)) /
+              JOBS[definition.job].durationMs) *
+            100
+          : 0
+      item.count.textContent = `${people.length} / ${definition.job ? game.getJobCapacity(definition.job) : 0}`
+      item.count.setAttribute(
+        'aria-label',
+        `${people.length} workers, capacity ${definition.job ? game.getJobCapacity(definition.job) : 0}`,
+      )
+      item.minus.disabled = !people.length
+      item.plus.disabled =
+        !definition.job ||
+        !idle ||
+        !game.isJobUnlocked(definition.job) ||
+        people.length >= game.getJobCapacity(definition.job)
+      const maxed = level >= definition.maxLevel
+      item.build.textContent = maxed ? 'Complete' : level ? 'Expand' : 'Build'
+      item.build.setAttribute(
+        'aria-label',
+        `${level ? 'Expand' : 'Build'} ${definition.name}`,
+      )
+      item.build.disabled = !game.canBuild(id)
+      item.build.hidden = maxed
+      item.costs.hidden = maxed
+      renderCosts(item.costs, game.getBuildingCost(id))
     }
+    let completed = 0
+    for (const key of Object.keys(game.actions) as ActionKey[]) {
+      const action = game.actions[key]
+      const item = actionViews[key]
+      const active = action.researchId
+        ? game.getActiveResearch()
+        : game.getActiveAction()
+      const working = active === action
+      item.button.disabled = Boolean(active && !working)
+      item.button.setAttribute('aria-busy', String(working))
+      const duration = game.getActionDuration(action)
+      if (!action.researchId) {
+        item.button.hidden =
+          key === 'explore'
+            ? state.explored || !state.exploreUnlocked
+            : key === 'sticks'
+              ? !state.explored
+              : key === 'exploreFurther'
+                ? state.stoneFound || !state.basicTools
+                : key === 'stone'
+                  ? !state.stoneFound
+                  : false
+        item.levelLabel.textContent = `Lv ${game.getSkill(action.id).level}`
+        const gain = game.getNextResourceGain(action.id)
+        item.subtitle.textContent = `${gain ? `+${formatResource(gain)} ${JOBS[key === 'gather' ? 'forager' : key === 'sticks' ? 'woodcutter' : 'stoneworker'].resource}` : '10 fruit'} · ${formatDuration(duration)}`
+        item.button.disabled =
+          !working &&
+          (Boolean(active) || Boolean(action.canStart && !action.canStart()))
+        item.button.setAttribute(
+          'aria-disabled',
+          String(working || item.button.disabled),
+        )
+        item.button.setAttribute(
+          'aria-label',
+          `${action.name}. ${item.subtitle.textContent}`,
+        )
+        continue
+      }
+      const id = action.researchId
+      const research = researchViews.get(id)
+      if (!research) continue
+      const definition = game.getResearchDefinition(id)
+      const level = game.getResearchLevel(id)
+      const maxed = !game.getResearchNextLevel(id)
+      const otherPath =
+        ((id === 'forestry' || id === 'joinery') &&
+          state.specialization === 'stonecraft') ||
+        ((id === 'stonecraft' || id === 'architecture') &&
+          state.specialization === 'forestry')
+      const ready = definition.prerequisite()
+      const group = groups.find((candidate) => candidate.ids.includes(id))
+      const visible =
+        maxed ||
+        (group?.name === 'Foundations'
+          ? state.researchUnlocked
+          : group?.ids === PRODUCTION_TECH
+            ? automated && state.stoneFound
+            : group?.ids === SPECIALIZATION_TECH
+              ? game.getResearchLevel('writing') > 0
+              : game.getResearchLevel('writing') > 0)
+      item.button.hidden = !visible || otherPath
+      item.button.dataset.locked = String(!ready || otherPath)
+      item.button.dataset.complete = String(maxed)
+      item.levelLabel.textContent = maxed
+        ? 'Complete'
+        : definition.maxLevel > 1
+          ? `${level}/${definition.maxLevel}`
+          : ''
+      item.subtitle.textContent = maxed
+        ? game.getResearchEffect(id, level)
+        : game.getResearchEffect(id, level + 1)
+      research.effect.textContent = maxed ? '' : formatDuration(duration)
+      const next = game.getResearchNextLevel(id)
+      research.costs.hidden = !next
+      if (next) renderCosts(research.costs, next)
+      research.requirement.textContent = otherPath
+        ? 'Other path locked'
+        : !ready && !maxed
+          ? `Requires ${REQUIREMENTS[id]}`
+          : (id === 'forestry' || id === 'stonecraft') && !maxed
+            ? 'Choose for this run'
+            : ''
+      research.requirement.hidden = !research.requirement.textContent
+      item.button.disabled =
+        !working &&
+        (maxed ||
+          Boolean(active) ||
+          !ready ||
+          otherPath ||
+          !game.canAffordResearch(id))
+      item.button.setAttribute(
+        'aria-disabled',
+        String(working || item.button.disabled),
+      )
+      item.button.setAttribute(
+        'aria-label',
+        `${action.name}. ${otherPath ? 'Other path locked' : maxed ? 'Complete' : !ready ? `Requires ${REQUIREMENTS[id]}` : next ? formatResearchCost(next) : ''}. ${item.subtitle.textContent}`,
+      )
+      const parent = maxed ? element('completed-list') : group?.list
+      if (parent && item.button.parentElement !== parent)
+        parent.append(item.button)
+      if (maxed) completed++
+    }
+    element('discovery-section').hidden =
+      actionViews.explore.button.hidden &&
+      actionViews.exploreFurther.button.hidden
+    for (const group of groups)
+      group.section.hidden = !Array.from(group.list.children).some(
+        (child) => !(child as HTMLElement).hidden,
+      )
+    element('completed-research').hidden = completed === 0
+    element('completed-count').textContent = `Completed · ${completed}`
+    element('technology-count').textContent =
+      `${RESEARCH_ITEM_KEYS.filter((id) => game.getResearchLevel(id) > 0).length} researched`
+    researchTab.disabled = !state.researchUnlocked
+    setView(view)
+    const hungry = state.people.filter((person) => person.hunger <= 3).length
+    element('food-summary').textContent = hungry ? `${hungry} hungry` : 'Fed'
     for (const person of state.people) {
-      let view = peopleViews.get(person)
-      if (!view) {
-        const row = document.createElement('div')
-        row.className =
-          'list-row grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-2 px-[18px] py-4'
-        const copy = document.createElement('div')
-        copy.className = 'col-start-1 row-span-2 min-w-0'
-        const name = document.createElement('span')
-        name.className =
-          'block text-[15px] leading-snug font-semibold [overflow-wrap:anywhere]'
-        const hunger = document.createElement('span')
-        hunger.className =
-          'col-start-2 text-right text-base whitespace-nowrap tracking-[2px] text-error'
-        hunger.setAttribute('role', 'img')
-        const status = document.createElement('span')
-        status.className = 'mt-1.5 block text-xs leading-normal text-muted'
-        const select = document.createElement('select')
-        select.className =
-          'select select-sm col-start-2 row-start-2 min-h-11 w-[150px] max-w-full text-xs min-[421px]:min-h-[38px]'
-        for (const job of [
-          'idle',
-          'forager',
-          'woodcutter',
-          'stoneworker',
-        ] as const) {
-          const option = document.createElement('option')
+      let personView = peopleViews.get(person)
+      if (!personView) {
+        const row = node('div', 'person-row')
+        const name = node('span')
+        const health = node('span', 'person-health')
+        const select = node('select')
+        for (const job of ['idle', ...Object.keys(JOBS)] as JobId[]) {
+          const option = node(
+            'option',
+            '',
+            job === 'idle' ? 'Available' : BUILDINGS[JOB_BUILDING[job]].name,
+          )
           option.value = job
-          option.textContent = job === 'idle' ? 'Idle' : JOBS[job].name
           select.append(option)
         }
-        copy.append(name, status)
-        row.append(copy, hunger, select)
+        row.append(name, health, select)
         tribeList.append(row)
-        view = { row, name, hunger, select, status }
-        peopleViews.set(person, view)
+        personView = { row, name, health, select }
+        peopleViews.set(person, personView)
       }
-      view.name.textContent = person.name
-      view.select.setAttribute('aria-label', `Job for ${person.name}`)
-      view.select.hidden = !jobsUnlocked
-      for (const option of Array.from(view.select.options))
-        option.disabled = !game.isJobUnlocked(option.value as JobId)
-      view.select.value = person.job
-      const effects = getHungerEffects(person)
-      const health =
-        effects.outputMultiplier === 1
-          ? 'Fed'
-          : effects.outputMultiplier === 0
-            ? 'Starving'
-            : 'Hungry'
-      const filledHearts = Math.ceil(person.hunger)
-      view.hunger.textContent =
-        '♥'.repeat(filledHearts) +
-        '♡'.repeat(Math.ceil(person.maxHunger) - filledHearts)
-      const hungerLabel = `${health}. Hunger ${formatResource(person.hunger)}/${formatResource(person.maxHunger)}. Eats ${effects.portion} fruit per minute.`
-      view.hunger.title = hungerLabel
-      view.hunger.setAttribute('aria-label', hungerLabel)
-      view.status.textContent =
-        person.job === 'idle'
-          ? 'Idle'
-          : effects.outputMultiplier === 0
-            ? 'Too hungry to work · gather fruit to recover at the next meal'
-            : `+${formatResource(game.getWorkerGain(person))} ${JOBS[person.job].resource} / ${formatDuration(JOBS[person.job].durationMs)}${effects.outputMultiplier < 1 ? ' · hungry: reduced output' : ''}`
-      view.status.hidden = !jobsUnlocked
+      personView.name.textContent = person.name
+      personView.health.textContent = `${formatResource(person.hunger)}/${formatResource(person.maxHunger)}`
+      personView.health.title = `${person.hunger <= 3 ? 'Hungry · reduced output' : 'Fed'} · 1 fruit per person each minute when fed`
+      personView.health.dataset.hungry = String(person.hunger <= 3)
+      personView.select.setAttribute(
+        'aria-label',
+        `Workplace for ${person.name}`,
+      )
+      personView.select.hidden = !automated
+      personView.select.value = person.job
+      for (const option of Array.from(personView.select.options))
+        option.disabled =
+          !game.isJobUnlocked(option.value as JobId) ||
+          (option.value !== 'idle' &&
+            option.value !== person.job &&
+            state.people.filter((p) => p.job === option.value).length >=
+              game.getJobCapacity(option.value as JobId))
     }
+    feastButton.disabled = !game.canFeast()
+    element('feast-cost').textContent = game.getFeastCost()
+      ? `${game.getFeastCost()} fruit · restore everyone`
+      : 'Everyone is fed'
+    if (
+      focused instanceof HTMLButtonElement &&
+      Object.values(actionViews).some((item) => item.button === focused) &&
+      (focused.hidden ||
+        focused.disabled ||
+        focused.closest('details:not([open])'))
+    ) {
+      const tab = view === 'research' ? researchTab : actionsTab
+      tab.focus()
+    }
+    recruitButton.setAttribute(
+      'aria-label',
+      `Invite a person. ${RECRUIT_COST} fruit`,
+    )
   }
-  function resetActionView(view: ActionView) {
-    view.button.disabled = false
-    view.button.removeAttribute('aria-disabled')
-    view.button.removeAttribute('aria-busy')
-    setHidden(view.progressWrap, true)
-    view.progressBar.value = 0
-    view.progressLabel.textContent = ''
-  }
-
   return {
     render,
     setView,
-    resetActionView,
-    actionViews,
     feedback,
+    actionViews,
     actionsTab,
     researchTab,
     recruitButton,
+    feastButton,
     tribeList,
     getPersonForJobControl,
   }
