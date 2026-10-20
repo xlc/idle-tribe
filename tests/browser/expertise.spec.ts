@@ -30,7 +30,6 @@ for (const width of [1280, 390]) {
       page,
     }) => {
       await open(page, createDefaultState())
-      await page.getByText('People · 1', { exact: true }).click()
       await expect(
         page.getByRole('article', { name: 'You', exact: true }),
       ).toContainText('Foraging aptitude · +5%')
@@ -38,8 +37,8 @@ for (const width of [1280, 390]) {
       await page
         .getByRole('button', { name: 'Gather food', exact: true })
         .click()
-      await page.clock.runFor(9500)
-      expect((await saved(page)).resources.food).toBe(3)
+      await page.clock.runFor(1500)
+      expect((await saved(page)).resources.food).toBe(1)
     })
 
     test('staffing chooses expertise and explicit assignments preserve earlier skills', async ({
@@ -74,7 +73,6 @@ for (const width of [1280, 390]) {
       await lumber.getByRole('button', { name: '−', exact: true }).click()
       await expect(lumber.getByText('1 / 2', { exact: true })).toBeVisible()
       expect(required((await saved(page)).people[3]).job).toBe('idle')
-      await page.getByText('People · 4', { exact: true }).click()
       await page.getByLabel('Tavi occupation').selectOption('sawyer')
       await page.clock.runFor(30000)
       const before = await saved(page)
@@ -135,7 +133,6 @@ for (const width of [1280, 390]) {
       s.people = [person]
       s.facilities['food-store'].level = 10000
       await open(page, s)
-      await page.getByText('People · 1', { exact: true }).click()
       const row = page.getByRole('article', { name: 'Neri', exact: true })
       await expect(
         row.getByRole('img', { name: 'Neri health: 2 of 5', exact: true }),
@@ -174,17 +171,18 @@ for (const width of [1280, 390]) {
       await page.getByRole('button', { name: /Away ·/ }).click()
       const report = page.getByRole('region', { name: 'Offline progress' })
       await expect(report).toContainText('Growing expertise')
-      await expect(report).toContainText('Villager 1: Woodcutting 0 → 2')
+      await expect(
+        report.locator('li').filter({ hasText: 'Villager 1' }),
+      ).toContainText('Woodcutting 0 → 2')
       await report.getByText('2 more people', { exact: true }).click()
       await expect(
-        report.getByText('Villager 7: Woodcutting 0 → 2', { exact: true }),
+        report.locator('li').filter({ hasText: 'Villager 7' }),
       ).toBeVisible()
       await report.screenshot({
         path: info.outputPath('expertise-return.png'),
         animations: 'disabled',
       })
-      await report.getByRole('button', { name: 'Close', exact: true }).click()
-      await page.getByText('People · 36', { exact: true }).click()
+      await report.getByRole('button', { name: /Away ·/ }).click()
       await page.getByLabel('Villager 36 occupation').selectOption('farmer')
       await expect(page.getByLabel('Villager 36 occupation')).toHaveValue(
         'farmer',

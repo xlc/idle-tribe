@@ -38,12 +38,18 @@ for (const width of [1280, 390]) {
       await expect(
         page.getByRole('button', { name: 'Gather food', exact: true }),
       ).toBeVisible()
-      await expect(page.getByText('+3 food', { exact: true })).toBeVisible()
-      for (let i = 0; i < 4; i++) {
+      await expect(
+        page.getByText('+1 food · 1s', { exact: true }),
+      ).toBeVisible()
+      for (let i = 0; i < 10; i++) {
         await page
           .getByRole('button', { name: 'Gather food', exact: true })
           .click()
-        await page.clock.runFor(9500)
+        await page.clock.runFor(1500)
+        await expect(
+          page.getByRole('button', { name: 'Gather food', exact: true }),
+        ).toBeEnabled()
+        expect((await readState(page)).resources.food).toBe(i + 1)
       }
       await expect(
         page.getByRole('button', { name: 'Explore nearby', exact: true }),
@@ -51,20 +57,19 @@ for (const width of [1280, 390]) {
       await page
         .getByRole('button', { name: 'Explore nearby', exact: true })
         .click()
-      await page.clock.runFor(21000)
+      await page.clock.runFor(3100)
       await expect(
         page.getByRole('button', { name: 'Gather wood', exact: true }),
       ).toBeVisible()
-      await page
-        .getByRole('button', { name: 'Gather wood', exact: true })
-        .click()
-      await page.clock.runFor(15500)
-      await page
-        .getByRole('button', { name: 'Gather wood', exact: true })
-        .click()
-      await page.clock.runFor(15500)
+      for (let i = 0; i < 2; i++) {
+        await page
+          .getByRole('button', { name: 'Gather wood', exact: true })
+          .click()
+        await page.clock.runFor(2500)
+        expect((await readState(page)).resources.wood).toBe(i + 1)
+      }
       await expect(
-        page.getByRole('button', { name: 'Technology', exact: true }),
+        page.getByRole('tab', { name: 'Technology', exact: true }),
       ).toBeVisible()
       await page.screenshot({
         animations: 'disabled',
@@ -106,8 +111,6 @@ for (const width of [1280, 390]) {
       await expect(lumber.getByText('2 / 2', { exact: true })).toBeVisible()
       await lumber.getByRole('button', { name: '+', exact: true }).click()
       await expect(lumber.getByText('3 / 2', { exact: true })).toBeVisible()
-      if (width < 1200)
-        await page.getByRole('button', { name: /^Construction/ }).click()
       await page
         .getByRole('group', { name: 'builder staffing' })
         .getByRole('button', { name: 'Fill', exact: true })
@@ -162,9 +165,15 @@ for (const width of [1280, 390]) {
       s.research.joinery = false
       s.specialization = null
       await open(page, s)
-      await page
-        .getByRole('button', { name: 'Technology', exact: true })
-        .click()
+      const tabs = page.getByRole('tablist', { name: 'Game views' })
+      await tabs.getByRole('tab', { name: 'Settlement', exact: true }).focus()
+      await page.keyboard.press('ArrowRight')
+      await expect(
+        tabs.getByRole('tab', { name: 'Technology', exact: true }),
+      ).toHaveAttribute('aria-selected', 'true')
+      await expect(
+        page.getByRole('tabpanel', { name: 'Technology', exact: true }),
+      ).toBeVisible()
       const forestry = page.getByRole('article', {
         name: 'Forestry',
         exact: true,
@@ -185,9 +194,7 @@ for (const width of [1280, 390]) {
       await page.clock.runFor(3000)
       const before = await readState(page)
       await page.reload()
-      await page
-        .getByRole('button', { name: 'Technology', exact: true })
-        .click()
+      await page.getByRole('tab', { name: 'Technology', exact: true }).click()
       const after = await readState(page)
       expect(after.queues.research.active?.paid).toEqual(
         before.queues.research.active?.paid,
@@ -216,9 +223,7 @@ for (const width of [1280, 390]) {
       await open(page, s)
       const farm = page.getByRole('article', { name: 'Farm', exact: true })
       await farm.getByRole('button', { name: /Queue build/ }).click()
-      await page
-        .getByRole('button', { name: 'Technology', exact: true })
-        .click()
+      await page.getByRole('tab', { name: 'Technology', exact: true }).click()
       const writing = page.getByRole('article', {
         name: 'Writing',
         exact: true,
@@ -232,9 +237,7 @@ for (const width of [1280, 390]) {
       expect(state.facilities.farm.level).toBe(1)
       expect(state.queues.research.active?.project.id).toBe('writing')
       expect(state.queues.research.active?.paid.knowledge).toBe(3600)
-      await page
-        .getByRole('button', { name: 'Settlement', exact: true })
-        .click()
+      await page.getByRole('tab', { name: 'Settlement', exact: true }).click()
       await farm.getByRole('button', { name: 'Fill', exact: true }).click()
       await expect(farm.getByText('1 / 2', { exact: true })).toBeVisible()
       expect(
@@ -273,7 +276,7 @@ for (const width of [1280, 390]) {
       active.progress = active.total - 1
       await open(page, s)
       await page.clock.runFor(2000)
-      await page.getByRole('button', { name: 'Time box', exact: true }).click()
+      await page.getByRole('tab', { name: 'Time box', exact: true }).click()
       await expect(
         page.getByRole('button', { name: /Reset settlement/ }),
       ).toBeEnabled()
@@ -294,7 +297,7 @@ for (const width of [1280, 390]) {
       await expect(
         page.getByRole('button', { name: 'Gather food', exact: true }),
       ).toBeVisible()
-      await page.getByRole('button', { name: 'Time box', exact: true }).click()
+      await page.getByRole('tab', { name: 'Time box', exact: true }).click()
       await page.getByRole('button', { name: '20 points', exact: true }).click()
       const saved = await readState(page)
       expect(saved.legacy.perks['early-astronomy']).toBe(true)
@@ -310,9 +313,6 @@ for (const width of [1280, 390]) {
       people(s, 'farmer', 'builder', 'idle', 'idle')
       s.resources['causal-models'] = 0
       await open(page, s)
-      await expect(
-        page.getByText('Beyond quantum', { exact: true }),
-      ).toBeVisible()
       await page
         .getByRole('button', { name: 'Production', exact: true })
         .click()
@@ -412,10 +412,17 @@ for (const width of [1280, 390]) {
       await open(page, s)
       await page.getByRole('button', { name: /Away ·/ }).click()
       const report = page.getByRole('region', { name: 'Offline progress' })
-      await expect(report).toContainText('1 projects completed')
-      await expect(report).toContainText('-120 food')
+      await expect(
+        report
+          .locator('.away-stats')
+          .getByText('Projects completed')
+          .locator('..'),
+      ).toContainText('1')
+      await expect(
+        report.locator('.away-resources li').filter({ hasText: 'Food' }),
+      ).toContainText('−120')
       await page.screenshot({ path: info.outputPath('away.png') })
-      await report.getByRole('button', { name: 'Close', exact: true }).click()
+      await report.getByRole('button', { name: /Away ·/ }).click()
       await expect(page.getByRole('button', { name: /Away ·/ })).toBeVisible()
     })
   })

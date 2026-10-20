@@ -4,7 +4,7 @@ import { RESOURCES } from './ids'
 import { createRecord } from './records'
 import { enqueue, nextExpansion } from './research'
 import { arrivalStatus, happinessTarget, workerRate } from './settlement'
-import { advanceTime, resourceRates } from './simulation'
+import { advanceTime, resourceFlows, resourceRates } from './simulation'
 import { createDefaultState } from './state'
 import { complete, people, required, settlement } from './test-helpers'
 
@@ -185,6 +185,12 @@ test('net rates include processor inputs, meals, equipment and storage pressure'
   expect(rates.food).toBeCloseTo(sum('forager') - sum('scholar') - 3)
   expect(rates.wood).toBeCloseTo(-2 * sum('sawyer'))
   expect(rates.planks).toBeCloseTo(sum('sawyer'))
+  const flows = resourceFlows(s)
+  expect(flows.food.production).toBeCloseTo(sum('forager'))
+  expect(flows.food.inputs).toBeCloseTo(sum('scholar'))
+  expect(flows.food.meals).toBe(3)
+  expect(flows.wood.inputs).toBeCloseTo(2 * sum('sawyer'))
+  expect(flows.planks.production).toBeCloseTo(sum('sawyer'))
 })
 
 test('spending from an above-threshold stockpile immediately relieves production pressure', () => {

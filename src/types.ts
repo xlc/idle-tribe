@@ -131,7 +131,8 @@ export interface Absence {
   completed: number
 }
 export interface GameState {
-  version: 6
+  version: 7
+  actionSkills: Record<ActionId, { level: number; xp: number }>
   resources: Record<ResourceId, number>
   facilities: Record<BuildingId, Facility>
   research: Record<ResearchId, boolean>

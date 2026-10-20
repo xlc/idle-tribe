@@ -7,7 +7,7 @@ import { Button, Costs, type ViewProps } from './common'
 import { Builders } from './settlement'
 
 export function Construction(props: ViewProps) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(true)
   const s = props.session.game.state
   return (
     <section
@@ -66,7 +66,7 @@ export function Queue({ session, confirm, id }: { id: QueueId } & ViewProps) {
           <strong>{projectName(s, active.project)}</strong>
           <div className="project-progress">
             <progress
-              className="progress progress-primary"
+              className="progress"
               value={active.progress}
               max={active.total || 1}
             />

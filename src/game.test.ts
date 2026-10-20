@@ -1,8 +1,14 @@
 import { expect, test } from 'bun:test'
-import { startAction } from './actions'
+import {
+  actionDuration,
+  actionRequiredXp,
+  actionYield,
+  startAction,
+} from './actions'
 import { BUILDINGS } from './economy'
 import { createGame, removeFacility } from './game'
 import { BUILDING_IDS, RESEARCH_IDS } from './ids'
+import { parseSave } from './persistence'
 import {
   allEntries,
   cancelProject,
@@ -39,21 +45,21 @@ import { complete, people, required, settlement } from './test-helpers'
 
 test('the opening discovers resources and grants a working camp once', () => {
   const s = createDefaultState()
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 15; i++) {
     expect(startAction(s, 'gather')).toBe(true)
-    advanceTime(s, 9, true)
+    advanceTime(s, 1, true)
   }
   expect(startAction(s, 'explore')).toBe(true)
   advanceTime(s, 20, true)
   expect(s.discovered.wood).toBe(true)
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 30; i++) {
     startAction(s, 'sticks')
-    advanceTime(s, 15, true)
+    advanceTime(s, 2, true)
   }
   expect(s.researchUnlocked).toBe(true)
   while (s.resources.food < 30) {
     startAction(s, 'gather')
-    advanceTime(s, 9, true)
+    advanceTime(s, 1, true)
   }
   enqueue(s, { kind: 'research', id: 'sharpened-stick' })
   enqueue(s, { kind: 'research', id: 'shelters' })
@@ -363,15 +369,52 @@ test('a missing lower expansion can be rebuilt while a higher target stays queue
   expect(s.facilities.housing.form).toBe(1)
 })
 
-test('a gathering batch awards its full yield after visible work', () => {
+test('food gathering rewards the first second and opens exploration after five clicks', () => {
   const s = createDefaultState()
-  startAction(s, 'gather')
-  advanceTime(s, 4, true)
-  expect(s.manual?.progress).toBeCloseTo(4 / 9)
+  expect(startAction(s, 'gather')).toBe(true)
+  advanceTime(s, 0.4, true)
+  expect(s.manual?.progress).toBeCloseTo(0.4)
   advanceTime(s, 3600, false)
-  expect(s.manual?.progress).toBeCloseTo(4 / 9)
-  advanceTime(s, 5, true)
-  expect(s.resources.food).toBe(3)
+  expect(s.manual?.progress).toBeCloseTo(0.4)
+  advanceTime(s, 0.6, true)
+  expect(s.resources.food).toBe(1)
+  expect(s.manual).toBeNull()
+  for (let i = 0; i < 4; i++) {
+    expect(startAction(s, 'gather')).toBe(true)
+    advanceTime(s, 1, true)
+  }
+  expect(s.resources.food).toBe(5)
+  expect(s.exploreUnlocked).toBe(true)
+})
+
+test.each([
+  { action: 'sticks', resource: 'wood', seconds: 2 },
+  { action: 'stone', resource: 'stone', seconds: 3 },
+] as const)(
+  '$resource gathering awards one unit after $seconds seconds',
+  ({ action, resource, seconds }) => {
+    const s = createDefaultState()
+    s.discovered[resource] = true
+    expect(startAction(s, action)).toBe(true)
+    advanceTime(s, seconds / 2, true)
+    expect(s.manual?.progress).toBeCloseTo(0.5)
+    advanceTime(s, seconds / 2, true)
+    expect(s.resources[resource]).toBe(1)
+    expect(s.manual).toBeNull()
+  },
+)
+
+test('the gathering duration preview completes a batch under storage pressure', () => {
+  const s = createDefaultState()
+  s.discovered.wood = true
+  s.resources.wood = 240
+  const duration = actionDuration(s, 'sticks')
+  expect(duration).toBe(4)
+  expect(startAction(s, 'sticks')).toBe(true)
+  advanceTime(s, duration / 2, true)
+  expect(s.manual?.progress).toBeCloseTo(0.5)
+  advanceTime(s, duration / 2, true)
+  expect(s.resources.wood).toBe(241)
 })
 
 test('manual gathering follows the same storage pressure timeline across tick sizes', () => {
@@ -379,10 +422,11 @@ test('manual gathering follows the same storage pressure timeline across tick si
   s.facilities.foraging.level = 10
   s.resources.food = 150
   people(s, 'forager', 'forager')
+  for (const person of s.people) person.progress = 0.99
   startAction(s, 'gather')
   const sliced = structuredClone(s)
-  advanceTime(s, 8, true)
-  for (let i = 0; i < 32; i++) advanceTime(sliced, 0.25, true)
+  advanceTime(s, 0.5, true)
+  for (let i = 0; i < 32; i++) advanceTime(sliced, 0.5 / 32, true)
   expect(s.resources.food).toBeGreaterThan(150)
   expect(s.manual?.progress).toBeGreaterThan(0)
   expect(s.manual?.progress).toBeCloseTo(
@@ -414,3 +458,43 @@ test('queued Writing follows a paid farm investment and retains its research cos
   advanceTime(s, 180 * 60)
   expect(s.research.writing).toBe(true)
 })
+
+test('completed gathering levels up, improves its own speed and milestone yield, and persists', () => {
+  const s = createDefaultState()
+  // Reach the first yield milestone through ordinary completed actions.
+  while (s.actionSkills.gather.level < 5) {
+    const before = s.resources.food
+    const reachesMilestone =
+      s.actionSkills.gather.level === 4 &&
+      s.actionSkills.gather.xp + 1 === actionRequiredXp(s, 'gather')
+    expect(startAction(s, 'gather')).toBe(true)
+    advanceTime(s, actionDuration(s, 'gather'), true)
+    expect(s.resources.food - before).toBeCloseTo(reachesMilestone ? 1.1 : 1)
+  }
+  expect(actionDuration(s, 'gather')).toBeCloseTo(1 / 1.12)
+  expect(actionYield(s, 'gather')).toBeCloseTo(1.1)
+  expect(s.actionSkills.sticks).toEqual({ level: 1, xp: 0 })
+  expect(s.people[0]?.practice.forager).toBe(0)
+  expect(parseSave(JSON.stringify(s)).actionSkills).toEqual(s.actionSkills)
+  startAction(s, 'gather')
+  advanceTime(s, 0.2, true)
+  const loaded = parseSave(JSON.stringify(s))
+  expect(loaded.actionSkills).toEqual(s.actionSkills)
+  expect(loaded.manual).toBeNull()
+})
+
+test.each(['explore', 'explore-further'] as const)(
+  '%s discovers its resource after three visible seconds',
+  (id) => {
+    const s = createDefaultState()
+    s.exploreUnlocked = true
+    s.research['sharpened-stick'] = true
+    s.resources.food = 30
+    expect(startAction(s, id)).toBe(true)
+    advanceTime(s, 2.5, true)
+    expect(s.manual?.progress).toBeCloseTo(2.5 / 3)
+    advanceTime(s, 0.5, true)
+    expect(s.discovered[id === 'explore' ? 'wood' : 'stone']).toBe(true)
+    expect(s.manual).toBeNull()
+  },
+)

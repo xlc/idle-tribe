@@ -197,19 +197,33 @@ export function advanceTime(
     if (settleEvents(state, visible) || learned) rules = intervalRules(state)
   }
 }
-export function resourceRates(
+export function resourceFlows(
   state: GameState,
   options: { ignoreInputs?: boolean } = {},
 ) {
-  const rates = createRecord(RESOURCES, () => 0)
+  const flows = createRecord(RESOURCES, () => ({
+    production: 0,
+    inputs: 0,
+    meals: 0,
+  }))
   const production = workerRates(state, options)
   for (const [index, p] of state.people.entries())
     if (isProductionJob(p.job)) {
       const rate = production[index] ?? 0
-      rates[JOBS[p.job].output] += rate
+      flows[JOBS[p.job].output].production += rate
       const input = jobInput(state, p.job)
-      for (const r of RESOURCES) rates[r] -= rate * (input[r] ?? 0)
+      for (const r of RESOURCES) flows[r].inputs += rate * (input[r] ?? 0)
     }
-  rates.food -= mealCost(state)
-  return rates
+  flows.food.meals = mealCost(state)
+  return flows
+}
+export function resourceRates(
+  state: GameState,
+  options: { ignoreInputs?: boolean } = {},
+) {
+  const flows = resourceFlows(state, options)
+  return createRecord(RESOURCES, (r) => {
+    const flow = flows[r]
+    return flow.production - flow.inputs - flow.meals
+  })
 }

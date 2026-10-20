@@ -28,7 +28,7 @@ test('reloading cancels only manual work and refunds its exact commitment once',
   s.exploreUnlocked = true
   s.resources.food = 20
   startAction(s, 'explore')
-  advanceTime(s, 5, true)
+  advanceTime(s, 1, true)
   const loaded = parseSave(JSON.stringify(s))
   expect(loaded.resources.food).toBe(20)
   expect(loaded.manual).toBeNull()

@@ -71,8 +71,10 @@ test('manual work pauses while hidden; research continues; duplicate restoration
     session.game.startAction('gather')
     enqueue(s, { kind: 'research', id: 'record-keeping' })
   }, hour)
-  session.setVisible(false, hour + 1000)
+  session.setVisible(false, hour + 500)
   const manual = s.manual?.progress
+  expect(manual).toBeGreaterThan(0)
+  expect(manual).toBeLessThan(1)
   session.tick(3 * hour)
   expect(s.manual?.progress).toBe(manual)
   expect(s.research['record-keeping']).toBe(true)

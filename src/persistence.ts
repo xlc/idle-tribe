@@ -1,4 +1,4 @@
-import { cancelManual } from './actions'
+import { actionRequiredXp, cancelManual } from './actions'
 import { BUILDINGS } from './economy'
 import {
   ACTION_IDS,
@@ -129,6 +129,17 @@ export function parseSave(serialized: string | null): GameState {
       queues = object(p.queues),
       legacy = object(p.legacy),
       perks = object(legacy.perks)
+    const actionSkills = object(p.actionSkills)
+    s.actionSkills = createRecord(ACTION_IDS, (id) => {
+      const skill = object(actionSkills[id])
+      return {
+        level: number(skill.level, 1, Infinity, true),
+        xp: number(skill.xp, 0, Infinity, true),
+      }
+    })
+    for (const id of ACTION_IDS)
+      if (s.actionSkills[id].xp >= actionRequiredXp(s, id))
+        throw new Error('Invalid action experience')
     s.resources = createRecord(RESOURCES, (r) => number(resources[r]))
     s.research = createRecord(RESEARCH_IDS, (id) => bool(research[id]))
     s.facilities = createRecord(BUILDING_IDS, (id) => {

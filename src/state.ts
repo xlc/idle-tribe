@@ -1,4 +1,5 @@
 import {
+  ACTION_IDS,
   BUILDING_IDS,
   PERK_IDS,
   RESEARCH_IDS,
@@ -22,7 +23,8 @@ export function createPerson(
 }
 export function createDefaultState(): GameState {
   return {
-    version: 6,
+    version: 7,
+    actionSkills: createRecord(ACTION_IDS, () => ({ level: 1, xp: 0 })),
     resources: createRecord(RESOURCES, () => 0),
     facilities: createRecord(BUILDING_IDS, () => ({
       level: 0,

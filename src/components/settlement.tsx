@@ -12,7 +12,7 @@ import {
   previewProject,
   researchPlan,
 } from '../research'
-import { committed, storageMultiplier, threshold } from '../resources'
+import { storageMultiplier, threshold } from '../resources'
 import type { GameSession } from '../session'
 import {
   arrivalStatus,
@@ -29,68 +29,56 @@ import {
   staffingMultiplier,
   workerRate,
 } from '../settlement'
-import { resourceRates } from '../simulation'
+import { resourceFlows, resourceRates } from '../simulation'
 import type { BuildingId, JobId } from '../types'
 import { Button, Costs, type ViewProps } from './common'
 export function Stockpile({ session }: { session: GameSession }) {
   const s = session.game.state,
-    rates = resourceRates(s)
+    flows = resourceFlows(s)
+  const visibleResources = RESOURCES.filter(
+    (r) =>
+      ACTION_IDS.some(
+        (id) => ACTIONS[id].resource === r && ACTIONS[id].visible(s),
+      ) ||
+      s.resources[r] > 0 ||
+      BUILDING_IDS.some(
+        (id) =>
+          BUILDINGS[id].job &&
+          isProductionJob(BUILDINGS[id].job) &&
+          JOBS[BUILDINGS[id].job].output === r &&
+          !requirementBlocker(s, BUILDINGS[id].forms[0]?.requires ?? {}),
+      ),
+  )
   return (
-    <section className="stockpile" aria-label="Stockpile">
-      {RESOURCES.filter(
-        (r) =>
-          ACTION_IDS.some(
-            (id) => ACTIONS[id].resource === r && ACTIONS[id].visible(s),
-          ) ||
-          s.resources[r] > 0 ||
-          BUILDING_IDS.some(
-            (id) =>
-              BUILDINGS[id].job &&
-              isProductionJob(BUILDINGS[id].job) &&
-              JOBS[BUILDINGS[id].job].output === r &&
-              !requirementBlocker(s, BUILDINGS[id].forms[0]?.requires ?? {}),
-          ),
-      ).map((r) => {
-        const k = threshold(s, r),
-          pressure = storageMultiplier(s, r),
-          reserved = committed(s, r),
-          stored = s.resources[r] + reserved
-        return (
-          <div
-            className={`resource resource-${r}`}
-            key={r}
-            title={`${RESOURCE_INFO[r].description}\nComfortable storage ${formatResource(k)}; production ×${formatResource(pressure)}${reserved ? `\nCommitted ${formatResource(reserved)}` : ''}`}
-          >
-            <span className="resource-name">
-              {RESOURCE_INFO[r].icon} {RESOURCE_INFO[r].name}
-            </span>
-            <strong className="resource-value">
-              {formatCompactResource(s.resources[r])}
-            </strong>
-            <span className="resource-rate" data-negative={rates[r] < 0}>
-              {rates[r] >= 0 ? '+' : ''}
-              {formatCompactResource(rates[r])}/min
-            </span>
-            <small className={pressure < 1 ? 'pressure' : ''}>
-              {formatCompactResource(k)} comfort
-              {reserved ? ` · ${formatCompactResource(reserved)} held` : ''}
-            </small>
-            {/* Comfort is the midpoint; storage above it keeps filling toward the end without a cap. */}
-            <span
-              className="status-meter storage-meter"
-              role="img"
-              aria-label={`${RESOURCE_INFO[r].name} storage: ${formatResource(stored)}, comfort ${formatResource(k)}`}
-              data-pressure={pressure < 1}
+    <section className="stockpile-panel" aria-label="Stockpile">
+      <div className="stockpile" id="stockpile-resources">
+        {visibleResources.map((r) => {
+          const pressure = storageMultiplier(s, r),
+            flow = flows[r],
+            net = flow.production - flow.inputs - flow.meals
+          return (
+            <section
+              className="resource"
+              aria-label={`${RESOURCE_INFO[r].name} resource`}
+              key={r}
             >
-              <span
-                className="meter-fill"
-                style={{ width: `${(stored / (stored + k)) * 100}%` }}
-              />
-              <span className="meter-marker" />
-            </span>
-          </div>
-        )
-      })}
+              <span className="resource-name">{RESOURCE_INFO[r].name}</span>
+              <strong className="resource-value">
+                {formatCompactResource(s.resources[r])}
+              </strong>
+              <div className="resource-meta">
+                <span className="resource-rate" data-negative={net < 0}>
+                  {net >= 0 ? '+' : ''}
+                  {formatCompactResource(net)}/min
+                </span>
+                <small className="storage-effect" hidden={pressure >= 1}>
+                  Storage ×{formatResource(pressure)}
+                </small>
+              </div>
+            </section>
+          )
+        })}
+      </div>
     </section>
   )
 }
@@ -181,7 +169,7 @@ export function Workforce({ session }: { session: GameSession }) {
       <div className="arrival-control">
         <label>
           <input
-            className="checkbox checkbox-sm"
+            className="checkbox"
             type="checkbox"
             checked={s.welcome}
             onChange={() =>
@@ -281,7 +269,7 @@ function Facility({ session, confirm, id }: ViewProps & { id: BuildingId }) {
   }
   return (
     <article
-      className="building-card card"
+      className="building-card"
       data-built={f.level > 0}
       aria-label={form.name}
     >
@@ -292,7 +280,6 @@ function Facility({ session, confirm, id }: ViewProps & { id: BuildingId }) {
           {f.equipment ? ` · tools ${f.equipment}` : ''}
         </span>
       </div>
-      <p className="flavor">{form.description}</p>
       {job ? (
         <>
           <p className="building-recipe">
@@ -341,6 +328,7 @@ function Facility({ session, confirm, id }: ViewProps & { id: BuildingId }) {
       )}
       <details className="facility-detail">
         <summary>Details & upgrades</summary>
+        <p className="flavor">{form.description}</p>
         {job && output && RESOURCES.some((r) => input[r]) && (
           <p>
             {formatCost(input)} → 1 {RESOURCE_INFO[output].name.toLowerCase()}
@@ -359,7 +347,7 @@ function Facility({ session, confirm, id }: ViewProps & { id: BuildingId }) {
           <label>
             Build form{' '}
             <select
-              className="select select-sm"
+              className="select"
               value={selectedForm}
               onChange={(e) => setSelectedForm(Number(e.target.value))}
             >
@@ -449,7 +437,6 @@ export function Production(props: ViewProps) {
     <section>
       <div className="section-heading">
         <h2>Facilities</h2>
-        <span>One settlement, room to grow</span>
       </div>
       <fieldset className="facility-filters" aria-label="Facility filters">
         {['All', 'Production', 'Storage', 'Housing & support'].map((value) => (
@@ -457,7 +444,7 @@ export function Production(props: ViewProps) {
             type="button"
             key={value}
             aria-pressed={filter === value}
-            className="btn btn-sm"
+            className="btn"
             onClick={() => setFilter(value)}
           >
             {value}

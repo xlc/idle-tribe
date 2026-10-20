@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { type ReactNode, useLayoutEffect, useRef } from 'react'
 import { RESOURCE_INFO } from '../constants'
 import { formatCost } from '../format'
 import { RESOURCES } from '../ids'
@@ -8,6 +8,47 @@ export type Confirm = (title: string, body: string, run: () => void) => void
 export interface ViewProps {
   session: GameSession
   confirm: Confirm
+}
+export function ActionProgress({
+  session,
+  duration,
+  label,
+  value,
+  running,
+}: {
+  session: GameSession
+  duration: number
+  label: string
+  value: number
+  running: boolean
+}) {
+  const bar = useRef<HTMLProgressElement>(null)
+  const updatedAt = session.game.state.savedAt
+  const paused = Boolean(session.game.state.absence)
+  useLayoutEffect(() => {
+    if (bar.current) bar.current.value = value
+    if (!running || paused) return
+    let frame = 0
+    function draw() {
+      if (bar.current && !document.hidden) {
+        // Interpolate display only; the session owns work, rewards and saves.
+        const elapsed = Math.max(0, Date.now() - updatedAt) / 1000
+        bar.current.value = Math.min(1, value + elapsed / duration)
+      }
+      frame = requestAnimationFrame(draw)
+    }
+    draw()
+    return () => cancelAnimationFrame(frame)
+  }, [duration, paused, running, updatedAt, value])
+  return (
+    <progress
+      ref={bar}
+      className="progress"
+      aria-label={label}
+      value={value}
+      max={1}
+    />
+  )
 }
 export function Button({
   children,
@@ -23,7 +64,7 @@ export function Button({
   return (
     <button
       type="button"
-      className="btn btn-sm"
+      className="btn"
       onClick={onClick}
       disabled={disabled}
       title={title}
