@@ -2,22 +2,24 @@ import { Tabs } from '@radix-ui/themes'
 import { useEffect, useRef, useState } from 'react'
 import { ACTIONS } from './actions'
 import { ManualActions } from './components/actions'
+import { ViewIcon } from './components/art'
 import { AwayReport } from './components/away-report'
 import { Button, type Confirm } from './components/common'
 import { OfflineStatus } from './components/offline-status'
 import { People } from './components/people'
-import { Construction } from './components/queues'
+import { Construction, Queue } from './components/queues'
 import { Production, Stockpile, Workforce } from './components/settlement'
 import { Technology } from './components/technology'
 import { ERAS } from './constants'
 import { formatResource } from './format'
 import { ACTION_IDS, PERK_IDS } from './ids'
 import { buyPerk, canReset, legacyReward, PERKS, resetRun } from './prestige'
+import { RESEARCH } from './research-definitions'
 import type { GameSession } from './session'
 import { automationUnlocked, prestigeMultiplier } from './settlement'
 import { useSession } from './use-session'
 
-type View = 'settlement' | 'research' | 'legacy'
+type View = 'settlement' | 'research' | 'people' | 'legacy'
 export function App({ session }: { session: GameSession }) {
   useSession(session)
   const s = session.game.state,
@@ -37,6 +39,7 @@ export function App({ session }: { session: GameSession }) {
       available: s.researchUnlocked,
       working: Boolean(s.queues.research.active),
     },
+    { id: 'people', label: 'People', available: automated },
     { id: 'legacy', label: 'Time box', available: s.legacy.discovered },
   ]
   const availableViews = views.filter((entry) => entry.available)
@@ -61,6 +64,19 @@ export function App({ session }: { session: GameSession }) {
   const props = { session, confirm }
   return (
     <main className={`game-shell${automated ? '' : ' opening-shell'}`}>
+      <header className="game-header">
+        <div>
+          <h1>Primitive Tribe</h1>
+          <div className="settlement-identity">
+            <span>{ERAS[s.era]?.name} era</span>
+            {s.specialization && (
+              <span className="branch-badge">
+                {RESEARCH[s.specialization].name}
+              </span>
+            )}
+          </div>
+        </div>
+      </header>
       <div className="game-layout">
         <Stockpile session={session} />
         <Tabs.Root
@@ -71,24 +87,6 @@ export function App({ session }: { session: GameSession }) {
             if (next) showView(next.id)
           }}
         >
-          <Tabs.List className="view-tabs" aria-label="Game views" size="2">
-            {availableViews.map((entry) => (
-              <Tabs.Trigger
-                key={entry.id}
-                value={entry.id}
-                onClick={() => content.current?.scrollTo({ top: 0 })}
-              >
-                {entry.label}
-                {entry.working && (
-                  <span
-                    className="working-dot"
-                    aria-hidden="true"
-                    title="In progress"
-                  />
-                )}
-              </Tabs.Trigger>
-            ))}
-          </Tabs.List>
           <div className="view-scroll" ref={content}>
             {away && away.wallSeconds >= 60 && (
               <AwayReport session={session} report={away} />
@@ -111,6 +109,13 @@ export function App({ session }: { session: GameSession }) {
                   <ManualActions session={session} discoveries />
                 </section>
               )}
+            {view === 'settlement' && automated && (
+              <div
+                className="settlement-landscape"
+                data-landscape={ERAS[s.era]?.landscape}
+                aria-hidden="true"
+              />
+            )}
             <div className={automated ? 'settlement-layout' : 'opening'}>
               <div className="view-panel">
                 <Tabs.Content
@@ -140,6 +145,15 @@ export function App({ session }: { session: GameSession }) {
                 >
                   <Technology {...props} />
                 </Tabs.Content>
+                {automated && (
+                  <Tabs.Content
+                    value="people"
+                    forceMount
+                    hidden={view !== 'people'}
+                  >
+                    <People session={session} />
+                  </Tabs.Content>
+                )}
                 {s.legacy.discovered && (
                   <Tabs.Content
                     className="legacy"
@@ -197,19 +211,41 @@ export function App({ session }: { session: GameSession }) {
                 )}
               </div>
               <aside className="camp-aside">
-                <People session={session} />
-                {automated && view === 'settlement' && (
-                  <>
+                {!automated && <People session={session} />}
+                {automated && (
+                  <div className="project-plans">
                     <Construction {...props} />
-                    <section className="manual-work">
-                      <h2>Manual work</h2>
-                      <ManualActions session={session} />
-                    </section>
-                  </>
+                    <Queue {...props} id="research" />
+                  </div>
+                )}
+                {automated && view === 'settlement' && (
+                  <details className="manual-work">
+                    <summary>Manual work</summary>
+                    <ManualActions session={session} />
+                  </details>
                 )}
               </aside>
             </div>
           </div>
+          <Tabs.List className="view-tabs" aria-label="Game views" size="2">
+            {availableViews.map((entry) => (
+              <Tabs.Trigger
+                key={entry.id}
+                value={entry.id}
+                onClick={() => content.current?.scrollTo({ top: 0 })}
+              >
+                <ViewIcon name={entry.id} />
+                {entry.label}
+                {entry.working && (
+                  <span
+                    className="working-dot"
+                    aria-hidden="true"
+                    title="In progress"
+                  />
+                )}
+              </Tabs.Trigger>
+            ))}
+          </Tabs.List>
         </Tabs.Root>
       </div>
       <OfflineStatus />

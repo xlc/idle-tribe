@@ -25,5 +25,6 @@
     "playwright.config.ts",
     "build.ts",
     "styles-plugin.ts"
-  ]
+  ],
+  "exclude": ["src/service-worker.ts"]
 }

@@ -108,9 +108,15 @@ for (const width of [1280, 390]) {
         exact: true,
       })
       await lumber.getByRole('button', { name: 'Fill', exact: true }).click()
-      await expect(lumber.getByText('2 / 2', { exact: true })).toBeVisible()
+      await expect(lumber.locator('.worker-count')).toHaveText('2')
       await lumber.getByRole('button', { name: '+', exact: true }).click()
-      await expect(lumber.getByText('3 / 2', { exact: true })).toBeVisible()
+      await expect(lumber.locator('.worker-count')).toHaveText('3')
+      await expect(
+        lumber.getByText('2 efficient', { exact: true }),
+      ).toBeVisible()
+      await page
+        .getByRole('button', { name: 'Construction', exact: true })
+        .click()
       await page
         .getByRole('group', { name: 'builder staffing' })
         .getByRole('button', { name: 'Fill', exact: true })
@@ -239,7 +245,7 @@ for (const width of [1280, 390]) {
       expect(state.queues.research.active?.paid.knowledge).toBe(3600)
       await page.getByRole('tab', { name: 'Settlement', exact: true }).click()
       await farm.getByRole('button', { name: 'Fill', exact: true }).click()
-      await expect(farm.getByText('1 / 2', { exact: true })).toBeVisible()
+      await expect(farm.locator('.worker-count')).toHaveText('1')
       expect(
         (await readState(page)).people.some((p) => p.job === 'farmer'),
       ).toBe(true)
@@ -321,7 +327,7 @@ for (const width of [1280, 390]) {
         exact: true,
       })
       await lab.getByRole('button', { name: 'Fill', exact: true }).click()
-      await expect(lab.getByText('2 / 4', { exact: true })).toBeVisible()
+      await expect(lab.locator('.worker-count')).toHaveText('2')
       await lab.getByText('Details & upgrades', { exact: true }).click()
       await expect(lab).toContainText(
         '12 charge · 8 data · 1 quantum components → 1 causal models',
@@ -382,7 +388,7 @@ for (const width of [1280, 390]) {
         .getByRole('button', { name: 'Remove facility', exact: true })
         .click()
       await expect(page.getByRole('dialog')).toContainText(
-        'workers become available',
+        'workers become unassigned',
       )
       await page
         .getByRole('dialog')

@@ -1,6 +1,6 @@
 # Design implementation and validation
 
-> Historical snapshot of the original implementation. See [balance testing and tuning](BALANCE_RESULTS.md) for the current test harness, matched comparisons, and subsequent tuning.
+> Historical snapshot of the original implementation.
 
 Implemented on 19 October 2026 against [design draft 0.2](GAME_DESIGN_DETAILS.md), following [AGENTS.md](../AGENTS.md). The baseline in [GAME_DESIGN.md](GAME_DESIGN.md) remains a historical snapshot. Setup and commands live in [README.md](../README.md).
 

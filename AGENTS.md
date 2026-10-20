@@ -41,7 +41,7 @@ These inform the principles, not every project policy; in particular, their hard
 - Keep changes focused and follow existing patterns. Prefer clear names, direct control flow, and a single source of truth. Add dependencies or abstractions only for concrete needs; avoid speculative frameworks, redundant state, and defensive layers for unsupported cases. Simplicity must preserve correctness.
 - Treat `biome.json`, `tsconfig.json`, and `.editorconfig` as the sources of truth for code conventions; do not duplicate their settings in documentation.
 - Use concrete types instead of `unknown`. Reserve `unknown` for rare boundaries where the input cannot be modeled more precisely, and explain the exception locally. Do not substitute `any` or unchecked assertions.
-- Keep game rules independent of the DOM so they can be tested without browser setup.
+- Keep game rules easy to unit test without browser setup. Pass state and dependencies such as time and randomness explicitly; keep game logic independent of the DOM, browser APIs, and mutable globals.
 - Shared logic must operate on typed definitions, not chains of special cases for named jobs, buildings, resources, actions, or research. Put prerequisites, costs, effects, and other item-specific behavior in their owning definitions; use small shared evaluators across gameplay, save normalization, and rendering. Adding an item must not require extending ID comparisons in those consumers. Do not merely hide the same branch chain in a helper or build a generic framework for hypothetical rules.
 - This project is at the proof-of-concept (PoC) stage. Compatibility code is not allowed: do not add or retain legacy adapters, fallback formats, or save migrations. Breaking changes and lost saves are acceptable. Update default initialization and current-format save handling together when changing state; reset incompatible saves rather than migrating them.
 - When changing actions or research, check shared types, configuration, game rules, renderer, and HTML bindings together. Keep identifiers consistent.
@@ -51,8 +51,8 @@ These inform the principles, not every project policy; in particular, their hard
 ## Validation and handoff
 
 - For code or tooling changes, run the README's development checks; report anything that could not run and why.
-- Add focused regression coverage for behavior changes, especially saves and game rules. Avoid tests that merely restate configuration or implementation.
-- For interface changes, verify interactions and layout in a browser, including narrow screens and common click/tap flows.
+- Keep the test suite small and focused. Unit tests should primarily cover meaningful game logic and save behavior; add regression coverage where it protects a distinct behavior. Extend existing tests when practical, and avoid redundant cases or tests that merely restate configuration or implementation.
+- Keep only a minimal set of automated browser tests for essential end-to-end flows and browser-specific behavior that unit tests cannot cover. For interface changes, manually verify affected interactions and layout in a browser, including narrow screens and common click/tap flows; do not add a browser test for every UI change.
 - For gameplay changes, play through the affected decision loop: purpose, pacing, tradeoffs, and recovery. For balance changes, compare early, middle, and late states and report empty waits or dominant strategies; unit tests alone do not establish fun.
 - For documentation-only changes, verify accuracy and local links; application tests are unnecessary unless executable behavior changes.
 - Summarize results, validation, and remaining limitations.

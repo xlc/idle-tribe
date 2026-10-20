@@ -22,7 +22,7 @@ import { Button } from './common'
 
 function output(state: GameState, person: Person) {
   const job = person.job
-  if (!isWorkingJob(job)) return 'Available'
+  if (!isWorkingJob(job)) return 'Unassigned'
   if (isProductionJob(job))
     return `${formatResource(workerRate(state, person))} ${RESOURCE_INFO[JOBS[job].output].name.toLowerCase()}/min`
   const rate =
@@ -35,7 +35,8 @@ function output(state: GameState, person: Person) {
 
 export function People({ session }: { session: GameSession }) {
   const s = session.game.state,
-    cost = feastCost(s)
+    cost = feastCost(s),
+    occupations = JOB_IDS.filter((job) => jobUnlocked(s, job))
   return (
     <section className="people" aria-label="People">
       <div className="section-heading people-heading">
@@ -54,7 +55,7 @@ export function People({ session }: { session: GameSession }) {
         {s.people.map((p, i) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: People are append-only during a run; roster positions are their stable identity.
           <article className="person-row" key={i} aria-label={p.name}>
-            <label>
+            <div className="person-heading">
               <strong>{p.name}</strong>
               <span
                 className="person-health"
@@ -73,24 +74,29 @@ export function People({ session }: { session: GameSession }) {
                   </span>
                 ))}
               </span>
-              <select
-                className="select"
-                value={p.job}
-                aria-label={`${p.name} occupation`}
-                onChange={(e) => {
-                  const job = JOB_IDS.find((id) => id === e.target.value)
-                  if (job) session.change(() => session.game.assign(i, job))
-                }}
-              >
-                {JOB_IDS.filter((job) => jobUnlocked(s, job)).map((job) => (
-                  <option key={job} value={job}>
-                    {isWorkingJob(job)
-                      ? `${OCCUPATIONS[job].name} · level ${expertiseLevel(p.practice[job])}`
-                      : 'Available'}
-                  </option>
-                ))}
-              </select>
-            </label>
+            </div>
+            {occupations.length > 1 && (
+              <label className="person-occupation">
+                <span>Occupation</span>
+                <select
+                  className="select"
+                  value={p.job}
+                  aria-label={`${p.name} occupation`}
+                  onChange={(e) => {
+                    const job = JOB_IDS.find((id) => id === e.target.value)
+                    if (job) session.change(() => session.game.assign(i, job))
+                  }}
+                >
+                  {occupations.map((job) => (
+                    <option key={job} value={job}>
+                      {isWorkingJob(job)
+                        ? `${OCCUPATIONS[job].name} · level ${expertiseLevel(p.practice[job])}`
+                        : 'Unassigned'}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
             {isWorkingJob(p.job) && (
               <p className="person-output">{output(s, p)}</p>
             )}

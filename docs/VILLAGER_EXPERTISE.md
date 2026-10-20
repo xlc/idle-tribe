@@ -109,9 +109,9 @@ The People view retains explicit occupation selection. A player can intentionall
 
 Remove the settlement-wide food, wood, and stone mastery tracks and their worker bonuses. Remove their per-output awards and shared mastery presentation. Expertise is personal and occupational, so farming does not inherit foraging experience and later arrivals do not inherit veteran skills. Equipment and research remain settlement investments that can benefit new workers immediately.
 
-Manual gathering also currently receives shared mastery speed bonuses. Under this proposal it preserves the current action definitions and storage pressure, but earns and receives no expertise. The working-tree actions at design review produce **3 food in 9 seconds or 3 wood or stone in 15 seconds** before modifiers, equivalent to base rates of one food per 3 seconds and one wood or stone per 5 seconds. Preserve that batching when implementing rather than reverting to one-unit clicks. Exploration keeps its existing costs and duration. Manual actions are settlement actions, not a second simultaneous occupation for the founder; this avoids rewarding compulsory clicking or double-training an assigned worker.
+Manual gathering does not use occupational expertise. Separate action levels earn 1 XP per completion. Food, wood, and stone start at 1, 2, and 3 seconds for one unit; each additional level adds 3% speed, and every fifth level adds 0.1 yield. XP requirements are `ceil(base XP × 1.2^(level − 1))`, with base XP 4, 3, and 5 respectively. Duration is base seconds divided by the speed multiplier and storage multiplier. Both explorations take 3 seconds and retain their costs. Manual actions are settlement actions, not a second simultaneous occupation for the founder.
 
-This removes a real speed bonus from the opening and from later manual recovery. Its effect must be measured rather than assuming personal expertise compensates for it. Start with unchanged action durations and costs; if the opening misses its pacing target, tune the relevant opening action or investment directly instead of restoring a second mastery system.
+Action XP rewards manual gathering and recovery without granting a settlement-wide worker bonus. Worker production continues to depend on the assigned villager’s own occupational expertise.
 
 At Agriculture, a practiced forager begins farming at level 0. This follows the chosen occupation-specific progression. At base rates and without other modifiers, even a forager with 7 days of practice and matching aptitude produces 7.8 food/min, compared with a novice farmer's 18 food/min. That example supports a reachable transition, but actual facility levels, equipment, storage, and other bonuses must be included in playtesting. Veteran foragers should remain useful without making farming unattractive.
 
@@ -160,7 +160,7 @@ Practice uses simulated gameplay seconds, including the effective seconds suppli
 
 Extend the absence snapshot with starting occupational levels for the existing roster; append-only roster positions identify people during a run. Do not use editable names as identity. A run reset clears the snapshot together with the roster. Store only the baseline needed for the report, not a duplicate activity ledger.
 
-Save schema version 6 adds aptitudes and occupational practice and removes shared mastery. Default initialization and current-format validation use the same schema; incompatible saves reset. Missing or invalid required expertise data invalidates the new-format save rather than inventing a migration. Loading preserves saved aptitudes and practice exactly; it does not retroactively train anyone.
+Save schema version 7 retains aptitudes and occupational practice and adds separate manual action levels and XP. Default initialization and current-format validation use the same schema; incompatible saves reset. Missing or invalid required expertise data invalidates the new-format save rather than inventing a migration. Loading preserves saved aptitudes and practice exactly; it does not retroactively train anyone.
 
 Prestige resets people, aptitudes, and expertise with the settlement. The new founder uses the same fixed starting aptitude. Existing legacy points and perks retain their current meaning, and the reset preview explicitly lists personal expertise among the losses. Prestige does not provide an undocumented practice-speed multiplier.
 
@@ -172,7 +172,7 @@ Use the current working-tree economy as the baseline at implementation time, inc
 
 | Stage or decision | Required comparison |
 | --- | --- |
-| Opening | Fresh game through food automation, housing, and the first arrival; verify manual mastery removal still allows the intended 10–15-minute opening. Record first useful aptitude choice and first expertise gain. |
+| Opening | Fresh game through food automation, housing, and the first arrival; verify action XP, three-second exploration, and the path to automation. Record first useful aptitude choice and first expertise gain. |
 | Early visits | Food, wood, stone, and builder allocation under brief visits and a 15–20-minute active session. Compare a stable crew with sensible reassignment, including opportunity costs and empty waits. |
 | Agriculture | Compare veteran foragers with novice farmers using actual facilities and bonuses. Reassign for food recovery and return to the original occupation with its expertise intact. |
 | Middle economy | Compare equipment, expansion, and expertise for input-limited tools and knowledge. Include net input demand, meals, time to afford, and payback. |

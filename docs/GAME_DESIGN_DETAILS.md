@@ -351,9 +351,9 @@ The first run can delay specialization until a branch-dependent technology becom
 
 ## Opening and interface behavior
 
-Start with one healthy person, no resources, no buildings, and the initial storage thresholds. The first visible action is Gather food: one food per 3 seconds. Manual wood and stone produce one unit per 5 seconds after discovery. Manual gathering rate uses mastery and storage pressure; each completed action still yields one unit. No routine clicking is needed once camps unlock.
+Start with one healthy person, no resources, no buildings, and the initial storage thresholds. The first visible action is Gather food: one food per second. After discovery, manual wood produces one unit per 2 seconds, and stone one unit per 3 seconds. Storage pressure slows manual gathering; each completed action still yields one unit. No routine clicking is needed once camps unlock.
 
-Holding 5 food reveals Explore nearby. It costs 10 food and takes 20 seconds, discovers wood, and reveals Gather wood. Holding 2 wood reveals Technology. Sharpened stick reveals Explore farther: 20 food, 30 seconds, discovers stone. Discoveries are permanent and never repeat for duplicate rewards.
+Holding 5 food reveals Explore nearby. It costs 10 food and takes 3 seconds, discovers wood, and reveals Gather wood. Holding 2 wood reveals Technology. Sharpened stick reveals Explore farther: 20 food, 3 seconds, discovers stone. Discoveries are permanent and never repeat for duplicate rewards.
 
 Shelters reveals worker assignments, builders, housing, and the construction queue. Its camp grant starts food automation. Research becomes queued as soon as Technology is available, with one active project. Early discovery and manual actions continue to use one separate visible-time action slot. They pause when hidden and cancel/refund on reload, as today; automatic jobs and the two planning queues use elapsed simulation time.
 

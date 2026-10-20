@@ -2,13 +2,16 @@ import { formatDuration } from '../format'
 import { RESEARCH_IDS } from '../ids'
 import { allEntries, quoteProject, researchVisible } from '../research'
 import { RESEARCH } from '../research-definitions'
+import { automationUnlocked } from '../settlement'
 import { Button, Costs, type ViewProps } from './common'
 import { Queue } from './queues'
 export function Technology({ session, confirm }: ViewProps) {
   const s = session.game.state
   return (
     <>
-      <Queue session={session} confirm={confirm} id="research" />
+      {!automationUnlocked(s) && (
+        <Queue session={session} confirm={confirm} id="research" />
+      )}
       <section className="tech-section">
         <div className="tech-grid">
           {RESEARCH_IDS.filter((id) => researchVisible(s, id)).map((id) => {

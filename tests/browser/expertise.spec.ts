@@ -33,7 +33,7 @@ for (const width of [1280, 390]) {
       await expect(
         page.getByRole('article', { name: 'You', exact: true }),
       ).toContainText('Foraging aptitude · +5%')
-      await expect(page.getByLabel('You occupation')).toHaveValue('idle')
+      await expect(page.getByLabel('You occupation')).not.toBeAttached()
       await page
         .getByRole('button', { name: 'Gather food', exact: true })
         .click()
@@ -62,7 +62,7 @@ for (const width of [1280, 390]) {
         exact: true,
       })
       await lumber.getByRole('button', { name: '+', exact: true }).click()
-      await expect(lumber.getByText('1 / 2', { exact: true })).toBeVisible()
+      await expect(lumber.locator('.worker-count')).toHaveText('1')
       expect(required((await saved(page)).people[0]).job).toBe('woodcutter')
       await lumber.getByRole('button', { name: 'Fill', exact: true }).click()
       expect(
@@ -71,7 +71,17 @@ for (const width of [1280, 390]) {
           .map((p) => p.name),
       ).toEqual(['Mira', 'Rowan'])
       await lumber.getByRole('button', { name: '−', exact: true }).click()
-      await expect(lumber.getByText('1 / 2', { exact: true })).toBeVisible()
+      await expect(lumber.locator('.worker-count')).toHaveText('1')
+      expect(required((await saved(page)).people[3]).job).toBe('idle')
+      await page.getByRole('tab', { name: 'People', exact: true }).click()
+      const rowan = page.getByRole('article', { name: 'Rowan', exact: true })
+      await expect(rowan.getByText('Occupation', { exact: true })).toBeVisible()
+      await expect(
+        rowan.getByRole('option', { name: 'Unassigned', exact: true }),
+      ).toHaveJSProperty('selected', true)
+      await page.getByLabel('Rowan occupation').selectOption('forager')
+      await expect(rowan.locator('.person-output')).toContainText('food/min')
+      await page.getByLabel('Rowan occupation').selectOption('idle')
       expect(required((await saved(page)).people[3]).job).toBe('idle')
       await page.getByLabel('Tavi occupation').selectOption('sawyer')
       await page.clock.runFor(30000)
@@ -133,6 +143,7 @@ for (const width of [1280, 390]) {
       s.people = [person]
       s.facilities['food-store'].level = 10000
       await open(page, s)
+      await page.getByRole('tab', { name: 'People', exact: true }).click()
       const row = page.getByRole('article', { name: 'Neri', exact: true })
       await expect(
         row.getByRole('img', { name: 'Neri health: 2 of 5', exact: true }),
@@ -183,6 +194,7 @@ for (const width of [1280, 390]) {
         animations: 'disabled',
       })
       await report.getByRole('button', { name: /Away ·/ }).click()
+      await page.getByRole('tab', { name: 'People', exact: true }).click()
       await page.getByLabel('Villager 36 occupation').selectOption('farmer')
       await expect(page.getByLabel('Villager 36 occupation')).toHaveValue(
         'farmer',

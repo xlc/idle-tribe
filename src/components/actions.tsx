@@ -9,6 +9,7 @@ import { formatDuration, formatResource } from '../format'
 import { ACTION_IDS } from '../ids'
 import { canAfford } from '../resources'
 import type { GameSession } from '../session'
+import { ResourceArt } from './art'
 import { ActionProgress, Costs } from './common'
 
 function ActionSkill({
@@ -92,7 +93,7 @@ export function ManualActions({
                 data-resource={def.resource}
                 aria-hidden="true"
               >
-                {def.resource ? '●' : '↗'}
+                {def.resource ? <ResourceArt resource={def.resource} /> : '↗'}
               </span>
               <span className="action-copy">
                 <strong className="action-name">{def.name}</strong>

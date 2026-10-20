@@ -30,9 +30,10 @@ for (const width of [320, 390, 768, 1024, 1280, 1920]) {
     })
     const toggle = construction.getByRole('button', { name: /^Construction/ })
     const builders = page.getByRole('group', { name: 'builder staffing' })
+    await toggle.click()
     await builders.getByRole('button', { name: 'Fill', exact: true }).click()
-    await expect(builders.getByText('4 / 4', { exact: true })).toBeVisible()
-    if (width < 720) await toggle.click()
+    await expect(builders.locator('.worker-count')).toHaveText('4')
+    await toggle.click()
 
     await expect(
       stockpile.getByRole('region', {
@@ -44,6 +45,7 @@ for (const width of [320, 390, 768, 1024, 1280, 1920]) {
       name: 'Causal synthesis lab',
       exact: true,
     })
+    await lab.getByText('Details & upgrades', { exact: true }).click()
     await lab.getByRole('button', { name: /Queue expansion/ }).click()
     // Navigation and desktop stock remain reachable while working at the end of a long catalog.
     await expect(
@@ -54,6 +56,7 @@ for (const width of [320, 390, 768, 1024, 1280, 1920]) {
         stockpile.getByText('Food', { exact: false }).first(),
       ).toBeInViewport()
     await views.getByRole('tab', { name: 'Settlement', exact: true }).click()
+    await views.getByRole('tab', { name: 'People', exact: true }).click()
     await expect(page.getByLabel('You occupation')).toBeInViewport()
     await page.getByLabel('Settler 36 occupation').selectOption('farmer')
     await expect(page.getByLabel('Settler 36 occupation')).toHaveValue('farmer')
@@ -66,6 +69,7 @@ for (const width of [320, 390, 768, 1024, 1280, 1920]) {
     await page.setViewportSize({ width: newWidth, height: 900 })
     await expect(page.getByLabel('Settler 36 occupation')).toHaveValue('farmer')
     await views.getByRole('tab', { name: 'Settlement', exact: true }).click()
+    await toggle.click()
     await expect(
       builders.getByRole('button', { name: '−', exact: true }),
     ).toBeEnabled()

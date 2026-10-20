@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <title>Primitive Tribe</title>
+  <rect width="512" height="512" fill="#f3f1ea"/>
+  <circle cx="256" cy="256" r="180" fill="#355b40"/>
+  <path d="M142 286 256 164 370 286H338V352H174V286Z" fill="#fffefa"/>
+  <path d="M234 352V284A22 22 0 0 1 278 284V352" fill="#8a7145"/>
+  <path d="M256 164V130M228 146H284" stroke="#fffefa" stroke-width="14" stroke-linecap="round"/>
+</svg>

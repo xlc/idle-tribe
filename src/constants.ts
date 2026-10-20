@@ -91,33 +91,44 @@ export const RESOURCE_INFO: Record<
 export const ERAS = [
   {
     name: 'Tribal',
+    landscape: 'camp',
     description:
       'Civilization begins with lunch and a fairly optimistic stick.',
   },
   {
     name: 'Agricultural',
+    landscape: 'town',
     description: 'Dinner has put down roots, and so have we.',
   },
   {
     name: 'Town',
+    landscape: 'town',
     description:
       'A settlement large enough for everyone to have opinions about it.',
   },
   {
     name: 'Industrial',
+    landscape: 'future',
     description: 'The settlement has discovered a louder way to work.',
   },
   {
     name: 'Digital',
+    landscape: 'future',
     description: 'The blinking lights insist everything is under control.',
   },
-  { name: 'Space', description: 'The roof was becoming a limitation.' },
+  {
+    name: 'Space',
+    landscape: 'future',
+    description: 'The roof was becoming a limitation.',
+  },
   {
     name: 'Quantum',
+    landscape: 'future',
     description: 'Very small things are making very large demands.',
   },
   {
     name: 'Beyond quantum',
+    landscape: 'future',
     description: 'The laws of physics have received your suggested edits.',
   },
 ]

@@ -101,24 +101,19 @@ for (const width of [320, 390, 1280]) {
   })
 }
 
-test('construction chevron follows its controls when opened and closed', async ({
+test('construction summary opens builder controls and retains them across toggles', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 900 })
   await open(page, settlement())
   const toggle = page.getByRole('button', { name: 'Construction', exact: true })
-  const chevron = toggle.locator('.construction-chevron')
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+  await toggle.click()
   await expect(toggle).toHaveAttribute('aria-expanded', 'true')
-  await expect(
-    page.getByRole('group', { name: 'builder staffing' }),
-  ).toBeVisible()
-  await expect(chevron).toHaveCSS('transform', 'matrix(0, 1, -1, 0, 0, 0)')
+  const builders = page.getByRole('group', { name: 'builder staffing' })
+  await expect(builders).toBeVisible()
   await toggle.click()
   await expect(toggle).toHaveAttribute('aria-expanded', 'false')
-  await expect(chevron).toHaveCSS('transform', 'none')
   await toggle.click()
-  await expect(toggle).toHaveAttribute('aria-expanded', 'true')
-  await expect(
-    page.getByRole('group', { name: 'builder staffing' }),
-  ).toBeVisible()
+  await expect(builders).toBeVisible()
 })
