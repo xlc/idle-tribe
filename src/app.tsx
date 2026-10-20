@@ -3,16 +3,17 @@ import { ACTIONS } from './actions'
 import { offlineWindow } from './clock'
 import { ManualActions } from './components/actions'
 import { Button, type Confirm } from './components/common'
+import { People } from './components/people'
 import { Queue } from './components/queues'
 import {
   Builders,
-  People,
   Production,
   Stockpile,
   Workforce,
 } from './components/settlement'
 import { Technology } from './components/technology'
 import { ERAS, RESOURCE_INFO } from './constants'
+import { OCCUPATIONS } from './economy'
 import { formatDuration, formatResource } from './format'
 import { ACTION_IDS, PERK_IDS, RESOURCES } from './ids'
 import { buyPerk, canReset, legacyReward, PERKS, resetRun } from './prestige'
@@ -130,7 +131,7 @@ export function App({ session }: { session: GameSession }) {
                 <ManualActions session={session} />
               </section>
             )}
-            {automated && <People session={session} />}
+            <People session={session} />
           </aside>
         </div>
       </section>
@@ -155,7 +156,7 @@ export function App({ session }: { session: GameSession }) {
             onClick={() =>
               confirm(
                 'Begin a new settlement?',
-                `Gain ${legacyReward(s)} legacy points. Lose all resources, people, facilities, equipment, assignments, mastery, discoveries, research, branch choices, and queued work. Keep lifetime points, perks, settings, and the time box.`,
+                `Gain ${legacyReward(s)} legacy points. Lose all resources, people, facilities, equipment, assignments, aptitudes, personal expertise, discoveries, research, branch choices, and queued work. Keep lifetime points, perks, settings, and the time box.`,
                 () => {
                   resetRun(s)
                   setView('settlement')
@@ -216,6 +217,38 @@ export function App({ session }: { session: GameSession }) {
               <p>
                 {away.arrivals} arrivals · {away.completed} projects completed
               </p>
+              {away.expertise.length > 0 && (
+                <div className="away-expertise">
+                  <strong>Growing expertise</strong>
+                  {away.expertise.slice(0, 5).map((person) => (
+                    <p key={person.index}>
+                      {person.name}:{' '}
+                      {person.gains
+                        .map(
+                          (gain) =>
+                            `${OCCUPATIONS[gain.job].aptitude} ${gain.before} → ${gain.after}`,
+                        )
+                        .join(' · ')}
+                    </p>
+                  ))}
+                  {away.expertise.length > 5 && (
+                    <details>
+                      <summary>{away.expertise.length - 5} more people</summary>
+                      {away.expertise.slice(5).map((person) => (
+                        <p key={person.index}>
+                          {person.name}:{' '}
+                          {person.gains
+                            .map(
+                              (gain) =>
+                                `${OCCUPATIONS[gain.job].aptitude} ${gain.before} → ${gain.after}`,
+                            )
+                            .join(' · ')}
+                        </p>
+                      ))}
+                    </details>
+                  )}
+                </div>
+              )}
               <p>
                 {QUEUES.map((id) => {
                   const blocker = queueBlocker(s, id)

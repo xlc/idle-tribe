@@ -1,15 +1,27 @@
-import type { GameState, Mastery } from './types'
-export function masteryRequired(mastery: Mastery) {
-  return Math.ceil(20 * mastery.level ** 1.5)
+import { EPSILON } from './constants'
+import { healthMultiplier } from './food'
+import type { Person, WorkingJob } from './types'
+
+export function practiceThreshold(level: number) {
+  return 15 * 60 * level ** 2
 }
-export function masteryMultiplier(mastery: Mastery) {
-  return 1 + 0.07 * Math.sqrt(mastery.level - 1)
+export function expertiseLevel(seconds: number) {
+  return Math.floor(Math.sqrt((seconds + EPSILON) / (15 * 60)))
 }
-export function awardMastery(state: GameState, id: 'food' | 'wood' | 'stone') {
-  const mastery = state.mastery[id]
-  mastery.xp++
-  while (mastery.xp >= masteryRequired(mastery)) {
-    mastery.xp -= masteryRequired(mastery)
-    mastery.level++
-  }
+export function expertiseBonus(seconds: number) {
+  return 0.05 * Math.sqrt(expertiseLevel(seconds))
+}
+export function personalWork(person: Person, job: WorkingJob) {
+  return (
+    1 +
+    expertiseBonus(person.practice[job]) +
+    (person.aptitude === job ? 0.05 : 0)
+  )
+}
+export function workContribution(
+  person: Person,
+  job: WorkingJob,
+  health = healthMultiplier(person),
+) {
+  return health * personalWork(person, job)
 }

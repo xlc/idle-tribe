@@ -1,5 +1,10 @@
 import type { BuildingId, JobId } from './ids'
-import type { BuildingDefinition, JobDefinition } from './types'
+import type {
+  BuildingDefinition,
+  JobDefinition,
+  OccupationDefinition,
+  WorkingJob,
+} from './types'
 export const BUILDINGS: Record<BuildingId, BuildingDefinition> = {
   housing: {
     forms: [
@@ -845,70 +850,88 @@ export type ProductionJob = Exclude<JobId, 'idle' | 'builder'>
 export const JOBS: Record<ProductionJob, JobDefinition> = {
   forager: {
     name: 'Forager',
+    aptitude: 'Foraging',
+    learning: 'production',
     description: 'Finds breakfast in places the rest of us walked past.',
     output: 'food',
     input: {},
-    mastery: 'food',
   },
   farmer: {
     name: 'Farmer',
+    aptitude: 'Farming',
+    learning: 'production',
     description: 'Persuades plants to keep regular working hours.',
     output: 'food',
     input: {},
-    mastery: 'food',
   },
   woodcutter: {
     name: 'Woodcutter',
+    aptitude: 'Woodcutting',
+    learning: 'production',
     description: 'Negotiates a change of direction for trees.',
     output: 'wood',
     input: {},
-    mastery: 'wood',
   },
   stoneworker: {
     name: 'Stoneworker',
+    aptitude: 'Stoneworking',
+    learning: 'production',
     description: 'Brings home the rocks the settlement has taken a liking to.',
     output: 'stone',
     input: {},
-    mastery: 'stone',
   },
   sawyer: {
     name: 'Sawyer',
+    aptitude: 'Sawing',
+    learning: 'production',
     description: 'Helps trees settle into a flatter line of work.',
     output: 'planks',
     input: { wood: 3 },
   },
   mason: {
     name: 'Mason',
+    aptitude: 'Masonry',
+    learning: 'production',
     description: 'Makes stone look like it was expecting to become a building.',
     output: 'blocks',
     input: { stone: 3 },
   },
   toolmaker: {
     name: 'Toolmaker',
+    aptitude: 'Toolmaking',
+    learning: 'production',
     description: 'Equips everyone else to complain less about their equipment.',
     output: 'tools',
     input: { planks: 2, blocks: 1 },
   },
   scholar: {
     name: 'Scholar',
+    aptitude: 'Scholarship',
+    learning: 'production',
     description: 'Turns a full stomach into difficult questions.',
     output: 'knowledge',
     input: { food: 1 },
   },
   miner: {
     name: 'Miner',
+    aptitude: 'Mining',
+    learning: 'production',
     description: 'Finds promising metal before it has stopped being a rock.',
     output: 'ore',
     input: {},
   },
   smelter: {
     name: 'Smelter',
+    aptitude: 'Smelting',
+    learning: 'production',
     description: 'Helps ore reconsider its commitment to being inconvenient.',
     output: 'metal',
     input: { ore: 3, wood: 1 },
   },
   machinist: {
     name: 'Machinist',
+    aptitude: 'Machining',
+    learning: 'production',
     description:
       'Builds the moving parts that make everyone else look organized.',
     output: 'machinery',
@@ -916,12 +939,16 @@ export const JOBS: Record<ProductionJob, JobDefinition> = {
   },
   'power-worker': {
     name: 'Power worker',
+    aptitude: 'Power generation',
+    learning: 'production',
     description: 'Keeps the switches supplied with reasons to switch on.',
     output: 'charge',
     input: { wood: 0.5 },
   },
   'electronics-worker': {
     name: 'Electronics worker',
+    aptitude: 'Electronics',
+    learning: 'production',
     description:
       'Connects tiny parts with impressively strong opinions about direction.',
     output: 'circuits',
@@ -929,6 +956,8 @@ export const JOBS: Record<ProductionJob, JobDefinition> = {
   },
   analyst: {
     name: 'Analyst',
+    aptitude: 'Analysis',
+    learning: 'production',
     description:
       'Asks the machines to turn an interesting question into several files.',
     output: 'data',
@@ -936,6 +965,8 @@ export const JOBS: Record<ProductionJob, JobDefinition> = {
   },
   'orbital-worker': {
     name: 'Orbital worker',
+    aptitude: 'Orbital extraction',
+    learning: 'production',
     description:
       'Gathers useful material a rather long way from the lunch room.',
     output: 'exotic-material',
@@ -943,6 +974,8 @@ export const JOBS: Record<ProductionJob, JobDefinition> = {
   },
   'quantum-engineer': {
     name: 'Quantum engineer',
+    aptitude: 'Quantum engineering',
+    learning: 'production',
     description:
       'Keeps very small parts on unusually complicated speaking terms.',
     output: 'quantum-components',
@@ -950,6 +983,8 @@ export const JOBS: Record<ProductionJob, JobDefinition> = {
   },
   'causal-researcher': {
     name: 'Causal researcher',
+    aptitude: 'Causal research',
+    learning: 'production',
     description:
       'Files the results carefully enough to remember which happened first.',
     output: 'causal-models',
@@ -957,6 +992,8 @@ export const JOBS: Record<ProductionJob, JobDefinition> = {
   },
   'stellar-worker': {
     name: 'Stellar worker',
+    aptitude: 'Stellar production',
+    learning: 'production',
     description:
       'Works beside a furnace with an unusually ambitious job description.',
     output: 'metal',
@@ -965,4 +1002,9 @@ export const JOBS: Record<ProductionJob, JobDefinition> = {
 }
 export function isProductionJob(job: JobId): job is ProductionJob {
   return job !== 'idle' && job !== 'builder'
+}
+
+export const OCCUPATIONS: Record<WorkingJob, OccupationDefinition> = {
+  ...JOBS,
+  builder: { name: 'Builder', aptitude: 'Building', learning: 'construction' },
 }

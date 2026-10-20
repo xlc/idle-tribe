@@ -38,3 +38,6 @@ playwright-report/
 # Local editor settings
 .idea/
 .vscode/
+
+# Reproducible balance run artifacts
+/balance-results/

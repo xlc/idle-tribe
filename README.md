@@ -23,15 +23,17 @@ Bun is not pinned; CI uses the latest stable release. Automatic peer installatio
 
 The playable catalog covers **all eight eras**, through Causal synthesis. The first three eras follow [the detailed design](docs/GAME_DESIGN_DETAILS.md); [the later-era addendum](docs/LATER_ERAS.md) defines the remaining costs, unlocks, recipes, branch upgrades, and time-box discovery. [Implementation and playtest results](docs/IMPLEMENTATION_RESULTS.md) record coverage and pacing evidence.
 
-Explore to discover wood and stone. Research **Shelters** to receive the first Foraging camp and unlock builders and automatic arrivals. Housing and other facilities require construction. Workers gather **food**, wood, and stone, then process planks, blocks, tools, and knowledge. Processing pauses without inputs and spends one recipe per completed unit.
+Manual gathering produces three units per batch at the same base rate as individual gathering. Explore to discover wood and stone. Research **Shelters** to receive the first Foraging camp and unlock builders and automatic arrivals. Housing and other facilities require construction. Workers gather **food**, wood, and stone, then process planks, blocks, tools, and knowledge. Processing pauses without inputs and spends one recipe per completed unit.
 
-Each workplace has **−**, **+**, and **Fill** controls. Fill assigns available people up to efficient staffing once. Extra workers remain useful with diminishing returns; they are never automatically reassigned. Comfortable housing slows crowding rather than imposing a population limit. Arrivals require a food buffer and sustainable production, arrive unassigned, and can be paused with **Welcome arrivals**.
+Each workplace has **−**, **+**, and **Fill** controls. Plus and Fill choose available villagers with the strongest current contribution for that occupation; Minus releases the weakest contributor. Fill runs once up to the nominal staffing target. The People view allows deliberate individual assignments. Extra workers remain useful with diminishing returns; they are never automatically reassigned. Comfortable housing slows crowding rather than imposing a population limit. Arrivals require a food buffer and sustainable production, arrive unassigned, and can be paused with **Welcome arrivals**.
+
+Every villager has a permanent **aptitude** worth +5% personal work in one occupation. Productive work earns separate **expertise** for each occupation, starting with a 5% gain after 15 practice minutes and diminishing gains afterward. Crowding, poor health, storage pressure, and missing inputs slow practice. Expertise survives reassignment, but does not transfer between occupations; farmers start fresh even after years of foraging. Skilled workers also use workplace capacity, so extra staffing and personal bonuses have diminishing returns in crowded workplaces. The People view shows aptitudes, effective output, and optional learning progress. [Villager expertise](docs/VILLAGER_EXPERTISE.md) defines the rules and [its validation results](docs/VILLAGER_EXPERTISE_RESULTS.md) describe the playtests. Manual gathering keeps its base batch rates and has no expertise bonus.
 
 Construction and research have separate ordered queues. Waiting plans reserve nothing; an eligible head pays when it starts. Builders advance construction, while research uses a fixed timer. Reorder or remove waiting plans freely. Cancelling active work refunds its exact committed materials and discards progress. Completed facilities retain their effects during expansion and conversion. Conversion retains levels, assignments, partial cycles, and equipment; removal loses completed investment while preserving people and stock.
 
 Repeatable buildings and equipment refinements have no gameplay level cap. Storage thresholds reduce production gradually above comfortable amounts; all stock remains spendable. Costs committed to unfinished projects still count toward storage pressure. Toolmaking, Organized work, and Civic engineering unlock equipment tiers; Civic engineering also opens unlimited refinements.
 
-**Agriculture** unlocks farms, cottages, and granaries. **Writing** introduces towns, gradual happiness, schools, libraries, and permanent specialization:
+**Agriculture** unlocks farms, cottages, and granaries. **Writing** requires a completed Farm and introduces towns, gradual happiness, schools, libraries, and permanent specialization:
 
 - **Forestry:** wood and plank workplace rates ×1.40; Precision joinery reduces wood and stone processing inputs from 3 to 2.
 - **Stonecraft:** stone and block workplace rates ×1.40; Architecture adds +50% block production technology and +25% housing contribution.
@@ -44,13 +46,13 @@ Fed people eat 1 food per minute. Shortages reduce individual output to 80% at 3
 
 ## Saves and offline progress
 
-Progress saves automatically in browser local storage under `primitive-tribe-v1`, with current-format schema version 5. Prototype saves from previous schemas reset; there are no migrations. Saves belong to the browser and origin. If storage is unavailable, the current session remains playable but progress will not persist.
+Progress saves automatically in browser local storage under `primitive-tribe-v1`, with current-format schema version 6. Prototype saves from previous schemas reset; there are no migrations. Saves belong to the browser and origin. If storage is unavailable, the current session remains playable but progress will not persist.
 
-Current-format reloads preserve queued research and construction, recorded payments, partial worker cycles, assignments, and absence accounting. Unfinished manual actions alone cancel and refund on reload. Manual actions pause while hidden; workers, meals, immigration, happiness, construction, and research share the same simulation timeline.
+Current-format reloads preserve queued research and construction, recorded payments, partial worker cycles, assignments, aptitudes, occupational practice, and absence accounting. Unfinished manual actions alone cancel and refund on reload. Manual actions pause while hidden; workers, meals, immigration, happiness, construction, and research share the same simulation timeline.
 
 The initial **8 hours** away run at full speed. Longer absences continue with diminishing effective time: 24 hours gives about 19.71 simulated hours, and a week gives about 65.32. Supply posts and record technologies extend the full-speed window. Its duration is snapshotted at departure; hidden callbacks and reloads settle only time not already accounted for. Improvements completed away benefit the next absence.
 
-The return report shows wall and simulated time, signed resource changes, arrivals, completed plans, and current blockers. No choices, assignments, or new purchases are added automatically beyond the plans you queued.
+The return report shows wall and simulated time, signed resource changes, arrivals, completed plans, personal expertise gains, and current blockers. No choices, assignments, or new purchases are added automatically beyond the plans you queued.
 
 ## Development
 
@@ -69,11 +71,14 @@ bun run check
 | `bun run typecheck` | Check TypeScript types. |
 | `bun run test` | Run unit tests. |
 | `bun run test:browser` | Build and test the production UI in Chromium at desktop and phone widths. |
-| `bun run balance` | Simulate scheduled visits through Mechanization; add `--full` for all eras and `--branch=forestry` or `--branch=stonecraft` for one path. |
+| `bun run balance` | Simulate ordinary visits through Mechanization; `--full` reaches all eras, and `--matrix` runs both policies, branches, and all three schedules. |
+| `bun scripts/balance-experiments.ts` | Compare earned-checkpoint investments, recovery, prestige strategies, and first-purchase perks. |
 | `bun run build` | Check types and generate the production bundle in `dist/`. |
 | `bun run preview` | Build and serve locally using Cloudflare's runtime. |
 | `bun run deploy` | Build and publish to Cloudflare Workers. |
 | `bun run check` | Run lint, build (including type checking), and tests. |
+
+Balance runs accept `--branch=forestry|stonecraft`, `--policy=simple|bottleneck`, `--schedule=frequent|daily|concentrated`, `--days=60`, and `--out=balance-results/latest`. Experiments accept `--branch` and `--out`. Results include source provenance, milestone bounds, control counts, snapshots, and earned checkpoints. See [balance methodology and results](docs/BALANCE_RESULTS.md) for interpretation and limitations. Generated artifacts are ignored by Git; preserve their provenance when comparing runs.
 
 Before the first browser test, install Chromium with `bunx playwright install chromium`. The browser checks use isolated saves and start their own local server.
 

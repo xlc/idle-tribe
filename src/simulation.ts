@@ -1,22 +1,24 @@
 import { finishManual, manualRate, syncUnlocks } from './actions'
 import { EPSILON } from './constants'
-import { isProductionJob, JOBS } from './economy'
-import { consumeMeal, mealCost } from './food'
-import { JOB_IDS, RESOURCES } from './ids'
+import { isProductionJob, JOBS, OCCUPATIONS } from './economy'
+import { consumeMeal, healthMultiplier, mealCost } from './food'
+import { isWorkingJob, JOB_IDS, RESOURCES, WORKING_JOB_IDS } from './ids'
 import { createRecord } from './records'
 import { completeProject, projectName, QUEUES, startQueues } from './research'
 import { RESEARCH } from './research-definitions'
 import { canAfford, pay, storageMultiplier, threshold } from './resources'
 import {
+  arrivalAptitude,
   arrivalBlocker,
   arrivalStatus,
   constructionSpeed,
   happinessTarget,
   happinessUnlocked,
   jobInput,
+  staffingMultiplier,
   workerRates,
 } from './settlement'
-import { awardMastery } from './skills'
+import { expertiseLevel, practiceThreshold } from './skills'
 import { createPerson } from './state'
 import type { GameState } from './types'
 
@@ -30,11 +32,6 @@ function settleEvents(state: GameState, visible: boolean) {
         p.progress = Math.max(0, p.progress - 1)
         const def = JOBS[p.job]
         state.resources[def.output]++
-        if (def.mastery) {
-          const level = state.mastery[def.mastery].level
-          awardMastery(state, def.mastery)
-          changed ||= state.mastery[def.mastery].level !== level
-        }
       } else p.progress = 1
     }
   for (const id of QUEUES) {
@@ -69,7 +66,12 @@ function settleEvents(state: GameState, visible: boolean) {
   }
   if (state.arrivalProgress >= 1 - EPSILON && !arrivalStatus(state).blocker) {
     changed = true
-    state.people.push(createPerson(`Settler ${state.people.length + 1}`))
+    state.people.push(
+      createPerson(
+        `Settler ${state.people.length + 1}`,
+        arrivalAptitude(state),
+      ),
+    )
     state.arrivalProgress = 0
   }
   const active = QUEUES.map((id) => state.queues[id].active?.sequence)
@@ -81,15 +83,17 @@ function settleEvents(state: GameState, visible: boolean) {
     )
   )
 }
-// Structure and worker health change at discrete events. Between those events
-// only stock, commitments and cycle progress change; keep their checks live.
-function intervalRules(state: GameState, visible: boolean) {
+// Structure, health and expertise bonuses change at discrete events. Keep stock,
+// commitment and cycle-progress checks live between those events.
+function intervalRules(state: GameState) {
   return {
     rates: workerRates(state, { storage: 1, ignoreInputs: true }),
+    staffing: createRecord(WORKING_JOB_IDS, (job) =>
+      staffingMultiplier(state, job),
+    ),
     inputs: createRecord(JOB_IDS, (job) => jobInput(state, job)),
     comfort: createRecord(RESOURCES, (resource) => threshold(state, resource)),
     construction: constructionSpeed(state) / 60,
-    manual: visible ? manualRate(state) : 0,
     arrival: arrivalStatus(state),
   }
 }
@@ -101,7 +105,7 @@ export function advanceTime(
   if (!Number.isFinite(seconds) || seconds < 0) return
   settleEvents(state, visible)
   let remaining = seconds
-  let rules = intervalRules(state, visible)
+  let rules = intervalRules(state)
   while (remaining > EPSILON) {
     const available = createRecord(JOB_IDS, (job) =>
       canAfford(state, rules.inputs[job]),
@@ -115,11 +119,26 @@ export function advanceTime(
       ),
     )
     const rates = state.people.map((person, index) =>
-      isProductionJob(person.job) && available[person.job]
+      isProductionJob(person.job) &&
+      available[person.job] &&
+      person.progress < 1 - EPSILON
         ? ((rules.rates[index] ?? 0) * pressure[JOBS[person.job].output]) / 60
         : 0,
     )
-    const { construction, manual, arrival } = rules
+    const practiceRates = state.people.map((person, index) => {
+      const job = person.job
+      if (!isWorkingJob(job)) return 0
+      const definition = OCCUPATIONS[job]
+      const working =
+        definition.learning === 'production'
+          ? (rates[index] ?? 0) > 0
+          : Boolean(state.queues.construction.active && rules.construction > 0)
+      if (!working) return 0
+      const storage = isProductionJob(job) ? pressure[JOBS[job].output] : 1
+      return healthMultiplier(person) * rules.staffing[job] * storage
+    })
+    const { construction, arrival } = rules
+    const manual = visible ? manualRate(state) : 0
     const immigration = arrivalBlocker(state, arrival)
       ? 0
       : 1 / (arrival.interval * 60)
@@ -127,6 +146,11 @@ export function advanceTime(
     state.people.forEach((p, i) => {
       const rate = rates[i] ?? 0
       if (rate > 0) step = Math.min(step, Math.max(0, 1 - p.progress) / rate)
+      const practice = practiceRates[i] ?? 0
+      if (isWorkingJob(p.job) && practice > 0) {
+        const next = practiceThreshold(expertiseLevel(p.practice[p.job]) + 1)
+        step = Math.min(step, (next - p.practice[p.job]) / practice)
+      }
     })
     for (const id of QUEUES) {
       const active = state.queues[id].active,
@@ -146,11 +170,17 @@ export function advanceTime(
       )
     // A zero-work conversion can complete without advancing the timeline.
     if (step <= EPSILON) {
-      if (settleEvents(state, visible)) rules = intervalRules(state, visible)
+      if (settleEvents(state, visible)) rules = intervalRules(state)
       step = Math.min(remaining, EPSILON)
     }
+    let learned = false
     state.people.forEach((p, i) => {
       p.progress = Math.min(1, p.progress + (rates[i] ?? 0) * step)
+      if (isWorkingJob(p.job)) {
+        const previous = expertiseLevel(p.practice[p.job])
+        p.practice[p.job] += (practiceRates[i] ?? 0) * step
+        learned = expertiseLevel(p.practice[p.job]) !== previous || learned
+      }
     })
     for (const id of QUEUES) {
       const active = state.queues[id].active
@@ -164,7 +194,7 @@ export function advanceTime(
     )
     state.minuteProgress += step
     remaining -= step
-    if (settleEvents(state, visible)) rules = intervalRules(state, visible)
+    if (settleEvents(state, visible) || learned) rules = intervalRules(state)
   }
 }
 export function resourceRates(

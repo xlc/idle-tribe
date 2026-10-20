@@ -2,10 +2,9 @@ import { useState } from 'react'
 import { ACTIONS } from '../actions'
 import { RESOURCE_INFO } from '../constants'
 import { BUILDINGS, isProductionJob, JOBS } from '../economy'
-import { feastCost } from '../food'
 import { formatCompactResource, formatCost, formatResource } from '../format'
 import { removeFacility } from '../game'
-import { ACTION_IDS, BUILDING_IDS, JOB_IDS, RESOURCES } from '../ids'
+import { ACTION_IDS, BUILDING_IDS, isWorkingJob, RESOURCES } from '../ids'
 import {
   allEntries,
   nextEquipment,
@@ -27,9 +26,12 @@ import {
   jobInput,
   jobUnlocked,
   requirementBlocker,
+  staffingMultiplier,
+  workerCandidate,
   workerRate,
 } from '../settlement'
 import { resourceRates } from '../simulation'
+import { workContribution } from '../skills'
 import type { BuildingId, JobId } from '../types'
 import { Button, Costs, type ViewProps } from './common'
 export function Stockpile({ session }: { session: GameSession }) {
@@ -90,34 +92,67 @@ export function WorkerControls({
   const s = session.game.state,
     n = assigned(s, job),
     cap = jobCapacity(s, job),
-    available = assigned(s, 'idle')
+    available = assigned(s, 'idle'),
+    [feedback, setFeedback] = useState('')
+  function adjust(change: number) {
+    session.change(() => {
+      const candidate = s.people[workerCandidate(s, job, change < 0)]
+      if (candidate && session.game.adjust(job, change))
+        setFeedback(`${candidate.name} ${change < 0 ? 'released' : 'assigned'}`)
+    })
+  }
   return (
-    <fieldset className="worker-control" aria-label={`${job} staffing`}>
-      <Button
-        title="Release worker"
-        disabled={!n}
-        onClick={() => session.change(() => session.game.adjust(job, -1))}
-      >
-        −
-      </Button>
-      <span className="worker-count" title="Assigned / efficient staffing">
-        {n} / {cap}
-      </span>
-      <Button
-        title="Assign worker"
-        disabled={!available || !jobUnlocked(s, job)}
-        onClick={() => session.change(() => session.game.adjust(job, 1))}
-      >
-        +
-      </Button>
-      <Button
-        title="Assign available people up to efficient staffing"
-        disabled={!available || n >= cap || !jobUnlocked(s, job)}
-        onClick={() => session.change(() => session.game.fill(job))}
-      >
-        Fill
-      </Button>
-    </fieldset>
+    <div className="worker-allocation">
+      <fieldset className="worker-control" aria-label={`${job} staffing`}>
+        <Button
+          title="Release the worker contributing least"
+          disabled={!n}
+          onClick={() => adjust(-1)}
+        >
+          −
+        </Button>
+        <span
+          className="worker-count"
+          title="Assigned people / nominal staffing target"
+        >
+          {n} / {cap}
+        </span>
+        <Button
+          title="Assign the best available worker"
+          disabled={!available || !jobUnlocked(s, job)}
+          onClick={() => adjust(1)}
+        >
+          +
+        </Button>
+        <Button
+          title="Assign the best available people up to the staffing target"
+          disabled={!available || n >= cap || !jobUnlocked(s, job)}
+          onClick={() =>
+            session.change(() => {
+              const before = assigned(s, job)
+              if (session.game.fill(job))
+                setFeedback(`${assigned(s, job) - before} people assigned`)
+            })
+          }
+        >
+          Fill
+        </Button>
+      </fieldset>
+      {n > 0 && isWorkingJob(job) && (
+        <small
+          className="staffing-efficiency"
+          title="Skilled workers also use workplace capacity. More people remain useful, with diminishing returns."
+        >
+          {formatResource(staffingMultiplier(s, job) * 100)}% staffing
+          efficiency
+        </small>
+      )}
+      {feedback && (
+        <small className="assignment-feedback" role="status">
+          {feedback}
+        </small>
+      )}
+    </div>
   )
 }
 export function Workforce({ session }: { session: GameSession }) {
@@ -169,7 +204,8 @@ export function Workforce({ session }: { session: GameSession }) {
 }
 export function Builders({ session }: { session: GameSession }) {
   const s = session.game.state,
-    speed = constructionSpeed(s)
+    speed = constructionSpeed(s),
+    next = s.people[workerCandidate(s, 'builder')]
   return (
     <section className="builders">
       <div>
@@ -180,10 +216,15 @@ export function Builders({ session }: { session: GameSession }) {
           {formatResource(speed)} work/min ·{' '}
           {s.queues.construction.active ? 'Building' : 'Waiting'}
         </p>
-        <small>
-          Next healthy builder: +
-          {formatResource(constructionSpeed(s, 1) - speed)} work/min
-        </small>
+        {next && (
+          <small>
+            {next.name}: +
+            {formatResource(
+              constructionSpeed(s, workContribution(next, 'builder')) - speed,
+            )}{' '}
+            work/min
+          </small>
+        )}
       </div>
       <WorkerControls session={session} job="builder" />
     </section>
@@ -457,50 +498,5 @@ export function Production(props: ViewProps) {
         ))}
       </div>
     </section>
-  )
-}
-export function People({ session }: { session: GameSession }) {
-  const s = session.game.state,
-    cost = feastCost(s)
-  return (
-    <details>
-      <summary>People · {s.people.length}</summary>
-      {cost > 0 && (
-        <div className="feast-row">
-          <Button
-            title="An entire settlement briefly agrees on what to do next."
-            disabled={s.resources.food < cost}
-            onClick={() => session.change(() => session.game.feast())}
-          >
-            Feast · {cost} food
-          </Button>
-        </div>
-      )}
-      {s.people.map((p, i) => (
-        <div className="person-row" key={p.name}>
-          <label>
-            {p.name} <span className="person-health">♥ {p.health}/5</span>
-            <select
-              className="select select-sm"
-              value={p.job}
-              onChange={(e) => {
-                const job = JOB_IDS.find((id) => id === e.target.value)
-                if (job) session.change(() => session.game.assign(i, job))
-              }}
-            >
-              {JOB_IDS.filter((job) => jobUnlocked(s, job)).map((job) => (
-                <option key={job} value={job}>
-                  {job === 'idle'
-                    ? 'Available'
-                    : job === 'builder'
-                      ? 'Builder'
-                      : JOBS[job].name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-      ))}
-    </details>
   )
 }

@@ -1,7 +1,8 @@
 import { expect, test } from 'bun:test'
 import { startAction } from './actions'
+import { BUILDINGS } from './economy'
 import { createGame, removeFacility } from './game'
-import { RESEARCH_IDS } from './ids'
+import { BUILDING_IDS, RESEARCH_IDS } from './ids'
 import {
   allEntries,
   cancelProject,
@@ -13,6 +14,7 @@ import {
   quoteProject,
   startQueues,
 } from './research'
+import { RESEARCH } from './research-definitions'
 import {
   canAfford,
   capital,
@@ -28,6 +30,7 @@ import {
   equipmentMultiplier,
   fillWorkers,
   jobInput,
+  requirementBlocker,
   workerRate,
 } from './settlement'
 import { advanceTime } from './simulation'
@@ -36,21 +39,21 @@ import { complete, people, required, settlement } from './test-helpers'
 
 test('the opening discovers resources and grants a working camp once', () => {
   const s = createDefaultState()
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i < 6; i++) {
     expect(startAction(s, 'gather')).toBe(true)
-    advanceTime(s, 3, true)
+    advanceTime(s, 9, true)
   }
   expect(startAction(s, 'explore')).toBe(true)
   advanceTime(s, 20, true)
   expect(s.discovered.wood).toBe(true)
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < 10; i++) {
     startAction(s, 'sticks')
-    advanceTime(s, 5, true)
+    advanceTime(s, 15, true)
   }
   expect(s.researchUnlocked).toBe(true)
   while (s.resources.food < 30) {
     startAction(s, 'gather')
-    advanceTime(s, 3, true)
+    advanceTime(s, 9, true)
   }
   enqueue(s, { kind: 'research', id: 'sharpened-stick' })
   enqueue(s, { kind: 'research', id: 'shelters' })
@@ -316,7 +319,22 @@ test('the common research graph is reachable independently of either branch', ()
         id !== (branch === 'forestry' ? 'architecture' : 'joinery'),
     )
     while (pending.length) {
-      s.facilities['launch-complex'].level = 1
+      // This is a dependency-graph fixture, not a pacing run. Construct required
+      // facilities only after their own prerequisites become available.
+      for (const facility of BUILDING_IDS) {
+        const needed = Math.max(
+          0,
+          ...pending.map(
+            (id) => RESEARCH[id].requires.facilities?.[facility] ?? 0,
+          ),
+        )
+        const form = BUILDINGS[facility].forms[0]
+        if (form && !requirementBlocker(s, form.requires))
+          s.facilities[facility].level = Math.max(
+            s.facilities[facility].level,
+            needed,
+          )
+      }
       const index = pending.findIndex(
         (id) => !quoteProject(s, { kind: 'research', id }).blocker,
       )
@@ -343,4 +361,56 @@ test('a missing lower expansion can be rebuilt while a higher target stays queue
   advanceTime(s, 2400)
   expect(s.facilities.housing.level).toBe(2)
   expect(s.facilities.housing.form).toBe(1)
+})
+
+test('a gathering batch awards its full yield after visible work', () => {
+  const s = createDefaultState()
+  startAction(s, 'gather')
+  advanceTime(s, 4, true)
+  expect(s.manual?.progress).toBeCloseTo(4 / 9)
+  advanceTime(s, 3600, false)
+  expect(s.manual?.progress).toBeCloseTo(4 / 9)
+  advanceTime(s, 5, true)
+  expect(s.resources.food).toBe(3)
+})
+
+test('manual gathering follows the same storage pressure timeline across tick sizes', () => {
+  const s = createDefaultState()
+  s.facilities.foraging.level = 10
+  s.resources.food = 150
+  people(s, 'forager', 'forager')
+  startAction(s, 'gather')
+  const sliced = structuredClone(s)
+  advanceTime(s, 8, true)
+  for (let i = 0; i < 32; i++) advanceTime(sliced, 0.25, true)
+  expect(s.resources.food).toBeGreaterThan(150)
+  expect(s.manual?.progress).toBeGreaterThan(0)
+  expect(s.manual?.progress).toBeCloseTo(
+    required(sliced.manual ?? undefined).progress,
+    10,
+  )
+  advanceTime(s, 4, true)
+  advanceTime(sliced, 4, true)
+  expect(s.manual).toBeNull()
+  expect(s.resources.food).toBe(sliced.resources.food)
+})
+
+test('queued Writing follows a paid farm investment and retains its research cost', () => {
+  const s = settlement()
+  s.research.writing = false
+  s.facilities.farm.level = 0
+  people(s, 'builder', 'forager')
+  const before = s.resources.knowledge
+  enqueue(s, { kind: 'research', id: 'writing' })
+  enqueue(s, nextExpansion(s, 'farm'))
+  advanceTime(s, 0)
+  expect(s.queues.construction.active?.project.id).toBe('farm')
+  advanceTime(s, 15 * 60)
+  expect(s.facilities.farm.level).toBe(1)
+  expect(s.queues.research.active?.project.id).toBe('writing')
+  expect(s.queues.research.active?.paid.knowledge).toBe(
+    before - s.resources.knowledge,
+  )
+  advanceTime(s, 180 * 60)
+  expect(s.research.writing).toBe(true)
 })

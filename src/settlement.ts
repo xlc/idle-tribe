@@ -1,10 +1,29 @@
-import { BUILDINGS, isProductionJob, JOBS } from './economy'
+import {
+  BUILDINGS,
+  isProductionJob,
+  JOBS,
+  OCCUPATIONS,
+  type ProductionJob,
+} from './economy'
 import { healthMultiplier } from './food'
-import { BUILDING_IDS, RESEARCH_IDS, RESOURCES } from './ids'
+import {
+  BUILDING_IDS,
+  isWorkingJob,
+  RESEARCH_IDS,
+  RESOURCES,
+  WORKING_JOB_IDS,
+} from './ids'
 import { RESEARCH } from './research-definitions'
 import { canAfford, storageMultiplier } from './resources'
-import { masteryMultiplier } from './skills'
-import type { Cost, GameState, JobId, Person, Requirements } from './types'
+import { personalWork, workContribution } from './skills'
+import type {
+  Cost,
+  GameState,
+  JobId,
+  Person,
+  Requirements,
+  WorkingJob,
+} from './types'
 export function requirementBlocker(
   state: GameState,
   req: Requirements,
@@ -65,7 +84,7 @@ export function crewSize(state: GameState) {
 }
 export function jobCapacity(state: GameState, job: JobId) {
   const id = workplace(job)
-  return job === 'builder'
+  return isWorkingJob(job) && OCCUPATIONS[job].learning === 'construction'
     ? crewSize(state)
     : id
       ? 2 * state.facilities[id].level
@@ -74,7 +93,7 @@ export function jobCapacity(state: GameState, job: JobId) {
 export function jobUnlocked(state: GameState, job: JobId) {
   return (
     job === 'idle' ||
-    (job === 'builder'
+    (OCCUPATIONS[job].learning === 'construction'
       ? automationUnlocked(state)
       : jobCapacity(state, job) > 0)
   )
@@ -86,17 +105,39 @@ export function assignJob(state: GameState, index: number, job: JobId) {
   person.progress = 0
   return true
 }
+export function workerCandidate(state: GameState, job: JobId, release = false) {
+  if (!isWorkingJob(job)) return -1
+  let best = -1
+  let score = release ? Infinity : -Infinity
+  for (const [index, person] of state.people.entries()) {
+    if (person.job !== (release ? job : 'idle')) continue
+    const contribution = workContribution(person, job)
+    if (release ? contribution < score : contribution > score) {
+      best = index
+      score = contribution
+    }
+  }
+  return best
+}
 export function adjustWorkers(state: GameState, job: JobId, change: number) {
   let changed = false
   for (let n = 0; n < Math.abs(change); n++) {
-    const index =
-      change > 0
-        ? state.people.findIndex((p) => p.job === 'idle')
-        : state.people.map((p) => p.job).lastIndexOf(job)
+    const index = workerCandidate(state, job, change < 0)
     if (!assignJob(state, index, change > 0 ? job : 'idle')) break
     changed = true
   }
   return changed
+}
+// A reproducible draw per arrival keeps live, sliced, and reloaded timelines
+// identical without persisting a second random-state ledger.
+export function arrivalAptitude(state: GameState, draw?: number): WorkingJob {
+  let seed = Math.imul(state.people.length ^ 0x9e3779b9, 0x21f0aaad)
+  seed = Math.imul(seed ^ (seed >>> 16), 0x735a2d97)
+  const roll = draw ?? ((seed ^ (seed >>> 15)) >>> 0) / 4294967296
+  const eligible = WORKING_JOB_IDS.filter((job) => jobUnlocked(state, job))
+  const aptitude = eligible[Math.floor(roll * eligible.length)]
+  if (!aptitude) throw new Error('Arrival requires an available occupation')
+  return aptitude
 }
 export function fillWorkers(state: GameState, job: JobId) {
   return adjustWorkers(
@@ -129,19 +170,31 @@ export function jobInput(state: GameState, job: JobId): Cost {
   return input
 }
 interface RateOptions {
-  health?: number
   happiness?: number
   storage?: number
   ignoreInputs?: boolean
   fullHealthCrew?: boolean
 }
-export function workerRate(
+export function staffingMultiplier(
   state: GameState,
-  person: Person,
-  options: RateOptions = {},
+  job: WorkingJob,
+  fullHealth = false,
 ) {
-  const job = person.job
-  if (!isProductionJob(job)) return 0
+  const x = state.people
+    .filter((p) => p.job === job)
+    .reduce(
+      (sum, p) =>
+        sum + workContribution(p, job, fullHealth ? 1 : healthMultiplier(p)),
+      0,
+    )
+  const capacity = jobCapacity(state, job)
+  return x && capacity ? effectiveStaff(x, capacity) / x : 0
+}
+function workplaceRate(
+  state: GameState,
+  job: ProductionJob,
+  options: RateOptions,
+) {
   const id = workplace(job)
   if (!id) return 0
   const f = state.facilities[id],
@@ -152,10 +205,6 @@ export function workerRate(
     (!options.ignoreInputs && !canAfford(state, jobInput(state, job)))
   )
     return 0
-  const x = state.people
-    .filter((p) => p.job === job)
-    .reduce((n, p) => n + (options.fullHealthCrew ? 1 : healthMultiplier(p)), 0)
-  if (!x) return 0
   let technology = 1,
     specialization = 1
   for (const tech of RESEARCH_IDS)
@@ -168,33 +217,40 @@ export function workerRate(
     technology +=
       (BUILDINGS[b].jobBonus?.[job] ?? 0) * Math.sqrt(state.facilities[b].level)
   }
-  const mastery = JOBS[job].mastery
   return (
-    (((def.rate ?? 0) *
-      (1 + 0.1 * (f.level - 1)) *
-      effectiveStaff(x, 2 * f.level)) /
-      x) *
+    (def.rate ?? 0) *
+    (1 + 0.1 * (f.level - 1)) *
+    staffingMultiplier(state, job, options.fullHealthCrew) *
     equipmentMultiplier(f.equipment) *
-    (mastery ? masteryMultiplier(state.mastery[mastery]) : 1) *
     technology *
     specialization *
-    (options.health ?? healthMultiplier(person)) *
     (options.happiness ?? happinessMultiplier(state)) *
     prestigeMultiplier(state) *
     (options.storage ?? storageMultiplier(state, JOBS[job].output))
   )
 }
-// All workers in a job share congestion, recipes and multipliers. Compute that
-// common rate once per event interval, then apply each person's health.
+export function workerRate(
+  state: GameState,
+  person: Person,
+  options: RateOptions = {},
+) {
+  if (!isProductionJob(person.job)) return 0
+  return (
+    workplaceRate(state, person.job, options) *
+    workContribution(person, person.job)
+  )
+}
+// Cache workplace factors only; health and expertise belong to each person.
 export function workerRates(state: GameState, options: RateOptions = {}) {
   const shared = new Map<JobId, number>()
   return state.people.map((person) => {
+    if (!isProductionJob(person.job)) return 0
     let rate = shared.get(person.job)
     if (rate === undefined) {
-      rate = workerRate(state, person, { ...options, health: 1 })
+      rate = workplaceRate(state, person.job, options)
       shared.set(person.job, rate)
     }
-    return rate * healthMultiplier(person)
+    return rate * workContribution(person, person.job)
   })
 }
 export function constructionSpeed(state: GameState, extra = 0) {
@@ -202,7 +258,7 @@ export function constructionSpeed(state: GameState, extra = 0) {
     0,
     state.people
       .filter((p) => p.job === 'builder')
-      .reduce((n, p) => n + healthMultiplier(p), 0) + extra,
+      .reduce((n, p) => n + workContribution(p, 'builder'), 0) + extra,
   )
   return (
     effectiveStaff(x, crewSize(state)) *
@@ -244,33 +300,37 @@ export function arrivalStatus(state: GameState) {
     town = happinessUnlocked(state)
   let foodOutput = 0,
     recipeDemand = 0
-  const checked = new Set<JobId>()
-  for (const p of state.people)
-    if (isProductionJob(p.job) && !checked.has(p.job)) {
-      checked.add(p.job)
-      const workers = state.people.filter((worker) => worker.job === p.job)
-      if (JOBS[p.job].output === 'food')
-        foodOutput +=
-          workers.reduce((sum, worker) => sum + healthMultiplier(worker), 0) *
-          workerRate(state, p, {
-            health: 1,
-            happiness: town ? 0.75 : 1,
-            storage: storageMultiplier(state, 'food', buffer),
-            ignoreInputs: true,
-          })
-      const input = jobInput(state, p.job).food ?? 0
-      if (input)
-        recipeDemand +=
-          workers.length *
-          input *
-          workerRate(state, p, {
-            health: 1,
-            fullHealthCrew: true,
-            happiness: town ? 1.25 : 1,
-            storage: 1,
-            ignoreInputs: true,
-          })
-    }
+  const checked = new Set<ProductionJob>()
+  for (const p of state.people) {
+    const job = p.job
+    if (!isProductionJob(job) || checked.has(job)) continue
+    checked.add(job)
+    const food = JOBS[job].output === 'food'
+    const input = jobInput(state, job).food ?? 0
+    if (!food && !input) continue
+    const workers = state.people.filter((worker) => worker.job === job)
+    if (food)
+      foodOutput +=
+        workers.reduce(
+          (sum, worker) => sum + workContribution(worker, job),
+          0,
+        ) *
+        workplaceRate(state, job, {
+          happiness: town ? 0.75 : 1,
+          storage: storageMultiplier(state, 'food', buffer),
+          ignoreInputs: true,
+        })
+    if (input)
+      recipeDemand +=
+        input *
+        workers.reduce((sum, worker) => sum + personalWork(worker, job), 0) *
+        workplaceRate(state, job, {
+          fullHealthCrew: true,
+          happiness: town ? 1.25 : 1,
+          storage: 1,
+          ignoreInputs: true,
+        })
+  }
   const required = 1.1 * (next + recipeDemand)
   const interval =
     (5 * Math.max(1, next / comfortablePlaces(state)) ** 2) /

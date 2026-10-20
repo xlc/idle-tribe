@@ -45,7 +45,7 @@ export function ManualActions({
             ) : (
               <small>
                 {def.resource
-                  ? `+1 ${def.resource}`
+                  ? `+${def.amount} ${def.resource}`
                   : formatDuration(def.seconds)}
               </small>
             )}

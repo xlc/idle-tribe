@@ -38,11 +38,12 @@ for (const width of [1280, 390]) {
       await expect(
         page.getByRole('button', { name: 'Gather food', exact: true }),
       ).toBeVisible()
-      for (let i = 0; i < 12; i++) {
+      await expect(page.getByText('+3 food', { exact: true })).toBeVisible()
+      for (let i = 0; i < 4; i++) {
         await page
           .getByRole('button', { name: 'Gather food', exact: true })
           .click()
-        await page.clock.runFor(3500)
+        await page.clock.runFor(9500)
       }
       await expect(
         page.getByRole('button', { name: 'Explore nearby', exact: true }),
@@ -57,11 +58,11 @@ for (const width of [1280, 390]) {
       await page
         .getByRole('button', { name: 'Gather wood', exact: true })
         .click()
-      await page.clock.runFor(5500)
+      await page.clock.runFor(15500)
       await page
         .getByRole('button', { name: 'Gather wood', exact: true })
         .click()
-      await page.clock.runFor(5500)
+      await page.clock.runFor(15500)
       await expect(
         page.getByRole('button', { name: 'Technology', exact: true }),
       ).toBeVisible()
@@ -196,6 +197,51 @@ for (const width of [1280, 390]) {
         animations: 'disabled',
         path: info.outputPath('technology.png'),
         fullPage: true,
+      })
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= window.innerWidth,
+        ),
+      ).toBe(true)
+    })
+    test('a farm can be built, staffed, and used to start the town investment', async ({
+      page,
+    }, info) => {
+      const s = settlement()
+      s.research.writing = false
+      s.facilities.farm.level = 0
+      people(s, 'builder', 'forager', 'idle')
+      await open(page, s)
+      const farm = page.getByRole('article', { name: 'Farm', exact: true })
+      await farm.getByRole('button', { name: /Queue build/ }).click()
+      await page
+        .getByRole('button', { name: 'Technology', exact: true })
+        .click()
+      const writing = page.getByRole('article', {
+        name: 'Writing',
+        exact: true,
+      })
+      await page.clock.fastForward(16 * 60_000)
+      await expect(writing).toContainText('Enter town era')
+      await writing
+        .getByRole('button', { name: 'Queue research', exact: true })
+        .click()
+      const state = await readState(page)
+      expect(state.facilities.farm.level).toBe(1)
+      expect(state.queues.research.active?.project.id).toBe('writing')
+      expect(state.queues.research.active?.paid.knowledge).toBe(3600)
+      await page
+        .getByRole('button', { name: 'Settlement', exact: true })
+        .click()
+      await farm.getByRole('button', { name: 'Fill', exact: true }).click()
+      await expect(farm.getByText('1 / 2', { exact: true })).toBeVisible()
+      expect(
+        (await readState(page)).people.some((p) => p.job === 'farmer'),
+      ).toBe(true)
+      await page.screenshot({
+        path: info.outputPath('agriculture.png'),
+        fullPage: true,
+        animations: 'disabled',
       })
       expect(
         await page.evaluate(

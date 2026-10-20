@@ -98,7 +98,7 @@ export const RESEARCH: Record<ResearchId, ResearchDefinition> = {
   },
   irrigation: {
     name: 'Irrigation',
-    cost: { knowledge: 200, planks: 80, blocks: 60, tools: 20 },
+    cost: { knowledge: 1200, planks: 480, blocks: 360, tools: 120 },
     minutes: 90,
     effect: 'Unlock Irrigation works.',
     description: 'Teach water a route that includes the vegetables.',
@@ -107,7 +107,7 @@ export const RESEARCH: Record<ResearchId, ResearchDefinition> = {
   },
   'forestry-methods': {
     name: 'Forestry methods',
-    cost: { knowledge: 150, wood: 100, planks: 60, tools: 20 },
+    cost: { knowledge: 900, wood: 600, planks: 360, tools: 120 },
     minutes: 60,
     effect: 'Unlock Timber yard conversion.',
     description: 'A little planning saves a lot of arguing with trees.',
@@ -116,7 +116,7 @@ export const RESEARCH: Record<ResearchId, ResearchDefinition> = {
   },
   'stone-lifting': {
     name: 'Stone lifting',
-    cost: { knowledge: 150, stone: 100, blocks: 60, tools: 20 },
+    cost: { knowledge: 900, stone: 600, blocks: 360, tools: 120 },
     minutes: 60,
     effect: 'Unlock Stone pit conversion.',
     description: 'The rock remains heavy, but fewer people have to mention it.',
@@ -125,7 +125,7 @@ export const RESEARCH: Record<ResearchId, ResearchDefinition> = {
   },
   'organized-work': {
     name: 'Organized work',
-    cost: { knowledge: 250, planks: 100, blocks: 80, tools: 30 },
+    cost: { knowledge: 1500, planks: 600, blocks: 480, tools: 180 },
     minutes: 120,
     effect: 'Unlock tier-2 equipment.',
     description: 'Everyone knows which end of the job they are holding.',
@@ -134,7 +134,7 @@ export const RESEARCH: Record<ResearchId, ResearchDefinition> = {
   },
   'inventory-keeping': {
     name: 'Inventory keeping',
-    cost: { knowledge: 200, planks: 80, blocks: 60 },
+    cost: { knowledge: 1200, planks: 480, blocks: 360 },
     minutes: 90,
     effect:
       'All seven storage thresholds \u00d71.50; full-speed offline window +4h.',
@@ -145,13 +145,14 @@ export const RESEARCH: Record<ResearchId, ResearchDefinition> = {
   },
   writing: {
     name: 'Writing',
-    cost: { knowledge: 600, planks: 200, blocks: 150, tools: 60 },
+    cost: { knowledge: 3600, planks: 1200, blocks: 900, tools: 360 },
     minutes: 180,
     effect:
       'Enter town era; unlock School, Library, Meeting place, happiness, and first specialization.',
     description:
       'Good ideas can now outlive the person who keeps repeating them.',
     requires: {
+      facilities: { farm: 1 },
       research: [
         'forestry-methods',
         'stone-lifting',

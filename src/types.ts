@@ -5,6 +5,7 @@ import type {
   PerkId,
   ResearchId,
   ResourceId,
+  WorkingJob,
 } from './ids'
 
 export type {
@@ -14,6 +15,7 @@ export type {
   PerkId,
   ResearchId,
   ResourceId,
+  WorkingJob,
 } from './ids'
 export type Cost = Partial<Record<ResourceId, number>>
 export type Specialization = 'forestry' | 'stonecraft'
@@ -72,27 +74,28 @@ export interface BuildingDefinition {
   offlineHours?: number
   jobBonus?: Partial<Record<JobId, number>>
 }
-export interface JobDefinition {
+export interface OccupationDefinition {
   name: string
+  aptitude: string
+  learning: 'production' | 'construction'
+}
+export interface JobDefinition extends OccupationDefinition {
   description: string
   output: ResourceId
   input: Cost
-  mastery?: 'food' | 'wood' | 'stone'
 }
 export interface Person {
   name: string
   health: number
   job: JobId
   progress: number
+  aptitude: WorkingJob
+  practice: Record<WorkingJob, number>
 }
 export interface Facility {
   level: number
   form: number
   equipment: number
-}
-export interface Mastery {
-  level: number
-  xp: number
 }
 export type Project =
   | { kind: 'research'; id: ResearchId }
@@ -124,14 +127,14 @@ export interface Absence {
   settledSeconds: number
   resources: Record<ResourceId, number>
   population: number
+  expertise: Record<WorkingJob, number>[]
   completed: number
 }
 export interface GameState {
-  version: 5
+  version: 6
   resources: Record<ResourceId, number>
   facilities: Record<BuildingId, Facility>
   research: Record<ResearchId, boolean>
-  mastery: Record<'food' | 'wood' | 'stone', Mastery>
   people: Person[]
   discovered: { wood: boolean; stone: boolean }
   exploreUnlocked: boolean

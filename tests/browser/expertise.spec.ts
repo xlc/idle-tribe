@@ -1,0 +1,195 @@
+import { expect, type Page, test } from '@playwright/test'
+import { parseSave, STORAGE_KEY } from '../../src/persistence'
+import { practiceThreshold } from '../../src/skills'
+import { createDefaultState, createPerson } from '../../src/state'
+import { required, settlement } from '../../src/test-helpers'
+import type { GameState } from '../../src/types'
+
+async function open(page: Page, state: GameState) {
+  await page.clock.install({ time: new Date('2026-10-20T10:00:00Z') })
+  await page.addInitScript(
+    ({ key, state }) => {
+      if (!localStorage.getItem(key))
+        localStorage.setItem(key, JSON.stringify(state))
+    },
+    { key: STORAGE_KEY, state },
+  )
+  await page.goto('/')
+}
+async function saved(page: Page) {
+  return parseSave(
+    await page.evaluate((key) => localStorage.getItem(key), STORAGE_KEY),
+  )
+}
+
+for (const width of [1280, 390]) {
+  test.describe(`villagers ${width}px`, () => {
+    test.use({ viewport: { width, height: 900 } })
+
+    test('the founder has a visible aptitude before automation', async ({
+      page,
+    }) => {
+      await open(page, createDefaultState())
+      await page.getByText('People · 1', { exact: true }).click()
+      await expect(
+        page.getByRole('article', { name: 'You', exact: true }),
+      ).toContainText('Foraging aptitude · +5%')
+      await expect(page.getByLabel('You occupation')).toHaveValue('idle')
+      await page
+        .getByRole('button', { name: 'Gather food', exact: true })
+        .click()
+      await page.clock.runFor(9500)
+      expect((await saved(page)).resources.food).toBe(3)
+    })
+
+    test('staffing chooses expertise and explicit assignments preserve earlier skills', async ({
+      page,
+    }, info) => {
+      const s = settlement()
+      s.facilities.lumber.level = 1
+      s.people = [
+        createPerson('Mira', 'woodcutter'),
+        createPerson('Tavi', 'stoneworker'),
+        createPerson('Neri', 'forager'),
+        createPerson('Rowan', 'woodcutter'),
+      ]
+      required(s.people[0]).practice.woodcutter = practiceThreshold(4)
+      required(s.people[1]).practice.stoneworker = practiceThreshold(4)
+      required(s.people[2]).job = 'forager'
+      required(s.people[2]).practice.forager = practiceThreshold(4)
+      await open(page, s)
+      const lumber = page.getByRole('article', {
+        name: 'Lumber camp',
+        exact: true,
+      })
+      await lumber.getByRole('button', { name: '+', exact: true }).click()
+      await expect(lumber.getByRole('status')).toHaveText('Mira assigned')
+      await lumber.getByRole('button', { name: 'Fill', exact: true }).click()
+      expect(
+        (await saved(page)).people
+          .filter((p) => p.job === 'woodcutter')
+          .map((p) => p.name),
+      ).toEqual(['Mira', 'Rowan'])
+      await lumber.getByRole('button', { name: '−', exact: true }).click()
+      await expect(lumber.getByRole('status')).toHaveText('Rowan released')
+      await page.getByText('People · 4', { exact: true }).click()
+      await page.getByLabel('Tavi occupation').selectOption('sawyer')
+      await page.clock.runFor(30000)
+      const before = await saved(page)
+      expect(required(before.people[1]).practice.sawyer).toBeGreaterThan(0)
+      await page.getByLabel('Tavi occupation').selectOption('stoneworker')
+      await page
+        .getByRole('article', { name: 'Tavi', exact: true })
+        .getByText('Expertise · level 4', { exact: true })
+        .click()
+      await expect(
+        page.getByRole('article', { name: 'Tavi', exact: true }),
+      ).toContainText('Stoneworking · level 4')
+      await expect(
+        page.getByRole('article', { name: 'Tavi', exact: true }),
+      ).toContainText('Sawing · level 0')
+      await page.getByLabel('Neri occupation').selectOption('farmer')
+      expect(
+        required((await saved(page)).people[2]).practice.farmer,
+      ).toBeLessThan(practiceThreshold(1))
+      await expect(
+        page.getByRole('article', { name: 'Neri', exact: true }),
+      ).toContainText('Expertise · level 0')
+      await page.locator('.people').screenshot({
+        path: info.outputPath('people.png'),
+        animations: 'disabled',
+      })
+      await page.screenshot({
+        path: info.outputPath('villager-assignments.png'),
+        fullPage: true,
+        animations: 'disabled',
+      })
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= window.innerWidth,
+        ),
+      ).toBe(true)
+      const beforeReload = await saved(page)
+      await page.reload()
+      const restored = await saved(page)
+      expect(required(restored.people[1]).practice.sawyer).toBeCloseTo(
+        required(beforeReload.people[1]).practice.sawyer,
+        5,
+      )
+      expect(
+        required(restored.people[2]).practice.forager,
+      ).toBeGreaterThanOrEqual(practiceThreshold(4))
+      expect(required(restored.people[2]).job).toBe('farmer')
+    })
+
+    test('a feast restores work and the first expertise milestone appears through practice', async ({
+      page,
+    }, info) => {
+      const s = settlement()
+      const person = createPerson('Neri', 'forager')
+      person.job = 'forager'
+      person.health = 2
+      person.practice.forager = 890
+      s.people = [person]
+      s.facilities['food-store'].level = 10000
+      await open(page, s)
+      await page.getByText('People · 1', { exact: true }).click()
+      const row = page.getByRole('article', { name: 'Neri', exact: true })
+      await expect(row).toContainText('♥ 2/5')
+      await page
+        .getByRole('button', { name: 'Feast · 3 food', exact: true })
+        .click()
+      await expect(row).toContainText('♥ 5/5')
+      await page.clock.runFor(15000)
+      await row
+        .getByText('Expertise · Practiced · level 1', { exact: true })
+        .click()
+      await expect(row).toContainText('+5% expertise')
+      await expect(
+        row.getByRole('progressbar', { name: 'Foraging practice' }),
+      ).toBeVisible()
+      await row.screenshot({
+        path: info.outputPath('practiced-forager.png'),
+        animations: 'disabled',
+      })
+    })
+
+    test('return reports group personal milestones and large rosters remain usable', async ({
+      page,
+    }, info) => {
+      const s = settlement()
+      s.facilities.stockyard.level = 100000
+      s.facilities['food-store'].level = 100000
+      s.facilities.lumber.level = 4
+      s.people = Array.from({ length: 36 }, (_, i) =>
+        createPerson(`Villager ${i + 1}`, 'woodcutter'),
+      )
+      for (const person of s.people.slice(0, 7)) person.job = 'woodcutter'
+      s.savedAt = new Date('2026-10-20T09:00:00Z').getTime()
+      await open(page, s)
+      await page.getByRole('button', { name: /Away ·/ }).click()
+      const report = page.getByRole('region', { name: 'Offline progress' })
+      await expect(report).toContainText('Growing expertise')
+      await expect(report).toContainText('Villager 1: Woodcutting 0 → 2')
+      await report.getByText('2 more people', { exact: true }).click()
+      await expect(
+        report.getByText('Villager 7: Woodcutting 0 → 2', { exact: true }),
+      ).toBeVisible()
+      await report.screenshot({
+        path: info.outputPath('expertise-return.png'),
+        animations: 'disabled',
+      })
+      await report.getByRole('button', { name: 'Close', exact: true }).click()
+      await page.getByText('People · 36', { exact: true }).click()
+      await page.getByLabel('Villager 36 occupation').selectOption('farmer')
+      await expect(page.getByLabel('Villager 36 occupation')).toHaveValue(
+        'farmer',
+      )
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= window.innerWidth,
+        ),
+      ).toBe(true)
+    })
+  })
+}

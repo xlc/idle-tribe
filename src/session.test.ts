@@ -80,7 +80,7 @@ test('manual work pauses while hidden; research continues; duplicate restoration
   const before = { ...s.resources }
   session.setVisible(true, 3 * hour)
   expect(s.resources).toEqual(before)
-  session.tick(3 * hour + 10000)
+  session.tick(3 * hour + 30000)
   expect(s.manual).toBeNull()
 })
 

@@ -7,10 +7,12 @@ import {
   PERK_IDS,
   RESEARCH_IDS,
   RESOURCES,
+  WORKING_JOB_IDS,
 } from './ids'
 import { createRecord } from './records'
 import { QUEUES } from './research'
 import { jobUnlocked } from './settlement'
+import { expertiseLevel } from './skills'
 import { createDefaultState } from './state'
 import type {
   ActiveProject,
@@ -123,7 +125,6 @@ export function parseSave(serialized: string | null): GameState {
     const resources = object(p.resources),
       facilities = object(p.facilities),
       research = object(p.research),
-      mastery = object(p.mastery),
       discovered = object(p.discovered),
       queues = object(p.queues),
       legacy = object(p.legacy),
@@ -139,24 +140,20 @@ export function parseSave(serialized: string | null): GameState {
         throw new Error('Invalid facility')
       return { level, form, equipment }
     })
-    s.mastery = createRecord(['food', 'wood', 'stone'] as const, (id) => {
-      const m = object(mastery[id])
-      return {
-        level: number(m.level, 1, Infinity, true),
-        xp: number(m.xp, 0, Infinity, true),
-      }
-    })
     s.discovered = {
       wood: bool(discovered.wood),
       stone: bool(discovered.stone),
     }
     s.people = list(p.people).map((v) => {
-      const person = object(v)
+      const person = object(v),
+        practice = object(person.practice)
       return {
         name: string(person.name),
         health: number(person.health, 0, 5),
         job: member(person.job, JOB_IDS),
         progress: number(person.progress, 0, 1),
+        aptitude: member(person.aptitude, WORKING_JOB_IDS),
+        practice: createRecord(WORKING_JOB_IDS, (job) => number(practice[job])),
       }
     })
     if (
@@ -219,9 +216,25 @@ export function parseSave(serialized: string | null): GameState {
         windowHours: number(a.windowHours, 8),
         settledSeconds: number(a.settledSeconds),
         resources: createRecord(RESOURCES, (r) => number(balances[r])),
-        population: number(a.population, 1, Infinity, true),
+        population: number(a.population, 1, s.people.length, true),
+        expertise: list(a.expertise).map((value) => {
+          const levels = object(value)
+          return createRecord(WORKING_JOB_IDS, (job) =>
+            number(levels[job], 0, Infinity, true),
+          )
+        }),
         completed: number(a.completed, 0, Infinity, true),
       }
+      if (
+        s.absence.expertise.length !== s.absence.population ||
+        s.absence.expertise.some((levels, index) =>
+          WORKING_JOB_IDS.some(
+            (job) =>
+              levels[job] > expertiseLevel(s.people[index]?.practice[job] ?? 0),
+          ),
+        )
+      )
+        throw new Error('Invalid absence expertise')
     }
     cancelManual(s)
     return s

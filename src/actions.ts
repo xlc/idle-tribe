@@ -1,40 +1,43 @@
 import { canAfford, pay, refund, storageMultiplier } from './resources'
-import { awardMastery, masteryMultiplier } from './skills'
 import type { ActionId, Cost, GameState } from './types'
 
-interface ActionDefinition {
+type ActionDefinition = {
   name: string
   description: string
   seconds: number
   cost: Cost
-  resource?: 'food' | 'wood' | 'stone'
-  discovery?: 'wood' | 'stone'
   visible: (state: GameState) => boolean
-}
+} & (
+  | { resource: 'food' | 'wood' | 'stone'; amount: number; discovery?: never }
+  | { resource?: never; amount?: never; discovery: 'wood' | 'stone' }
+)
 export const ACTIONS: Record<ActionId, ActionDefinition> = {
   gather: {
     name: 'Gather food',
     description:
       'Investigate the bushes for something that counts as breakfast.',
-    seconds: 3,
+    seconds: 9,
     cost: {},
     resource: 'food',
+    amount: 3,
     visible: () => true,
   },
   sticks: {
     name: 'Gather wood',
     description: 'Find a branch with a promising future.',
-    seconds: 5,
+    seconds: 15,
     cost: {},
     resource: 'wood',
+    amount: 3,
     visible: (s) => s.discovered.wood,
   },
   stone: {
     name: 'Gather stone',
     description: 'Pick up a rock and call it the start of something.',
-    seconds: 5,
+    seconds: 15,
     cost: {},
     resource: 'stone',
+    amount: 3,
     visible: (s) => s.discovered.stone,
   },
   explore: {
@@ -71,11 +74,7 @@ export function manualRate(state: GameState) {
   if (!state.manual) return 0
   const def = ACTIONS[state.manual.id],
     r = def.resource
-  return (
-    (r
-      ? masteryMultiplier(state.mastery[r]) * storageMultiplier(state, r)
-      : 1) / def.seconds
-  )
+  return (r ? storageMultiplier(state, r) : 1) / def.seconds
 }
 export function finishManual(state: GameState) {
   const active = state.manual
@@ -83,8 +82,7 @@ export function finishManual(state: GameState) {
   const def = ACTIONS[active.id]
   state.manual = null
   if (def.resource) {
-    state.resources[def.resource]++
-    awardMastery(state, def.resource)
+    state.resources[def.resource] += def.amount
   }
   if (def.discovery) {
     state.discovered[def.discovery] = true

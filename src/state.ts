@@ -1,12 +1,28 @@
-import { BUILDING_IDS, PERK_IDS, RESEARCH_IDS, RESOURCES } from './ids'
+import {
+  BUILDING_IDS,
+  PERK_IDS,
+  RESEARCH_IDS,
+  RESOURCES,
+  WORKING_JOB_IDS,
+} from './ids'
 import { createRecord } from './records'
-import type { GameState, Person } from './types'
-export function createPerson(name: string): Person {
-  return { name, health: 5, job: 'idle', progress: 0 }
+import type { GameState, Person, WorkingJob } from './types'
+export function createPerson(
+  name: string,
+  aptitude: WorkingJob = 'forager',
+): Person {
+  return {
+    name,
+    health: 5,
+    job: 'idle',
+    progress: 0,
+    aptitude,
+    practice: createRecord(WORKING_JOB_IDS, () => 0),
+  }
 }
 export function createDefaultState(): GameState {
   return {
-    version: 5,
+    version: 6,
     resources: createRecord(RESOURCES, () => 0),
     facilities: createRecord(BUILDING_IDS, () => ({
       level: 0,
@@ -14,10 +30,6 @@ export function createDefaultState(): GameState {
       equipment: 0,
     })),
     research: createRecord(RESEARCH_IDS, () => false),
-    mastery: createRecord(['food', 'wood', 'stone'] as const, () => ({
-      level: 1,
-      xp: 0,
-    })),
     people: [createPerson('You')],
     discovered: { wood: false, stone: false },
     exploreUnlocked: false,

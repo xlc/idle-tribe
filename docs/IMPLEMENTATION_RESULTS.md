@@ -1,6 +1,10 @@
 # Design implementation and validation
 
+> Historical snapshot of the original implementation. See [balance testing and tuning](BALANCE_RESULTS.md) for the current test harness, matched comparisons, and subsequent tuning.
+
 Implemented on 19 October 2026 against [design draft 0.2](GAME_DESIGN_DETAILS.md), following [AGENTS.md](../AGENTS.md). The baseline in [GAME_DESIGN.md](GAME_DESIGN.md) remains a historical snapshot. Setup and commands live in [README.md](../README.md).
+
+Subsequent change: [villager expertise](VILLAGER_EXPERTISE_RESULTS.md), implemented on 20 October, replaces shared gathering mastery with personal occupational practice and save schema 6. The figures below describe the earlier implementation.
 
 ## Playable scope
 

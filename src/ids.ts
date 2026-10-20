@@ -144,3 +144,9 @@ export type ResearchId = (typeof RESEARCH_IDS)[number]
 export type JobId = (typeof JOB_IDS)[number]
 export type ActionId = (typeof ACTION_IDS)[number]
 export type PerkId = (typeof PERK_IDS)[number]
+
+export type WorkingJob = Exclude<JobId, 'idle'>
+export function isWorkingJob(job: JobId): job is WorkingJob {
+  return job !== 'idle'
+}
+export const WORKING_JOB_IDS = JOB_IDS.filter(isWorkingJob)
