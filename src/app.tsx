@@ -1,16 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { ACTIONS } from './actions'
-import { offlineWindow } from './clock'
 import { ManualActions } from './components/actions'
 import { Button, type Confirm } from './components/common'
 import { People } from './components/people'
-import { Queue } from './components/queues'
-import {
-  Builders,
-  Production,
-  Stockpile,
-  Workforce,
-} from './components/settlement'
+import { Construction } from './components/queues'
+import { Production, Stockpile, Workforce } from './components/settlement'
 import { Technology } from './components/technology'
 import { ERAS, RESOURCE_INFO } from './constants'
 import { OCCUPATIONS } from './economy'
@@ -113,12 +107,7 @@ export function App({ session }: { session: GameSession }) {
         <div className={automated ? 'settlement-layout' : 'opening'}>
           {automated && <Production {...props} />}
           <aside className="camp-aside">
-            {automated && (
-              <>
-                <Builders session={session} />
-                <Queue {...props} id="construction" />
-              </>
-            )}
+            {automated && <Construction {...props} />}
             {automated ? (
               <details>
                 <summary>Manual work</summary>
@@ -185,10 +174,6 @@ export function App({ session }: { session: GameSession }) {
           </div>
         </section>
       )}
-      <footer>
-        Progress saves automatically · {formatResource(offlineWindow(s))}h
-        full-speed offline, then diminishing progress
-      </footer>
       <section
         id="away-notice"
         className="away-notice card"

@@ -106,6 +106,8 @@ for (const width of [1280, 390]) {
       await expect(lumber.getByText('2 / 2', { exact: true })).toBeVisible()
       await lumber.getByRole('button', { name: '+', exact: true }).click()
       await expect(lumber.getByText('3 / 2', { exact: true })).toBeVisible()
+      if (width < 1200)
+        await page.getByRole('button', { name: /^Construction/ }).click()
       await page
         .getByRole('group', { name: 'builder staffing' })
         .getByRole('button', { name: 'Fill', exact: true })
@@ -322,7 +324,7 @@ for (const width of [1280, 390]) {
       await expect(lab.getByText('2 / 4', { exact: true })).toBeVisible()
       await lab.getByText('Details & upgrades', { exact: true }).click()
       await expect(lab).toContainText(
-        'Recipe: 12 charge · 8 data · 1 quantum components',
+        '12 charge · 8 data · 1 quantum components → 1 causal models',
       )
       await page.clock.runFor(600000)
       expect(

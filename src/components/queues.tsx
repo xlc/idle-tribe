@@ -1,20 +1,65 @@
+import { useState } from 'react'
 import { formatCost, formatDuration } from '../format'
 import { plannedQuotes, projectName, queueBlocker } from '../research'
 import { constructionSpeed } from '../settlement'
 import type { QueueId } from '../types'
 import { Button, Costs, type ViewProps } from './common'
+import { Builders } from './settlement'
+
+export function Construction(props: ViewProps) {
+  const [open, setOpen] = useState(false)
+  const s = props.session.game.state
+  return (
+    <section
+      className={`construction-panel${open ? ' expanded' : ''}`}
+      aria-label="Construction management"
+    >
+      <button
+        type="button"
+        className="construction-toggle"
+        aria-expanded={open}
+        aria-controls="construction-controls"
+        onClick={() => setOpen(!open)}
+      >
+        <span>
+          Construction
+          {!open && s.queues.construction.active
+            ? ` · ${projectName(s, s.queues.construction.active.project)}`
+            : ''}
+        </span>
+        <svg
+          className="construction-chevron"
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          aria-hidden="true"
+        >
+          <path d="m6 3 5 5-5 5" />
+        </svg>
+      </button>
+      <div className="construction-body" id="construction-controls">
+        <Builders session={props.session} />
+        <Queue {...props} id="construction" />
+      </div>
+    </section>
+  )
+}
+
 export function Queue({ session, confirm, id }: { id: QueueId } & ViewProps) {
   const { game } = session,
     s = game.state,
     q = s.queues[id],
-    active = q.active,
-    quotes = plannedQuotes(s, id)
-  const speed = id === 'research' ? 1 : constructionSpeed(s) / 60
+    active = q.active
+  if (!active && !q.waiting.length) return null
+  const quotes = plannedQuotes(s, id),
+    speed = id === 'research' ? 1 : constructionSpeed(s) / 60
   return (
     <section className="queue-panel" aria-label={`${id} queue`}>
       <div className="section-heading">
         <h2>{id === 'research' ? 'Research' : 'Construction'}</h2>
-        <span>{q.waiting.length} planned</span>
       </div>
       {active ? (
         <div className="active-project">
@@ -31,30 +76,24 @@ export function Queue({ session, confirm, id }: { id: QueueId } & ViewProps) {
                 : 'No builders'}
             </span>
           </div>
-          <div className="queue-meta">
-            <small>Committed: {formatCost(active.paid)}</small>
-            <Button
-              onClick={() =>
-                confirm(
-                  'Cancel project?',
-                  `Refund ${formatCost(active.paid)}. Work progress will be lost.`,
-                  () => game.cancel(id, active.sequence),
-                )
-              }
-            >
-              Cancel
-            </Button>
-          </div>
+          <Button
+            onClick={() =>
+              confirm(
+                'Cancel project?',
+                `Refund ${formatCost(active.paid)}. Work progress will be lost.`,
+                () => game.cancel(id, active.sequence),
+              )
+            }
+          >
+            Cancel
+          </Button>
         </div>
       ) : (
         <p className="small-note">{queueBlocker(s, id)}</p>
       )}
       {q.waiting.length > 0 && (
         <details className="waiting-list">
-          <summary>
-            Planned · {q.waiting.length}
-            {!active ? ` · ${queueBlocker(s, id)}` : ''}
-          </summary>
+          <summary>Planned · {q.waiting.length}</summary>
           <ol>
             {q.waiting.map((entry, index) => {
               const quote = quotes.get(entry.sequence)
@@ -65,8 +104,9 @@ export function Queue({ session, confirm, id }: { id: QueueId } & ViewProps) {
                     <>
                       <Costs session={session} cost={quote.cost} />
                       <small>
-                        {quote.blocker ||
-                          `${id === 'research' ? formatDuration(quote.total) : `${quote.total.toFixed(1)} builder-min`} · estimated`}
+                        {quote.blocker && (active || index > 0)
+                          ? quote.blocker
+                          : `~${id === 'research' ? formatDuration(quote.total) : `${quote.total.toFixed(1)} builder-min`}`}
                       </small>
                     </>
                   )}

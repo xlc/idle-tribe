@@ -63,7 +63,8 @@ for (const width of [1280, 390]) {
         exact: true,
       })
       await lumber.getByRole('button', { name: '+', exact: true }).click()
-      await expect(lumber.getByRole('status')).toHaveText('Mira assigned')
+      await expect(lumber.getByText('1 / 2', { exact: true })).toBeVisible()
+      expect(required((await saved(page)).people[0]).job).toBe('woodcutter')
       await lumber.getByRole('button', { name: 'Fill', exact: true }).click()
       expect(
         (await saved(page)).people
@@ -71,7 +72,8 @@ for (const width of [1280, 390]) {
           .map((p) => p.name),
       ).toEqual(['Mira', 'Rowan'])
       await lumber.getByRole('button', { name: '−', exact: true }).click()
-      await expect(lumber.getByRole('status')).toHaveText('Rowan released')
+      await expect(lumber.getByText('1 / 2', { exact: true })).toBeVisible()
+      expect(required((await saved(page)).people[3]).job).toBe('idle')
       await page.getByText('People · 4', { exact: true }).click()
       await page.getByLabel('Tavi occupation').selectOption('sawyer')
       await page.clock.runFor(30000)
@@ -135,15 +137,17 @@ for (const width of [1280, 390]) {
       await open(page, s)
       await page.getByText('People · 1', { exact: true }).click()
       const row = page.getByRole('article', { name: 'Neri', exact: true })
-      await expect(row).toContainText('♥ 2/5')
+      await expect(
+        row.getByRole('img', { name: 'Neri health: 2 of 5', exact: true }),
+      ).toHaveText('♥♥♡♡♡')
       await page
         .getByRole('button', { name: 'Feast · 3 food', exact: true })
         .click()
-      await expect(row).toContainText('♥ 5/5')
+      await expect(
+        row.getByRole('img', { name: 'Neri health: 5 of 5', exact: true }),
+      ).toHaveText('♥♥♥♥♥')
       await page.clock.runFor(15000)
-      await row
-        .getByText('Expertise · Practiced · level 1', { exact: true })
-        .click()
+      await row.getByText('Expertise · level 1', { exact: true }).click()
       await expect(row).toContainText('+5% expertise')
       await expect(
         row.getByRole('progressbar', { name: 'Foraging practice' }),

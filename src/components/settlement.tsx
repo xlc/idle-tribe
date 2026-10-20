@@ -27,11 +27,9 @@ import {
   jobUnlocked,
   requirementBlocker,
   staffingMultiplier,
-  workerCandidate,
   workerRate,
 } from '../settlement'
 import { resourceRates } from '../simulation'
-import { workContribution } from '../skills'
 import type { BuildingId, JobId } from '../types'
 import { Button, Costs, type ViewProps } from './common'
 export function Stockpile({ session }: { session: GameSession }) {
@@ -55,7 +53,8 @@ export function Stockpile({ session }: { session: GameSession }) {
       ).map((r) => {
         const k = threshold(s, r),
           pressure = storageMultiplier(s, r),
-          reserved = committed(s, r)
+          reserved = committed(s, r),
+          stored = s.resources[r] + reserved
         return (
           <div
             className={`resource resource-${r}`}
@@ -76,6 +75,19 @@ export function Stockpile({ session }: { session: GameSession }) {
               {formatCompactResource(k)} comfort
               {reserved ? ` · ${formatCompactResource(reserved)} held` : ''}
             </small>
+            {/* Comfort is the midpoint; storage above it keeps filling toward the end without a cap. */}
+            <span
+              className="status-meter storage-meter"
+              role="img"
+              aria-label={`${RESOURCE_INFO[r].name} storage: ${formatResource(stored)}, comfort ${formatResource(k)}`}
+              data-pressure={pressure < 1}
+            >
+              <span
+                className="meter-fill"
+                style={{ width: `${(stored / (stored + k)) * 100}%` }}
+              />
+              <span className="meter-marker" />
+            </span>
           </div>
         )
       })}
@@ -92,22 +104,14 @@ export function WorkerControls({
   const s = session.game.state,
     n = assigned(s, job),
     cap = jobCapacity(s, job),
-    available = assigned(s, 'idle'),
-    [feedback, setFeedback] = useState('')
-  function adjust(change: number) {
-    session.change(() => {
-      const candidate = s.people[workerCandidate(s, job, change < 0)]
-      if (candidate && session.game.adjust(job, change))
-        setFeedback(`${candidate.name} ${change < 0 ? 'released' : 'assigned'}`)
-    })
-  }
+    available = assigned(s, 'idle')
   return (
     <div className="worker-allocation">
       <fieldset className="worker-control" aria-label={`${job} staffing`}>
         <Button
           title="Release the worker contributing least"
           disabled={!n}
-          onClick={() => adjust(-1)}
+          onClick={() => session.change(() => session.game.adjust(job, -1))}
         >
           −
         </Button>
@@ -120,36 +124,24 @@ export function WorkerControls({
         <Button
           title="Assign the best available worker"
           disabled={!available || !jobUnlocked(s, job)}
-          onClick={() => adjust(1)}
+          onClick={() => session.change(() => session.game.adjust(job, 1))}
         >
           +
         </Button>
         <Button
           title="Assign the best available people up to the staffing target"
           disabled={!available || n >= cap || !jobUnlocked(s, job)}
-          onClick={() =>
-            session.change(() => {
-              const before = assigned(s, job)
-              if (session.game.fill(job))
-                setFeedback(`${assigned(s, job) - before} people assigned`)
-            })
-          }
+          onClick={() => session.change(() => session.game.fill(job))}
         >
           Fill
         </Button>
       </fieldset>
-      {n > 0 && isWorkingJob(job) && (
+      {n > 0 && isWorkingJob(job) && staffingMultiplier(s, job) < 1 && (
         <small
           className="staffing-efficiency"
           title="Skilled workers also use workplace capacity. More people remain useful, with diminishing returns."
         >
-          {formatResource(staffingMultiplier(s, job) * 100)}% staffing
-          efficiency
-        </small>
-      )}
-      {feedback && (
-        <small className="assignment-feedback" role="status">
-          {feedback}
+          {formatResource(staffingMultiplier(s, job) * 100)}% efficiency
         </small>
       )}
     </div>
@@ -157,7 +149,8 @@ export function WorkerControls({
 }
 export function Workforce({ session }: { session: GameSession }) {
   const s = session.game.state,
-    arrival = arrivalStatus(s)
+    arrival = arrivalStatus(s),
+    target = happinessTarget(s)
   return (
     <section className="workforce-bar" aria-label="Population">
       <div>
@@ -165,16 +158,24 @@ export function Workforce({ session }: { session: GameSession }) {
           {s.people.length} people{' '}
           <small>/ {comfortablePlaces(s)} comfortable places</small>
         </h2>
-        <p>
-          {assigned(s, 'idle')} available
-          {happinessUnlocked(s)
-            ? ` · Happiness ${formatResource(s.happiness)} / 100`
-            : ''}
-        </p>
+        <p>{assigned(s, 'idle')} available</p>
         {happinessUnlocked(s) && (
-          <small title="Happiness moves up to two points per minute.">
-            Happiness target {formatResource(happinessTarget(s))}
-          </small>
+          <div className="happiness-status">
+            <span>Happiness {formatResource(s.happiness)}</span>
+            <span
+              className="status-meter happiness-meter"
+              title={`Target ${formatResource(target)}`}
+            >
+              <meter
+                min={0}
+                max={100}
+                value={s.happiness}
+                aria-label="Happiness"
+                aria-valuetext={`${formatResource(s.happiness)}, target ${formatResource(target)}`}
+              />
+              <span className="meter-marker" style={{ left: `${target}%` }} />
+            </span>
+          </div>
         )}
       </div>
       <div className="arrival-control">
@@ -204,27 +205,14 @@ export function Workforce({ session }: { session: GameSession }) {
 }
 export function Builders({ session }: { session: GameSession }) {
   const s = session.game.state,
-    speed = constructionSpeed(s),
-    next = s.people[workerCandidate(s, 'builder')]
+    speed = constructionSpeed(s)
   return (
     <section className="builders">
       <div>
         <h3 title="Turns everyone’s plans into things everyone can point at.">
           Builders
         </h3>
-        <p>
-          {formatResource(speed)} work/min ·{' '}
-          {s.queues.construction.active ? 'Building' : 'Waiting'}
-        </p>
-        {next && (
-          <small>
-            {next.name}: +
-            {formatResource(
-              constructionSpeed(s, workContribution(next, 'builder')) - speed,
-            )}{' '}
-            work/min
-          </small>
-        )}
+        <p>{formatResource(speed)} work/min</p>
       </div>
       <WorkerControls session={session} job="builder" />
     </section>
@@ -255,7 +243,7 @@ function Facility({ session, confirm, id }: ViewProps & { id: BuildingId }) {
     : output && storageMultiplier(s, output) < 1
       ? 'Crowded storage'
       : !f.level
-        ? 'Not built'
+        ? ''
         : job && !n
           ? 'No workers'
           : ''
@@ -323,20 +311,18 @@ function Facility({ session, confirm, id }: ViewProps & { id: BuildingId }) {
       ) : (
         <p className="building-recipe">
           {form.housing
-            ? `Base housing: ${form.housing} places per level`
+            ? `Base +${form.housing} places/level`
             : form.storage
               ? RESOURCES.filter((r) => form.storage?.[r])
                   .map(
                     (r) =>
-                      `+${form.storage?.[r]} ${RESOURCE_INFO[r].name.toLowerCase()} base storage`,
+                      `Base +${form.storage?.[r]} ${RESOURCE_INFO[r].name.toLowerCase()} storage/level`,
                   )
                   .join(' · ')
               : def.effect}
         </p>
       )}
-      <p className="building-status">
-        {blocked || (job ? 'Producing' : 'In use')}
-      </p>
+      {blocked && <p className="building-status">{blocked}</p>}
       {!(def.unique && f.level > 0) && (
         <>
           <Costs session={session} cost={quote.cost} />
@@ -355,21 +341,20 @@ function Facility({ session, confirm, id }: ViewProps & { id: BuildingId }) {
       )}
       <details className="facility-detail">
         <summary>Details & upgrades</summary>
-        {job && output && (
+        {job && output && RESOURCES.some((r) => input[r]) && (
           <p>
-            Recipe: {formatCost(input)} → 1{' '}
-            {RESOURCE_INFO[output].name.toLowerCase()}
+            {formatCost(input)} → 1 {RESOURCE_INFO[output].name.toLowerCase()}
           </p>
         )}
-        <p>
-          {form.rate
-            ? `${form.rate}/min per healthy worker before bonuses. `
-            : ''}
-          {job
-            ? `Installed tools ×${formatResource(equipmentMultiplier(f.equipment))}. `
-            : ''}
-          {quote.blocker}
-        </p>
+        {(form.rate || (job && f.equipment) || quote.blocker) && (
+          <p>
+            {form.rate ? `Base ${form.rate}/min per worker. ` : ''}
+            {job && f.equipment
+              ? `Tools ×${formatResource(equipmentMultiplier(f.equipment))}. `
+              : ''}
+            {quote.blocker}
+          </p>
+        )}
         {!f.level && def.forms.length > 1 && (
           <label>
             Build form{' '}

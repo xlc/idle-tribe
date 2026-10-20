@@ -10,7 +10,6 @@ export function Technology({ session, confirm }: ViewProps) {
     <>
       <Queue session={session} confirm={confirm} id="research" />
       <section className="tech-section">
-        <h2>Discoveries</h2>
         <div className="tech-grid">
           {RESEARCH_IDS.filter((id) => researchVisible(s, id)).map((id) => {
             const def = RESEARCH[id],

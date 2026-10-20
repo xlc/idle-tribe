@@ -30,7 +30,7 @@ function output(state: GameState, person: Person) {
     staffingMultiplier(state, job) *
     happinessMultiplier(state) *
     prestigeMultiplier(state)
-  return `${formatResource(rate)} work/min${state.queues.construction.active ? '' : ' · Waiting'}`
+  return `${formatResource(rate)} work/min`
 }
 
 export function People({ session }: { session: GameSession }) {
@@ -55,7 +55,23 @@ export function People({ session }: { session: GameSession }) {
         <article className="person-row" key={i} aria-label={p.name}>
           <label>
             <strong>{p.name}</strong>
-            <span className="person-health">♥ {p.health}/5</span>
+            <span
+              className="person-health"
+              role="img"
+              aria-label={`${p.name} health: ${p.health} of 5`}
+              title={`Health ${p.health}/5`}
+              data-low={p.health <= 2}
+            >
+              {[1, 2, 3, 4, 5].map((point) => (
+                <span
+                  key={point}
+                  aria-hidden="true"
+                  data-filled={point <= p.health}
+                >
+                  {point <= p.health ? '♥' : '♡'}
+                </span>
+              ))}
+            </span>
             <select
               className="select select-sm"
               value={p.job}
@@ -87,7 +103,7 @@ export function People({ session }: { session: GameSession }) {
             <summary>
               Expertise
               {isWorkingJob(p.job)
-                ? ` · ${expertiseLevel(p.practice[p.job]) === 1 ? 'Practiced · ' : ''}level ${expertiseLevel(p.practice[p.job])}`
+                ? ` · level ${expertiseLevel(p.practice[p.job])}`
                 : ''}
             </summary>
             {WORKING_JOB_IDS.filter(
@@ -112,14 +128,11 @@ export function People({ session }: { session: GameSession }) {
                     max={next - start}
                   />
                   <small>
-                    {formatDuration(seconds)} / {formatDuration(next)} practice
+                    {formatDuration(seconds)} / {formatDuration(next)}
                   </small>
                 </div>
               )
             })}
-            <p className="practice-note">
-              Learn through supported work. Experience stays when changing jobs.
-            </p>
           </details>
         </article>
       ))}
