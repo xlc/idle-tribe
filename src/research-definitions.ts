@@ -3,7 +3,7 @@ import type { ResearchDefinition } from './types'
 export const RESEARCH: Record<ResearchId, ResearchDefinition> = {
   'sharpened-stick': {
     name: 'Sharpened stick',
-    cost: { wood: 10, food: 5 },
+    cost: { wood: 6, food: 5 },
     minutes: 1,
     effect: 'Foraging technology bonus +10%.',
     description: 'A stick with a surprisingly convincing point.',
@@ -12,7 +12,7 @@ export const RESEARCH: Record<ResearchId, ResearchDefinition> = {
   },
   shelters: {
     name: 'Shelters',
-    cost: { wood: 20, food: 20 },
+    cost: { wood: 15, food: 10 },
     minutes: 2,
     effect:
       'Unlock housing, camps, basic storage, immigration; grant first Foraging camp.',
@@ -23,7 +23,7 @@ export const RESEARCH: Record<ResearchId, ResearchDefinition> = {
   },
   'stone-tools': {
     name: 'Stone tools',
-    cost: { wood: 30, stone: 30, food: 30 },
+    cost: { wood: 20, stone: 15, food: 10 },
     minutes: 8,
     effect: 'Unlock Quarry.',
     description: 'Some rocks are better at convincing other rocks.',
