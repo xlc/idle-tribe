@@ -103,27 +103,19 @@ export function WorkerControls({
     <div className="worker-allocation">
       <fieldset className="worker-control" aria-label={`${job} staffing`}>
         <Button
-          title="Release the worker contributing least"
           disabled={!n}
           onClick={() => session.change(() => session.game.adjust(job, -1))}
         >
           −
         </Button>
-        <span
-          className="worker-count"
-          title={`${cap} efficient staffing target; extra people remain useful`}
-        >
-          {n}
-        </span>
+        <span className="worker-count">{n}</span>
         <Button
-          title="Assign the best unassigned worker"
           disabled={!available || !jobUnlocked(s, job)}
           onClick={() => session.change(() => session.game.adjust(job, 1))}
         >
           +
         </Button>
         <Button
-          title="Assign the best unassigned people up to the staffing target"
           disabled={!available || n >= cap || !jobUnlocked(s, job)}
           onClick={() => session.change(() => session.game.fill(job))}
         >
@@ -132,10 +124,7 @@ export function WorkerControls({
       </fieldset>
       <small className="staffing-target">{cap} efficient</small>
       {n > 0 && isWorkingJob(job) && staffingMultiplier(s, job) < 1 && (
-        <small
-          className="staffing-efficiency"
-          title="Skilled workers also use workplace capacity. More people remain useful, with diminishing returns."
-        >
+        <small className="staffing-efficiency">
           {formatResource(staffingMultiplier(s, job) * 100)}% efficiency
         </small>
       )}
@@ -149,17 +138,15 @@ export function Workforce({ session }: { session: GameSession }) {
   return (
     <section className="workforce-bar" aria-label="Population">
       <div>
-        <h2 title="Every new pair of hands arrives with a matching mouth.">
-          {s.people.length} people
-        </h2>
+        <h2>{s.people.length} people</h2>
         <p>{assigned(s, 'idle')} unassigned</p>
         {happinessUnlocked(s) && (
           <div className="happiness-status">
-            <span>Happiness {formatResource(s.happiness)}</span>
-            <span
-              className="status-meter happiness-meter"
-              title={`Target ${formatResource(target)}`}
-            >
+            <span>
+              Happiness {formatResource(s.happiness)} · target{' '}
+              {formatResource(target)}
+            </span>
+            <span className="status-meter happiness-meter">
               <meter
                 min={0}
                 max={100}
@@ -189,11 +176,13 @@ export function Workforce({ session }: { session: GameSession }) {
             />{' '}
             Welcome arrivals
           </label>
-          <small
-            title={`Sustainable food ${formatResource(arrival.foodOutput)} / ${formatResource(arrival.required)} per minute required`}
-          >
+          <small>
             {arrival.blocker ||
               `Next arrival · ${Math.ceil((1 - s.arrivalProgress) * arrival.interval)}m`}
+          </small>
+          <small className="arrival-supply">
+            Food {formatResource(arrival.foodOutput)} /{' '}
+            {formatResource(arrival.required)} per minute
           </small>
           <progress className="progress" value={s.arrivalProgress} max={1} />
         </div>
@@ -207,9 +196,7 @@ export function Builders({ session }: { session: GameSession }) {
   return (
     <section className="builders">
       <div>
-        <h3 title="Turns everyone’s plans into things everyone can point at.">
-          Builders
-        </h3>
+        <h3>Builders</h3>
         <p>{formatResource(speed)} work/min</p>
       </div>
       <WorkerControls session={session} job="builder" />

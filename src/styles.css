@@ -280,13 +280,18 @@ small {
   border-radius: 3px;
 }
 .working-dot {
-  position: absolute;
-  top: 10px;
-  right: 20%;
   width: 5px;
   height: 5px;
   border-radius: 50%;
   background: var(--color-primary);
+}
+.working-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-primary);
+  font-size: 11px;
+  font-weight: 600;
 }
 .feedback {
   margin-bottom: 12px;
@@ -566,6 +571,9 @@ small {
   color: var(--color-neutral);
   font-size: 13px;
 }
+.arrival-supply {
+  font-variant-numeric: tabular-nums;
+}
 .happiness-meter {
   width: 52px;
 }
@@ -775,8 +783,9 @@ details {
   gap: 10px;
 }
 .manual-action {
+  display: grid;
+  grid-template-rows: auto auto;
   min-width: 0;
-  min-height: 106px;
   border: 1px solid var(--color-base-300);
   border-radius: 8px;
   background: var(--color-base-100);
@@ -787,11 +796,11 @@ details {
   overflow: hidden;
   border-radius: inherit;
   width: 100%;
-  min-height: 104px;
+  min-height: 0;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 14px 22px;
+  padding: 14px;
   text-align: left;
   cursor: pointer;
 }
@@ -833,6 +842,14 @@ details {
   font-size: 13px;
   margin-top: 4px;
 }
+.action-description {
+  display: block;
+  color: var(--color-neutral);
+  font:
+    italic 12px / 1.35 Georgia,
+    serif;
+  margin-top: 4px;
+}
 .action-skill {
   display: flex;
   align-items: center;
@@ -841,6 +858,13 @@ details {
   color: var(--color-neutral);
   font-size: 11px;
   font-variant-numeric: tabular-nums;
+}
+.action-skill-rules {
+  display: block;
+  margin-top: 2px;
+  color: var(--color-neutral);
+  font-size: 10px;
+  line-height: 1.35;
 }
 .action-level {
   border-radius: 3px;
@@ -874,8 +898,9 @@ details {
 }
 .manual-action .costs {
   margin: 0;
-  padding: 0 12px 8px 78px;
-  min-height: 18px;
+  padding: 8px 14px 10px 78px;
+  min-height: 0;
+  border-top: 1px solid var(--color-base-300);
 }
 .discoveries {
   margin: 16px 0;
@@ -1002,6 +1027,14 @@ details {
 }
 .completed-research p {
   margin-bottom: 8px;
+}
+.completed-research-description {
+  display: block;
+  margin-top: 2px;
+  font-style: italic;
+}
+.legacy-note {
+  color: var(--color-neutral);
 }
 .legacy h2 {
   margin-bottom: 12px;

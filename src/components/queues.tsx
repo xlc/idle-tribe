@@ -98,7 +98,6 @@ export function Queue({ session, confirm, id }: { id: QueueId } & ViewProps) {
                     )}
                     <div className="inline-controls">
                       <Button
-                        title="Move earlier"
                         disabled={index === 0}
                         onClick={() =>
                           session.change(() =>
@@ -106,16 +105,15 @@ export function Queue({ session, confirm, id }: { id: QueueId } & ViewProps) {
                           )
                         }
                       >
-                        ↑
+                        ↑ Earlier
                       </Button>
                       <Button
-                        title="Move later"
                         disabled={index === q.waiting.length - 1}
                         onClick={() =>
                           session.change(() => game.move(id, entry.sequence, 1))
                         }
                       >
-                        ↓
+                        ↓ Later
                       </Button>
                       <Button
                         onClick={() =>

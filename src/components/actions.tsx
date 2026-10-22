@@ -44,10 +44,7 @@ function ActionSkill({
     return () => animation?.cancel()
   }, [level])
   return (
-    <span
-      className="action-skill"
-      title="Each completion earns 1 XP. Each level adds 3% speed; every fifth level adds 0.1 yield."
-    >
+    <span className="action-skill">
       <span className="action-level" ref={label}>
         Level {level}
       </span>
@@ -84,7 +81,6 @@ export function ManualActions({
               type="button"
               className="manual-trigger"
               aria-label={def.name}
-              title={def.description}
               disabled={Boolean(active) || !canAfford(s, def.cost)}
               onClick={() => session.change(() => session.game.startAction(id))}
             >
@@ -97,6 +93,7 @@ export function ManualActions({
               </span>
               <span className="action-copy">
                 <strong className="action-name">{def.name}</strong>
+                <span className="action-description">{def.description}</span>
                 <span className="action-yield">
                   {def.resource
                     ? `+${formatResource(actionYield(s, id))} ${def.resource} · `
@@ -106,11 +103,16 @@ export function ManualActions({
                     : formatDuration(duration)}
                 </span>
                 {def.resource && (
-                  <ActionSkill
-                    level={s.actionSkills[id].level}
-                    xp={s.actionSkills[id].xp}
-                    requiredXp={actionRequiredXp(s, id)}
-                  />
+                  <>
+                    <ActionSkill
+                      level={s.actionSkills[id].level}
+                      xp={s.actionSkills[id].xp}
+                      requiredXp={actionRequiredXp(s, id)}
+                    />
+                    <span className="action-skill-rules">
+                      +1 XP/completion · +3% speed/level · +0.1 yield/5 levels
+                    </span>
+                  </>
                 )}
               </span>
               <span className="project-progress" data-running={running}>

@@ -44,7 +44,6 @@ export function People({ session }: { session: GameSession }) {
           People <span>· {s.people.length}</span>
         </h2>
         <Button
-          title="An entire settlement briefly agrees on what to do next."
           disabled={!cost || s.resources.food < cost}
           onClick={() => session.change(() => session.game.feast())}
         >
@@ -61,7 +60,6 @@ export function People({ session }: { session: GameSession }) {
                 className="person-health"
                 role="img"
                 aria-label={`${p.name} health: ${p.health} of 5`}
-                title={`Health ${p.health}/5`}
                 data-low={p.health <= 2}
               >
                 {[1, 2, 3, 4, 5].map((point) => (
@@ -100,10 +98,7 @@ export function People({ session }: { session: GameSession }) {
             {isWorkingJob(p.job) && (
               <p className="person-output">{output(s, p)}</p>
             )}
-            <p
-              className="person-aptitude"
-              title="Adds 5% personal work in this occupation, subject to staffing efficiency."
-            >
+            <p className="person-aptitude">
               {OCCUPATIONS[p.aptitude].aptitude} aptitude · +5%
             </p>
             {WORKING_JOB_IDS.some(

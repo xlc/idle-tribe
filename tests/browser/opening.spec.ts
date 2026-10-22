@@ -73,7 +73,9 @@ for (const width of [320, 390, 1280]) {
       await expect(
         page.getByRole('region', { name: 'Food resource', exact: true }),
       ).toContainText('-1/min')
-      await expect(page.getByLabel('You occupation')).toHaveValue('idle')
+      await expect(
+        page.getByRole('article', { name: 'You', exact: true }),
+      ).toContainText('Foraging aptitude · +5%')
       expect(await gather.boundingBox()).toEqual(anchors.gather)
 
       for (let i = 0; i < 10; i++) {

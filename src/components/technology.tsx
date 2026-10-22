@@ -63,8 +63,11 @@ export function Technology({ session, confirm }: ViewProps) {
         </summary>
         <div className="completed-research">
           {RESEARCH_IDS.filter((id) => s.research[id]).map((id) => (
-            <p key={id} title={RESEARCH[id].description}>
+            <p key={id}>
               <strong>{RESEARCH[id].name}</strong> · {RESEARCH[id].effect}
+              <small className="completed-research-description">
+                {RESEARCH[id].description}
+              </small>
             </p>
           ))}
         </div>

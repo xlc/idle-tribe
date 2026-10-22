@@ -6,7 +6,7 @@ This guide sets the visual direction, not a finished screen specification. [Agen
 
 ## Visual anchor
 
-<img src="assets/mobile-town-reference.png" alt="Illustrated town-stage concept with an ivory background, green accents, resource balances, a painted settlement, project summaries, and workplace staffing rows" width="430">
+<img src="assets/mobile-town-reference.png" alt="Illustrated town-stage concept with an ivory background, green accents, resource balances, a painted settlement, project summaries, and workplace staffing rows">
 
 Carry forward the reference's ivory surfaces, forest-green accents, painted resources, and readable workplace rows. Its generous overview and scenery establish the mood, but the playable screen must leave room for decisions. Preserve the character as the layout adapts.
 

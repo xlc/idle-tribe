@@ -167,10 +167,14 @@ export function App({ session }: { session: GameSession }) {
                     <p>
                       A small box with a very unreasonable relationship to time.
                     </p>
-                    <p title="Lifetime points speed up worker production, construction and research. Spending points does not reduce this bonus.">
+                    <p>
                       {s.legacy.lifetime} lifetime points · efficiency ×
                       {formatResource(prestigeMultiplier(s))}
                       {!canReset(s) && ' · Reset requires Writing'}
+                    </p>
+                    <p className="legacy-note">
+                      Lifetime points improve worker, construction, and research
+                      speed for every settlement.
                     </p>
                     <Button
                       disabled={!canReset(s)}
@@ -237,11 +241,10 @@ export function App({ session }: { session: GameSession }) {
                 <ViewIcon name={entry.id} />
                 {entry.label}
                 {entry.working && (
-                  <span
-                    className="working-dot"
-                    aria-hidden="true"
-                    title="In progress"
-                  />
+                  <span className="working-status">
+                    <span className="working-dot" aria-hidden="true" />
+                    Working
+                  </span>
                 )}
               </Tabs.Trigger>
             ))}

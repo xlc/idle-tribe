@@ -1,6 +1,5 @@
 import { type ReactNode, useLayoutEffect, useRef } from 'react'
 import { RESOURCE_INFO } from '../constants'
-import { formatCost } from '../format'
 import { RESOURCES } from '../ids'
 import type { GameSession } from '../session'
 import type { Cost } from '../types'
@@ -54,28 +53,20 @@ export function Button({
   children,
   onClick,
   disabled = false,
-  title,
 }: {
   children: ReactNode
   onClick: () => void
   disabled?: boolean
-  title?: string
 }) {
   return (
-    <button
-      type="button"
-      className="btn"
-      onClick={onClick}
-      disabled={disabled}
-      title={title}
-    >
+    <button type="button" className="btn" onClick={onClick} disabled={disabled}>
       {children}
     </button>
   )
 }
 export function Costs({ session, cost }: { session: GameSession; cost: Cost }) {
   return (
-    <p className="costs" title={formatCost(cost)}>
+    <p className="costs">
       {RESOURCES.filter((r) => cost[r]).map((r) => (
         <span
           key={r}
