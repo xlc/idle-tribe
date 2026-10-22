@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import type { AwayProgress } from '../clock'
+import { useEffect, useRef, useState } from 'react'
+import { type AwayProgress, awaySummary } from '../clock'
 import { RESOURCE_INFO } from '../constants'
 import { OCCUPATIONS } from '../economy'
 import { formatDuration, formatResource } from '../format'
@@ -7,6 +7,7 @@ import { RESOURCES } from '../ids'
 import { QUEUES, queueBlocker } from '../research'
 import { storageMultiplier } from '../resources'
 import type { GameSession } from '../session'
+import { Button } from './common'
 
 function ExpertiseGains({ people }: { people: AwayProgress['expertise'] }) {
   return (
@@ -25,6 +26,64 @@ function ExpertiseGains({ people }: { people: AwayProgress['expertise'] }) {
         </li>
       ))}
     </ul>
+  )
+}
+
+export function AwayNotification({
+  session,
+  report,
+}: {
+  session: GameSession
+  report: AwayProgress
+}) {
+  const [seen, setSeen] = useState(report)
+  const [shown, setShown] = useState(true)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const dialog = useRef<HTMLDialogElement>(null)
+  if (report !== seen) {
+    setSeen(report)
+    setShown(true)
+  }
+  useEffect(() => {
+    if (!shown || dialogOpen) return
+    const timer = setTimeout(() => setShown(false), 20000)
+    return () => clearTimeout(timer)
+  }, [shown, dialogOpen])
+  if (!shown) return null
+  return (
+    <div className="away-toast" role="status">
+      <button
+        type="button"
+        className="away-toast-body"
+        onClick={() => {
+          dialog.current?.showModal()
+          setDialogOpen(true)
+        }}
+      >
+        <strong>Away · {formatDuration(report.wallSeconds)}</strong>
+        <span className="away-toast-counts">{awaySummary(report)}</span>
+      </button>
+      <button
+        type="button"
+        className="away-toast-close"
+        aria-label="Dismiss away report"
+        onClick={() => setShown(false)}
+      >
+        ×
+      </button>
+      <dialog
+        ref={dialog}
+        className="modal away-modal"
+        onClose={() => setDialogOpen(false)}
+      >
+        <div className="modal-box">
+          <AwayReport session={session} report={report} />
+          <div className="modal-action">
+            <Button onClick={() => dialog.current?.close()}>Close</Button>
+          </div>
+        </div>
+      </dialog>
+    </div>
   )
 }
 

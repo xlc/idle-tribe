@@ -416,8 +416,12 @@ for (const width of [1280, 390]) {
       enqueue(s, nextExpansion(s, 'housing'))
       advanceTime(s, 0)
       await open(page, s)
-      await page.getByRole('button', { name: /Away ·/ }).click()
-      const report = page.getByRole('region', { name: 'Offline progress' })
+      const toast = page.locator('.away-toast')
+      await expect(toast).toBeVisible()
+      await toast.getByRole('button', { name: /Away ·/ }).click()
+      const dialog = page.getByRole('dialog')
+      const report = dialog.getByRole('region', { name: 'Offline progress' })
+      await report.getByRole('button', { name: /Away ·/ }).click()
       await expect(
         report
           .locator('.away-stats')
@@ -428,8 +432,8 @@ for (const width of [1280, 390]) {
         report.locator('.away-resources li').filter({ hasText: 'Food' }),
       ).toContainText('−120')
       await page.screenshot({ path: info.outputPath('away.png') })
-      await report.getByRole('button', { name: /Away ·/ }).click()
-      await expect(page.getByRole('button', { name: /Away ·/ })).toBeVisible()
+      await dialog.getByRole('button', { name: 'Close' }).click()
+      await expect(toast).toBeVisible()
     })
   })
 }

@@ -63,3 +63,6 @@ export function settleAbsence(state: GameState, time: number) {
   }
 }
 export type AwayProgress = NonNullable<ReturnType<typeof settleAbsence>>
+export function awaySummary(report: AwayProgress) {
+  return `${report.arrivals} ${report.arrivals === 1 ? 'arrival' : 'arrivals'} · ${report.completed} ${report.completed === 1 ? 'project' : 'projects'} completed`
+}

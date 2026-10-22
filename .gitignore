@@ -41,3 +41,6 @@ playwright-report/
 
 # Reproducible balance run artifacts
 /balance-results/
+
+# Playwright MCP session artifacts
+.playwright-mcp/

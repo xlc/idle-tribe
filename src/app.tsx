@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ACTIONS } from './actions'
 import { ManualActions } from './components/actions'
 import { ViewIcon } from './components/art'
-import { AwayReport } from './components/away-report'
+import { AwayNotification } from './components/away-report'
 import { Button, type Confirm } from './components/common'
 import { OfflineStatus } from './components/offline-status'
 import { People } from './components/people'
@@ -20,7 +20,7 @@ import type { GameSession } from './session'
 import { automationUnlocked, prestigeMultiplier } from './settlement'
 import { useSession } from './use-session'
 
-type View = 'settlement' | 'research' | 'people' | 'legacy'
+type View = 'settlement' | 'research' | 'people' | 'legacy' | 'settings'
 export function App({ session }: { session: GameSession }) {
   useSession(session)
   const s = session.game.state,
@@ -42,6 +42,7 @@ export function App({ session }: { session: GameSession }) {
     },
     { id: 'people', label: 'People', available: automated },
     { id: 'legacy', label: 'Time box', available: s.legacy.discovered },
+    { id: 'settings', label: 'Settings', available: true },
   ]
   const availableViews = views.filter((entry) => entry.available)
   const content = useRef<HTMLDivElement>(null)
@@ -66,41 +67,9 @@ export function App({ session }: { session: GameSession }) {
   const props = { session, confirm }
   return (
     <main className={`game-shell${automated ? '' : ' opening-shell'}`}>
-      <header className="game-header">
-        <div className="game-header-copy">
-          <h1>Primitive Tribe</h1>
-          <div className="settlement-identity">
-            <span>{ERAS[s.era]?.name} era</span>
-            {s.specialization && (
-              <span className="branch-badge">
-                {RESEARCH[s.specialization].name}
-              </span>
-            )}
-          </div>
-        </div>
-        <details className="settings-menu">
-          <summary className="settings-trigger">Settings</summary>
-          <div className="settings-panel">
-            <h2>Settings</h2>
-            <p>Manage this browser's local game data.</p>
-            <Button
-              onClick={() =>
-                confirm(
-                  'Wipe local save?',
-                  'This permanently deletes the settlement saved in this browser and starts a new game.',
-                  () => {
-                    wipeSave()
-                    window.location.reload()
-                  },
-                  { direct: true },
-                )
-              }
-            >
-              Wipe local save
-            </Button>
-          </div>
-        </details>
-      </header>
+      {away && away.wallSeconds >= 60 && (
+        <AwayNotification session={session} report={away} />
+      )}
       <div className="game-layout">
         <Stockpile session={session} />
         <Tabs.Root
@@ -112,9 +81,14 @@ export function App({ session }: { session: GameSession }) {
           }}
         >
           <div className="view-scroll" ref={content}>
-            {away && away.wallSeconds >= 60 && (
-              <AwayReport session={session} report={away} />
-            )}
+            <div className="settlement-identity">
+              <span>{ERAS[s.era]?.name} era</span>
+              {s.specialization && (
+                <span className="branch-badge">
+                  {RESEARCH[s.specialization].name}
+                </span>
+              )}
+            </div>
             {s.notice && (
               <p className="feedback" role="status">
                 {s.notice}
@@ -140,7 +114,10 @@ export function App({ session }: { session: GameSession }) {
                 aria-hidden="true"
               />
             )}
-            <div className={automated ? 'settlement-layout' : 'opening'}>
+            <div
+              className={automated ? 'settlement-layout' : 'opening'}
+              data-aside={view !== 'settings'}
+            >
               <div className="view-panel">
                 <Tabs.Content
                   value="settlement"
@@ -237,8 +214,57 @@ export function App({ session }: { session: GameSession }) {
                     </div>
                   </Tabs.Content>
                 )}
+                <Tabs.Content
+                  value="settings"
+                  forceMount
+                  hidden={view !== 'settings'}
+                >
+                  <h2>Settings</h2>
+                  <p>Manage this browser's local game data.</p>
+                  <div className="settings-actions">
+                    <Button
+                      onClick={() =>
+                        confirm(
+                          'Wipe local save?',
+                          'This permanently deletes the settlement saved in this browser and starts a new game.',
+                          () => {
+                            wipeSave()
+                            window.location.reload()
+                          },
+                          { direct: true },
+                        )
+                      }
+                    >
+                      Wipe local save
+                    </Button>
+                  </div>
+                  <section className="event-log-section">
+                    <h2>Event log</h2>
+                    <p className="event-log-note">
+                      Events from this session. Refreshing the page clears the
+                      log.
+                    </p>
+                    {session.events.length ? (
+                      <ul className="event-log">
+                        {[...session.events].reverse().map((event) => (
+                          <li key={event.id}>
+                            <time>
+                              {new Date(event.at).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </time>
+                            <span>{event.text}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="event-log-note">No events yet.</p>
+                    )}
+                  </section>
+                </Tabs.Content>
               </div>
-              <aside className="camp-aside">
+              <aside className="camp-aside" hidden={view === 'settings'}>
                 {!automated && <People session={session} />}
                 {automated && (
                   <div className="project-plans">

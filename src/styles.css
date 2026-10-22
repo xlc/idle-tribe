@@ -127,75 +127,11 @@ small {
   user-select: none;
   -webkit-touch-callout: none;
 }
-.game-header {
-  position: relative;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  flex-shrink: 0;
-  padding-bottom: 16px;
-}
-.game-header-copy {
-  min-width: 0;
-}
-.settings-menu {
-  position: relative;
-  flex-shrink: 0;
-}
-.settings-trigger {
-  display: inline-flex;
-  align-items: center;
-  min-height: 40px;
-  padding: 9px 12px;
-  border: 1px solid var(--color-base-300);
-  border-radius: 6px;
-  background: var(--color-base-100);
-  color: var(--color-primary);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  list-style: none;
-}
-.settings-trigger::-webkit-details-marker {
-  display: none;
-}
-.settings-trigger::after {
-  content: "⌄";
-  margin-left: 7px;
-  font-size: 15px;
-}
-.settings-menu[open] .settings-trigger,
-.settings-trigger:hover {
-  border-color: #859f7e;
-  background: #edf1e6;
-}
-.settings-panel {
-  position: absolute;
-  z-index: 5;
-  top: calc(100% + 8px);
-  right: 0;
-  width: min(260px, calc(100vw - 24px));
-  padding: 16px;
-  border: 1px solid var(--color-base-300);
-  border-radius: 8px;
-  background: var(--color-base-100);
-  box-shadow: 0 12px 32px #263a3026;
-}
-.settings-panel h2 {
-  font-size: 20px;
-}
-.settings-panel p {
-  margin-top: 8px;
-  color: var(--color-neutral);
-  font-size: 12px;
-  line-height: 1.5;
-}
 .settlement-identity {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: 7px;
+  margin-bottom: 10px;
   color: var(--color-neutral);
   font-size: 13px;
 }
@@ -380,6 +316,9 @@ small {
   gap: 22px;
   align-items: start;
 }
+.settlement-layout[data-aside="false"] {
+  grid-template-columns: minmax(0, 1fr);
+}
 /* Each landscape is one third of the atlas. Crop within that band without stretching it. */
 .settlement-landscape {
   position: relative;
@@ -530,9 +469,7 @@ small {
   background: #f1eee7;
   cursor: default;
 }
-.settings-panel .btn {
-  width: 100%;
-  margin-top: 14px;
+.settings-actions .btn {
   color: var(--color-warning);
 }
 .worker-control .btn {
@@ -1111,6 +1048,80 @@ details {
 .legacy .tech-grid {
   margin-top: 20px;
 }
+.away-toast {
+  position: fixed;
+  z-index: 20;
+  top: calc(14px + env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: stretch;
+  width: min(420px, calc(100vw - 24px));
+  border: 1px solid var(--color-base-300);
+  border-radius: 10px;
+  background: var(--color-base-100);
+  box-shadow: 0 12px 32px #263a3026;
+  overflow: hidden;
+}
+.away-toast-body {
+  flex: 1;
+  display: grid;
+  gap: 3px;
+  min-height: 56px;
+  padding: 10px 14px;
+  text-align: left;
+  cursor: pointer;
+}
+.away-toast-body strong {
+  font-size: 14px;
+}
+.away-toast-counts {
+  color: var(--color-neutral);
+  font-size: 12px;
+}
+.away-toast-close {
+  flex-shrink: 0;
+  width: 44px;
+  border: 0;
+  border-left: 1px solid var(--color-base-300);
+  background: transparent;
+  color: var(--color-primary);
+  font-size: 22px;
+  cursor: pointer;
+}
+.away-toast-close:hover {
+  background: #edf1e6;
+}
+.away-modal {
+  width: min(560px, calc(100% - 32px));
+}
+.event-log-section {
+  margin-top: 28px;
+}
+.event-log-note {
+  color: var(--color-neutral);
+  font-size: 12px;
+  margin-top: 6px;
+}
+.event-log {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+}
+.event-log li {
+  display: flex;
+  gap: 14px;
+  padding: 9px 2px;
+  border-bottom: 1px solid var(--color-base-300);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.event-log time {
+  flex-shrink: 0;
+  color: var(--color-neutral);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
 .away-report {
   margin-bottom: 16px;
   border: 1px solid var(--color-base-300);
@@ -1118,6 +1129,9 @@ details {
   background: var(--color-base-100);
   font-size: 12px;
   overflow: hidden;
+}
+.away-modal .away-report {
+  margin-bottom: 0;
 }
 .away-summary {
   display: flex;
@@ -1386,12 +1400,6 @@ details {
   }
 }
 @media (max-width: 440px) {
-  .game-header {
-    gap: 8px;
-  }
-  .settings-trigger {
-    padding-inline: 10px;
-  }
   .facility-overview {
     grid-template-columns: 44px minmax(0, 1fr);
     gap: 8px 10px;
@@ -1418,12 +1426,6 @@ details {
 @media (max-height: 760px) and (max-width: 719px) {
   .settlement-landscape {
     display: none;
-  }
-  .game-header {
-    padding-bottom: 8px;
-  }
-  .game-header h1 {
-    font-size: 26px;
   }
   .plan-toggle {
     gap: 5px;
