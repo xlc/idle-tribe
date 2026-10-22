@@ -13,6 +13,7 @@ import { Technology } from './components/technology'
 import { ERAS } from './constants'
 import { formatResource } from './format'
 import { ACTION_IDS, PERK_IDS } from './ids'
+import { wipeSave } from './persistence'
 import { buyPerk, canReset, legacyReward, PERKS, resetRun } from './prestige'
 import { RESEARCH } from './research-definitions'
 import type { GameSession } from './session'
@@ -52,11 +53,12 @@ export function App({ session }: { session: GameSession }) {
     title: string
     body: string
     run: () => void
+    direct: boolean
   } | null>(null)
   const dialog = useRef<HTMLDialogElement>(null)
-  const confirm: Confirm = (title, body, run) => {
+  const confirm: Confirm = (title, body, run, options) => {
     session.tick(Date.now())
-    setChoice({ title, body, run })
+    setChoice({ title, body, run, direct: options?.direct ?? false })
   }
   useEffect(() => {
     if (choice) dialog.current?.showModal()
@@ -65,7 +67,7 @@ export function App({ session }: { session: GameSession }) {
   return (
     <main className={`game-shell${automated ? '' : ' opening-shell'}`}>
       <header className="game-header">
-        <div>
+        <div className="game-header-copy">
           <h1>Primitive Tribe</h1>
           <div className="settlement-identity">
             <span>{ERAS[s.era]?.name} era</span>
@@ -76,6 +78,28 @@ export function App({ session }: { session: GameSession }) {
             )}
           </div>
         </div>
+        <details className="settings-menu">
+          <summary className="settings-trigger">Settings</summary>
+          <div className="settings-panel">
+            <h2>Settings</h2>
+            <p>Manage this browser's local game data.</p>
+            <Button
+              onClick={() =>
+                confirm(
+                  'Wipe local save?',
+                  'This permanently deletes the settlement saved in this browser and starts a new game.',
+                  () => {
+                    wipeSave()
+                    window.location.reload()
+                  },
+                  { direct: true },
+                )
+              }
+            >
+              Wipe local save
+            </Button>
+          </div>
+        </details>
       </header>
       <div className="game-layout">
         <Stockpile session={session} />
@@ -268,7 +292,10 @@ export function App({ session }: { session: GameSession }) {
               </Button>
               <Button
                 onClick={() => {
-                  if (choice) session.change(choice.run)
+                  if (choice) {
+                    if (choice.direct) choice.run()
+                    else session.change(choice.run)
+                  }
                   dialog.current?.close()
                   setChoice(null)
                 }}

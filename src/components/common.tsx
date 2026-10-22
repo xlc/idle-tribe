@@ -3,7 +3,12 @@ import { RESOURCE_INFO } from '../constants'
 import { RESOURCES } from '../ids'
 import type { GameSession } from '../session'
 import type { Cost } from '../types'
-export type Confirm = (title: string, body: string, run: () => void) => void
+export type Confirm = (
+  title: string,
+  body: string,
+  run: () => void,
+  options?: { direct?: boolean },
+) => void
 export interface ViewProps {
   session: GameSession
   confirm: Confirm

@@ -267,3 +267,11 @@ export function saveState(state: GameState) {
     /* Storage can be unavailable; the current session remains playable. */
   }
 }
+
+export function wipeSave() {
+  try {
+    localStorage.removeItem(STORAGE_KEY)
+  } catch {
+    /* Storage can be unavailable; the current session remains playable. */
+  }
+}
