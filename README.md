@@ -45,13 +45,13 @@ bun run check
 | `bun run lint` / `bun run lint:fix` | Check or fix Biome formatting, lint rules, and import organization. |
 | `bun run typecheck` | Check TypeScript types. |
 | `bun run test` | Run unit tests. |
-| `bun run test:browser` | Build and test the production UI in Chromium and iOS WebKit, including offline loading. |
+| `bun run test:browser` | Build and test the production UI in Chromium, including offline loading. |
 | `bun run balance` | Simulate ordinary visits; `--full` reaches all eras, `--matrix` sweeps branches and schedules. |
 | `bun run build` | Check types and generate the production bundle in `dist/`. |
 | `bun run preview` | Build and serve locally using Cloudflare's runtime. |
 | `bun run deploy` | Build and publish to Cloudflare Workers. |
 
-Before the first browser test, install the engines with `bunx playwright install chromium webkit`.
+Before the first browser test, install Chromium with `bunx playwright install chromium`.
 
 ## Cloudflare deployment
 

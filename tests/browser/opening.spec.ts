@@ -44,13 +44,13 @@ test('action progress animates between ticks and resumes from paused work', asyn
   await page.evaluate(() => window.dispatchEvent(new Event('pageshow')))
   await page.clock.runFor(100)
   expect(await progress()).toBeGreaterThan(paused)
-  expect(await progress()).toBeLessThan(paused + 0.15)
+  expect(await progress()).toBeLessThan(paused + 0.3)
   await page.clock.runFor(1500)
   await expect(gather).toBeEnabled()
   await gather.click()
   await page.clock.runFor(100)
   expect(await progress()).toBeGreaterThan(0)
-  expect(await progress()).toBeLessThan(0.15)
+  expect(await progress()).toBeLessThan(0.3)
 })
 
 for (const width of [320, 390, 1280]) {

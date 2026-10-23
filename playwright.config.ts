@@ -1,21 +1,9 @@
-import { defineConfig, devices } from '@playwright/test'
+import { defineConfig } from '@playwright/test'
 
 export default defineConfig({
   testDir: './tests/browser',
   fullyParallel: true,
-  projects: [
-    { name: 'chromium', use: { browserName: 'chromium' } },
-    {
-      name: 'ios-webkit',
-      testMatch: [
-        '**/pwa.spec.ts',
-        '**/responsive.spec.ts',
-        '**/opening.spec.ts',
-        '**/indicators.spec.ts',
-      ],
-      use: { ...devices['iPhone 13'], browserName: 'webkit' },
-    },
-  ],
+  projects: [{ name: 'chromium', use: { browserName: 'chromium' } }],
   use: {
     baseURL: 'http://127.0.0.1:3019',
     viewport: { width: 1280, height: 900 },

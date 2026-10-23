@@ -3,7 +3,7 @@ import { createServer } from 'node:http'
 import { extname } from 'node:path'
 
 // A server per offline test lets us disconnect the actual origin, including in
-// WebKit where setOffline rejects even service-worker-generated navigations.
+// Some browser versions reject setOffline for service-worker-generated navigations.
 export async function offlineServer() {
   const types: Record<string, string> = {
     '.html': 'text/html',

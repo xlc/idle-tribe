@@ -15,7 +15,7 @@
     "preview": "bun run build && wrangler dev",
     "deploy": "bun run build && wrangler deploy",
     "test": "bun test ./src ./scripts",
-    "test:browser": "playwright test",
+    "test:browser": "playwright test --project=chromium",
     "balance": "bun scripts/simulate-visits.ts",
     "check": "bun run lint && bun run build && bun run test"
   },

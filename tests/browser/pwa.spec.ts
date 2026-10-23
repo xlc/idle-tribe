@@ -4,7 +4,7 @@ import { createDefaultState } from '../../src/state'
 import { advancedSettlement, people } from '../../src/test-helpers'
 import { offlineServer } from './offline-server'
 
-// Use real touch contexts; Chromium and WebKit both run this file.
+// Use a real touch context for the mobile PWA flow.
 test.use({
   viewport: { width: 390, height: 844 },
   isMobile: true,
