@@ -14,7 +14,6 @@ import { formatResource } from './format'
 import { PERK_IDS } from './ids'
 import { wipeSave } from './persistence'
 import { buyPerk, canReset, legacyReward, PERKS, resetRun } from './prestige'
-import { RESEARCH } from './research-definitions'
 import type { GameSession } from './session'
 import { automationUnlocked, prestigeMultiplier } from './settlement'
 import { useSession } from './use-session'
@@ -80,14 +79,6 @@ export function App({ session }: { session: GameSession }) {
           }}
         >
           <div className="view-scroll" ref={content}>
-            <div className="settlement-identity">
-              <span>{ERAS[s.era]?.name} era</span>
-              {s.specialization && (
-                <span className="branch-badge">
-                  {RESEARCH[s.specialization].name}
-                </span>
-              )}
-            </div>
             {s.notice && (
               <p className="feedback" role="status">
                 {s.notice}

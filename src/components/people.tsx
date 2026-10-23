@@ -53,6 +53,8 @@ export function People({ session }: { session: GameSession }) {
           People <span>· {s.people.length}</span>
         </h2>
         <Button
+          className="feast-button"
+          data-missing={cost > 0 && s.resources.food < cost}
           disabled={!cost || s.resources.food < cost}
           onClick={() => session.change(() => session.game.feast())}
         >

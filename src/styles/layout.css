@@ -1,7 +1,8 @@
 .game-shell {
   max-width: 1200px;
   margin: auto;
-  height: 100dvh;
+  /* Keep the frame inside Safari's stable viewport while its browser chrome moves. */
+  height: 100vh;
   display: flex;
   flex-direction: column;
   padding: calc(18px + env(safe-area-inset-top))
@@ -12,19 +13,10 @@
   user-select: none;
   -webkit-touch-callout: none;
 }
-.settlement-identity {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 10px;
-  color: var(--color-neutral);
-  font-size: 13px;
-}
-.branch-badge {
-  background: var(--color-chip);
-  color: var(--color-primary);
-  padding: 3px 10px;
-  border-radius: 5px;
+@supports (height: 100svh) {
+  .game-shell {
+    height: 100svh;
+  }
 }
 .game-layout {
   display: grid;

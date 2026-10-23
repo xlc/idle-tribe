@@ -105,7 +105,11 @@ function ActionCard({ session, id }: { session: GameSession; id: ActionId }) {
     </span>
   )
   return (
-    <article className="manual-action panel" aria-label={def.name}>
+    <article
+      className="manual-action panel"
+      aria-label={def.name}
+      data-running={running}
+    >
       <div className="action-row">
         {workers > 0 ? (
           <fieldset className="action-automated" aria-label={def.name}>

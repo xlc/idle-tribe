@@ -40,6 +40,10 @@
   min-width: 0;
   overflow: hidden;
 }
+.manual-action[data-running="true"] {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent);
+}
 .action-row {
   display: flex;
   align-items: stretch;
@@ -59,6 +63,10 @@
 }
 .action-toggle:hover {
   background: var(--color-hover);
+  color: var(--color-primary);
+}
+.action-toggle[aria-expanded="true"] {
+  background: var(--color-base-200);
   color: var(--color-primary);
 }
 .action-toggle:focus-visible {
