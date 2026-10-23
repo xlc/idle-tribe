@@ -6,8 +6,6 @@
   }
   .view-tabs .rt-TabsTrigger {
     flex: 0 0 auto;
-    min-height: 50px;
-    padding: 8px 22px;
   }
   .view-tabs .rt-TabsTriggerInner {
     flex-direction: row;
@@ -187,6 +185,9 @@
   .rt-Button {
     min-height: 44px;
     min-width: 44px;
+  }
+  .rt-TabsTrigger {
+    min-height: 44px;
   }
   .select,
   input {
