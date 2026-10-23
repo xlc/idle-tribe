@@ -21,6 +21,7 @@ export const BUILDING_IDS = [
   'foraging',
   'lumber',
   'quarry',
+  'expedition-camp',
   'food-store',
   'stockyard',
   'sawmill',
@@ -110,6 +111,7 @@ export const JOB_IDS = [
   'farmer',
   'woodcutter',
   'stoneworker',
+  'explorer',
   'sawyer',
   'mason',
   'toolmaker',
@@ -125,12 +127,12 @@ export const JOB_IDS = [
   'causal-researcher',
   'stellar-worker',
 ] as const
-export const ACTION_IDS = [
-  'gather',
-  'sticks',
-  'stone',
-  'explore',
-  'explore-further',
+export const ACTION_IDS = ['gather', 'sticks', 'stone', 'explore'] as const
+export const ACTION_JOB_IDS = [
+  'forager',
+  'woodcutter',
+  'stoneworker',
+  'explorer',
 ] as const
 export const PERK_IDS = [
   'longer-preparations',
@@ -143,6 +145,7 @@ export type BuildingId = (typeof BUILDING_IDS)[number]
 export type ResearchId = (typeof RESEARCH_IDS)[number]
 export type JobId = (typeof JOB_IDS)[number]
 export type ActionId = (typeof ACTION_IDS)[number]
+export type ActionJob = (typeof ACTION_JOB_IDS)[number]
 export type PerkId = (typeof PERK_IDS)[number]
 
 export type WorkingJob = Exclude<JobId, 'idle'>
@@ -150,3 +153,6 @@ export function isWorkingJob(job: JobId): job is WorkingJob {
   return job !== 'idle'
 }
 export const WORKING_JOB_IDS = JOB_IDS.filter(isWorkingJob)
+export function isActionJob(job: JobId): job is ActionJob {
+  return (ACTION_JOB_IDS as readonly string[]).includes(job)
+}

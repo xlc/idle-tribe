@@ -1,7 +1,6 @@
 import { Tabs } from '@radix-ui/themes'
 import { useEffect, useRef, useState } from 'react'
-import { ACTIONS } from './actions'
-import { ManualActions } from './components/actions'
+import { ActionCards } from './components/actions'
 import { ViewIcon } from './components/art'
 import { AwayNotification } from './components/away-report'
 import { Button, type Confirm } from './components/common'
@@ -12,7 +11,7 @@ import { Production, Stockpile, Workforce } from './components/settlement'
 import { Technology } from './components/technology'
 import { ERAS } from './constants'
 import { formatResource } from './format'
-import { ACTION_IDS, PERK_IDS } from './ids'
+import { PERK_IDS } from './ids'
 import { wipeSave } from './persistence'
 import { buyPerk, canReset, legacyReward, PERKS, resetRun } from './prestige'
 import { RESEARCH } from './research-definitions'
@@ -97,16 +96,12 @@ export function App({ session }: { session: GameSession }) {
             {view === 'settlement' && automated && (
               <Workforce session={session} />
             )}
-            {view === 'settlement' &&
-              automated &&
-              ACTION_IDS.some(
-                (id) => ACTIONS[id].discovery && ACTIONS[id].visible(s),
-              ) && (
-                <section className="discoveries">
-                  <h2>Explore</h2>
-                  <ManualActions session={session} discoveries />
-                </section>
-              )}
+            {view === 'settlement' && (
+              <section className="discoveries" aria-label="Actions">
+                <h2>Actions</h2>
+                <ActionCards session={session} />
+              </section>
+            )}
             {view === 'settlement' && automated && (
               <div
                 className="settlement-landscape"
@@ -127,16 +122,7 @@ export function App({ session }: { session: GameSession }) {
                   {automated ? (
                     <Production {...props} />
                   ) : (
-                    <>
-                      <p className="opening-flavor">{ERAS[0]?.description}</p>
-                      <ManualActions session={session} />
-                      <section
-                        className="discoveries opening-discoveries"
-                        aria-label="Discoveries"
-                      >
-                        <ManualActions session={session} discoveries />
-                      </section>
-                    </>
+                    <p className="opening-flavor">{ERAS[0]?.description}</p>
                   )}
                 </Tabs.Content>
                 <Tabs.Content
@@ -271,12 +257,6 @@ export function App({ session }: { session: GameSession }) {
                     <Construction {...props} />
                     <Queue {...props} id="research" />
                   </div>
-                )}
-                {automated && view === 'settlement' && (
-                  <details className="manual-work">
-                    <summary>Manual work</summary>
-                    <ManualActions session={session} />
-                  </details>
                 )}
               </aside>
             </div>

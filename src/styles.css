@@ -307,6 +307,36 @@ small {
     serif;
   margin-bottom: 16px;
 }
+.action-automated {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  border: 0;
+  padding: 12px 14px;
+}
+.action-automation-controls {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+  margin-left: auto;
+}
+.rate-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  background: #e5ecd9;
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 600;
+}
+.action-hint {
+  color: var(--color-neutral);
+  font-size: 11px;
+  padding: 0 14px 10px;
+}
 .view-panel {
   min-width: 0;
 }

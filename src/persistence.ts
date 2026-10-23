@@ -129,14 +129,18 @@ export function parseSave(serialized: string | null): GameState {
       queues = object(p.queues),
       legacy = object(p.legacy),
       perks = object(legacy.perks)
-    const actionSkills = object(p.actionSkills)
+    const actionSkills = object(p.actionSkills),
+      actionProgress = object(p.actionProgress)
     s.actionSkills = createRecord(ACTION_IDS, (id) => {
       const skill = object(actionSkills[id])
       return {
         level: number(skill.level, 1, Infinity, true),
-        xp: number(skill.xp, 0, Infinity, true),
+        xp: number(skill.xp, 0, Infinity),
       }
     })
+    s.actionProgress = createRecord(ACTION_IDS, (id) =>
+      number(actionProgress[id]),
+    )
     for (const id of ACTION_IDS)
       if (s.actionSkills[id].xp >= actionRequiredXp(s, id))
         throw new Error('Invalid action experience')
@@ -174,6 +178,8 @@ export function parseSave(serialized: string | null): GameState {
       throw new Error('Invalid people')
     s.exploreUnlocked = bool(p.exploreUnlocked)
     s.researchUnlocked = bool(p.researchUnlocked)
+    s.expeditionUnlocked = bool(p.expeditionUnlocked)
+    s.exploreRolls = number(p.exploreRolls, 0, Infinity, true)
     s.queues = {
       research: queue(queues.research),
       construction: queue(queues.construction),

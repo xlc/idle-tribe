@@ -213,8 +213,11 @@ export function runBalance(
   }
   function opening() {
     const deadline = Math.min(horizon, wall + 3600)
-    gather('food', 15, deadline)
-    manual('explore', deadline)
+    // Exploration can take several attempts before the first discovery; keep
+    // enough provisions on hand so a dry streak cannot deadlock the opening.
+    gather('food', 60, deadline)
+    while (!state.discovered.wood && wall < deadline)
+      if (!manual('explore', deadline)) break
     gather('wood', 10, deadline)
     gather('food', 8, deadline)
     controls.plan({ kind: 'research', id: 'sharpened-stick' })
@@ -279,9 +282,8 @@ export function runBalance(
       visitStart = wall,
       actionStart = actions.length
     const deadline = Math.min(horizon, visitStart + schedule.minutes * 60)
-    if (!state.discovered.stone) {
-      if (state.resources.food >= 20) manual('explore-further', deadline)
-    }
+    while (!state.discovered.stone && wall < deadline)
+      if (!manual('explore', deadline)) break
     if (state.discovered.stone && !state.facilities.quarry.level)
       gather('stone', 40, deadline)
     let previousAllocation = ''

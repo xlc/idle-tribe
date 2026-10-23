@@ -1,4 +1,4 @@
-import type { BuildingId, JobId } from './ids'
+import { type ActionJob, type BuildingId, isActionJob, type JobId } from './ids'
 import type {
   BuildingDefinition,
   JobDefinition,
@@ -65,10 +65,9 @@ export const BUILDINGS: Record<BuildingId, BuildingDefinition> = {
         cost: { wood: 10 },
         work: 1,
         requires: { research: ['shelters'] },
-        rate: 6,
       },
     ],
-    effect: 'Forager workplace; 6 food/min per worker',
+    effect: 'Gather food slots = level; equipment improves automation',
     job: 'forager',
   },
   lumber: {
@@ -79,7 +78,6 @@ export const BUILDINGS: Record<BuildingId, BuildingDefinition> = {
         cost: { wood: 15 },
         work: 2,
         requires: { research: ['shelters'], discovery: 'wood' },
-        rate: 2,
       },
       {
         name: 'Timber yard',
@@ -88,7 +86,7 @@ export const BUILDINGS: Record<BuildingId, BuildingDefinition> = {
         requires: { research: ['forestry-methods'] },
         cost: { planks: 20, blocks: 10, tools: 3 },
         work: 6,
-        rate: 4,
+        actionAutomation: { sticks: 0.05 },
       },
       {
         name: 'Mechanical timber yard',
@@ -97,10 +95,10 @@ export const BUILDINGS: Record<BuildingId, BuildingDefinition> = {
         requires: { research: ['powered-workshops'] },
         cost: { planks: 40, blocks: 30, metal: 20, machinery: 5 },
         work: 12,
-        rate: 8,
+        actionAutomation: { sticks: 0.1 },
       },
     ],
-    effect: 'Woodcutter workplace; 2 wood/min per worker',
+    effect: 'Gather wood slots = level; forms and equipment improve automation',
     job: 'woodcutter',
   },
   quarry: {
@@ -111,7 +109,6 @@ export const BUILDINGS: Record<BuildingId, BuildingDefinition> = {
         cost: { wood: 20, stone: 10 },
         work: 3,
         requires: { research: ['stone-tools'] },
-        rate: 1.5,
       },
       {
         name: 'Stone pit',
@@ -119,7 +116,7 @@ export const BUILDINGS: Record<BuildingId, BuildingDefinition> = {
         requires: { research: ['stone-lifting'] },
         cost: { planks: 15, blocks: 20, tools: 3 },
         work: 6,
-        rate: 3,
+        actionAutomation: { stone: 0.05 },
       },
       {
         name: 'Mechanical quarry',
@@ -128,11 +125,26 @@ export const BUILDINGS: Record<BuildingId, BuildingDefinition> = {
         requires: { research: ['powered-workshops'] },
         cost: { planks: 30, blocks: 40, metal: 20, machinery: 5 },
         work: 12,
-        rate: 6,
+        actionAutomation: { stone: 0.1 },
       },
     ],
-    effect: 'Stoneworker workplace; 1.5 stone/min per worker',
+    effect:
+      'Gather stone slots = level; forms and equipment improve automation',
     job: 'stoneworker',
+  },
+  'expedition-camp': {
+    forms: [
+      {
+        name: 'Expedition camp',
+        description:
+          'Base camp for people who keep coming back with interesting stories.',
+        cost: { wood: 15, food: 10 },
+        work: 3,
+        requires: { research: ['shelters'], expedition: true },
+      },
+    ],
+    effect: 'Explorer workplace; explore slots = level',
+    job: 'explorer',
   },
   'food-store': {
     forms: [
@@ -846,38 +858,14 @@ export const BUILDINGS: Record<BuildingId, BuildingDefinition> = {
     job: 'stellar-worker',
   },
 }
-export type ProductionJob = Exclude<JobId, 'idle' | 'builder'>
+export type ProductionJob = Exclude<JobId, 'idle' | 'builder' | ActionJob>
 export const JOBS: Record<ProductionJob, JobDefinition> = {
-  forager: {
-    name: 'Forager',
-    aptitude: 'Foraging',
-    learning: 'production',
-    description: 'Finds breakfast in places the rest of us walked past.',
-    output: 'food',
-    input: {},
-  },
   farmer: {
     name: 'Farmer',
     aptitude: 'Farming',
     learning: 'production',
     description: 'Persuades plants to keep regular working hours.',
     output: 'food',
-    input: {},
-  },
-  woodcutter: {
-    name: 'Woodcutter',
-    aptitude: 'Woodcutting',
-    learning: 'production',
-    description: 'Negotiates a change of direction for trees.',
-    output: 'wood',
-    input: {},
-  },
-  stoneworker: {
-    name: 'Stoneworker',
-    aptitude: 'Stoneworking',
-    learning: 'production',
-    description: 'Brings home the rocks the settlement has taken a liking to.',
-    output: 'stone',
     input: {},
   },
   sawyer: {
@@ -1001,10 +989,29 @@ export const JOBS: Record<ProductionJob, JobDefinition> = {
   },
 }
 export function isProductionJob(job: JobId): job is ProductionJob {
-  return job !== 'idle' && job !== 'builder'
+  return job !== 'idle' && job !== 'builder' && !isActionJob(job)
 }
 
+// Gathering is automated through the action system; these entries remain as
+// inert display labels for the assignment markers (people are interchangeable
+// on actions, so no aptitude or practice effects apply).
 export const OCCUPATIONS: Record<WorkingJob, OccupationDefinition> = {
   ...JOBS,
   builder: { name: 'Builder', aptitude: 'Building', learning: 'construction' },
+  forager: { name: 'Forager', aptitude: 'Foraging', learning: 'production' },
+  woodcutter: {
+    name: 'Woodcutter',
+    aptitude: 'Woodcutting',
+    learning: 'production',
+  },
+  stoneworker: {
+    name: 'Stoneworker',
+    aptitude: 'Stoneworking',
+    learning: 'production',
+  },
+  explorer: {
+    name: 'Explorer',
+    aptitude: 'Exploration',
+    learning: 'production',
+  },
 }

@@ -1,10 +1,5 @@
 import { expect, test } from 'bun:test'
-import {
-  actionDuration,
-  actionRequiredXp,
-  actionYield,
-  startAction,
-} from './actions'
+import { actionDuration, actionYield, startAction } from './actions'
 import { BUILDINGS } from './economy'
 import { createGame, removeFacility } from './game'
 import { BUILDING_IDS, RESEARCH_IDS } from './ids'
@@ -49,9 +44,13 @@ test('the opening discovers resources and grants a working camp once', () => {
     expect(startAction(s, 'gather')).toBe(true)
     advanceTime(s, 1, true)
   }
-  expect(startAction(s, 'explore')).toBe(true)
-  advanceTime(s, 20, true)
-  expect(s.discovered.wood).toBe(true)
+  s.resources.food += 600
+  // Explore finds wood through its random reward table eventually.
+  for (let i = 0; !s.discovered.wood; i++) {
+    expect(i).toBeLessThan(100)
+    expect(startAction(s, 'explore')).toBe(true)
+    advanceTime(s, 4, true)
+  }
   for (let i = 0; i < 30; i++) {
     startAction(s, 'sticks')
     advanceTime(s, 2, true)
@@ -254,17 +253,17 @@ test('storage thresholds slow throughput while prices remain payable', () => {
 
 test('health-weighted overstaffing always adds output and Fill only uses available people', () => {
   const s = settlement()
-  s.resources.wood = 0
-  s.facilities.lumber.level = 1
-  people(s, 'woodcutter', 'woodcutter', 'idle', 'idle')
+  s.resources.food = 0
+  s.facilities.farm.level = 1
+  people(s, 'farmer', 'farmer', 'idle', 'idle')
   const rate = () => s.people.reduce((n, p) => n + workerRate(s, p), 0),
     before = rate()
   required(s.people[2]).health = 0
-  assignJob(s, 2, 'woodcutter')
+  assignJob(s, 2, 'farmer')
   expect(rate()).toBeGreaterThan(before)
-  expect(fillWorkers(s, 'woodcutter')).toBe(false)
+  expect(fillWorkers(s, 'farmer')).toBe(false)
   expect(s.people[3]?.job).toBe('idle')
-  assignJob(s, 3, 'woodcutter')
+  assignJob(s, 3, 'farmer')
   expect(rate()).toBeGreaterThan(before)
   expect(effectiveStaff(8, 2)).toBeCloseTo(4.77258872)
   expect(constructionSpeed(s, 8)).toBeGreaterThan(constructionSpeed(s, 4))
@@ -383,7 +382,8 @@ test('food gathering rewards the first second and opens exploration after five c
     expect(startAction(s, 'gather')).toBe(true)
     advanceTime(s, 1, true)
   }
-  expect(s.resources.food).toBe(5)
+  // The fourth completion reaches level 2 (+2% yield), the fifth collects it.
+  expect(s.resources.food).toBeCloseTo(5.04, 6)
   expect(s.exploreUnlocked).toBe(true)
 })
 
@@ -417,26 +417,20 @@ test('the gathering duration preview completes a batch under storage pressure', 
   expect(s.resources.wood).toBe(241)
 })
 
-test('manual gathering follows the same storage pressure timeline across tick sizes', () => {
+test('automated gathering follows the same storage pressure timeline across tick sizes', () => {
   const s = createDefaultState()
   s.facilities.foraging.level = 10
   s.resources.food = 150
   people(s, 'forager', 'forager')
-  for (const person of s.people) person.progress = 0.99
-  startAction(s, 'gather')
   const sliced = structuredClone(s)
   advanceTime(s, 0.5, true)
   for (let i = 0; i < 32; i++) advanceTime(sliced, 0.5 / 32, true)
-  expect(s.resources.food).toBeGreaterThan(150)
-  expect(s.manual?.progress).toBeGreaterThan(0)
-  expect(s.manual?.progress).toBeCloseTo(
-    required(sliced.manual ?? undefined).progress,
-    10,
-  )
+  expect(s.actionProgress.gather).toBeGreaterThan(0)
+  expect(s.actionProgress.gather).toBeCloseTo(sliced.actionProgress.gather, 3)
   advanceTime(s, 4, true)
   advanceTime(sliced, 4, true)
-  expect(s.manual).toBeNull()
-  expect(s.resources.food).toBe(sliced.resources.food)
+  expect(s.resources.food).toBeGreaterThan(150)
+  expect(s.resources.food).toBeCloseTo(sliced.resources.food, 4)
 })
 
 test('queued Writing follows a paid farm investment and retains its research cost', () => {
@@ -459,20 +453,14 @@ test('queued Writing follows a paid farm investment and retains its research cos
   expect(s.research.writing).toBe(true)
 })
 
-test('completed gathering levels up, improves its own speed and milestone yield, and persists', () => {
+test('completed gathering levels up, compounds yield and speed, and persists', () => {
   const s = createDefaultState()
-  // Reach the first yield milestone through ordinary completed actions.
-  while (s.actionSkills.gather.level < 5) {
-    const before = s.resources.food
-    const reachesMilestone =
-      s.actionSkills.gather.level === 4 &&
-      s.actionSkills.gather.xp + 1 === actionRequiredXp(s, 'gather')
+  while (s.actionSkills.gather.level < 3) {
     expect(startAction(s, 'gather')).toBe(true)
     advanceTime(s, actionDuration(s, 'gather'), true)
-    expect(s.resources.food - before).toBeCloseTo(reachesMilestone ? 1.1 : 1)
   }
-  expect(actionDuration(s, 'gather')).toBeCloseTo(1 / 1.12)
-  expect(actionYield(s, 'gather')).toBeCloseTo(1.1)
+  expect(actionDuration(s, 'gather')).toBeCloseTo(0.98 ** 2, 8)
+  expect(actionYield(s, 'gather')).toBeCloseTo(1.02 ** 2, 8)
   expect(s.actionSkills.sticks).toEqual({ level: 1, xp: 0 })
   expect(s.people[0]?.practice.forager).toBe(0)
   expect(parseSave(JSON.stringify(s)).actionSkills).toEqual(s.actionSkills)
@@ -483,18 +471,20 @@ test('completed gathering levels up, improves its own speed and milestone yield,
   expect(loaded.manual).toBeNull()
 })
 
-test.each(['explore', 'explore-further'] as const)(
-  '%s discovers its resource after three visible seconds',
-  (id) => {
-    const s = createDefaultState()
-    s.exploreUnlocked = true
-    s.research['sharpened-stick'] = true
-    s.resources.food = 30
-    expect(startAction(s, id)).toBe(true)
-    advanceTime(s, 2.5, true)
-    expect(s.manual?.progress).toBeCloseTo(2.5 / 3)
-    advanceTime(s, 0.5, true)
-    expect(s.discovered[id === 'explore' ? 'wood' : 'stone']).toBe(true)
-    expect(s.manual).toBeNull()
-  },
-)
+test('explore discovers wood then stone through its random rewards', () => {
+  const s = createDefaultState()
+  s.exploreUnlocked = true
+  s.resources.food = 4000
+  for (let i = 0; !s.discovered.wood; i++) {
+    expect(i).toBeLessThan(200)
+    expect(startAction(s, 'explore')).toBe(true)
+    advanceTime(s, 4, true)
+  }
+  expect(s.expeditionUnlocked).toBe(true)
+  for (let i = 0; !s.discovered.stone; i++) {
+    expect(i).toBeLessThan(200)
+    expect(startAction(s, 'explore')).toBe(true)
+    advanceTime(s, 4, true)
+  }
+  expect(s.exploreRolls).toBeGreaterThan(0)
+})

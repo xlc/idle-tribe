@@ -64,11 +64,11 @@ test('an offline upgrade extends the next absence without changing this one', ()
 
 test('manual work pauses while hidden; research continues; duplicate restoration settles once', () => {
   const s = settlement()
-  people(s, 'forager')
+  people(s, 'idle')
   s.research['record-keeping'] = false
   const session = createSession(s, () => {}, hour, true)
   session.change(() => {
-    session.game.startAction('gather')
+    session.game.startAction('sticks')
     enqueue(s, { kind: 'research', id: 'record-keeping' })
   }, hour)
   session.setVisible(false, hour + 500)
@@ -99,7 +99,7 @@ test('actions settle elapsed gameplay before spending newly produced stock', () 
 
 test('a backwards wall clock cannot settle the same interval twice or invalidate a save', () => {
   const s = settlement()
-  people(s, 'forager')
+  people(s, 'farmer', 'farmer')
   s.savedAt = 2 * hour
   const session = createSession(s, () => {}, hour, false)
   session.tick(hour + 60000)

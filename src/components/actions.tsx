@@ -1,16 +1,22 @@
 import { useEffect, useRef } from 'react'
 import {
   ACTIONS,
-  actionDuration,
+  actionCompletionDuration,
+  actionOutputRate,
   actionRequiredXp,
+  actionSlots,
+  actionWorkers,
   actionYield,
+  automationFactor,
+  isRateMode,
 } from '../actions'
-import { formatDuration, formatResource } from '../format'
+import { formatResource } from '../format'
 import { ACTION_IDS } from '../ids'
 import { canAfford } from '../resources'
 import type { GameSession } from '../session'
 import { ResourceArt } from './art'
 import { ActionProgress, Costs } from './common'
+import { WorkerControls } from './settlement'
 
 function ActionSkill({
   level,
@@ -50,87 +56,137 @@ function ActionSkill({
       </span>
       <span>·</span>
       <span>
-        {xp}/{requiredXp} XP
+        {Math.floor(xp)}/{requiredXp} XP
       </span>
     </span>
   )
 }
 
-export function ManualActions({
-  session,
-  discoveries = false,
-}: {
-  session: GameSession
-  discoveries?: boolean
-}) {
+function exploreHint(level: number) {
+  if (level >= 10)
+    return 'Finds: resources · discoveries · rare finds · travelers and stories'
+  if (level >= 5) return 'Finds: resources · discoveries · rare finds'
+  return 'Finds: resources · discoveries · sometimes nothing'
+}
+
+export function ActionCards({ session }: { session: GameSession }) {
   const s = session.game.state,
     active = s.manual
   return (
     <div className="manual-actions">
-      {ACTION_IDS.filter(
-        (id) =>
-          ACTIONS[id].visible(s) &&
-          Boolean(ACTIONS[id].discovery) === discoveries,
-      ).map((id) => {
+      {ACTION_IDS.filter((id) => ACTIONS[id].visible(s)).map((id) => {
         const def = ACTIONS[id],
+          workers = actionWorkers(s, id),
+          slots = actionSlots(s, id),
           running = active?.id === id,
-          duration = actionDuration(s, id)
+          rateMode = isRateMode(s, id)
         return (
           <div className="manual-action" key={id}>
-            <button
-              type="button"
-              className="manual-trigger"
-              aria-label={def.name}
-              disabled={Boolean(active) || !canAfford(s, def.cost)}
-              onClick={() => session.change(() => session.game.startAction(id))}
-            >
-              <span
-                className="action-icon"
-                data-resource={def.resource}
-                aria-hidden="true"
-              >
-                {def.resource ? <ResourceArt resource={def.resource} /> : '↗'}
-              </span>
-              <span className="action-copy">
-                <strong className="action-name">{def.name}</strong>
-                <span className="action-description">{def.description}</span>
-                <span className="action-yield">
-                  {def.resource
-                    ? `+${formatResource(actionYield(s, id))} ${def.resource} · `
-                    : ''}
-                  {duration < 10
-                    ? `${Number(duration.toFixed(2))}s`
-                    : formatDuration(duration)}
+            {workers > 0 ? (
+              <fieldset className="action-automated" aria-label={def.name}>
+                <span
+                  className="action-icon"
+                  data-resource={def.resource}
+                  aria-hidden="true"
+                >
+                  {def.resource ? <ResourceArt resource={def.resource} /> : '↗'}
                 </span>
-                {def.resource && (
-                  <>
-                    <ActionSkill
-                      level={s.actionSkills[id].level}
-                      xp={s.actionSkills[id].xp}
-                      requiredXp={actionRequiredXp(s, id)}
-                    />
-                    <span className="action-skill-rules">
-                      +1 XP/completion · +3% speed/level · +0.1 yield/5 levels
+                <span className="action-copy">
+                  <strong className="action-name">{def.name}</strong>
+                  <span className="action-yield">
+                    {def.resource
+                      ? `+${formatResource(actionOutputRate(s, id) * 60)} ${def.resource}/min · automation ${Math.round(automationFactor(s, id) * 100)}%`
+                      : `${formatResource((1 / actionCompletionDuration(s, id)) * 60)} explores/min`}
+                  </span>
+                  <ActionSkill
+                    level={s.actionSkills[id].level}
+                    xp={s.actionSkills[id].xp}
+                    requiredXp={actionRequiredXp(s, id)}
+                  />
+                </span>
+                <span className="action-automation-controls">
+                  {rateMode ? (
+                    <span className="rate-chip" role="status">
+                      {def.resource
+                        ? `${formatResource(actionYield(s, id))} ${def.resource} · continuous`
+                        : 'exploring'}
                     </span>
-                  </>
-                )}
-              </span>
-              <span className="project-progress" data-running={running}>
-                <ActionProgress
-                  session={session}
-                  duration={duration}
-                  label={`${def.name} progress`}
-                  value={running ? active.progress : 0}
-                  running={running}
-                />
-                <small>
-                  {formatDuration(
-                    running ? (1 - active.progress) * duration : duration,
+                  ) : (
+                    <ActionProgress
+                      session={session}
+                      duration={actionCompletionDuration(s, id)}
+                      label={`${def.name} progress`}
+                      value={s.actionProgress[id] % 1}
+                      running
+                    />
                   )}
-                </small>
-              </span>
-            </button>
-            {discoveries && <Costs session={session} cost={def.cost} />}
+                  <WorkerControls session={session} job={def.job} />
+                </span>
+              </fieldset>
+            ) : (
+              <button
+                type="button"
+                className="manual-trigger"
+                aria-label={def.name}
+                disabled={Boolean(active) || !canAfford(s, def.cost)}
+                onClick={() =>
+                  session.change(() => session.game.startAction(id))
+                }
+              >
+                <span
+                  className="action-icon"
+                  data-resource={def.resource}
+                  aria-hidden="true"
+                >
+                  {def.resource ? <ResourceArt resource={def.resource} /> : '↗'}
+                </span>
+                <span className="action-copy">
+                  <strong className="action-name">{def.name}</strong>
+                  <span className="action-description">{def.description}</span>
+                  <span className="action-yield">
+                    {def.resource
+                      ? `+${formatResource(actionYield(s, id))} ${def.resource} · `
+                      : ''}
+                    {formatResource(actionCompletionDuration(s, id))}s
+                    {slots > 0
+                      ? ` · ${slots} slot${slots === 1 ? '' : 's'}`
+                      : ''}
+                  </span>
+                  <ActionSkill
+                    level={s.actionSkills[id].level}
+                    xp={s.actionSkills[id].xp}
+                    requiredXp={actionRequiredXp(s, id)}
+                  />
+                  <span className="action-skill-rules">
+                    +2% yield/level · −2% duration/level
+                  </span>
+                </span>
+                <span className="project-progress" data-running={running}>
+                  <ActionProgress
+                    session={session}
+                    duration={actionCompletionDuration(s, id)}
+                    label={`${def.name} progress`}
+                    value={running && active ? active.progress : 0}
+                    running={running}
+                  />
+                  <small>
+                    {formatResource(
+                      running && active
+                        ? (1 - active.progress) *
+                            actionCompletionDuration(s, id)
+                        : actionCompletionDuration(s, id),
+                    )}
+                    s
+                  </small>
+                </span>
+              </button>
+            )}
+            {!def.resource && <Costs session={session} cost={def.cost} />}
+            {id === 'explore' && (
+              <p className="action-hint">
+                {exploreHint(s.actionSkills.explore.level)}
+              </p>
+            )}
           </div>
         )
       })}

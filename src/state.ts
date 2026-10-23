@@ -23,8 +23,9 @@ export function createPerson(
 }
 export function createDefaultState(): GameState {
   return {
-    version: 7,
+    version: 8,
     actionSkills: createRecord(ACTION_IDS, () => ({ level: 1, xp: 0 })),
+    actionProgress: createRecord(ACTION_IDS, () => 0),
     resources: createRecord(RESOURCES, () => 0),
     facilities: createRecord(BUILDING_IDS, () => ({
       level: 0,
@@ -36,6 +37,8 @@ export function createDefaultState(): GameState {
     discovered: { wood: false, stone: false },
     exploreUnlocked: false,
     researchUnlocked: false,
+    expeditionUnlocked: false,
+    exploreRolls: 0,
     queues: {
       research: { active: null, waiting: [] },
       construction: { active: null, waiting: [] },

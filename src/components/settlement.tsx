@@ -1,10 +1,16 @@
 import { useState } from 'react'
-import { ACTIONS } from '../actions'
+import { ACTIONS, actionOutputRate, automationFactor } from '../actions'
 import { RESOURCE_INFO } from '../constants'
 import { BUILDINGS, isProductionJob, JOBS } from '../economy'
 import { formatCompactResource, formatCost, formatResource } from '../format'
 import { removeFacility } from '../game'
-import { ACTION_IDS, BUILDING_IDS, isWorkingJob, RESOURCES } from '../ids'
+import {
+  ACTION_IDS,
+  type ActionId,
+  BUILDING_IDS,
+  isWorkingJob,
+  RESOURCES,
+} from '../ids'
 import {
   allEntries,
   nextEquipment,
@@ -208,7 +214,12 @@ function Facility({ session, confirm, id }: ViewProps & { id: BuildingId }) {
     def = BUILDINGS[id],
     f = s.facilities[id],
     [selectedForm, setSelectedForm] = useState(f.form)
-  const form = def.forms[f.level ? f.form : selectedForm]
+  const form = def.forms[f.level ? f.form : selectedForm],
+    action = def.job
+      ? (ACTION_IDS.find((id) => ACTIONS[id].job === def.job) as
+          | ActionId
+          | undefined)
+      : undefined
   if (!form) return null
   const expansion = nextExpansion(s, id, selectedForm),
     quote = previewProject(s, expansion),
@@ -261,7 +272,7 @@ function Facility({ session, confirm, id }: ViewProps & { id: BuildingId }) {
         : ''
     confirm(
       `Remove ${form.name}?`,
-      `${housing}${losses.join('; ')}${losses.length ? '. ' : ''}${job ? `${n} workers become unassigned; ${formatResource(production)} ${output ? RESOURCE_INFO[output].name.toLowerCase() : ''}/min production removed. ` : ''}${rateChanges ? `${rateChanges}. ` : ''}Levels and equipment are lost with no refund. People and stockpiles remain.`,
+      `${housing}${losses.join('; ')}${losses.length ? '. ' : ''}${job ? `${n} workers become unassigned;${output ? ` ${formatResource(production)} ${RESOURCE_INFO[output].name.toLowerCase()}/min production removed. ` : ' '}` : ''}${rateChanges ? `${rateChanges}. ` : ''}Levels and equipment are lost with no refund. People and stockpiles remain.`,
       () => session.game.remove(id),
     )
   }
@@ -295,7 +306,18 @@ function Facility({ session, confirm, id }: ViewProps & { id: BuildingId }) {
             {f.level ? `Level ${f.level}` : 'Not built'}
             {f.equipment ? ` · tools ${f.equipment}` : ''}
           </span>
-          {job ? (
+          {action ? (
+            <div className="building-recipe">
+              <span className="recipe-output" data-zero={production === 0}>
+                +{formatResource(actionOutputRate(s, action) * 60)}{' '}
+                {ACTIONS[action].resource}/min
+              </span>
+              <span className="recipe-input">
+                {n}/{f.level} slots · automation{' '}
+                {Math.round(automationFactor(s, action) * 100)}%
+              </span>
+            </div>
+          ) : job ? (
             <div className="building-recipe">
               <span className="recipe-output" data-zero={production === 0}>
                 +{formatResource(production)}{' '}
@@ -340,7 +362,9 @@ function Facility({ session, confirm, id }: ViewProps & { id: BuildingId }) {
           <p>
             {form.rate ? `Base ${form.rate}/min per worker. ` : ''}
             {job && f.equipment
-              ? `Tools ×${formatResource(equipmentMultiplier(f.equipment))}. `
+              ? action
+                ? `Tools +${formatResource(0.05 * f.equipment * 100)}pp automation. `
+                : `Tools ×${formatResource(equipmentMultiplier(f.equipment))}. `
               : ''}
             {quote.blocker}
           </p>

@@ -22,6 +22,7 @@ const resources: Record<ResourceId, number> = {
 const buildings: Record<BuildingId, number> = {
   housing: 16,
   foraging: 17,
+  'expedition-camp': 17,
   lumber: 18,
   quarry: 19,
   'food-store': 20,

@@ -1,8 +1,32 @@
-import { finishManual, manualRate, syncUnlocks } from './actions'
+import {
+  ACTIONS,
+  actionDuration,
+  actionOutputRate,
+  actionRequiredXp,
+  actionWorkers,
+  actionYield,
+  automationFactor,
+  completeAction,
+  exploreExpectedRewards,
+  finishManual,
+  grantActionXp,
+  isRateMode,
+  manualRate,
+  syncActions,
+  syncUnlocks,
+  xpFactor,
+} from './actions'
 import { EPSILON } from './constants'
 import { isProductionJob, JOBS, OCCUPATIONS } from './economy'
 import { consumeMeal, healthMultiplier, mealCost } from './food'
-import { isWorkingJob, JOB_IDS, RESOURCES, WORKING_JOB_IDS } from './ids'
+import {
+  ACTION_IDS,
+  type ActionId,
+  isWorkingJob,
+  JOB_IDS,
+  RESOURCES,
+  WORKING_JOB_IDS,
+} from './ids'
 import { createRecord } from './records'
 import { completeProject, projectName, QUEUES, startQueues } from './research'
 import { RESEARCH } from './research-definitions'
@@ -12,6 +36,7 @@ import {
   arrivalBlocker,
   arrivalStatus,
   constructionSpeed,
+  happinessMultiplier,
   happinessTarget,
   happinessUnlocked,
   jobInput,
@@ -53,7 +78,25 @@ function settleEvents(state: GameState, visible: boolean) {
     finishManual(state)
     changed = true
   }
+  // Automated actions run whether or not the settlement is visible.
+  for (const id of ACTION_IDS) {
+    const progress = state.actionProgress[id]
+    if (progress < 1 || (ACTIONS[id].resource && isRateMode(state, id)))
+      continue
+    const completions = Math.floor(progress)
+    let done = 0
+    if (ACTIONS[id].resource && !isRateMode(state, id)) {
+      done = completeAction(state, id, completions) ? completions : 0
+    } else {
+      while (done < completions && completeAction(state, id)) done++
+    }
+    if (done > 0) {
+      state.actionProgress[id] = progress - done
+      changed = true
+    }
+  }
   syncUnlocks(state)
+  syncActions(state)
   if (state.minuteProgress >= 60 - EPSILON) {
     state.minuteProgress = Math.max(0, state.minuteProgress - 60)
     changed = true
@@ -85,6 +128,44 @@ function settleEvents(state: GameState, visible: boolean) {
 }
 // Structure, health and expertise bonuses change at discrete events. Keep stock,
 // commitment and cycle-progress checks live between those events.
+type ActionRule = {
+  id: ActionId
+  // Storage-free completion speed (workers × 1 / base duration); storage
+  // pressure applies live in the loop, exactly like worker rates.
+  speed: number
+  // Fast resource actions accrue output and XP continuously instead of
+  // creating one simulation event per completion.
+  rateMode: boolean
+  outputPerCompletion: number
+  xpPerCompletion: number
+  // Explore always completes discretely (cost + rolls); batch its progress
+  // so deep rate-mode explore cannot shrink the event step to 0.1s.
+  stepCap: number
+}
+function actionRules(state: GameState): ActionRule[] {
+  return ACTION_IDS.flatMap((id): ActionRule[] => {
+    const def = ACTIONS[id],
+      n = actionWorkers(state, id)
+    if (n < 1 || !def.visible(state) || !canAfford(state, def.cost)) return []
+    const base = def.seconds * 0.98 ** (state.actionSkills[id].level - 1),
+      speed = n / base,
+      rateMode = isRateMode(state, id)
+    return [
+      {
+        id,
+        speed,
+        rateMode,
+        outputPerCompletion: def.resource
+          ? actionYield(state, id) *
+            automationFactor(state, id) *
+            happinessMultiplier(state)
+          : 0,
+        xpPerCompletion: xpFactor(state, id),
+        stepCap: id === 'explore' ? 64 * (base / n) : Infinity,
+      },
+    ]
+  })
+}
 function intervalRules(state: GameState) {
   return {
     rates: workerRates(state, { storage: 1, ignoreInputs: true }),
@@ -95,6 +176,7 @@ function intervalRules(state: GameState) {
     comfort: createRecord(RESOURCES, (resource) => threshold(state, resource)),
     construction: constructionSpeed(state) / 60,
     arrival: arrivalStatus(state),
+    actions: actionRules(state),
   }
 }
 export function advanceTime(
@@ -163,6 +245,27 @@ export function advanceTime(
     }
     if (manual && state.manual)
       step = Math.min(step, Math.max(0, 1 - state.manual.progress) / manual)
+    for (const action of rules.actions) {
+      const resource = ACTIONS[action.id].resource,
+        rate = resource
+          ? action.speed * (pressure[resource] ?? 1)
+          : action.speed
+      if (rate <= 0) continue
+      if (action.id === 'explore') {
+        step = Math.min(step, action.stepCap)
+      } else if (action.rateMode) {
+        // Keep level-ups as event boundaries so rules refresh with skill.
+        const gap =
+          actionRequiredXp(state, action.id) - state.actionSkills[action.id].xp
+        if (gap > EPSILON)
+          step = Math.min(step, gap / (rate * action.xpPerCompletion))
+      } else {
+        step = Math.min(
+          step,
+          Math.max(0, 1 - state.actionProgress[action.id]) / rate,
+        )
+      }
+    }
     if (immigration)
       step = Math.min(
         step,
@@ -188,6 +291,19 @@ export function advanceTime(
         active.progress += step * (id === 'research' ? 1 : construction)
     }
     if (state.manual) state.manual.progress += manual * step
+    for (const action of rules.actions) {
+      const resource = ACTIONS[action.id].resource,
+        rate = resource
+          ? action.speed * (pressure[resource] ?? 1)
+          : action.speed
+      if (action.rateMode) {
+        if (resource)
+          state.resources[resource] += rate * action.outputPerCompletion * step
+        grantActionXp(state, action.id, rate * action.xpPerCompletion * step)
+        state.actionProgress[action.id] =
+          (state.actionProgress[action.id] + rate * step) % 1
+      } else state.actionProgress[action.id] += rate * step
+    }
     state.arrivalProgress = Math.min(
       1,
       state.arrivalProgress + immigration * step,
@@ -214,6 +330,19 @@ export function resourceFlows(
       const input = jobInput(state, p.job)
       for (const r of RESOURCES) flows[r].inputs += rate * (input[r] ?? 0)
     }
+  for (const id of ACTION_IDS) {
+    const def = ACTIONS[id]
+    if (def.resource) {
+      flows[def.resource].production += actionOutputRate(state, id) * 60
+      continue
+    }
+    const n = actionWorkers(state, id)
+    if (n < 1 || !def.visible(state) || !canAfford(state, def.cost)) continue
+    const rate = (n / actionDuration(state, id)) * 60
+    for (const r of RESOURCES) flows[r].inputs += rate * (def.cost[r] ?? 0)
+    const expected = exploreExpectedRewards(state)
+    for (const r of RESOURCES) flows[r].production += rate * (expected[r] ?? 0)
+  }
   flows.food.meals = mealCost(state)
   return flows
 }

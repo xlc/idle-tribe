@@ -26,38 +26,40 @@ function camp() {
   complete(s, 'shelters')
   s.welcome = false
   s.resources.food = 100000
+  s.resources.wood = 100000
   s.facilities.stockyard.level = 100000
   s.facilities['food-store'].level = 100000
   s.facilities.lumber.level = 1
   s.facilities.sawmill.level = 1
   s.facilities['tool-workshop'].level = 1
+  s.facilities.farm.level = 1
   return s
 }
 
 test('expertise earned at a threshold changes only subsequent work', () => {
   const s = camp()
-  people(s, 'woodcutter')
+  people(s, 'farmer')
   const p = required(s.people[0])
-  p.practice.woodcutter = 890
+  p.practice.farmer = 890
   advanceTime(s, 30)
-  expect(p.practice.woodcutter).toBeCloseTo(920, 8)
-  expect(expertiseLevel(p.practice.woodcutter)).toBe(1)
-  expect(s.resources.wood + p.progress).toBeCloseTo(
-    (2 * 10) / 60 + (2.1 * 20) / 60,
+  expect(p.practice.farmer).toBeCloseTo(920, 8)
+  expect(expertiseLevel(p.practice.farmer)).toBe(1)
+  expect(s.resources.food - 100000 + p.progress).toBeCloseTo(
+    (18 * 10) / 60 + (18 * 1.05 * 20) / 60,
     8,
   )
 })
 
 test('different recipes and equipment earn the same practice per supported minute', () => {
   const s = camp()
-  people(s, 'woodcutter', 'toolmaker')
+  people(s, 'farmer', 'toolmaker')
   s.resources.planks = 100
   s.resources.blocks = 100
-  s.facilities.lumber.equipment = 3
+  s.facilities.farm.equipment = 3
   advanceTime(s, 30)
-  expect(required(s.people[0]).practice.woodcutter).toBeCloseTo(30, 8)
+  expect(required(s.people[0]).practice.farmer).toBeCloseTo(30, 8)
   expect(required(s.people[1]).practice.toolmaker).toBeCloseTo(30, 8)
-  expect(s.resources.wood).toBeGreaterThan(s.resources.tools)
+  expect(s.resources.food - 100000).toBeGreaterThan(s.resources.tools)
 })
 
 test('contested inputs award actual practice, then resume from the blocked cycle', () => {
@@ -78,46 +80,43 @@ test('contested inputs award actual practice, then resume from the blocked cycle
 
 test('crowding and storage pressure slow practice and expansion restores efficiency', () => {
   const crowded = camp()
-  people(crowded, 'woodcutter', 'woodcutter', 'woodcutter', 'woodcutter')
+  people(crowded, 'farmer', 'farmer', 'farmer', 'farmer')
   const roomy = structuredClone(crowded)
-  roomy.facilities.lumber.level = 2
+  roomy.facilities.farm.level = 2
   advanceTime(crowded, 30)
   advanceTime(roomy, 30)
-  expect(required(crowded.people[0]).practice.woodcutter).toBeCloseTo(
+  expect(required(crowded.people[0]).practice.farmer).toBeCloseTo(
     (30 * (1 + Math.log(2))) / 2,
     8,
   )
-  expect(required(roomy.people[0]).practice.woodcutter).toBeCloseTo(30, 8)
+  expect(required(roomy.people[0]).practice.farmer).toBeCloseTo(30, 8)
   const stock = camp()
-  people(stock, 'woodcutter')
-  stock.facilities.stockyard.level = 0
-  stock.resources.wood = 10000
+  people(stock, 'farmer')
+  stock.facilities['food-store'].level = 0
+  stock.resources.food = 10000
   advanceTime(stock, 30)
-  expect(required(stock.people[0]).practice.woodcutter).toBeLessThan(30)
-  stock.resources.wood = 0
-  const before = required(stock.people[0]).practice.woodcutter
+  expect(required(stock.people[0]).practice.farmer).toBeLessThan(30)
+  stock.resources.food = 0
+  const before = required(stock.people[0]).practice.farmer
   advanceTime(stock, 30)
-  expect(required(stock.people[0]).practice.woodcutter - before).toBeCloseTo(
-    30,
-    8,
-  )
+  expect(required(stock.people[0]).practice.farmer - before).toBeCloseTo(30, 8)
 })
 
 test('meals and a feast recover health and the normal learning rate', () => {
   const s = camp()
-  people(s, 'woodcutter')
+  people(s, 'farmer')
   const p = required(s.people[0])
   p.health = 2
   advanceTime(s, 30)
-  expect(p.practice.woodcutter).toBeCloseTo(15, 8)
+  expect(p.practice.farmer).toBeCloseTo(15, 8)
   expect(feast(s)).toBe(true)
   advanceTime(s, 30)
   expect(p.health).toBe(5)
-  expect(p.practice.woodcutter).toBeCloseTo(45, 8)
+  expect(p.practice.farmer).toBeCloseTo(45, 8)
   p.health = 3
   advanceTime(s, 60)
   expect(p.health).toBe(4)
-  expect(p.practice.woodcutter).toBeCloseTo(93, 8)
+  expect(p.practice.farmer).toBeCloseTo(93, 8)
 })
 
 test('builders learn through active work, preserve practice on cancellation, and stop after completion', () => {
@@ -142,24 +141,24 @@ test('builders learn through active work, preserve practice on cancellation, and
 
 test('expertise survives conversion and reassignment while a new occupation starts fresh', () => {
   const s = settlement()
-  people(s, 'woodcutter')
+  people(s, 'sawyer')
   const p = required(s.people[0])
-  p.practice.woodcutter = practiceThreshold(4)
+  p.practice.sawyer = practiceThreshold(4)
   p.progress = 0.7
   expect(assignJob(s, 0, 'farmer')).toBe(true)
   expect(personalWork(p, 'farmer')).toBe(1)
   expect(p.progress).toBe(0)
   advanceTime(s, 10)
   expect(p.practice.farmer).toBeGreaterThan(0)
-  expect(assignJob(s, 0, 'woodcutter')).toBe(true)
-  expect(expertiseLevel(p.practice.woodcutter)).toBe(4)
+  expect(assignJob(s, 0, 'sawyer')).toBe(true)
+  expect(expertiseLevel(p.practice.sawyer)).toBe(4)
   complete(s, 'forestry-methods')
   enqueue(s, { kind: 'convert', id: 'lumber', form: 1 })
-  people(s, 'builder', 'woodcutter')
-  required(s.people[1]).practice.woodcutter = practiceThreshold(4)
+  people(s, 'builder', 'sawyer')
+  required(s.people[1]).practice.sawyer = practiceThreshold(4)
   advanceTime(s, 10000)
   expect(s.facilities.lumber.form).toBe(1)
-  expect(required(s.people[1]).practice.woodcutter).toBeGreaterThan(
+  expect(required(s.people[1]).practice.sawyer).toBeGreaterThan(
     practiceThreshold(4),
   )
 })
@@ -169,37 +168,41 @@ test('Plus and Fill prefer healthy expertise, Minus releases the least contribut
   s.people = [
     createPerson('Novice', 'builder'),
     createPerson('Veteran', 'builder'),
-    createPerson('Natural', 'woodcutter'),
-    createPerson('Hungry', 'woodcutter'),
+    createPerson('Natural', 'builder'),
+    createPerson('Hungry', 'builder'),
   ]
-  required(s.people[1]).practice.woodcutter = practiceThreshold(4)
-  required(s.people[3]).practice.woodcutter = practiceThreshold(9)
+  required(s.people[0]).job = 'builder'
+  required(s.people[1]).job = 'idle'
+  required(s.people[2]).job = 'idle'
+  required(s.people[3]).job = 'idle'
+  required(s.people[1]).practice.sawyer = practiceThreshold(4)
+  required(s.people[3]).practice.sawyer = practiceThreshold(9)
   required(s.people[3]).health = 2
-  expect(adjustWorkers(s, 'woodcutter', 1)).toBe(true)
-  expect(required(s.people[1]).job).toBe('woodcutter')
-  expect(fillWorkers(s, 'woodcutter')).toBe(true)
-  expect(required(s.people[2]).job).toBe('woodcutter')
-  expect(adjustWorkers(s, 'woodcutter', -1)).toBe(true)
+  expect(adjustWorkers(s, 'sawyer', 1)).toBe(true)
+  expect(required(s.people[1]).job).toBe('sawyer')
+  expect(fillWorkers(s, 'sawyer')).toBe(true)
+  expect(required(s.people[2]).job).toBe('sawyer')
+  expect(adjustWorkers(s, 'sawyer', -1)).toBe(true)
   expect(required(s.people[2]).job).toBe('idle')
-  expect(assignJob(s, 0, 'woodcutter')).toBe(true)
+  expect(assignJob(s, 0, 'sawyer')).toBe(true)
   advanceTime(s, 30)
-  expect(required(s.people[0]).practice.woodcutter).toBeGreaterThan(0)
-  expect(required(s.people[1]).job).toBe('woodcutter')
+  expect(required(s.people[0]).practice.sawyer).toBeGreaterThan(0)
+  expect(required(s.people[1]).job).toBe('sawyer')
   expect(required(s.people[3]).job).toBe('idle')
 })
 
 test('mixed expertise raises aggregate output and per-person input demand consistently', () => {
   const s = camp()
-  people(s, 'woodcutter', 'woodcutter')
-  for (const p of s.people) p.practice.woodcutter = practiceThreshold(4)
-  const old = resourceRates(s).wood
+  people(s, 'farmer', 'farmer')
+  for (const p of s.people) p.practice.farmer = practiceThreshold(4)
+  const old = resourceRates(s).food
   const novice = createPerson('Newcomer', 'builder')
-  novice.job = 'woodcutter'
+  novice.job = 'farmer'
   s.people.push(novice)
-  expect(resourceRates(s).wood).toBeGreaterThan(old)
-  const before = resourceRates(s).wood
-  novice.practice.woodcutter = practiceThreshold(1)
-  expect(resourceRates(s).wood).toBeGreaterThan(before)
+  expect(resourceRates(s).food).toBeGreaterThan(old)
+  const before = resourceRates(s).food
+  novice.practice.farmer = practiceThreshold(1)
+  expect(resourceRates(s).food).toBeGreaterThan(before)
   people(s, 'sawyer', 'sawyer')
   s.resources.wood = 100
   required(s.people[0]).practice.sawyer = practiceThreshold(9)
@@ -245,7 +248,7 @@ test('arrival aptitudes are available occupations and persist across a reload', 
 
 test('offline practice and milestone reports agree across hidden callbacks and reloads', () => {
   const initial = camp()
-  people(initial, 'woodcutter', 'forager')
+  people(initial, 'sawyer', 'farmer')
   initial.welcome = true
   initial.facilities.housing.level = 2
   initial.savedAt = 1000

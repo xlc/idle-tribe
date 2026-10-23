@@ -201,7 +201,11 @@ export function makeDecisions(
     arrivalStatus(s).foodOutput < arrivalStatus(s).required &&
     assigned(s, 'idle') > 2
   )
-    add(food)
+    if (!add(food)) break
+  // Gathering workplaces use action jobs rather than production definitions;
+  // keep their discovered sources staffed so the policy can fund its queues.
+  for (const job of ['woodcutter', 'stoneworker'] as const)
+    if (jobUnlocked(s, job)) add(job)
   if (allEntries(s).some((e) => e.project.kind !== 'research')) {
     add('builder')
     // The deliberate planner uses the displayed efficient crew size, just as

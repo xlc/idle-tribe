@@ -8,6 +8,8 @@ import type {
   WorkingJob,
 } from './ids'
 
+export type ActionBonus = Partial<Record<ActionId, number>>
+
 export type {
   ActionId,
   BuildingId,
@@ -25,12 +27,15 @@ export interface Requirements {
   discovery?: 'wood' | 'stone'
   perk?: PerkId
   facilities?: Partial<Record<BuildingId, number>>
+  expedition?: boolean
 }
 export interface Effects {
   jobBonus?: Partial<Record<JobId, number>>
   specialization?: Partial<Record<JobId, number>>
   recipeMultiplier?: Partial<Record<JobId, number>>
   recipeReduction?: Partial<Record<JobId, Cost>>
+  actionAutomation?: ActionBonus
+  actionXp?: ActionBonus
   storage?: number
   resourceStorage?: Cost
   housing?: number
@@ -58,6 +63,7 @@ export interface FormDefinition {
   cost: Cost
   work: number
   rate?: number
+  actionAutomation?: ActionBonus
   storage?: Cost
   housing?: number
   input?: Cost
@@ -131,8 +137,9 @@ export interface Absence {
   completed: number
 }
 export interface GameState {
-  version: 7
+  version: 8
   actionSkills: Record<ActionId, { level: number; xp: number }>
+  actionProgress: Record<ActionId, number>
   resources: Record<ResourceId, number>
   facilities: Record<BuildingId, Facility>
   research: Record<ResearchId, boolean>
@@ -140,6 +147,8 @@ export interface GameState {
   discovered: { wood: boolean; stone: boolean }
   exploreUnlocked: boolean
   researchUnlocked: boolean
+  expeditionUnlocked: boolean
+  exploreRolls: number
   queues: Record<QueueId, ProjectQueue>
   nextSequence: number
   manual: ManualAction | null
