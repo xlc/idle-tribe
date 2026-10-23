@@ -56,7 +56,14 @@ export function createSession(
   if (visible) state.absence = null
   else beginAbsence(state, at)
   state.savedAt = at
-  function persist() {
+  // Ticks only need durable progress every few seconds: a stale save replays
+  // the gap as offline time on reload, exactly like a pagehide. User-driven
+  // changes and visibility flips always write immediately.
+  const WRITE_INTERVAL = 3000
+  let lastWrite = at
+  function persist(force = true) {
+    if (!force && at - lastWrite < WRITE_INTERVAL) return
+    lastWrite = at
     save(structuredClone(state))
   }
   function publish() {
@@ -79,8 +86,10 @@ export function createSession(
     game,
     tick(time: number) {
       settle(time)
-      persist()
-      publish()
+      persist(false)
+      // Hidden tabs skip re-rendering; the away report covers the gap and
+      // setVisible(true) publishes on return.
+      if (showing) publish()
     },
     change<T>(run: () => T, time = Date.now()) {
       settle(time)

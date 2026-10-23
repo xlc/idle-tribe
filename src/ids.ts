@@ -6,6 +6,7 @@ export const RESOURCES = [
   'blocks',
   'tools',
   'knowledge',
+  'ceramics',
   'ore',
   'metal',
   'machinery',
@@ -36,6 +37,8 @@ export const BUILDING_IDS = [
   'irrigation',
   'meeting-place',
   'public-well',
+  'kiln',
+  'bathhouse',
   'great-hall',
   'observatory',
   'ore-mine',
@@ -80,6 +83,8 @@ export const RESEARCH_IDS = [
   'architecture',
   'civic-engineering',
   'record-keeping',
+  'ceramic-craft',
+  'public-health',
   'mechanization',
   'early-astronomy',
   'powered-workshops',
@@ -126,6 +131,7 @@ export const JOB_IDS = [
   'quantum-engineer',
   'causal-researcher',
   'stellar-worker',
+  'potter',
 ] as const
 export const ACTION_IDS = ['gather', 'sticks', 'stone', 'explore'] as const
 export const ACTION_JOB_IDS = [

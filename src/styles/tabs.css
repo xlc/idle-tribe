@@ -1,0 +1,37 @@
+.view-tabs {
+  flex-shrink: 0;
+  display: flex;
+  border-top: 1px solid var(--color-base-300);
+  background: var(--color-base-200);
+}
+.view-tabs::before {
+  display: none;
+}
+.view-tabs .rt-TabsTrigger {
+  flex: 1;
+  min-height: 62px;
+  padding: 8px 6px;
+  gap: 5px;
+  color: var(--color-neutral);
+  font-size: 13px;
+  cursor: pointer;
+}
+.view-tabs .rt-TabsTriggerInner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.view-tabs .rt-TabsTrigger[data-state="active"] {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+.view-tabs .rt-TabsTrigger::before {
+  border-radius: 4px;
+}
+.view-tabs .rt-TabsTrigger::after {
+  bottom: 0;
+  height: 3px;
+  background: var(--color-primary);
+  border-radius: 3px;
+}

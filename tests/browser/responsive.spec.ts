@@ -32,7 +32,7 @@ for (const width of [320, 390, 768, 1024, 1280, 1920]) {
     const builders = page.getByRole('group', { name: 'builder staffing' })
     await toggle.click()
     await builders.getByRole('button', { name: 'Fill', exact: true }).click()
-    await expect(builders.locator('.worker-count')).toHaveText('4')
+    await expect(builders.getByRole('status')).toHaveText('4')
     await toggle.click()
 
     await expect(

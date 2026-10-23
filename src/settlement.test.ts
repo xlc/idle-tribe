@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 import { feast, feastCost } from './food'
-import { RESOURCES } from './ids'
+import { BUILDING_IDS, RESOURCES } from './ids'
 import { createRecord } from './records'
 import { enqueue, nextExpansion } from './research'
 import { arrivalStatus, happinessTarget, workerRate } from './settlement'
@@ -175,6 +175,27 @@ test('happiness begins at Writing and moves gradually after the shared meal', ()
   expect(s.happiness).toBe(50)
   advanceTime(s, 60)
   expect(s.happiness).toBe(52)
+})
+
+test('ceramic craft turns town inputs into a happiness investment', () => {
+  const s = settlement()
+  for (const id of BUILDING_IDS)
+    s.facilities[id] = { level: 0, form: 0, equipment: 0 }
+  people(s, 'potter')
+  s.resources.blocks = 2
+  s.resources.wood = 1
+  s.resources.ceramics = 0
+  required(s.people[0]).progress = 1
+
+  s.facilities.kiln.level = 1
+  advanceTime(s, 0)
+  expect(s.resources.ceramics).toBe(1)
+  expect(s.resources.blocks).toBe(0)
+  expect(s.resources.wood).toBe(0)
+
+  const beforeBathhouse = happinessTarget(s)
+  s.facilities.bathhouse.level = 1
+  expect(happinessTarget(s)).toBeGreaterThan(beforeBathhouse)
 })
 
 test('net rates include processor inputs, meals, equipment and storage pressure', () => {

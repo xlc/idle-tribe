@@ -59,7 +59,7 @@ export function People({ session }: { session: GameSession }) {
           {cost > 0 ? `Feast · ${cost} food` : 'Full health'}
         </Button>
       </div>
-      <div className="people-grid">
+      <div className="people-grid panel">
         {s.people.map((p, i) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: People are append-only during a run; roster positions are their stable identity.
           <article className="person-row" key={i} aria-label={p.name}>

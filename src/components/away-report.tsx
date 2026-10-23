@@ -51,7 +51,11 @@ export function AwayNotification({
   }, [shown, dialogOpen])
   if (!shown) return null
   return (
-    <div className="away-toast" role="status">
+    <div
+      className="away-toast panel panel-raised"
+      role="status"
+      aria-label="Away report"
+    >
       <button
         type="button"
         className="away-toast-body"
@@ -73,7 +77,7 @@ export function AwayNotification({
       </button>
       <dialog
         ref={dialog}
-        className="modal away-modal"
+        className="modal away-modal panel"
         onClose={() => setDialogOpen(false)}
       >
         <div className="modal-box">
@@ -107,7 +111,7 @@ export function AwayReport({
     }),
     crowded = RESOURCES.filter((r) => storageMultiplier(s, r) < 1)
   return (
-    <section className="away-report" aria-label="Offline progress">
+    <section className="away-report panel" aria-label="Offline progress">
       <button
         type="button"
         className="away-summary"

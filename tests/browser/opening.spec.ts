@@ -90,19 +90,25 @@ for (const width of [320, 390, 1280]) {
         await page.clock.runFor(1500)
         await expect(gather).toBeEnabled()
       }
-      const foodAction = page.locator('.manual-action').filter({ has: gather })
-      await expect(foodAction.locator('.action-skill')).toHaveText(
+      const foodAction = page.getByRole('article', {
+        name: 'Gather food',
+        exact: true,
+      })
+      await foodAction
+        .getByRole('button', { name: 'Gather food details' })
+        .click()
+      await expect(foodAction.getByText('Level 3·1/6 XP')).toHaveText(
         'Level 3·1/6 XP',
       )
       const explore = page.getByRole('button', {
-        name: 'Explore nearby',
+        name: 'Explore',
         exact: true,
       })
       await expect(explore).toBeEnabled()
       const discoveryPosition = await explore.boundingBox()
       await explore.click()
       expect(await explore.boundingBox()).toEqual(discoveryPosition)
-      await page.clock.runFor(3100)
+      await page.clock.runFor(4200)
       const wood = page.getByRole('button', {
         name: 'Gather wood',
         exact: true,
@@ -122,6 +128,9 @@ for (const width of [320, 390, 1280]) {
       expect(await wood.boundingBox()).toEqual(woodPosition)
       await page.screenshot({ path: info.outputPath('discovered.png') })
       await page.reload()
+      await foodAction
+        .getByRole('button', { name: 'Gather food details' })
+        .click()
       await expect(foodAction).toContainText('Level 3')
       await expect(foodAction).toContainText('1/6 XP')
       await page.clock.runFor(140000)

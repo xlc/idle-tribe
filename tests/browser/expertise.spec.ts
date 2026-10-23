@@ -62,7 +62,7 @@ for (const width of [1280, 390]) {
         exact: true,
       })
       await lumber.getByRole('button', { name: '+', exact: true }).click()
-      await expect(lumber.locator('.worker-count')).toHaveText('1')
+      await expect(lumber.getByRole('status')).toHaveText('1')
       expect(required((await saved(page)).people[0]).job).toBe('woodcutter')
       await lumber.getByRole('button', { name: 'Fill', exact: true }).click()
       expect(
@@ -71,7 +71,7 @@ for (const width of [1280, 390]) {
           .map((p) => p.name),
       ).toEqual(['Mira', 'Rowan'])
       await lumber.getByRole('button', { name: '−', exact: true }).click()
-      await expect(lumber.locator('.worker-count')).toHaveText('1')
+      await expect(lumber.getByRole('status')).toHaveText('1')
       expect(required((await saved(page)).people[3]).job).toBe('idle')
       await page.getByRole('tab', { name: 'People', exact: true }).click()
       const rowan = page.getByRole('article', { name: 'Rowan', exact: true })
@@ -80,7 +80,7 @@ for (const width of [1280, 390]) {
         rowan.getByRole('option', { name: 'Unassigned', exact: true }),
       ).toHaveJSProperty('selected', true)
       await page.getByLabel('Rowan occupation').selectOption('forager')
-      await expect(rowan.locator('.person-output')).toContainText('food/min')
+      await expect(rowan).toContainText('food/min')
       await page.getByLabel('Rowan occupation').selectOption('idle')
       expect(required((await saved(page)).people[3]).job).toBe('idle')
       await page.getByLabel('Tavi occupation').selectOption('sawyer')
@@ -105,10 +105,12 @@ for (const width of [1280, 390]) {
       await expect(
         page.getByRole('article', { name: 'Neri', exact: true }),
       ).toContainText('Expertise · level 0')
-      await page.locator('.people').screenshot({
-        path: info.outputPath('people.png'),
-        animations: 'disabled',
-      })
+      await page
+        .getByRole('region', { name: 'People', exact: true })
+        .screenshot({
+          path: info.outputPath('people.png'),
+          animations: 'disabled',
+        })
       await page.screenshot({
         path: info.outputPath('villager-assignments.png'),
         fullPage: true,

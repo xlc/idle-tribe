@@ -137,8 +137,7 @@ export const RESEARCH: Record<ResearchId, ResearchDefinition> = {
     name: 'Inventory keeping',
     cost: { knowledge: 1200, planks: 480, blocks: 360 },
     minutes: 90,
-    effect:
-      'All seven storage thresholds \u00d71.50; full-speed offline window +4h.',
+    effect: 'All storage thresholds \u00d71.50; full-speed offline window +4h.',
     description:
       'We have counted the piles, and some of them were surprisingly large.',
     requires: { research: ['agriculture'] },
@@ -244,6 +243,35 @@ export const RESEARCH: Record<ResearchId, ResearchDefinition> = {
       "Tomorrow's workers would appreciate knowing what today's workers were thinking.",
     requires: { research: ['writing'] },
     effects: { resourceStorage: { knowledge: 1.5 }, offlineHours: 4 },
+  },
+  'ceramic-craft': {
+    name: 'Ceramic craft',
+    cost: { knowledge: 900, planks: 260, blocks: 220, tools: 70 },
+    minutes: 75,
+    effect: 'Unlock Kiln and ceramics production.',
+    description:
+      'A hot kiln turns careful shapes into vessels that can outlast a season.',
+    requires: { research: ['writing', 'town-planning'] },
+    effects: {},
+  },
+  'public-health': {
+    name: 'Public health',
+    cost: {
+      knowledge: 1400,
+      planks: 360,
+      blocks: 280,
+      tools: 90,
+      ceramics: 80,
+    },
+    minutes: 90,
+    effect: 'Unlock Bathhouse; improve amenities and leisure.',
+    description:
+      'A town is easier to share when its water and washing have a plan.',
+    requires: {
+      research: ['ceramic-craft', 'town-planning'],
+      facilities: { kiln: 1 },
+    },
+    effects: {},
   },
   mechanization: {
     name: 'Mechanization',

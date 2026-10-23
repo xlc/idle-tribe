@@ -87,6 +87,11 @@ export const RESOURCE_INFO: Record<
       'Careful diagrams of why things happened, or might insist on happening.',
     threshold: 5,
   },
+  ceramics: {
+    name: 'Ceramics',
+    description: 'Fired clay that keeps water, grain, and good ideas in place.',
+    threshold: 30,
+  },
 }
 export const ERAS = [
   {

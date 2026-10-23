@@ -1,0 +1,35 @@
+:root {
+  font-family: "Trebuchet MS", ui-sans-serif, system-ui, sans-serif;
+  font-synthesis: none;
+  /* Outside the Radix theme (body overscroll); the theme itself paints its own background. */
+  --page-bg: #f8f5ed;
+}
+.game-theme {
+  height: 100%;
+  --default-font-family: "Trebuchet MS", ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--default-font-family);
+  font-size: 14px;
+
+  /*
+   * Semantic palette mapped onto the Radix Themes scales chosen by the
+   * <Theme accentColor="grass" grayColor="sage"> wrapper in main.tsx.
+   * Reference --gray- and --accent- scales (never --sage- or --grass-) so the Theme
+   * props stay the single source of truth for the palette.
+   */
+  --color-base-100: var(--gray-1);
+  --color-base-200: var(--gray-2);
+  --color-base-300: var(--gray-a4);
+  --color-base-content: var(--gray-12);
+  --color-primary: var(--accent-11);
+  --color-primary-content: var(--accent-contrast);
+  --color-neutral: var(--gray-11);
+  --color-accent: var(--accent-9);
+  --color-success: var(--grass-11);
+  --color-warning: var(--amber-11);
+  --color-error: var(--red-11);
+  --color-chip: var(--accent-a3);
+  --color-hover: var(--accent-a2);
+  --color-track: var(--gray-a3);
+  --color-backdrop: var(--gray-a11);
+  --radius-box: 8px;
+}

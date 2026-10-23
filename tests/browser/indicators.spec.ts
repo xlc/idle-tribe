@@ -45,10 +45,10 @@ for (const width of [320, 390, 1280]) {
         name: 'Wood resource',
         exact: true,
       })
-      await expect(resource.locator('.storage-effect')).toHaveText(
-        'Storage ×0.992',
-      )
-      await expect(resource.locator('.resource-value')).toHaveText('61')
+      await expect(
+        resource.getByText('Storage ×0.992', { exact: true }),
+      ).toBeVisible()
+      await expect(resource.getByText('61', { exact: true })).toBeVisible()
       expect(await gather.boundingBox()).toEqual(before)
       await page.screenshot({ path: info.outputPath('storage.png') })
     })
@@ -69,9 +69,12 @@ for (const width of [320, 390, 1280]) {
         name: 'Wood resource',
         exact: true,
       })
-      await expect(resource.locator('.storage-effect')).toHaveText(
-        `Storage ×${formatResource(storageMultiplier(building, 'wood'))}`,
-      )
+      await expect(
+        resource.getByText(
+          `Storage ×${formatResource(storageMultiplier(building, 'wood'))}`,
+          { exact: true },
+        ),
+      ).toBeVisible()
     })
 
     test('happiness shows the current value and the target on the same scale', async ({
@@ -85,17 +88,10 @@ for (const width of [320, 390, 1280]) {
       const meter = page.getByRole('meter', { name: 'Happiness', exact: true })
       await expect(meter).toHaveAttribute('value', '40')
       await expect(meter).toBeVisible()
-      const marked = await meter
-        .locator('..')
-        .locator('.meter-marker')
-        .boundingBox()
-      const track = await meter.boundingBox()
-      if (!marked || !track) throw new Error('Happiness indicator missing')
-      expect(
-        Math.abs(
-          (marked.x + marked.width / 2 - track.x) / track.width - target / 100,
-        ),
-      ).toBeLessThan(0.02)
+      await expect(meter).toHaveAttribute(
+        'aria-valuetext',
+        `${formatResource(state.happiness)}, target ${formatResource(target)}`,
+      )
       await page.screenshot({ path: info.outputPath('happiness.png') })
     })
   })

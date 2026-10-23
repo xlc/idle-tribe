@@ -176,8 +176,15 @@ test('touch controls and long lists stay within the viewport in portrait and lan
     })),
   ).toEqual({ x: 0, y: 0, scale: 1 })
   expect(
-    await page.locator('.people-grid').evaluate((element) => element.scrollTop),
-  ).toBeGreaterThan(0)
+    await page.getByLabel('Settler 36 occupation').evaluate((element) => {
+      let node: HTMLElement | null = element.parentElement
+      while (node) {
+        if (node.scrollTop > 0) return true
+        node = node.parentElement
+      }
+      return false
+    }),
+  ).toBe(true)
   await navigation.getByRole('tab', { name: 'Settlement', exact: true }).tap()
   await expect(
     page.getByRole('region', { name: 'Population' }).first(),

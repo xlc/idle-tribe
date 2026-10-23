@@ -1,0 +1,195 @@
+@media (min-width: 720px) {
+  .view-tabs {
+    order: -1;
+    border-top: 0;
+    margin-bottom: 16px;
+  }
+  .view-tabs .rt-TabsTrigger {
+    flex: 0 0 auto;
+    min-height: 50px;
+    padding: 8px 22px;
+  }
+  .view-tabs .rt-TabsTriggerInner {
+    flex-direction: row;
+    gap: 8px;
+  }
+}
+@media (max-width: 1000px) and (min-width: 720px) {
+  .settlement-layout {
+    grid-template-columns: minmax(0, 1fr) 230px;
+    gap: 16px;
+  }
+  .facility-overview {
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 10px;
+  }
+  .facility-overview .worker-allocation {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
+@media (max-width: 719px) {
+  .game-shell {
+    padding: calc(12px + env(safe-area-inset-top))
+      calc(12px + env(safe-area-inset-right)) env(safe-area-inset-bottom)
+      calc(12px + env(safe-area-inset-left));
+  }
+  .game-header {
+    padding-bottom: 12px;
+  }
+  .game-layout {
+    gap: 10px;
+  }
+  .stockpile-panel {
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .stockpile {
+    flex-wrap: nowrap;
+    padding: 10px 0;
+    overflow-x: auto;
+    touch-action: pan-x;
+    overscroll-behavior: none;
+    scrollbar-width: thin;
+  }
+  .resource {
+    min-width: 136px;
+    padding: 0 12px;
+    grid-template-columns: 36px auto;
+    gap: 0 8px;
+  }
+  .resource .painted-art {
+    width: 36px;
+    height: 36px;
+  }
+  .resource-value {
+    font-size: 18px;
+  }
+  .settlement-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  .camp-aside {
+    grid-row: 1;
+    position: static;
+  }
+  .project-plans {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    align-items: start;
+  }
+  .plan-toggle {
+    padding: 12px;
+    gap: 7px;
+  }
+  .plan-category {
+    font-size: 19px;
+  }
+  .plan-toggle strong {
+    font-size: 12px;
+    min-height: 2.5em;
+  }
+  .plan-status {
+    font-size: 11px;
+  }
+  .plan-details {
+    padding: 10px;
+  }
+  .plan-details .worker-control {
+    flex-wrap: wrap;
+  }
+  .manual-work {
+    margin-top: 8px;
+  }
+  .manual-work summary {
+    padding: 8px 0;
+    min-height: 36px;
+  }
+  .workforce-bar {
+    margin-bottom: 12px;
+  }
+  .workforce-bar > div {
+    gap: 6px 10px;
+  }
+  .happiness-status {
+    flex-basis: 100%;
+    font-size: 12px;
+  }
+  .arrival-details {
+    max-width: 138px;
+  }
+  .arrival-details summary {
+    white-space: normal;
+  }
+  .settlement-landscape {
+    height: auto;
+    aspect-ratio: 4.5;
+    max-height: 90px;
+    margin-bottom: 14px;
+  }
+  .facility-filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    touch-action: pan-x;
+    overscroll-behavior: none;
+    scrollbar-width: thin;
+  }
+  .facility-filters .rt-Button {
+    flex-shrink: 0;
+    touch-action: pan-x;
+  }
+  .away-summary {
+    flex-wrap: wrap;
+    gap: 6px 12px;
+  }
+  .away-summary-counts {
+    order: 2;
+    flex-basis: 100%;
+  }
+  .away-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 440px) {
+  .facility-overview {
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 8px 10px;
+  }
+  .facility-overview > .painted-art {
+    width: 44px;
+    height: 44px;
+  }
+  .facility-overview .worker-allocation {
+    grid-column: 2;
+    justify-self: start;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+  }
+  .staffing-efficiency {
+    flex-basis: 100%;
+  }
+  .building-card {
+    padding: 12px;
+  }
+}
+@media (max-height: 760px) and (max-width: 719px) {
+  .settlement-landscape {
+    display: none;
+  }
+  .plan-toggle {
+    gap: 5px;
+    padding: 10px;
+  }
+}
+@media (pointer: coarse) {
+  .rt-Button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .select,
+  input {
+    font-size: 16px;
+  }
+}

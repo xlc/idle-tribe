@@ -1,0 +1,65 @@
+/* Sizing on top of Radix Themes Button (rt-Button). */
+.rt-Button {
+  min-height: 40px;
+  font-weight: 600;
+}
+.worker-control .rt-Button {
+  min-width: 38px;
+  font-size: 17px;
+}
+.worker-control .rt-Button:last-child {
+  font-size: 13px;
+}
+.facility-detail .rt-Button {
+  margin: 6px 4px 0 0;
+}
+.facility-filters .rt-Button {
+  min-height: 36px;
+  padding: 6px 12px;
+  font-size: 12px;
+}
+.costs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-size: 12px;
+  line-height: 1.6;
+  margin-top: 10px;
+}
+.cost-missing {
+  color: var(--color-warning);
+}
+.cost-enough {
+  color: var(--color-neutral);
+}
+.progress {
+  appearance: none;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  height: 6px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--color-track);
+}
+.progress::-webkit-progress-bar {
+  background: var(--color-track);
+  border-radius: 4px;
+}
+.progress::-webkit-progress-value {
+  background: var(--color-accent);
+  border-radius: 4px;
+}
+.progress::-moz-progress-bar {
+  background: var(--color-accent);
+  border-radius: 4px;
+}
+.select {
+  background: var(--color-base-100);
+  border: 1px solid var(--color-base-300);
+  border-radius: 5px;
+  padding: 8px;
+  font-size: 14px;
+  min-width: 0;
+  min-height: 44px;
+}

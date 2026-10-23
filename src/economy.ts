@@ -450,6 +450,36 @@ export const BUILDINGS: Record<BuildingId, BuildingDefinition> = {
     effect: 'Amenity coverage for 10 people per level',
     amenities: 10,
   },
+  kiln: {
+    forms: [
+      {
+        name: 'Kiln',
+        description:
+          'A hot little room where clay becomes patient enough to be useful.',
+        cost: { planks: 80, blocks: 80, tools: 20 },
+        work: 30,
+        requires: { research: ['ceramic-craft'] },
+        rate: 1,
+      },
+    ],
+    effect: 'Potter workplace; 1 ceramic/min per worker.',
+    job: 'potter',
+  },
+  bathhouse: {
+    forms: [
+      {
+        name: 'Bathhouse',
+        description:
+          'Warm water and clean cups make a crowded town feel considered.',
+        cost: { planks: 100, blocks: 80, tools: 25, ceramics: 40 },
+        work: 45,
+        requires: { research: ['public-health'] },
+      },
+    ],
+    effect: 'Amenity coverage +15 and leisure coverage +5 per level',
+    amenities: 15,
+    leisure: 5,
+  },
   'great-hall': {
     forms: [
       {
@@ -883,6 +913,14 @@ export const JOBS: Record<ProductionJob, JobDefinition> = {
     description: 'Makes stone look like it was expecting to become a building.',
     output: 'blocks',
     input: { stone: 3 },
+  },
+  potter: {
+    name: 'Potter',
+    aptitude: 'Pottery',
+    learning: 'production',
+    description: 'Turns clay, heat, and a little patience into useful vessels.',
+    output: 'ceramics',
+    input: { blocks: 2, wood: 1 },
   },
   toolmaker: {
     name: 'Toolmaker',

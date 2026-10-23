@@ -52,11 +52,9 @@ for (const width of [1280, 390]) {
         expect((await readState(page)).resources.food).toBe(i + 1)
       }
       await expect(
-        page.getByRole('button', { name: 'Explore nearby', exact: true }),
+        page.getByRole('button', { name: 'Explore', exact: true }),
       ).toBeEnabled()
-      await page
-        .getByRole('button', { name: 'Explore nearby', exact: true })
-        .click()
+      await page.getByRole('button', { name: 'Explore', exact: true }).click()
       await page.clock.runFor(3100)
       await expect(
         page.getByRole('button', { name: 'Gather wood', exact: true }),
@@ -108,9 +106,9 @@ for (const width of [1280, 390]) {
         exact: true,
       })
       await lumber.getByRole('button', { name: 'Fill', exact: true }).click()
-      await expect(lumber.locator('.worker-count')).toHaveText('2')
+      await expect(lumber.getByRole('status')).toHaveText('2')
       await lumber.getByRole('button', { name: '+', exact: true }).click()
-      await expect(lumber.locator('.worker-count')).toHaveText('3')
+      await expect(lumber.getByRole('status')).toHaveText('3')
       await expect(
         lumber.getByText('2 efficient', { exact: true }),
       ).toBeVisible()
@@ -245,7 +243,7 @@ for (const width of [1280, 390]) {
       expect(state.queues.research.active?.paid.knowledge).toBe(3600)
       await page.getByRole('tab', { name: 'Settlement', exact: true }).click()
       await farm.getByRole('button', { name: 'Fill', exact: true }).click()
-      await expect(farm.locator('.worker-count')).toHaveText('1')
+      await expect(farm.getByRole('status')).toHaveText('1')
       expect(
         (await readState(page)).people.some((p) => p.job === 'farmer'),
       ).toBe(true)
@@ -327,7 +325,7 @@ for (const width of [1280, 390]) {
         exact: true,
       })
       await lab.getByRole('button', { name: 'Fill', exact: true }).click()
-      await expect(lab.locator('.worker-count')).toHaveText('2')
+      await expect(lab.getByRole('status')).toHaveText('2')
       await lab.getByText('Details & upgrades', { exact: true }).click()
       await expect(lab).toContainText(
         '12 charge · 8 data · 1 quantum components → 1 causal models',
@@ -416,20 +414,20 @@ for (const width of [1280, 390]) {
       enqueue(s, nextExpansion(s, 'housing'))
       advanceTime(s, 0)
       await open(page, s)
-      const toast = page.locator('.away-toast')
+      const toast = page.getByRole('status', { name: 'Away report' })
       await expect(toast).toBeVisible()
       await toast.getByRole('button', { name: /Away ·/ }).click()
       const dialog = page.getByRole('dialog')
       const report = dialog.getByRole('region', { name: 'Offline progress' })
       await report.getByRole('button', { name: /Away ·/ }).click()
       await expect(
-        report
-          .locator('.away-stats')
-          .getByText('Projects completed')
-          .locator('..'),
+        report.getByText('Projects completed', { exact: true }).locator('..'),
       ).toContainText('1')
       await expect(
-        report.locator('.away-resources li').filter({ hasText: 'Food' }),
+        report
+          .getByRole('region', { name: 'Resource changes' })
+          .getByText('Food', { exact: true })
+          .locator('..'),
       ).toContainText('−120')
       await page.screenshot({ path: info.outputPath('away.png') })
       await dialog.getByRole('button', { name: 'Close' }).click()

@@ -1,0 +1,86 @@
+.people {
+  min-width: 0;
+}
+.opening .people {
+  margin-top: 24px;
+}
+.people-heading {
+  min-height: 44px;
+  margin-bottom: 12px;
+  align-items: center;
+}
+.people-grid {
+  max-height: 60dvh;
+  overflow-y: auto;
+  overscroll-behavior: none;
+  touch-action: pan-y;
+  scrollbar-width: thin;
+}
+.opening .people-grid {
+  max-height: 300px;
+}
+.person-row {
+  padding: 14px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+.person-row + .person-row {
+  border-top: 1px solid var(--color-base-300);
+}
+.person-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+.person-heading > strong {
+  font-size: 18px;
+}
+.person-occupation {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+}
+.person-row select {
+  min-width: 0;
+  grid-column: 1 / -1;
+  width: 100%;
+}
+.person-output,
+.person-aptitude {
+  margin-top: 6px;
+}
+.person-aptitude,
+.staffing-efficiency {
+  color: var(--color-neutral);
+}
+.person-expertise {
+  margin-top: 8px;
+}
+.person-expertise summary {
+  padding: 8px 0;
+}
+.occupation-practice {
+  display: grid;
+  gap: 5px;
+  margin: 12px 0;
+}
+.person-health {
+  display: inline-flex;
+  gap: 1px;
+  white-space: nowrap;
+  color: var(--color-success);
+}
+.person-health span {
+  width: 0.9em;
+  text-align: center;
+}
+.person-health[data-low="true"] {
+  color: var(--color-warning);
+}
+.person-health [data-filled="false"] {
+  color: var(--color-neutral);
+  opacity: 0.5;
+}

@@ -34,7 +34,7 @@ export function Queue({ session, confirm, id }: { id: QueueId } & ViewProps) {
         ? queueBlocker(s, id)
         : 'No project'
   return (
-    <section className="queue-panel" aria-label={`${id} queue`}>
+    <section className="queue-panel panel" aria-label={`${id} queue`}>
       <button
         type="button"
         className="plan-toggle"

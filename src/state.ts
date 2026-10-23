@@ -23,7 +23,7 @@ export function createPerson(
 }
 export function createDefaultState(): GameState {
   return {
-    version: 8,
+    version: 9,
     actionSkills: createRecord(ACTION_IDS, () => ({ level: 1, xp: 0 })),
     actionProgress: createRecord(ACTION_IDS, () => 0),
     resources: createRecord(RESOURCES, () => 0),

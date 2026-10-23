@@ -1,0 +1,61 @@
+.stockpile-panel {
+  min-width: 0;
+  max-height: 172px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.stockpile {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 12px 8px;
+  gap: 12px 0;
+}
+.resource {
+  display: grid;
+  grid-template-columns: 42px auto;
+  align-items: center;
+  gap: 0 10px;
+  padding: 0 14px;
+  flex: 0 0 auto;
+  min-width: 138px;
+  border-right: 1px solid var(--color-base-300);
+  font-variant-numeric: tabular-nums;
+}
+.resource:last-child {
+  border-right: 0;
+}
+.resource .painted-art {
+  grid-row: 1 / 4;
+  width: 42px;
+  height: 42px;
+}
+.resource-name {
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--color-neutral);
+}
+.resource-value {
+  font-size: 20px;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+.resource-meta {
+  grid-column: 2;
+  white-space: nowrap;
+}
+.resource-rate {
+  font-size: 12px;
+  color: var(--color-success);
+}
+.resource-rate[data-negative="true"] {
+  color: var(--color-warning);
+}
+.resource-rate[data-zero="true"],
+.recipe-output[data-zero="true"] {
+  color: var(--color-neutral);
+}
+.storage-effect {
+  display: block;
+  font-size: 10px;
+  color: var(--color-warning);
+}

@@ -346,6 +346,8 @@ export function completeAction(state: GameState, id: ActionId, count = 1) {
   if (count > 1 && def.resource && Object.keys(def.cost).length === 0) {
     let remaining = count
     const xp = xpFactor(state, id)
+    // Skill level changes per batch below; automation and happiness do not.
+    const factor = automationFactor(state, id) * happinessMultiplier(state)
     while (remaining > 0) {
       const toLevel = Math.max(
         1,
@@ -354,7 +356,7 @@ export function completeAction(state: GameState, id: ActionId, count = 1) {
         ),
       )
       const batch = Math.min(remaining, toLevel)
-      state.resources[def.resource] += automatedOutput(state, id) * batch
+      state.resources[def.resource] += actionYield(state, id) * factor * batch
       grantActionXp(state, id, xp * batch)
       remaining -= batch
     }

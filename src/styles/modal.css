@@ -1,0 +1,29 @@
+.modal {
+  margin: auto;
+  width: min(440px, calc(100% - 32px));
+  max-height: calc(
+    100dvh -
+    32px -
+    env(safe-area-inset-top) -
+    env(safe-area-inset-bottom)
+  );
+  overflow-y: auto;
+  border-radius: 10px;
+  padding: 24px;
+  color: var(--color-base-content);
+  box-shadow: var(--shadow-4);
+}
+.modal::backdrop {
+  background: var(--color-backdrop);
+}
+.modal p {
+  font-size: 14px;
+  line-height: 1.7;
+  margin-top: 12px;
+}
+.modal-action {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}

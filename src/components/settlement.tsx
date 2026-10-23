@@ -57,7 +57,7 @@ export function Stockpile({ session }: { session: GameSession }) {
       ),
   )
   return (
-    <section className="stockpile-panel" aria-label="Stockpile">
+    <section className="stockpile-panel panel" aria-label="Stockpile">
       <div className="stockpile" id="stockpile-resources">
         {visibleResources.map((r) => {
           const pressure = storageMultiplier(s, r),
@@ -114,7 +114,7 @@ export function WorkerControls({
         >
           −
         </Button>
-        <span className="worker-count">{n}</span>
+        <output className="worker-count">{n}</output>
         <Button
           disabled={!available || !jobUnlocked(s, job)}
           onClick={() => session.change(() => session.game.adjust(job, 1))}
@@ -281,6 +281,8 @@ function Facility({ session, confirm, id }: ViewProps & { id: BuildingId }) {
       <Costs session={session} cost={quote.cost} />
       <div className="building-controls">
         <Button
+          variant="solid"
+          color="grass"
           onClick={() =>
             session.change(() => session.game.build(id, selectedForm))
           }
@@ -294,7 +296,7 @@ function Facility({ session, confirm, id }: ViewProps & { id: BuildingId }) {
   )
   return (
     <article
-      className="building-card"
+      className="building-card panel"
       data-built={f.level > 0}
       aria-label={form.name}
     >
@@ -466,15 +468,14 @@ export function Production(props: ViewProps) {
       </div>
       <fieldset className="facility-filters" aria-label="Facility filters">
         {['All', 'Production', 'Storage', 'Housing & support'].map((value) => (
-          <button
-            type="button"
+          <Button
             key={value}
             aria-pressed={filter === value}
-            className="btn"
+            variant={filter === value ? 'solid' : 'soft'}
             onClick={() => setFilter(value)}
           >
             {value}
-          </button>
+          </Button>
         ))}
       </fieldset>
       <div className="building-grid">

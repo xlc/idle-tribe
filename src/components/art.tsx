@@ -1,7 +1,8 @@
 import type { BuildingId, ResourceId } from '../ids'
 
 // Positions in the painted atlas, read left to right in six equal columns.
-const resources: Record<ResourceId, number> = {
+// Ceramics has no atlas tile; ResourceArt draws it as an inline SVG instead.
+const resources: Record<Exclude<ResourceId, 'ceramics'>, number> = {
   food: 0,
   wood: 1,
   stone: 2,
@@ -39,6 +40,8 @@ const buildings: Record<BuildingId, number> = {
   irrigation: 30,
   'meeting-place': 31,
   'public-well': 30,
+  kiln: 34,
+  bathhouse: 26,
   'great-hall': 31,
   observatory: 32,
   'ore-mine': 33,
@@ -72,6 +75,21 @@ function PaintedArt({ tile }: { tile: number }) {
   )
 }
 export function ResourceArt({ resource }: { resource: ResourceId }) {
+  if (resource === 'ceramics')
+    return (
+      <span className="painted-art ceramics-art" aria-hidden="true">
+        <svg viewBox="0 0 48 48" role="presentation">
+          <path
+            d="M14 10h20l-2 8v16a8 8 0 0 1-16 0V18l-2-8Z"
+            fill="#c47b54"
+            stroke="#70452f"
+            strokeWidth="2"
+          />
+          <path d="M12 10h24" stroke="#70452f" strokeWidth="3" />
+          <path d="M18 24h12" stroke="#eab08a" strokeWidth="2" />
+        </svg>
+      </span>
+    )
   return <PaintedArt tile={resources[resource]} />
 }
 export function BuildingArt({ building }: { building: BuildingId }) {

@@ -22,7 +22,11 @@ export function Technology({ session, confirm }: ViewProps) {
               )
             const queue = () => session.game.enqueue({ kind: 'research', id })
             return (
-              <article className="tech-card" key={id} aria-label={def.name}>
+              <article
+                className="tech-card panel"
+                key={id}
+                aria-label={def.name}
+              >
                 <h3>{def.name}</h3>
                 <p className="flavor">{def.description}</p>
                 <p className="tech-effect">{def.effect}</p>
@@ -32,6 +36,8 @@ export function Technology({ session, confirm }: ViewProps) {
                 )}
                 <div className="building-controls">
                   <Button
+                    variant="solid"
+                    color="grass"
                     disabled={queued || quote.blocker === 'Other path planned'}
                     onClick={() =>
                       def.branch

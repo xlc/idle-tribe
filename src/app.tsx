@@ -180,11 +180,13 @@ export function App({ session }: { session: GameSession }) {
                     </Button>
                     <div className="tech-grid">
                       {PERK_IDS.map((id) => (
-                        <article className="tech-card" key={id}>
+                        <article className="tech-card panel" key={id}>
                           <h3>{PERKS[id].name}</h3>
                           <p className="flavor">{PERKS[id].description}</p>
                           <p>{PERKS[id].effect}</p>
                           <Button
+                            variant="solid"
+                            color="grass"
                             disabled={
                               s.legacy.perks[id] ||
                               s.legacy.points < PERKS[id].cost
@@ -209,6 +211,7 @@ export function App({ session }: { session: GameSession }) {
                   <p>Manage this browser's local game data.</p>
                   <div className="settings-actions">
                     <Button
+                      color="amber"
                       onClick={() =>
                         confirm(
                           'Wipe local save?',
@@ -283,7 +286,11 @@ export function App({ session }: { session: GameSession }) {
       </div>
       <OfflineStatus />
       {choice && (
-        <dialog ref={dialog} className="modal" onClose={() => setChoice(null)}>
+        <dialog
+          ref={dialog}
+          className="modal panel"
+          onClose={() => setChoice(null)}
+        >
           <div className="modal-box">
             <h2>{choice?.title}</h2>
             <p>{choice?.body}</p>
@@ -297,6 +304,8 @@ export function App({ session }: { session: GameSession }) {
                 Keep playing
               </Button>
               <Button
+                variant="solid"
+                color="grass"
                 onClick={() => {
                   if (choice) {
                     if (choice.direct) choice.run()
