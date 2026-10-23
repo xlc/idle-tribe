@@ -1,6 +1,7 @@
 import {
   ACTIONS,
   actionDuration,
+  actionJobActive,
   actionOutputRate,
   actionRequiredXp,
   actionWorkers,
@@ -12,7 +13,6 @@ import {
   grantActionXp,
   isRateMode,
   manualRate,
-  syncActions,
   syncUnlocks,
   xpFactor,
 } from './actions'
@@ -22,6 +22,7 @@ import { consumeMeal, healthMultiplier, mealCost } from './food'
 import {
   ACTION_IDS,
   type ActionId,
+  isActionJob,
   isWorkingJob,
   JOB_IDS,
   RESOURCES,
@@ -96,7 +97,6 @@ function settleEvents(state: GameState, visible: boolean) {
     }
   }
   syncUnlocks(state)
-  syncActions(state)
   if (state.minuteProgress >= 60 - EPSILON) {
     state.minuteProgress = Math.max(0, state.minuteProgress - 60)
     changed = true
@@ -211,9 +211,16 @@ export function advanceTime(
       const job = person.job
       if (!isWorkingJob(job)) return 0
       const definition = OCCUPATIONS[job]
+      // Staffed actions practice like production jobs; storage pressure
+      // only slows their output, not the practice itself.
+      const action = isActionJob(job)
+        ? ACTION_IDS.find((id) => ACTIONS[id].job === job)
+        : undefined
       const working =
         definition.learning === 'production'
-          ? (rates[index] ?? 0) > 0
+          ? action
+            ? actionJobActive(state, action)
+            : (rates[index] ?? 0) > 0
           : Boolean(state.queues.construction.active && rules.construction > 0)
       if (!working) return 0
       const storage = isProductionJob(job) ? pressure[JOBS[job].output] : 1

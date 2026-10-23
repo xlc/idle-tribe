@@ -143,7 +143,7 @@ export const BUILDINGS: Record<BuildingId, BuildingDefinition> = {
         requires: { research: ['shelters'], expedition: true },
       },
     ],
-    effect: 'Explorer workplace; explore slots = level',
+    effect: 'Explorer workplace; 2 explore slots per level',
     job: 'explorer',
   },
   'food-store': {

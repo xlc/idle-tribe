@@ -2,7 +2,7 @@ import { expect, type Page, test } from '@playwright/test'
 import { parseSave, STORAGE_KEY } from '../../src/persistence'
 import { practiceThreshold } from '../../src/skills'
 import { createDefaultState, createPerson } from '../../src/state'
-import { required, settlement } from '../../src/test-helpers'
+import { complete, required, settlement } from '../../src/test-helpers'
 import type { GameState } from '../../src/types'
 
 async function open(page: Page, state: GameState) {
@@ -17,6 +17,10 @@ async function open(page: Page, state: GameState) {
   await page.goto('/')
 }
 async function saved(page: Page) {
+  // Visibility flips force a save, so throttled tick writes land first.
+  await page.evaluate(() =>
+    document.dispatchEvent(new Event('visibilitychange')),
+  )
   return parseSave(
     await page.evaluate((key) => localStorage.getItem(key), STORAGE_KEY),
   )
@@ -137,7 +141,10 @@ for (const width of [1280, 390]) {
     test('a feast restores work and the first expertise milestone appears through practice', async ({
       page,
     }, info) => {
-      const s = settlement()
+      // Pre-farm settlement so wild gathering is still the active food work.
+      const s = createDefaultState()
+      complete(s, 'sharpened-stick', 'shelters')
+      s.resources.food = 10
       const person = createPerson('Neri', 'forager')
       person.job = 'forager'
       person.health = 2
@@ -183,6 +190,7 @@ for (const width of [1280, 390]) {
       await open(page, s)
       await page.getByRole('button', { name: /Away ·/ }).click()
       const report = page.getByRole('region', { name: 'Offline progress' })
+      await report.getByRole('button', { name: /Away ·/ }).click()
       await expect(report).toContainText('Growing expertise')
       await expect(
         report.locator('li').filter({ hasText: 'Villager 1' }),
@@ -196,6 +204,10 @@ for (const width of [1280, 390]) {
         animations: 'disabled',
       })
       await report.getByRole('button', { name: /Away ·/ }).click()
+      await page
+        .getByRole('dialog')
+        .getByRole('button', { name: 'Close' })
+        .click()
       await page.getByRole('tab', { name: 'People', exact: true }).click()
       await page.getByLabel('Villager 36 occupation').selectOption('farmer')
       await expect(page.getByLabel('Villager 36 occupation')).toHaveValue(

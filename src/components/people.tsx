@@ -1,15 +1,9 @@
-import { ACTIONS } from '../actions'
+import { ACTIONS, actionOutputRate, actionWorkers } from '../actions'
 import { RESOURCE_INFO } from '../constants'
 import { isProductionJob, JOBS, OCCUPATIONS } from '../economy'
 import { feastCost } from '../food'
 import { formatDuration, formatResource } from '../format'
-import {
-  ACTION_IDS,
-  isActionJob,
-  isWorkingJob,
-  JOB_IDS,
-  WORKING_JOB_IDS,
-} from '../ids'
+import { ACTION_IDS, isWorkingJob, JOB_IDS, WORKING_JOB_IDS } from '../ids'
 import type { GameSession } from '../session'
 import {
   happinessMultiplier,
@@ -31,7 +25,13 @@ function output(state: GameState, person: Person) {
   const job = person.job
   if (!isWorkingJob(job)) return 'Unassigned'
   const action = ACTION_IDS.find((id) => ACTIONS[id].job === job)
-  if (action) return `Works ${ACTIONS[action].name.toLowerCase()}`
+  if (action) {
+    const def = ACTIONS[action],
+      workers = actionWorkers(state, action)
+    return def.resource
+      ? `${formatResource(workers ? (actionOutputRate(state, action) / workers) * 60 : 0)} ${RESOURCE_INFO[def.resource].name.toLowerCase()}/min`
+      : `Works ${def.name.toLowerCase()}`
+  }
   if (isProductionJob(job))
     return `${formatResource(workerRate(state, person))} ${RESOURCE_INFO[JOBS[job].output].name.toLowerCase()}/min`
   const rate =
@@ -98,9 +98,7 @@ export function People({ session }: { session: GameSession }) {
                     <option key={job} value={job}>
                       {!isWorkingJob(job)
                         ? 'Unassigned'
-                        : isActionJob(job)
-                          ? OCCUPATIONS[job].name
-                          : `${OCCUPATIONS[job].name} · level ${expertiseLevel(p.practice[job])}`}
+                        : `${OCCUPATIONS[job].name} · level ${expertiseLevel(p.practice[job])}`}
                     </option>
                   ))}
                 </select>
@@ -113,19 +111,17 @@ export function People({ session }: { session: GameSession }) {
               {OCCUPATIONS[p.aptitude].aptitude} aptitude · +5%
             </p>
             {WORKING_JOB_IDS.some(
-              (job) =>
-                !isActionJob(job) && (p.practice[job] > 0 || job === p.job),
+              (job) => p.practice[job] > 0 || job === p.job,
             ) && (
               <details className="person-expertise">
                 <summary>
                   Expertise
-                  {isWorkingJob(p.job) && !isActionJob(p.job)
+                  {isWorkingJob(p.job)
                     ? ` · level ${expertiseLevel(p.practice[p.job])}`
                     : ''}
                 </summary>
                 {WORKING_JOB_IDS.filter(
-                  (job) =>
-                    !isActionJob(job) && (p.practice[job] > 0 || job === p.job),
+                  (job) => p.practice[job] > 0 || job === p.job,
                 ).map((job) => {
                   const seconds = p.practice[job],
                     level = expertiseLevel(seconds),

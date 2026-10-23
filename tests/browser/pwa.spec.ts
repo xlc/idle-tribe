@@ -26,6 +26,10 @@ async function offlineReady(page: Page) {
 }
 
 async function food(page: Page): Promise<number> {
+  // Visibility flips force a save, so throttled tick writes land first.
+  await page.evaluate(() =>
+    document.dispatchEvent(new Event('visibilitychange')),
+  )
   const saved = await page.evaluate(
     (key) => localStorage.getItem(key),
     STORAGE_KEY,
@@ -131,12 +135,19 @@ test('a downloaded update waits for the running game and activates after it clos
     ).toBe(true)
     const reopening = await context.newPage()
     await page.close()
+    // Let the waiting worker activate and clean up the old caches before
+    // any new navigation can re-employ the old one.
+    await reopening.waitForTimeout(3000)
     await reopening.goto(origin.url)
     await expect
-      .poll(() =>
-        reopening.evaluate(async () =>
-          (await caches.keys()).filter((key) => key.startsWith('tribe-app-')),
-        ),
+      .poll(
+        () =>
+          reopening.evaluate(async () =>
+            (await caches.keys()).filter((key) => key.startsWith('tribe-app-')),
+          ),
+        // Activation (and old-cache cleanup) only starts once the last
+        // controlled window has closed, which can lag in headless browsers.
+        { timeout: 15000 },
       )
       .toEqual(['tribe-app-browser-update'])
     await origin.close()

@@ -83,7 +83,7 @@ export function Stockpile({ session }: { session: GameSession }) {
                   {net > 0 ? '+' : ''}
                   {formatCompactResource(net)}/min
                 </span>
-                <small className="storage-effect" hidden={pressure >= 1}>
+                <small className="storage-effect" data-idle={pressure >= 1}>
                   Storage ×{formatResource(pressure)}
                 </small>
               </div>

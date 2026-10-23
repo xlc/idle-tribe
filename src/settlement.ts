@@ -1,4 +1,4 @@
-import { actionOutputRate, gatherRetired } from './actions'
+import { actionOutputRate } from './actions'
 import {
   BUILDINGS,
   isProductionJob,
@@ -88,12 +88,6 @@ export function crewSize(state: GameState) {
 }
 export function jobCapacity(state: GameState, job: JobId) {
   const id = workplace(job)
-  if (isActionJob(job))
-    return job === 'forager' && gatherRetired(state)
-      ? 0
-      : id
-        ? state.facilities[id].level
-        : 0
   return isWorkingJob(job) && OCCUPATIONS[job].learning === 'construction'
     ? crewSize(state)
     : id
@@ -111,18 +105,12 @@ export function jobUnlocked(state: GameState, job: JobId) {
 export function assignJob(state: GameState, index: number, job: JobId) {
   const person = state.people[index]
   if (!person || !jobUnlocked(state, job) || person.job === job) return false
-  // Action slots are exact, so unlike workplaces the cap is enforced here.
-  if (isActionJob(job) && assigned(state, job) >= jobCapacity(state, job))
-    return false
   person.job = job
   person.progress = 0
   return true
 }
 export function workerCandidate(state: GameState, job: JobId, release = false) {
   if (!isWorkingJob(job)) return -1
-  // People are interchangeable on actions; take the first idle person.
-  if (isActionJob(job) && !release)
-    return state.people.findIndex((p) => p.job === 'idle')
   let best = -1
   let score = release ? Infinity : -Infinity
   for (const [index, person] of state.people.entries()) {
@@ -320,7 +308,7 @@ export function arrivalStatus(state: GameState) {
     town = happinessUnlocked(state)
   let foodOutput = 0,
     recipeDemand = 0
-  // Wild gathering covers food until the farm retires the gather action.
+  // Wild gathering covers food until farms outproduce it.
   foodOutput +=
     actionOutputRate(state, 'gather', {
       happiness: town ? 0.75 : 1,

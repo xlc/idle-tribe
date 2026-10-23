@@ -81,29 +81,18 @@ export function syncUnlocks(state: GameState) {
   if (state.resources.wood >= 2) state.researchUnlocked = true
 }
 
-// Farming graduates the settlement off wild gathering (design: upgrade
-// actions into better systems instead of accumulating parallel ones).
+// Farming graduates the settlement off wild gathering. Foragers stay
+// assignable at the camp; the gather action itself stops producing.
 export function gatherRetired(state: GameState) {
   return state.research.agriculture && state.facilities.farm.level >= 1
 }
 
-// Actions derive worker slots from their building; retired actions release
-// everyone back to idle.
 export function actionSlots(state: GameState, id: ActionId) {
-  return state.facilities[ACTIONS[id].building].level
+  return 2 * state.facilities[ACTIONS[id].building].level
 }
 export function actionWorkers(state: GameState, id: ActionId) {
   const job = ACTIONS[id].job
   return state.people.reduce((n, person) => (person.job === job ? n + 1 : n), 0)
-}
-export function syncActions(state: GameState) {
-  if (!gatherRetired(state)) return
-  state.actionProgress.gather = 0
-  for (const person of state.people)
-    if (person.job === 'forager') {
-      person.job = 'idle'
-      person.progress = 0
-    }
 }
 
 export function startAction(state: GameState, id: ActionId) {
@@ -213,6 +202,17 @@ export function manualRate(state: GameState) {
   return state.manual ? 1 / actionDuration(state, state.manual.id) : 0
 }
 
+// Whether an action's staff are actively working (visible, staffed, and
+// able to pay the per-run cost).
+export function actionJobActive(state: GameState, id: ActionId) {
+  const def = ACTIONS[id]
+  return Boolean(
+    def.visible(state) &&
+      actionWorkers(state, id) > 0 &&
+      canAfford(state, def.cost),
+  )
+}
+
 export function grantActionXp(state: GameState, id: ActionId, xp: number) {
   const skill = state.actionSkills[id]
   skill.xp += xp
@@ -267,7 +267,8 @@ function exploreResourceReward(state: GameState, level: number, scale: number) {
 
 // One explore completion: roll the reward table. `scale` is 1 for manual
 // runs and the automation factor for workers; discoveries always land in
-// full. Any non-empty result unlocks the expedition camp.
+// full. A manual run always finds the next pending discovery; workers roll.
+// Any non-empty result unlocks the expedition camp.
 export function applyExploreReward(state: GameState, scale: number) {
   const level = state.actionSkills.explore.level
   const roll = exploreRand(state)
@@ -275,8 +276,8 @@ export function applyExploreReward(state: GameState, scale: number) {
     rare = level >= 5 ? 0.1 : 0,
     resources = 0.5 - rare,
     mini = level >= 10 ? 0.1 : 0
-  if (roll < discover) {
-    const next = nextDiscovery(state)
+  const next = nextDiscovery(state)
+  if ((next && scale >= 1) || (!next && roll < discover)) {
     if (next) {
       state.discovered[next] = true
       state.notice = `Discovered ${next}`
@@ -334,7 +335,6 @@ export function finishManual(state: GameState) {
   }
   if (active.id === 'explore') applyExploreReward(state, 1)
   syncUnlocks(state)
-  syncActions(state)
 }
 
 // One automated completion. Explore pays its cost here (with pause) instead
@@ -361,7 +361,6 @@ export function completeAction(state: GameState, id: ActionId, count = 1) {
       remaining -= batch
     }
     syncUnlocks(state)
-    syncActions(state)
     return true
   }
   pay(state, def.cost)
@@ -371,7 +370,6 @@ export function completeAction(state: GameState, id: ActionId, count = 1) {
   }
   if (id === 'explore') applyExploreReward(state, automationFactor(state, id))
   syncUnlocks(state)
-  syncActions(state)
   return true
 }
 

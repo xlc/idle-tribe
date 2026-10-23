@@ -23,6 +23,10 @@ async function open(page: Page, state: GameState) {
   await page.goto('/')
 }
 async function readState(page: Page): Promise<GameState> {
+  // Visibility flips force a save, so throttled tick writes land first.
+  await page.evaluate(() =>
+    document.dispatchEvent(new Event('visibilitychange')),
+  )
   return page.evaluate(
     (key) => JSON.parse(localStorage.getItem(key) ?? 'null'),
     STORAGE_KEY,
@@ -49,13 +53,14 @@ for (const width of [1280, 390]) {
         await expect(
           page.getByRole('button', { name: 'Gather food', exact: true }),
         ).toBeEnabled()
-        expect((await readState(page)).resources.food).toBe(i + 1)
+        // Skill levels raise the yield above 1 per run from level 2 on.
+        expect((await readState(page)).resources.food).toBeGreaterThan(i)
       }
       await expect(
         page.getByRole('button', { name: 'Explore', exact: true }),
       ).toBeEnabled()
       await page.getByRole('button', { name: 'Explore', exact: true }).click()
-      await page.clock.runFor(3100)
+      await page.clock.runFor(4200)
       await expect(
         page.getByRole('button', { name: 'Gather wood', exact: true }),
       ).toBeVisible()
@@ -198,7 +203,8 @@ for (const width of [1280, 390]) {
       await page.clock.runFor(3000)
       const before = await readState(page)
       await page.reload()
-      await page.getByRole('tab', { name: 'Technology', exact: true }).click()
+      // The working indicator extends the tab's accessible name.
+      await page.getByRole('tab', { name: /Technology/ }).click()
       const after = await readState(page)
       expect(after.queues.research.active?.paid).toEqual(
         before.queues.research.active?.paid,

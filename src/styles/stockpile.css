@@ -54,8 +54,12 @@
 .recipe-output[data-zero="true"] {
   color: var(--color-neutral);
 }
+/* The line reserves space even when idle so appearing never shifts controls. */
 .storage-effect {
   display: block;
   font-size: 10px;
   color: var(--color-warning);
+}
+.storage-effect[data-idle="true"] {
+  visibility: hidden;
 }

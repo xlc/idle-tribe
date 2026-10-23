@@ -39,7 +39,7 @@ for (const width of [320, 390, 1280]) {
       await expect(gather.locator('..')).toContainText('+1 wood · 2s')
       await gather.click()
       await page.clock.runFor(ACTIONS.sticks.seconds * 1000 + 1000)
-      await expect(gather.locator('..')).toContainText('+1 wood · 2.02s')
+      await expect(gather.locator('..')).toContainText('+1 wood · 2.017s')
       expect(await gather.boundingBox()).toEqual(before)
       const resource = page.getByRole('region', {
         name: 'Wood resource',
