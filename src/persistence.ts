@@ -24,8 +24,7 @@ import type {
   ProjectQueue,
   QueueEntry,
 } from './types'
-import { SAVE_VERSION } from './types'
-export const STORAGE_KEY = 'primitive-tribe-v1'
+export const STORAGE_KEY = 'primitive-tribe'
 // JSON is the untrusted boundary. Model its values explicitly and rebuild the
 // entire current schema; incompatible or incomplete records reset atomically.
 type JsonValue =
@@ -124,7 +123,6 @@ export function parseSave(serialized: string | null): GameState {
     const decoded: JsonValue = JSON.parse(serialized ?? 'null'),
       p = object(decoded),
       s = createDefaultState()
-    if (p.version !== SAVE_VERSION) return s
     const resources = object(p.resources),
       facilities = object(p.facilities),
       research = object(p.research),

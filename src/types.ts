@@ -9,7 +9,6 @@ import type {
   WorkingJob,
 } from './ids'
 
-export const SAVE_VERSION = 9
 export type ActionBonus = Partial<Record<ActionId, number>>
 
 export type {
@@ -139,7 +138,6 @@ export interface Absence {
   completed: number
 }
 export interface GameState {
-  version: typeof SAVE_VERSION
   actionSkills: Record<ActionId, { level: number; xp: number }>
   actionProgress: Record<ActionId, number>
   resources: Record<ResourceId, number>

@@ -27,7 +27,7 @@ See the [design decisions](docs/GAME_DESIGN.md) and [villager expertise decision
 
 ## Saves and offline progress
 
-The game autosaves to your browser's local storage. Prototype saves from older versions reset; there are no migrations.
+The game autosaves to your browser's local storage. Incompatible prototype saves reset; there are no migrations or save versions.
 
 The production build installs as a standalone PWA. On iPhone or iPad, open it in Safari and choose **Share → Add to Home Screen**. Open the installed app online once to cache the complete game; after that it can reopen and play without a connection. Installation and caching require HTTPS or localhost.
 

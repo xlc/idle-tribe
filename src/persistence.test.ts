@@ -36,9 +36,9 @@ test('reloading cancels only manual work and refunds its exact commitment once',
 })
 
 test('incompatible and incomplete saves reset projects and absence timestamps together', () => {
-  expect(
-    parseSave(JSON.stringify({ version: 4, fruit: 900, savedAt: 123 })),
-  ).toEqual(createDefaultState())
+  expect(parseSave(JSON.stringify({ fruit: 900, savedAt: 123 }))).toEqual(
+    createDefaultState(),
+  )
   const s = settlement()
   s.savedAt = 1000
   const malformed = { ...s, queues: { research: null, construction: null } }

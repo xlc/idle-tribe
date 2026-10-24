@@ -289,9 +289,6 @@ test('current saves retain fractional practice; incompatible expertise resets an
   people(s, 'woodcutter')
   required(s.people[0]).practice.woodcutter = 12345.678
   expect(parseSave(JSON.stringify(s))).toEqual(s)
-  expect(parseSave(JSON.stringify({ ...s, version: 5 }))).toEqual(
-    createDefaultState(),
-  )
   const malformed = { ...s, people: [{ ...s.people[0], practice: {} }] }
   expect(parseSave(JSON.stringify(malformed))).toEqual(createDefaultState())
   s.legacy.discovered = true

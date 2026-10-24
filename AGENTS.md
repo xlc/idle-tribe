@@ -30,9 +30,10 @@ runtime commands. Keep this project a small, playable proof of concept.
   not require editing the core engine or renderer.
 - Keep one source of truth for state and rules. Avoid speculative abstractions,
   compatibility wrappers, and defensive handling for unsupported inputs.
-- This is a PoC: breaking save changes are acceptable. Do not add migrations or
-  legacy adapters; reset incompatible saves and update current initialization
-  and normalization together.
+- This is a PoC: save versioning is intentionally absent. Breaking save changes
+  are acceptable; reset incompatible saves and update current initialization and
+  normalization together. Do not add migrations, legacy adapters, or version
+  markers.
 - Preserve the distinction between active elapsed time and hidden-page time.
   Set user-controlled text through DOM text properties, never HTML strings.
 
