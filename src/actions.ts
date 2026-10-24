@@ -294,7 +294,7 @@ export function applyExploreReward(state: GameState, scale: number) {
     resources = 0.5 - rare,
     mini = level >= 10 ? 0.1 : 0
   const next = nextDiscovery(state)
-  if ((next && scale >= 1) || (!next && roll < discover)) {
+  if ((next && scale >= 1) || roll < discover) {
     if (next) {
       state.discovered[next] = true
       state.notice = `Discovered ${next}`
@@ -338,6 +338,8 @@ export function exploreExpectedRewards(state: GameState): Cost {
   const result: Cost = {}
   for (const find of pool)
     result[find.resource] = (chance / pool.length) * find.amount(level) * scale
+  if (level >= 5 && state.researchUnlocked)
+    result.knowledge = (result.knowledge ?? 0) + 0.1 * scale
   return result
 }
 

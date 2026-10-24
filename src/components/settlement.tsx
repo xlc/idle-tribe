@@ -1,16 +1,17 @@
 import { useState } from 'react'
-import { ACTIONS, actionOutputRate, automationFactor } from '../actions'
+import {
+  ACTIONS,
+  actionCompletionDuration,
+  actionJobActive,
+  actionOutputRate,
+  actionSlots,
+  automationFactor,
+} from '../actions'
 import { RESOURCE_INFO } from '../constants'
 import { BUILDINGS, isProductionJob, JOBS } from '../economy'
 import { formatCompactResource, formatCost, formatResource } from '../format'
 import { removeFacility } from '../game'
-import {
-  ACTION_IDS,
-  type ActionId,
-  BUILDING_IDS,
-  isWorkingJob,
-  RESOURCES,
-} from '../ids'
+import { ACTION_IDS, BUILDING_IDS, isWorkingJob, RESOURCES } from '../ids'
 import {
   allEntries,
   nextEquipment,
@@ -216,21 +217,27 @@ function Facility({ session, confirm, id }: ViewProps & { id: BuildingId }) {
     [selectedForm, setSelectedForm] = useState(f.form)
   const form = def.forms[f.level ? f.form : selectedForm],
     action = def.job
-      ? (ACTION_IDS.find((id) => ACTIONS[id].job === def.job) as
-          | ActionId
-          | undefined)
+      ? ACTION_IDS.find((id) => ACTIONS[id].job === def.job)
       : undefined
   if (!form) return null
   const expansion = nextExpansion(s, id, selectedForm),
     quote = previewProject(s, expansion),
     job = def.job,
     n = job ? assigned(s, job) : 0
-  const production = job
-    ? s.people
-        .filter((p) => p.job === job)
-        .reduce((sum, p) => sum + workerRate(s, p), 0)
-    : 0
-  const input = job ? jobInput(s, job) : {},
+  const actionDefinition = action ? ACTIONS[action] : undefined
+  const production =
+    action && actionDefinition
+      ? actionDefinition.resource
+        ? actionOutputRate(s, action) * 60
+        : actionJobActive(s, action)
+          ? 60 / actionCompletionDuration(s, action)
+          : 0
+      : job
+        ? s.people
+            .filter((p) => p.job === job)
+            .reduce((sum, p) => sum + workerRate(s, p), 0)
+        : 0
+  const input = actionDefinition?.cost ?? (job ? jobInput(s, job) : {}),
     output = job && isProductionJob(job) ? JOBS[job].output : null
   const missingInputs = RESOURCES.filter(
     (r) => n > 0 && (input[r] ?? 0) > s.resources[r],
@@ -308,14 +315,14 @@ function Facility({ session, confirm, id }: ViewProps & { id: BuildingId }) {
             {f.level ? `Level ${f.level}` : 'Not built'}
             {f.equipment ? ` · tools ${f.equipment}` : ''}
           </span>
-          {action ? (
+          {action && actionDefinition ? (
             <div className="building-recipe">
               <span className="recipe-output" data-zero={production === 0}>
-                +{formatResource(actionOutputRate(s, action) * 60)}{' '}
-                {ACTIONS[action].resource}/min
+                +{formatResource(production)}{' '}
+                {actionDefinition.resource ?? 'explores'}/min
               </span>
               <span className="recipe-input">
-                {n}/{f.level} slots · automation{' '}
+                {n}/{actionSlots(s, action)} slots · automation{' '}
                 {Math.round(automationFactor(s, action) * 100)}%
               </span>
             </div>
@@ -340,7 +347,7 @@ function Facility({ session, confirm, id }: ViewProps & { id: BuildingId }) {
                   ? RESOURCES.filter((r) => form.storage?.[r])
                       .map(
                         (r) =>
-                          `Base +${form.storage?.[r]} ${RESOURCE_INFO[r].name.toLowerCase()} storage/level`,
+                          `Base +${form.storage?.[r]} ${RESOURCE_INFO[r].name.toLowerCase()} storage`,
                       )
                       .join(' · ')
                   : def.effect}

@@ -1,4 +1,9 @@
 import { expect, test } from 'bun:test'
+import {
+  actionDuration,
+  automationFactor,
+  exploreExpectedRewards,
+} from './actions'
 import { offlineWindow } from './clock'
 import { BUILDINGS } from './economy'
 import { RESOURCES } from './ids'
@@ -12,7 +17,7 @@ import {
 } from './research'
 import { threshold } from './resources'
 import { jobInput, prestigeMultiplier, requirementBlocker } from './settlement'
-import { advanceTime, resourceRates } from './simulation'
+import { advanceTime, resourceFlows, resourceRates } from './simulation'
 import {
   advancedSettlement,
   complete,
@@ -175,4 +180,20 @@ test('planned production exposes upstream demand even while a downstream recipe 
   const running = resourceRates(s)
   expect(running.data).toBeCloseTo(planned.data)
   expect(running.circuits).toBeCloseTo(planned.circuits)
+})
+
+test('experienced explorers include rare knowledge rewards in resource flows', () => {
+  const s = settlement()
+  people(s, 'explorer')
+  expect(resourceFlows(s).knowledge.production).toBe(0)
+  s.actionSkills.explore.level = 5
+  expect(exploreExpectedRewards(s).knowledge).toBeCloseTo(
+    0.1 * automationFactor(s, 'explore'),
+  )
+  const cycles = 60 / actionDuration(s, 'explore')
+  expect(resourceFlows(s).knowledge.production).toBeCloseTo(
+    cycles * 0.1 * automationFactor(s, 'explore'),
+  )
+  s.resources.food = 0
+  expect(resourceFlows(s).knowledge.production).toBe(0)
 })

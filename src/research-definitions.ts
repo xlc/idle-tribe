@@ -5,7 +5,7 @@ export const RESEARCH: Record<ResearchId, ResearchDefinition> = {
     name: 'Sharpened stick',
     cost: { wood: 6, food: 5 },
     minutes: 1,
-    effect: 'Gathering automation +2%.',
+    effect: 'Food gathering automation +2 percentage points.',
     description: 'A stick with a surprisingly convincing point.',
     requires: { research: [], discovery: 'wood' },
     effects: { actionAutomation: { gather: 0.02 } },
@@ -53,7 +53,7 @@ export const RESEARCH: Record<ResearchId, ResearchDefinition> = {
     cost: { food: 100, planks: 20 },
     minutes: 30,
     effect:
-      'Unlock Learning circle and Records shelter; automated action XP +2%.',
+      'Unlock Learning circle and Records shelter; automated gathering XP +2 percentage points.',
     description:
       'Good advice travels farther when someone remembers the middle.',
     requires: { research: ['shelters', 'carpentry'] },
@@ -82,7 +82,7 @@ export const RESEARCH: Record<ResearchId, ResearchDefinition> = {
     name: 'Seasonal knowledge',
     cost: { knowledge: 120, planks: 50, blocks: 30, tools: 10 },
     minutes: 90,
-    effect: 'Gathering automation +3%.',
+    effect: 'Food gathering automation +3 percentage points.',
     description: 'The bushes have a schedule, and we are finally catching on.',
     requires: { research: ['oral-tradition', 'toolmaking'] },
     effects: { actionAutomation: { gather: 0.03 } },
@@ -91,7 +91,8 @@ export const RESEARCH: Record<ResearchId, ResearchDefinition> = {
     name: 'Agriculture',
     cost: { knowledge: 180, food: 500, wood: 200, stone: 100, tools: 30 },
     minutes: 120,
-    effect: 'Enter agricultural era; unlock Farm, Cottages and Granary forms.',
+    effect:
+      'Enter agricultural era; unlock Farm, Cottages and Granary. Building a Farm retires wild food gathering.',
     description: 'Convince dinner to put down roots.',
     requires: { research: ['preparedness', 'seasonal-knowledge'] },
     effects: {},
@@ -178,7 +179,8 @@ export const RESEARCH: Record<ResearchId, ResearchDefinition> = {
     name: 'Forestry',
     cost: { knowledge: 400, planks: 150, tools: 40 },
     minutes: 45,
-    effect: 'Plank workplace rates \u00d71.40; wood gathering automation +5%.',
+    effect:
+      'Plank workplace rates ×1.40; wood gathering automation +5 percentage points.',
     description: 'A proud tradition of knowing exactly what to do with a tree.',
     requires: { research: ['writing'] },
     effects: {
@@ -191,7 +193,8 @@ export const RESEARCH: Record<ResearchId, ResearchDefinition> = {
     name: 'Stonecraft',
     cost: { knowledge: 400, blocks: 150, tools: 40 },
     minutes: 45,
-    effect: 'Block workplace rates \u00d71.40; stone gathering automation +5%.',
+    effect:
+      'Block workplace rates ×1.40; stone gathering automation +5 percentage points.',
     description: 'Our ancestors saw rocks; we see a promising career.',
     requires: { research: ['writing'] },
     effects: {
@@ -204,7 +207,7 @@ export const RESEARCH: Record<ResearchId, ResearchDefinition> = {
     name: 'Precision joinery',
     cost: { knowledge: 800, planks: 300, blocks: 150, tools: 80 },
     minutes: 90,
-    effect: 'Plank and block recipes use 2 raw materials instead of 3.',
+    effect: 'Plank recipes use 1 less wood; block recipes use 1 less stone.',
     description:
       'Measure carefully enough and even the offcuts start pulling their weight.',
     requires: { research: ['forestry'] },
@@ -264,7 +267,7 @@ export const RESEARCH: Record<ResearchId, ResearchDefinition> = {
       ceramics: 80,
     },
     minutes: 90,
-    effect: 'Unlock Bathhouse; improve amenities and leisure.',
+    effect: 'Unlock Bathhouse for amenities and leisure.',
     description:
       'A town is easier to share when its water and washing have a plan.',
     requires: {
@@ -405,7 +408,7 @@ export const RESEARCH: Record<ResearchId, ResearchDefinition> = {
     },
     minutes: 180,
     effect:
-      'Enter space; unlock Launch complex, Orbital extractor, Habitat, Cargo depot, and Deep-space array.',
+      'Enter space; unlock Launch complex and Cargo depot. Build a Launch complex for orbital extraction, Habitat and Deep-space array.',
     description:
       'Falling around the world turns out to be a useful travel arrangement.',
     effects: {},

@@ -1,5 +1,10 @@
 import { expect, test } from 'bun:test'
-import { actionDuration, actionYield, startAction } from './actions'
+import {
+  actionDuration,
+  actionYield,
+  applyExploreReward,
+  startAction,
+} from './actions'
 import { BUILDINGS } from './economy'
 import { createGame, removeFacility } from './game'
 import { BUILDING_IDS, RESEARCH_IDS } from './ids'
@@ -487,4 +492,12 @@ test('explore discovers wood then stone through its random rewards', () => {
     advanceTime(s, 4, true)
   }
   expect(s.exploreRolls).toBeGreaterThan(0)
+})
+
+test('automated exploration can discover raw resources before manual exploration', () => {
+  const s = createDefaultState()
+  for (let i = 0; i < 100 && !s.discovered.stone; i++)
+    applyExploreReward(s, 0.1)
+  expect(s.discovered).toEqual({ wood: true, stone: true })
+  expect(s.expeditionUnlocked).toBe(true)
 })

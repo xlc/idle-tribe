@@ -54,7 +54,7 @@ export const BUILDINGS: Record<BuildingId, BuildingDefinition> = {
         housing: 24,
       },
     ],
-    effect: '+2 comfortable places per level',
+    effect: 'Housing; later forms provide more comfortable places.',
   },
   foraging: {
     forms: [
@@ -67,7 +67,7 @@ export const BUILDINGS: Record<BuildingId, BuildingDefinition> = {
         requires: { research: ['shelters'] },
       },
     ],
-    effect: 'Gather food slots = level; equipment improves automation',
+    effect: '2 food gathering slots per level; equipment improves automation.',
     job: 'forager',
   },
   lumber: {
@@ -98,7 +98,8 @@ export const BUILDINGS: Record<BuildingId, BuildingDefinition> = {
         actionAutomation: { sticks: 0.1 },
       },
     ],
-    effect: 'Gather wood slots = level; forms and equipment improve automation',
+    effect:
+      '2 wood gathering slots per level; forms and equipment improve automation.',
     job: 'woodcutter',
   },
   quarry: {
@@ -129,7 +130,7 @@ export const BUILDINGS: Record<BuildingId, BuildingDefinition> = {
       },
     ],
     effect:
-      'Gather stone slots = level; forms and equipment improve automation',
+      '2 stone gathering slots per level; forms and equipment improve automation.',
     job: 'stoneworker',
   },
   'expedition-camp': {
@@ -165,7 +166,7 @@ export const BUILDINGS: Record<BuildingId, BuildingDefinition> = {
         storage: { food: 1200 },
       },
     ],
-    effect: '+400 food base storage threshold',
+    effect: 'Food storage; later forms increase the storage threshold.',
   },
   stockyard: {
     forms: [
@@ -187,7 +188,7 @@ export const BUILDINGS: Record<BuildingId, BuildingDefinition> = {
         storage: { wood: 1000, stone: 1000, ore: 600 },
       },
     ],
-    effect: '+300 wood and +300 stone base storage threshold',
+    effect: 'Raw material storage; later forms also store ore.',
   },
   sawmill: {
     forms: [
@@ -208,7 +209,7 @@ export const BUILDINGS: Record<BuildingId, BuildingDefinition> = {
         rate: 1.5,
       },
     ],
-    effect: 'Sawyer workplace; 0.5 planks/min per worker',
+    effect: 'Plank production; later forms improve the base rate.',
     job: 'sawyer',
   },
   stoneworks: {
@@ -231,7 +232,7 @@ export const BUILDINGS: Record<BuildingId, BuildingDefinition> = {
         rate: 1.5,
       },
     ],
-    effect: 'Mason workplace; 0.5 blocks/min per worker',
+    effect: 'Block production; later forms improve the base rate.',
     job: 'mason',
   },
   storehouse: {
@@ -243,7 +244,7 @@ export const BUILDINGS: Record<BuildingId, BuildingDefinition> = {
         cost: { wood: 60, stone: 40 },
         work: 4,
         requires: { research: ['carpentry'] },
-        storage: { planks: 150, blocks: 150, tools: 60 },
+        storage: { planks: 150, blocks: 150, tools: 60, ceramics: 150 },
       },
       {
         name: 'Warehouse',
@@ -255,12 +256,14 @@ export const BUILDINGS: Record<BuildingId, BuildingDefinition> = {
           planks: 500,
           blocks: 500,
           tools: 200,
+          ceramics: 500,
           metal: 400,
           machinery: 100,
         },
       },
     ],
-    effect: '+150 planks, +150 blocks, +60 tools base storage threshold',
+    effect:
+      'Storage for crafted goods; later forms also store industrial goods.',
   },
   'tool-workshop': {
     forms: [
@@ -281,7 +284,7 @@ export const BUILDINGS: Record<BuildingId, BuildingDefinition> = {
         rate: 0.3,
       },
     ],
-    effect: 'Toolmaker workplace; 0.1 tools/min per worker',
+    effect: 'Tool production; later forms improve the base rate.',
     job: 'toolmaker',
   },
   study: {
@@ -313,7 +316,7 @@ export const BUILDINGS: Record<BuildingId, BuildingDefinition> = {
         rate: 2.25,
       },
     ],
-    effect: 'Scholar workplace; 0.25 knowledge/min per worker',
+    effect: 'Knowledge production; later forms improve the base rate.',
     job: 'scholar',
   },
   library: {
@@ -361,11 +364,12 @@ export const BUILDINGS: Record<BuildingId, BuildingDefinition> = {
         requires: { research: ['causal-archives'] },
         cost: { circuits: 200, 'quantum-components': 50, 'causal-models': 20 },
         work: 40,
-        storage: { knowledge: 9000, 'causal-models': 300 },
+        storage: { knowledge: 9000, data: 2000, 'causal-models': 300 },
         offlineHours: 2,
       },
     ],
-    effect: '+100 knowledge base storage threshold',
+    effect:
+      'Knowledge storage; later archives also store data and causal models.',
   },
   'builders-lodge': {
     forms: [
@@ -419,8 +423,7 @@ export const BUILDINGS: Record<BuildingId, BuildingDefinition> = {
         requires: { research: ['irrigation'] },
       },
     ],
-    effect:
-      'Farm rate \u00d7 `(1 + 0.15 \u00d7 sqrt(L))`; no workers or upkeep',
+    effect: 'Farm production technology +15% × √level; no workers or upkeep.',
     jobBonus: { farmer: 0.15 },
   },
   'meeting-place': {
@@ -547,7 +550,8 @@ export const BUILDINGS: Record<BuildingId, BuildingDefinition> = {
         input: { ore: 3, charge: 1 },
       },
     ],
-    effect: 'Smelter workplace; 2 metal/min per worker.',
+    effect:
+      'Metal production; electric conversion improves rate and uses charge.',
     job: 'smelter',
   },
   'machine-shop': {
@@ -582,7 +586,7 @@ export const BUILDINGS: Record<BuildingId, BuildingDefinition> = {
         input: { metal: 2, tools: 0.5, charge: 1, 'causal-models': 0.01 },
       },
     ],
-    effect: 'Machinist workplace; 0.25 machinery/min per worker.',
+    effect: 'Machinery production; later forms improve rate and recipes.',
     job: 'machinist',
   },
   generator: {
@@ -607,7 +611,8 @@ export const BUILDINGS: Record<BuildingId, BuildingDefinition> = {
         input: {},
       },
     ],
-    effect: 'Power workplace; 12 charge/min per worker.',
+    effect:
+      'Charge production; solar conversion improves rate and removes fuel use.',
     job: 'power-worker',
   },
   'electronics-plant': {
@@ -712,14 +717,17 @@ export const BUILDINGS: Record<BuildingId, BuildingDefinition> = {
       {
         name: 'Orbital mining network',
         description: 'The distant rocks now have a regular collection service.',
-        requires: { research: ['orbital-surveying'] },
+        requires: {
+          research: ['orbital-surveying'],
+          facilities: { 'launch-complex': 1 },
+        },
         cost: { machinery: 120, circuits: 150, 'exotic-material': 20 },
         work: 70,
         rate: 1,
         input: { charge: 6 },
       },
     ],
-    effect: 'Orbital workplace; 0.25 exotic material/min per worker.',
+    effect: 'Exotic material extraction; later forms improve the base rate.',
     job: 'orbital-worker',
   },
   'cargo-depot': {
@@ -864,7 +872,7 @@ export const BUILDINGS: Record<BuildingId, BuildingDefinition> = {
         input: { 'quantum-components': 1, data: 8, charge: 12 },
       },
     ],
-    effect: 'Causal workplace; 0.05 models/min per worker.',
+    effect: 'Causal model production; synthesis improves rate and recipe.',
     job: 'causal-researcher',
   },
   'stellar-foundry': {
