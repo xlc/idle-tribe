@@ -1,4 +1,5 @@
 import { actionRequiredXp, cancelManual } from './actions'
+import { ERAS } from './constants'
 import { BUILDINGS } from './economy'
 import {
   ACTION_IDS,
@@ -7,6 +8,7 @@ import {
   PERK_IDS,
   RESEARCH_IDS,
   RESOURCES,
+  SPECIALIZATION_IDS,
   WORKING_JOB_IDS,
 } from './ids'
 import { createRecord } from './records'
@@ -22,6 +24,7 @@ import type {
   ProjectQueue,
   QueueEntry,
 } from './types'
+import { SAVE_VERSION } from './types'
 export const STORAGE_KEY = 'primitive-tribe-v1'
 // JSON is the untrusted boundary. Model its values explicitly and rebuild the
 // entire current schema; incompatible or incomplete records reset atomically.
@@ -121,7 +124,7 @@ export function parseSave(serialized: string | null): GameState {
     const decoded: JsonValue = JSON.parse(serialized ?? 'null'),
       p = object(decoded),
       s = createDefaultState()
-    if (p.version !== s.version) return s
+    if (p.version !== SAVE_VERSION) return s
     const resources = object(p.resources),
       facilities = object(p.facilities),
       research = object(p.research),
@@ -210,11 +213,11 @@ export function parseSave(serialized: string | null): GameState {
     s.arrivalProgress = number(p.arrivalProgress, 0, 1)
     s.welcome = bool(p.welcome)
     s.happiness = number(p.happiness, 0, 100)
-    s.era = number(p.era, 0, 7, true)
+    s.era = number(p.era, 0, ERAS.length - 1, true)
     s.specialization =
       p.specialization === null
         ? null
-        : member(p.specialization, ['forestry', 'stonecraft'] as const)
+        : member(p.specialization, SPECIALIZATION_IDS)
     s.savedAt = number(p.savedAt)
     s.completedProjects = number(p.completedProjects, 0, Infinity, true)
     s.notice = string(p.notice)
@@ -222,7 +225,7 @@ export function parseSave(serialized: string | null): GameState {
       discovered: bool(legacy.discovered),
       lifetime: number(legacy.lifetime, 0, Infinity, true),
       points: number(legacy.points, 0, Infinity, true),
-      highestEra: number(legacy.highestEra, 0, 7, true),
+      highestEra: number(legacy.highestEra, 0, ERAS.length - 1, true),
       perks: createRecord(PERK_IDS, (id) => bool(perks[id])),
     }
     if (p.absence !== null) {

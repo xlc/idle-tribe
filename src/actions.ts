@@ -12,7 +12,7 @@ import { canAfford, pay, refund, storageMultiplier } from './resources'
 import { happinessMultiplier } from './settlement'
 import type { Cost, GameState } from './types'
 
-type ActionDefinition = {
+type ActionDefinitionBase = {
   name: string
   description: string
   seconds: number
@@ -21,12 +21,21 @@ type ActionDefinition = {
   building: BuildingId
   job: ActionJob
   visible: (state: GameState) => boolean
-} & (
-  | { resource: ResourceId; amount: number }
-  | { resource?: never; amount?: never }
-)
+}
+type ActionDefinition =
+  | (ActionDefinitionBase & {
+      kind: 'resource'
+      resource: ResourceId
+      amount: number
+    })
+  | (ActionDefinitionBase & {
+      kind: 'exploration'
+      resource?: never
+      amount?: never
+    })
 export const ACTIONS: Record<ActionId, ActionDefinition> = {
   gather: {
+    kind: 'resource',
     name: 'Gather food',
     description:
       'Investigate the bushes for something that counts as breakfast.',
@@ -40,6 +49,7 @@ export const ACTIONS: Record<ActionId, ActionDefinition> = {
     visible: (s) => !gatherRetired(s),
   },
   sticks: {
+    kind: 'resource',
     name: 'Gather wood',
     description: 'Find a branch with a promising future.',
     seconds: 2,
@@ -52,6 +62,7 @@ export const ACTIONS: Record<ActionId, ActionDefinition> = {
     visible: (s) => s.discovered.wood,
   },
   stone: {
+    kind: 'resource',
     name: 'Gather stone',
     description: 'Pick up a rock and call it the start of something.',
     seconds: 3,
@@ -64,6 +75,7 @@ export const ACTIONS: Record<ActionId, ActionDefinition> = {
     visible: (s) => s.discovered.stone,
   },
   explore: {
+    kind: 'exploration',
     name: 'Explore',
     description:
       'The edge of the clearing is doing an excellent job of looking interesting.',
@@ -333,7 +345,7 @@ export function finishManual(state: GameState) {
   if (def.resource) {
     state.resources[def.resource] += actionYield(state, active.id)
   }
-  if (active.id === 'explore') applyExploreReward(state, 1)
+  if (def.kind === 'exploration') applyExploreReward(state, 1)
   syncUnlocks(state)
 }
 
@@ -368,7 +380,8 @@ export function completeAction(state: GameState, id: ActionId, count = 1) {
   if (def.resource) {
     state.resources[def.resource] += automatedOutput(state, id)
   }
-  if (id === 'explore') applyExploreReward(state, automationFactor(state, id))
+  if (def.kind === 'exploration')
+    applyExploreReward(state, automationFactor(state, id))
   syncUnlocks(state)
   return true
 }

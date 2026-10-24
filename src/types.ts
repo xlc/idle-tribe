@@ -5,9 +5,11 @@ import type {
   PerkId,
   ResearchId,
   ResourceId,
+  SpecializationId,
   WorkingJob,
 } from './ids'
 
+export const SAVE_VERSION = 9
 export type ActionBonus = Partial<Record<ActionId, number>>
 
 export type {
@@ -20,7 +22,7 @@ export type {
   WorkingJob,
 } from './ids'
 export type Cost = Partial<Record<ResourceId, number>>
-export type Specialization = 'forestry' | 'stonecraft'
+export type Specialization = SpecializationId
 export interface Requirements {
   research?: ResearchId[]
   anyResearch?: ResearchId[]
@@ -137,7 +139,7 @@ export interface Absence {
   completed: number
 }
 export interface GameState {
-  version: 9
+  version: typeof SAVE_VERSION
   actionSkills: Record<ActionId, { level: number; xp: number }>
   actionProgress: Record<ActionId, number>
   resources: Record<ResourceId, number>

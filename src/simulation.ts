@@ -130,6 +130,7 @@ function settleEvents(state: GameState, visible: boolean) {
 // commitment and cycle-progress checks live between those events.
 type ActionRule = {
   id: ActionId
+  kind: 'resource' | 'exploration'
   // Storage-free completion speed (workers × 1 / base duration); storage
   // pressure applies live in the loop, exactly like worker rates.
   speed: number
@@ -153,6 +154,7 @@ function actionRules(state: GameState): ActionRule[] {
     return [
       {
         id,
+        kind: def.kind,
         speed,
         rateMode,
         outputPerCompletion: def.resource
@@ -161,7 +163,7 @@ function actionRules(state: GameState): ActionRule[] {
             happinessMultiplier(state)
           : 0,
         xpPerCompletion: xpFactor(state, id),
-        stepCap: id === 'explore' ? 64 * (base / n) : Infinity,
+        stepCap: def.kind === 'exploration' ? 64 * (base / n) : Infinity,
       },
     ]
   })
@@ -258,7 +260,7 @@ export function advanceTime(
           ? action.speed * (pressure[resource] ?? 1)
           : action.speed
       if (rate <= 0) continue
-      if (action.id === 'explore') {
+      if (action.kind === 'exploration') {
         step = Math.min(step, action.stepCap)
       } else if (action.rateMode) {
         // Keep level-ups as event boundaries so rules refresh with skill.

@@ -7,7 +7,12 @@ import {
   WORKING_JOB_IDS,
 } from './ids'
 import { createRecord } from './records'
-import type { GameState, Person, WorkingJob } from './types'
+import {
+  type GameState,
+  type Person,
+  SAVE_VERSION,
+  type WorkingJob,
+} from './types'
 export function createPerson(
   name: string,
   aptitude: WorkingJob = 'forager',
@@ -23,7 +28,7 @@ export function createPerson(
 }
 export function createDefaultState(): GameState {
   return {
-    version: 9,
+    version: SAVE_VERSION,
     actionSkills: createRecord(ACTION_IDS, () => ({ level: 1, xp: 0 })),
     actionProgress: createRecord(ACTION_IDS, () => 0),
     resources: createRecord(RESOURCES, () => 0),

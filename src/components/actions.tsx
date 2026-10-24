@@ -202,7 +202,7 @@ function ActionCard({ session, id }: { session: GameSession; id: ActionId }) {
             +2% yield/level · −2% duration/level
           </p>
           {!def.resource && <Costs session={session} cost={def.cost} />}
-          {id === 'explore' && (
+          {def.kind === 'exploration' && (
             <p className="action-hint">{exploreHint(skill.level)}</p>
           )}
         </div>
