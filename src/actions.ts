@@ -15,6 +15,7 @@ import type { Cost, GameState } from './types'
 type ActionDefinitionBase = {
   name: string
   description: string
+  levelEffect: string
   seconds: number
   baseXp: number
   cost: Cost
@@ -39,6 +40,7 @@ export const ACTIONS: Record<ActionId, ActionDefinition> = {
     name: 'Gather food',
     description:
       'Investigate the bushes for something that counts as breakfast.',
+    levelEffect: 'Each level: +2% output · −2% cycle time',
     seconds: 1,
     baseXp: 4,
     cost: {},
@@ -52,6 +54,7 @@ export const ACTIONS: Record<ActionId, ActionDefinition> = {
     kind: 'resource',
     name: 'Gather wood',
     description: 'Find a branch with a promising future.',
+    levelEffect: 'Each level: +2% output · −2% cycle time',
     seconds: 2,
     baseXp: 3,
     cost: {},
@@ -65,6 +68,7 @@ export const ACTIONS: Record<ActionId, ActionDefinition> = {
     kind: 'resource',
     name: 'Gather stone',
     description: 'Pick up a rock and call it the start of something.',
+    levelEffect: 'Each level: +2% output · −2% cycle time',
     seconds: 3,
     baseXp: 5,
     cost: {},
@@ -79,6 +83,7 @@ export const ACTIONS: Record<ActionId, ActionDefinition> = {
     name: 'Explore',
     description:
       'The edge of the clearing is doing an excellent job of looking interesting.',
+    levelEffect: 'Each level: faster trips · better finds',
     seconds: 4,
     baseXp: 1,
     cost: { food: 6 },

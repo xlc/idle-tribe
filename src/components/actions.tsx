@@ -198,9 +198,7 @@ function ActionCard({ session, id }: { session: GameSession; id: ActionId }) {
             xp={skill.xp}
             requiredXp={actionRequiredXp(s, id)}
           />
-          <p className="action-skill-rules">
-            +2% yield/level · −2% duration/level
-          </p>
+          <p className="action-skill-rules">{def.levelEffect}</p>
           {!def.resource && <Costs session={session} cost={def.cost} />}
           {def.kind === 'exploration' && (
             <p className="action-hint">{exploreHint(skill.level)}</p>
