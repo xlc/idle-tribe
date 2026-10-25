@@ -65,9 +65,6 @@ export function App({ session }: { session: GameSession }) {
   const props = { session, confirm }
   return (
     <main className={`game-shell${automated ? '' : ' opening-shell'}`}>
-      {away && away.wallSeconds >= 60 && (
-        <AwayNotification session={session} report={away} />
-      )}
       <div className="game-layout">
         <Stockpile session={session} />
         <Tabs.Root
@@ -79,6 +76,9 @@ export function App({ session }: { session: GameSession }) {
           }}
         >
           <div className="view-scroll" ref={content}>
+            {away && away.wallSeconds >= 60 && (
+              <AwayNotification session={session} report={away} />
+            )}
             {s.notice && (
               <p className="feedback" role="status">
                 {s.notice}
@@ -87,18 +87,11 @@ export function App({ session }: { session: GameSession }) {
             {view === 'settlement' && automated && (
               <Workforce session={session} />
             )}
-            {view === 'settlement' && (
+            {view === 'settlement' && !automated && (
               <section className="discoveries" aria-label="Actions">
                 <h2>Actions</h2>
                 <ActionCards session={session} />
               </section>
-            )}
-            {view === 'settlement' && automated && (
-              <div
-                className="settlement-landscape"
-                data-landscape={ERAS[s.era]?.landscape}
-                aria-hidden="true"
-              />
             )}
             <div
               className={automated ? 'settlement-layout' : 'opening'}
@@ -111,7 +104,17 @@ export function App({ session }: { session: GameSession }) {
                   hidden={view !== 'settlement'}
                 >
                   {automated ? (
-                    <Production {...props} />
+                    <>
+                      <Production {...props} />
+                      <details className="settlement-scenery">
+                        <summary>Settlement view</summary>
+                        <div
+                          className="settlement-landscape"
+                          data-landscape={ERAS[s.era]?.landscape}
+                          aria-hidden="true"
+                        />
+                      </details>
+                    </>
                   ) : (
                     <p className="opening-flavor">{ERAS[0]?.description}</p>
                   )}
@@ -263,13 +266,16 @@ export function App({ session }: { session: GameSession }) {
                 onClick={() => content.current?.scrollTo({ top: 0 })}
               >
                 <ViewIcon name={entry.id} />
-                {entry.label}
-                {entry.working && (
-                  <span className="working-status">
-                    <span className="working-dot" aria-hidden="true" />
-                    Working
-                  </span>
-                )}
+                <span className="nav-label">
+                  {entry.label}
+                  {entry.working && (
+                    <span
+                      className="working-dot"
+                      role="img"
+                      aria-label="Working"
+                    />
+                  )}
+                </span>
               </Tabs.Trigger>
             ))}
           </Tabs.List>

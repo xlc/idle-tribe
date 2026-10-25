@@ -71,6 +71,20 @@
   gap: 8px;
   margin-top: 10px;
 }
+.investment-change {
+  color: var(--color-primary);
+  font-size: 12px;
+  margin-top: 6px;
+}
+.branch-identity {
+  color: var(--color-primary);
+  font-size: 13px;
+  margin-top: 5px;
+  font-weight: 600;
+}
+.settlement-scenery {
+  margin-top: 16px;
+}
 .staffing-target,
 .staffing-efficiency {
   font-size: 11px;

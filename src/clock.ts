@@ -1,10 +1,12 @@
+import { RESOURCE_INFO } from './constants'
 import { BUILDINGS } from './economy'
+import { formatCompactResource } from './format'
 import { BUILDING_IDS, RESEARCH_IDS, RESOURCES, WORKING_JOB_IDS } from './ids'
 import { createRecord } from './records'
 import { RESEARCH } from './research-definitions'
 import { advanceTime } from './simulation'
 import { expertiseLevel } from './skills'
-import type { GameState } from './types'
+import type { GameState, ResourceId } from './types'
 export function offlineWindow(state: GameState) {
   let hours = 8 + (state.legacy.perks['longer-preparations'] ? 2 : 0)
   for (const id of BUILDING_IDS)
@@ -25,6 +27,7 @@ export function effectiveOfflineSeconds(
   return t <= b ? t : b * (2 * Math.sqrt(t / b) - 1)
 }
 export function beginAbsence(state: GameState, time: number) {
+  if (state.manual) state.manual.repeat = false
   if (state.absence) return
   state.absence = {
     start: time,
@@ -65,4 +68,37 @@ export function settleAbsence(state: GameState, time: number) {
 export type AwayProgress = NonNullable<ReturnType<typeof settleAbsence>>
 export function awaySummary(report: AwayProgress) {
   return `${report.arrivals} ${report.arrivals === 1 ? 'arrival' : 'arrivals'} · ${report.completed} ${report.completed === 1 ? 'project' : 'projects'} completed`
+}
+
+export function awayHighlight(report: AwayProgress) {
+  const milestones = [
+    ...(report.completed
+      ? [
+          `${report.completed} ${report.completed === 1 ? 'project' : 'projects'} completed`,
+        ]
+      : []),
+    ...(report.arrivals
+      ? [
+          `${report.arrivals} ${report.arrivals === 1 ? 'new settler' : 'new settlers'}`,
+        ]
+      : []),
+  ]
+  if (milestones.length) return milestones.join(' · ')
+  const levels = report.expertise.reduce(
+    (total, person) =>
+      total +
+      person.gains.reduce((sum, gain) => sum + gain.after - gain.before, 0),
+    0,
+  )
+  if (levels) return `+${levels} expertise ${levels === 1 ? 'level' : 'levels'}`
+  const best = RESOURCES.reduce<ResourceId | null>(
+    (chosen, r) =>
+      report.gains[r] > Math.max(0.0005, chosen ? report.gains[chosen] : 0)
+        ? r
+        : chosen,
+    null,
+  )
+  return best
+    ? `+${formatCompactResource(report.gains[best])} ${RESOURCE_INFO[best].name.toLowerCase()}`
+    : 'Settlement saved'
 }

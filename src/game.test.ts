@@ -3,6 +3,8 @@ import {
   actionDuration,
   actionYield,
   applyExploreReward,
+  cancelManual,
+  canRepeatAction,
   startAction,
 } from './actions'
 import { BUILDINGS } from './economy'
@@ -500,4 +502,50 @@ test('automated exploration can discover raw resources before manual exploration
     applyExploreReward(s, 0.1)
   expect(s.discovered).toEqual({ wood: true, stone: true })
   expect(s.expeditionUnlocked).toBe(true)
+})
+
+test('practiced gathering repeats only when selected and can be stopped immediately', () => {
+  const s = createDefaultState()
+  expect(canRepeatAction(s, 'gather')).toBe(false)
+  expect(startAction(s, 'gather', true)).toBe(false)
+  for (let i = 0; i < 4; i++) {
+    expect(startAction(s, 'gather')).toBe(true)
+    advanceTime(s, actionDuration(s, 'gather'), true)
+  }
+  expect(canRepeatAction(s, 'gather')).toBe(true)
+  expect(startAction(s, 'gather', true)).toBe(true)
+  const before = s.resources.food
+  const sliced = structuredClone(s)
+  advanceTime(s, 10, true)
+  for (let i = 0; i < 100; i++) advanceTime(sliced, 0.1, true)
+  expect(s.resources.food).toBeGreaterThan(before + 5)
+  expect(s.resources.food).toBeCloseTo(sliced.resources.food, 7)
+  expect(s.actionSkills).toEqual(sliced.actionSkills)
+  expect(s.manual?.repeat).toBe(true)
+  cancelManual(s)
+  const stopped = s.resources.food
+  advanceTime(s, 5, true)
+  expect(s.resources.food).toBe(stopped)
+  expect(s.manual).toBeNull()
+  expect(startAction(s, 'explore', true)).toBe(false)
+})
+
+test('repeated gathering hands over to assigned workers without starting another manual cycle', () => {
+  const s = createDefaultState()
+  s.discovered.wood = true
+  s.actionSkills.sticks.level = 2
+  expect(startAction(s, 'sticks', true)).toBe(true)
+  s.facilities.lumber.level = 1
+  people(s, 'woodcutter')
+  advanceTime(s, actionDuration(s, 'sticks'), true)
+  expect(s.manual).toBeNull()
+})
+
+test('the first researched stick immediately improves manual food gathering', () => {
+  const s = createDefaultState()
+  const before = actionYield(s, 'gather')
+  complete(s, 'sharpened-stick')
+  expect(startAction(s, 'gather')).toBe(true)
+  advanceTime(s, actionDuration(s, 'gather'), true)
+  expect(s.resources.food).toBeCloseTo(before * 1.25)
 })

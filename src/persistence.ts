@@ -205,6 +205,7 @@ export function parseSave(serialized: string | null): GameState {
         id: member(m.id, ACTION_IDS),
         paid: cost(m.paid),
         progress: number(m.progress, 0, 1),
+        repeat: false,
       }
     }
     s.minuteProgress = number(p.minuteProgress, 0, 60)

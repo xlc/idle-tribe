@@ -1,12 +1,7 @@
 .away-toast {
-  position: fixed;
-  z-index: 20;
-  top: calc(14px + env(safe-area-inset-top));
-  left: 50%;
-  transform: translateX(-50%);
   display: flex;
   align-items: stretch;
-  width: min(420px, calc(100vw - 24px));
+  margin-bottom: 12px;
   overflow: hidden;
 }
 .away-toast-body {

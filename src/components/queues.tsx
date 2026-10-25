@@ -48,13 +48,15 @@ export function Queue({ session, confirm, id }: { id: QueueId } & ViewProps) {
             {open ? '⌃' : '⌄'}
           </span>
         </span>
-        <strong>{current ? projectName(s, current) : 'No project'}</strong>
-        <progress
-          className="progress"
-          value={active?.progress ?? 0}
-          max={active?.total || 1}
-          aria-label={`${id} progress`}
-        />
+        {current && <strong>{projectName(s, current)}</strong>}
+        {current && (
+          <progress
+            className="progress"
+            value={active?.progress ?? 0}
+            max={active?.total || 1}
+            aria-label={`${id} progress`}
+          />
+        )}
         <span className="plan-status">
           {status}
           {q.waiting.length > 0 && <span> · {q.waiting.length} waiting</span>}

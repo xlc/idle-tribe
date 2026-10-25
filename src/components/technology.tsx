@@ -28,6 +28,9 @@ export function Technology({ session, confirm }: ViewProps) {
                 aria-label={def.name}
               >
                 <h3>{def.name}</h3>
+                {def.branchIdentity && (
+                  <p className="branch-identity">{def.branchIdentity}</p>
+                )}
                 <p className="flavor">{def.description}</p>
                 <p className="tech-effect">{def.effect}</p>
                 <Costs session={session} cost={quote.cost} />
@@ -43,7 +46,7 @@ export function Technology({ session, confirm }: ViewProps) {
                       def.branch
                         ? confirm(
                             `Choose ${def.name}?`,
-                            `${def.effect} This choice lasts for this run. The other path will be locked when research completes. Cancelling unfinished research permits changing the choice.`,
+                            `${def.branchIdentity}. Locks the other path when research completes. You can cancel unfinished research.`,
                             queue,
                           )
                         : session.change(queue)

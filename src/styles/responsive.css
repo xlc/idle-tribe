@@ -7,7 +7,8 @@
   .view-tabs .rt-TabsTrigger {
     flex: 0 0 auto;
   }
-  .view-tabs .rt-TabsTriggerInner {
+  .view-tabs .rt-TabsTriggerInner,
+  .view-tabs .rt-TabsTriggerInnerHidden {
     flex-direction: row;
     gap: 8px;
   }
@@ -38,10 +39,6 @@
   .game-layout {
     gap: 10px;
   }
-  .stockpile-panel {
-    overflow-x: auto;
-    overflow-y: hidden;
-  }
   .stockpile {
     flex-wrap: nowrap;
     padding: 10px 0;
@@ -62,6 +59,36 @@
   }
   .resource-value {
     font-size: 18px;
+  }
+  .stockpile[data-pinned="true"] {
+    overflow: hidden;
+  }
+  .stockpile[data-pinned="true"] .resource {
+    flex: 1 1 0;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0 6px;
+  }
+  .stockpile[data-pinned="true"] .painted-art {
+    display: none;
+  }
+  .stockpile[data-pinned="true"] .resource-name {
+    white-space: normal;
+    font-size: 11px;
+    min-height: 2.5em;
+  }
+  .stockpile[data-pinned="true"] .resource-value {
+    font-size: 16px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .stockpile[data-pinned="true"] .resource-meta {
+    grid-column: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .stockpile[data-pinned="true"] .resource-rate {
+    font-size: 11px;
   }
   .settlement-layout {
     grid-template-columns: minmax(0, 1fr);
@@ -102,6 +129,24 @@
   .manual-work summary {
     padding: 8px 0;
     min-height: 36px;
+  }
+  .action-automated {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr);
+    gap: 8px 10px;
+  }
+  .action-automation-controls {
+    grid-column: 1 / -1;
+    margin-left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .action-automation-controls > .progress {
+    flex: 1;
+    min-width: 40px;
   }
   .workforce-bar {
     margin-bottom: 12px;

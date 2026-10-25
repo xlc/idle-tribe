@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test'
 import {
+  awayHighlight,
   beginAbsence,
   effectiveOfflineSeconds,
   offlineWindow,
@@ -9,6 +10,7 @@ import { RESOURCES } from './ids'
 import { parseSave } from './persistence'
 import { enqueue } from './research'
 import { createSession } from './session'
+import { createDefaultState } from './state'
 import { people, settlement } from './test-helpers'
 
 const hour = 3600000
@@ -110,4 +112,39 @@ test('a backwards wall clock cannot settle the same interval twice or invalidate
   expect(s.resources).toEqual(before)
   session.tick(2 * hour + 60000)
   expect(s.resources.food).toBeGreaterThan(before.food)
+})
+
+test('leaving stops repetition while preserving the unfinished manual cycle', () => {
+  const s = createDefaultState()
+  s.actionSkills.gather.level = 2
+  const session = createSession(s, () => {}, hour, true)
+  session.change(() => session.game.startAction('gather', true), hour)
+  session.setVisible(false, hour + 200)
+  const paused = s.manual?.progress
+  expect(s.manual?.repeat).toBe(false)
+  session.tick(hour + 10000)
+  expect(s.manual?.progress).toBe(paused)
+  session.setVisible(true, hour + 10000)
+  session.tick(hour + 15000)
+  expect(s.manual).toBeNull()
+  expect(s.actionSkills.gather.xp).toBe(1)
+})
+
+test('a productive return highlights gains even without arrivals or completed projects', () => {
+  const s = settlement()
+  people(s, 'farmer')
+  s.resources.food = 0
+  beginAbsence(s, hour)
+  const report = settleAbsence(s, hour + 60000)
+  expect(report).not.toBeNull()
+  if (!report) throw new Error('Missing away report')
+  expect(report.arrivals).toBe(0)
+  expect(report.completed).toBe(0)
+  expect(awayHighlight(report)).toMatch(/^\+.* food$/)
+  report.expertise = [
+    { index: 0, name: 'You', gains: [{ job: 'farmer', before: 0, after: 1 }] },
+  ]
+  expect(awayHighlight(report)).toBe('+1 expertise level')
+  report.completed = 1
+  expect(awayHighlight(report)).toBe('1 project completed')
 })

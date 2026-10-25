@@ -5,10 +5,13 @@ export const RESEARCH: Record<ResearchId, ResearchDefinition> = {
     name: 'Sharpened stick',
     cost: { wood: 6, food: 5 },
     minutes: 1,
-    effect: 'Food gathering automation +2 percentage points.',
+    effect: 'Food gathering output +25%; automation +2 percentage points.',
     description: 'A stick with a surprisingly convincing point.',
     requires: { research: [], discovery: 'wood' },
-    effects: { actionAutomation: { gather: 0.02 } },
+    effects: {
+      actionYield: { gather: 0.25 },
+      actionAutomation: { gather: 0.02 },
+    },
   },
   shelters: {
     name: 'Shelters',
@@ -188,6 +191,7 @@ export const RESEARCH: Record<ResearchId, ResearchDefinition> = {
       actionAutomation: { sticks: 0.05 },
     },
     branch: 'forestry',
+    branchIdentity: 'Efficient crafting',
   },
   stonecraft: {
     name: 'Stonecraft',
@@ -202,6 +206,7 @@ export const RESEARCH: Record<ResearchId, ResearchDefinition> = {
       actionAutomation: { stone: 0.05 },
     },
     branch: 'stonecraft',
+    branchIdentity: 'Room to grow',
   },
   joinery: {
     name: 'Precision joinery',

@@ -37,6 +37,7 @@ export interface Effects {
   recipeReduction?: Partial<Record<JobId, Cost>>
   actionAutomation?: ActionBonus
   actionXp?: ActionBonus
+  actionYield?: ActionBonus
   storage?: number
   resourceStorage?: Cost
   housing?: number
@@ -52,6 +53,7 @@ export interface ResearchDefinition {
   effect: string
   effects: Effects
   branch?: Specialization
+  branchIdentity?: string
   grant?: { building: BuildingId; job: JobId }
   era?: number
   unlockHappiness?: boolean
@@ -127,6 +129,7 @@ export interface ManualAction {
   id: ActionId
   paid: Cost
   progress: number
+  repeat: boolean
 }
 export interface Absence {
   start: number

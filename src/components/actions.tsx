@@ -2,21 +2,23 @@ import { useEffect, useRef, useState } from 'react'
 import {
   ACTIONS,
   actionCompletionDuration,
+  actionJobActive,
   actionOutputRate,
   actionRequiredXp,
   actionSlots,
   actionWorkers,
   actionYield,
   automationFactor,
+  canRepeatAction,
   isRateMode,
 } from '../actions'
-import { formatResource } from '../format'
+import { formatCost, formatResource } from '../format'
 import { ACTION_IDS, type ActionId } from '../ids'
 import { canAfford } from '../resources'
 import type { GameSession } from '../session'
 import { ResourceArt } from './art'
 import { ActionCountdown, ActionProgress, Costs } from './common'
-import { WorkerControls } from './settlement'
+import { WorkerControls } from './worker-controls'
 
 function ActionSkill({
   level,
@@ -84,8 +86,15 @@ function Chevron() {
   )
 }
 
-function ActionCard({ session, id }: { session: GameSession; id: ActionId }) {
+export function ActionCard({
+  session,
+  id,
+}: {
+  session: GameSession
+  id: ActionId
+}) {
   const [expanded, setExpanded] = useState(false)
+  const [repeat, setRepeat] = useState(false)
   const s = session.game.state,
     active = s.manual
   const def = ACTIONS[id],
@@ -95,6 +104,8 @@ function ActionCard({ session, id }: { session: GameSession; id: ActionId }) {
     rateMode = isRateMode(s, id),
     duration = actionCompletionDuration(s, id),
     skill = s.actionSkills[id]
+  const working = actionJobActive(s, id)
+  const repeating = running && Boolean(active?.repeat)
   const icon = (
     <span
       className="action-icon"
@@ -119,23 +130,17 @@ function ActionCard({ session, id }: { session: GameSession; id: ActionId }) {
               <span className="action-yield">
                 {def.resource
                   ? `+${formatResource(actionOutputRate(s, id) * 60)} ${def.resource}/min · automation ${Math.round(automationFactor(s, id) * 100)}%`
-                  : `${formatResource((1 / duration) * 60)} explores/min`}
+                  : `${formatResource(working ? (1 / duration) * 60 : 0)} explores/min`}
               </span>
             </span>
             <span className="action-automation-controls">
-              {rateMode ? (
-                <span className="rate-chip" role="status">
-                  {def.resource
-                    ? `${formatResource(actionYield(s, id))} ${def.resource} · continuous`
-                    : 'exploring'}
-                </span>
-              ) : (
+              {!rateMode && (
                 <ActionProgress
                   session={session}
                   duration={duration}
                   label={`${def.name} progress`}
                   value={s.actionProgress[id] % 1}
-                  running
+                  running={working}
                 />
               )}
               <WorkerControls session={session} job={def.job} />
@@ -145,17 +150,30 @@ function ActionCard({ session, id }: { session: GameSession; id: ActionId }) {
           <button
             type="button"
             className="manual-trigger"
-            aria-label={def.name}
-            disabled={Boolean(active) || !canAfford(s, def.cost)}
-            onClick={() => session.change(() => session.game.startAction(id))}
+            aria-label={repeating ? `Stop ${def.name.toLowerCase()}` : def.name}
+            disabled={
+              !repeating && (Boolean(active) || !canAfford(s, def.cost))
+            }
+            onClick={() =>
+              session.change(() =>
+                repeating
+                  ? session.game.cancelAction()
+                  : session.game.startAction(
+                      id,
+                      repeat && canRepeatAction(s, id),
+                    ),
+              )
+            }
           >
             {icon}
             <span className="action-copy">
-              <strong className="action-name">{def.name}</strong>
+              <strong className="action-name">
+                {repeating ? `Stop · ${def.name}` : def.name}
+              </strong>
               <span className="action-yield">
                 {def.resource
                   ? `+${formatResource(actionYield(s, id))} ${def.resource} · `
-                  : ''}
+                  : `${formatCost(def.cost)} · `}
                 {formatResource(duration)}s
                 {slots > 0 ? ` · ${slots} slot${slots === 1 ? '' : 's'}` : ''}
               </span>
@@ -190,6 +208,27 @@ function ActionCard({ session, id }: { session: GameSession; id: ActionId }) {
           <Chevron />
         </button>
       </div>
+      {!workers && slots > 0 && (
+        <div className="action-unassigned">
+          <WorkerControls session={session} job={def.job} />
+        </div>
+      )}
+      {!workers && canRepeatAction(s, id) && (
+        <label className="action-repeat">
+          <input
+            type="checkbox"
+            checked={running ? Boolean(active?.repeat) : repeat}
+            onChange={(e) => {
+              const enabled = e.target.checked
+              setRepeat(enabled)
+              session.change(() => {
+                if (s.manual?.id === id) s.manual.repeat = enabled
+              })
+            }}
+          />
+          Repeat
+        </label>
+      )}
       {expanded && (
         <div className="action-details" id={`${id}-details`}>
           <p className="action-description">{def.description}</p>

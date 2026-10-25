@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import { type AwayProgress, awaySummary } from '../clock'
+import { useRef, useState } from 'react'
+import { type AwayProgress, awayHighlight } from '../clock'
 import { RESOURCE_INFO } from '../constants'
 import { OCCUPATIONS } from '../economy'
 import { formatDuration, formatResource } from '../format'
@@ -38,17 +38,11 @@ export function AwayNotification({
 }) {
   const [seen, setSeen] = useState(report)
   const [shown, setShown] = useState(true)
-  const [dialogOpen, setDialogOpen] = useState(false)
   const dialog = useRef<HTMLDialogElement>(null)
   if (report !== seen) {
     setSeen(report)
     setShown(true)
   }
-  useEffect(() => {
-    if (!shown || dialogOpen) return
-    const timer = setTimeout(() => setShown(false), 20000)
-    return () => clearTimeout(timer)
-  }, [shown, dialogOpen])
   if (!shown) return null
   return (
     <div
@@ -61,11 +55,10 @@ export function AwayNotification({
         className="away-toast-body"
         onClick={() => {
           dialog.current?.showModal()
-          setDialogOpen(true)
         }}
       >
         <strong>Away · {formatDuration(report.wallSeconds)}</strong>
-        <span className="away-toast-counts">{awaySummary(report)}</span>
+        <span className="away-toast-counts">{awayHighlight(report)}</span>
       </button>
       <button
         type="button"
@@ -75,11 +68,7 @@ export function AwayNotification({
       >
         ×
       </button>
-      <dialog
-        ref={dialog}
-        className="modal away-modal panel"
-        onClose={() => setDialogOpen(false)}
-      >
+      <dialog ref={dialog} className="modal away-modal panel">
         <div className="modal-box">
           <AwayReport session={session} report={report} />
           <div className="modal-action">
@@ -123,10 +112,7 @@ export function AwayReport({
           <strong>Away · {formatDuration(report.wallSeconds)}</strong>
           <small className="away-subtitle">While you were away</small>
         </span>
-        <span className="away-summary-counts">
-          {report.arrivals} {report.arrivals === 1 ? 'arrival' : 'arrivals'} ·{' '}
-          {report.completed} {report.completed === 1 ? 'project' : 'projects'}
-        </span>
+        <span className="away-summary-counts">{awayHighlight(report)}</span>
         <span className="away-chevron" aria-hidden="true">
           {open ? '−' : '+'}
         </span>

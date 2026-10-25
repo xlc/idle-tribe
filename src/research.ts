@@ -342,7 +342,7 @@ export function researchPlan(state: GameState) {
       completeProject(projected, entry.project)
   return projected
 }
-export function previewProject(state: GameState, project: Project) {
+export function constructionPlan(state: GameState) {
   const projected = researchPlan(state)
   const q = state.queues.construction
   for (const entry of [...(q.active ? [q.active] : []), ...q.waiting]) {
@@ -350,7 +350,10 @@ export function previewProject(state: GameState, project: Project) {
     if (!quote.blocker && !quote.obsolete)
       completeProject(projected, entry.project)
   }
-  return quoteProject(projected, project)
+  return projected
+}
+export function previewProject(state: GameState, project: Project) {
+  return quoteProject(constructionPlan(state), project)
 }
 export function researchVisible(
   state: GameState,

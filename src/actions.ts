@@ -18,6 +18,7 @@ type ActionDefinitionBase = {
   levelEffect: string
   seconds: number
   baseXp: number
+  repeatAtLevel?: number
   cost: Cost
   building: BuildingId
   job: ActionJob
@@ -43,6 +44,7 @@ export const ACTIONS: Record<ActionId, ActionDefinition> = {
     levelEffect: 'Each level: +2% output · −2% cycle time',
     seconds: 1,
     baseXp: 4,
+    repeatAtLevel: 2,
     cost: {},
     building: 'foraging',
     job: 'forager',
@@ -57,6 +59,7 @@ export const ACTIONS: Record<ActionId, ActionDefinition> = {
     levelEffect: 'Each level: +2% output · −2% cycle time',
     seconds: 2,
     baseXp: 3,
+    repeatAtLevel: 2,
     cost: {},
     building: 'lumber',
     job: 'woodcutter',
@@ -71,6 +74,7 @@ export const ACTIONS: Record<ActionId, ActionDefinition> = {
     levelEffect: 'Each level: +2% output · −2% cycle time',
     seconds: 3,
     baseXp: 5,
+    repeatAtLevel: 2,
     cost: {},
     building: 'quarry',
     job: 'stoneworker',
@@ -112,17 +116,23 @@ export function actionWorkers(state: GameState, id: ActionId) {
   return state.people.reduce((n, person) => (person.job === job ? n + 1 : n), 0)
 }
 
-export function startAction(state: GameState, id: ActionId) {
+export function canRepeatAction(state: GameState, id: ActionId) {
+  const level = ACTIONS[id].repeatAtLevel
+  return level !== undefined && state.actionSkills[id].level >= level
+}
+
+export function startAction(state: GameState, id: ActionId, repeat = false) {
   const def = ACTIONS[id]
   if (
     state.manual ||
+    (repeat && !canRepeatAction(state, id)) ||
     !def.visible(state) ||
     actionWorkers(state, id) > 0 ||
     !canAfford(state, def.cost)
   )
     return false
   pay(state, def.cost)
-  state.manual = { id, paid: { ...def.cost }, progress: 0 }
+  state.manual = { id, paid: { ...def.cost }, progress: 0, repeat }
   return true
 }
 export function actionRequiredXp(state: GameState, id: ActionId) {
@@ -132,8 +142,11 @@ export function actionRequiredXp(state: GameState, id: ActionId) {
 }
 export function actionYield(state: GameState, id: ActionId) {
   const def = ACTIONS[id]
+  let bonus = 1
+  for (const r of RESEARCH_IDS)
+    if (state.research[r]) bonus += RESEARCH[r].effects.actionYield?.[id] ?? 0
   return def.resource
-    ? def.amount * 1.02 ** (state.actionSkills[id].level - 1)
+    ? def.amount * 1.02 ** (state.actionSkills[id].level - 1) * bonus
     : 0
 }
 // Duration of one completion by a single worker at the current skill level.
@@ -209,7 +222,7 @@ export function actionOutputRate(
     storage = options.storage ?? storageMultiplier(state, def.resource)
   return (
     ((n * storage) / (def.seconds * 0.98 ** (level - 1))) *
-    (def.amount * 1.02 ** (level - 1)) *
+    actionYield(state, id) *
     automationFactor(state, id) *
     (options.happiness ?? happinessMultiplier(state))
   )
@@ -354,6 +367,7 @@ export function finishManual(state: GameState) {
   }
   if (def.kind === 'exploration') applyExploreReward(state, 1)
   syncUnlocks(state)
+  if (active.repeat) startAction(state, active.id, true)
 }
 
 // One automated completion. Explore pays its cost here (with pause) instead

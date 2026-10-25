@@ -1,4 +1,4 @@
-import { startAction, syncUnlocks } from './actions'
+import { cancelManual, startAction, syncUnlocks } from './actions'
 import { BUILDINGS } from './economy'
 import { feast } from './food'
 import {
@@ -44,7 +44,9 @@ export function createGame(state: GameState) {
     assign: (index: number, job: JobId) => assignJob(state, index, job),
     adjust: (job: JobId, n: number) => adjustWorkers(state, job, n),
     fill: (job: JobId) => fillWorkers(state, job),
-    startAction: (id: import('./ids').ActionId) => startAction(state, id),
+    startAction: (id: import('./ids').ActionId, repeat = false) =>
+      startAction(state, id, repeat),
+    cancelAction: () => cancelManual(state),
     feast: () => feast(state),
   }
 }
