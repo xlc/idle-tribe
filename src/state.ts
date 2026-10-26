@@ -6,6 +6,7 @@ import {
   RESOURCES,
   WORKING_JOB_IDS,
 } from './ids'
+import { generatePersonName } from './names'
 import { createRecord } from './records'
 import type { GameState, Person, WorkingJob } from './types'
 export function createPerson(
@@ -21,7 +22,7 @@ export function createPerson(
     practice: createRecord(WORKING_JOB_IDS, () => 0),
   }
 }
-export function createDefaultState(): GameState {
+export function createDefaultState(nameSeed = 0): GameState {
   return {
     actionSkills: createRecord(ACTION_IDS, () => ({ level: 1, xp: 0 })),
     actionProgress: createRecord(ACTION_IDS, () => 0),
@@ -32,7 +33,8 @@ export function createDefaultState(): GameState {
       equipment: 0,
     })),
     research: createRecord(RESEARCH_IDS, () => false),
-    people: [createPerson('You')],
+    nameSeed,
+    people: [createPerson(generatePersonName(nameSeed))],
     discovered: { wood: false, stone: false },
     exploreUnlocked: false,
     researchUnlocked: false,
@@ -62,4 +64,37 @@ export function createDefaultState(): GameState {
       perks: createRecord(PERK_IDS, () => false),
     },
   }
+}
+
+export function resetState(
+  state: GameState,
+  preserved: Pick<GameState, 'legacy' | 'welcome' | 'savedAt'>,
+) {
+  const fresh = createDefaultState((state.nameSeed + 1) >>> 0)
+  state.actionSkills = fresh.actionSkills
+  state.actionProgress = fresh.actionProgress
+  state.resources = fresh.resources
+  state.facilities = fresh.facilities
+  state.research = fresh.research
+  state.people = fresh.people
+  state.nameSeed = fresh.nameSeed
+  state.discovered = fresh.discovered
+  state.exploreUnlocked = fresh.exploreUnlocked
+  state.researchUnlocked = fresh.researchUnlocked
+  state.expeditionUnlocked = fresh.expeditionUnlocked
+  state.exploreRolls = fresh.exploreRolls
+  state.queues = fresh.queues
+  state.nextSequence = fresh.nextSequence
+  state.manual = fresh.manual
+  state.minuteProgress = fresh.minuteProgress
+  state.arrivalProgress = fresh.arrivalProgress
+  state.welcome = preserved.welcome
+  state.happiness = fresh.happiness
+  state.era = fresh.era
+  state.specialization = fresh.specialization
+  state.savedAt = preserved.savedAt
+  state.absence = fresh.absence
+  state.completedProjects = fresh.completedProjects
+  state.notice = fresh.notice
+  state.legacy = preserved.legacy
 }

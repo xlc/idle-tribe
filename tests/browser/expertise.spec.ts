@@ -5,6 +5,8 @@ import { createDefaultState, createPerson } from '../../src/state'
 import { complete, required, settlement } from '../../src/test-helpers'
 import type { GameState } from '../../src/types'
 
+const founder = required(createDefaultState().people[0]).name
+
 async function open(page: Page, state: GameState) {
   await page.clock.install({ time: new Date('2026-10-20T10:00:00Z') })
   await page.addInitScript(
@@ -35,9 +37,9 @@ for (const width of [1280, 390]) {
     }) => {
       await open(page, createDefaultState())
       await expect(
-        page.getByRole('article', { name: 'You', exact: true }),
+        page.getByRole('article', { name: founder, exact: true }),
       ).toContainText('Foraging aptitude · +5%')
-      await expect(page.getByLabel('You occupation')).not.toBeAttached()
+      await expect(page.getByLabel(`${founder} occupation`)).not.toBeAttached()
       await page
         .getByRole('button', { name: 'Gather food', exact: true })
         .click()

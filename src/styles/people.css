@@ -39,8 +39,33 @@
   gap: 8px;
   width: 100%;
 }
-.person-heading > strong {
+.person-name {
+  min-width: 0;
+}
+.person-name-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+}
+.person-name-heading > strong {
   font-size: 18px;
+}
+.person-name-heading .rt-Button {
+  margin: 0;
+}
+.person-name-form {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+.person-name-form input {
+  width: 100%;
+}
+.person-name-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 .person-occupation {
   display: grid;

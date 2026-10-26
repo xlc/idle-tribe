@@ -29,6 +29,7 @@ import {
   WORKING_JOB_IDS,
 } from './ids'
 import { isProductionJob } from './jobs'
+import { generatePersonName } from './names'
 import { createRecord } from './records'
 import { completeProject, projectName, QUEUES, startQueues } from './research'
 import { canAfford, pay, storageMultiplier, threshold } from './resources'
@@ -110,7 +111,10 @@ function settleEvents(state: GameState, visible: boolean) {
     changed = true
     state.people.push(
       createPerson(
-        `Settler ${state.people.length + 1}`,
+        generatePersonName(
+          state.nameSeed + state.people.length,
+          state.people.map((person) => person.name),
+        ),
         arrivalAptitude(state),
       ),
     )

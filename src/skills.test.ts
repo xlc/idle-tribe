@@ -293,6 +293,6 @@ test('current saves retain fractional practice; incompatible expertise resets an
   expect(parseSave(JSON.stringify(malformed))).toEqual(createDefaultState())
   s.legacy.discovered = true
   expect(resetRun(s)).toBe(true)
-  expect(s.people).toEqual(createDefaultState().people)
+  expect(s.people).toEqual(createDefaultState(s.nameSeed).people)
   expect(s.legacy.lifetime).toBeGreaterThan(0)
 })

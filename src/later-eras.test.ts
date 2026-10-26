@@ -33,13 +33,11 @@ test('industrial workers turn newly mined ore into metal and machinery in roster
     completeProject(s, { kind: 'expand', id, target: 1, form: 0 })
   people(s, 'miner', 'smelter', 'machinist')
   for (const person of s.people) person.progress = 1
-  Object.assign(s.resources, {
-    ore: 2,
-    metal: 2,
-    machinery: 0,
-    wood: 1,
-    tools: 1,
-  })
+  s.resources.ore = 2
+  s.resources.metal = 2
+  s.resources.machinery = 0
+  s.resources.wood = 1
+  s.resources.tools = 1
   advanceTime(s, 0)
   expect(s.resources.machinery).toBe(1)
   expect([
@@ -54,7 +52,10 @@ test('industrial workers turn newly mined ore into metal and machinery in roster
 test('electric conversion changes the recipe; solar generation removes fuel demand', () => {
   const s = advancedSettlement()
   people(s, 'power-worker', 'smelter')
-  Object.assign(s.resources, { wood: 0, charge: 0, ore: 3, metal: 0 })
+  s.resources.wood = 0
+  s.resources.charge = 0
+  s.resources.ore = 3
+  s.resources.metal = 0
   required(s.people[0]).progress = 1
   required(s.people[1]).progress = 1
   advanceTime(s, 0)
@@ -107,13 +108,11 @@ test('the launch project gates orbital work, and quantum materials sustain causa
   expect(requirementBlocker(s, orbital.requires)).toBe('')
   people(s, 'quantum-engineer', 'causal-researcher')
   for (const person of s.people) person.progress = 1
-  Object.assign(s.resources, {
-    'exotic-material': 2,
-    data: 13,
-    charge: 22,
-    'quantum-components': 0,
-    'causal-models': 0,
-  })
+  s.resources['exotic-material'] = 2
+  s.resources.data = 13
+  s.resources.charge = 22
+  s.resources['quantum-components'] = 0
+  s.resources['causal-models'] = 0
   advanceTime(s, 0)
   expect(s.resources['causal-models']).toBe(1)
   expect(s.resources['quantum-components']).toBe(0)

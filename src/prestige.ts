@@ -1,6 +1,6 @@
 import { PERKS } from './definitions'
 import { completedTechnologies } from './research'
-import { createDefaultState } from './state'
+import { resetState } from './state'
 import type { GameState, PerkId } from './types'
 export function legacyReward(state: GameState) {
   return Math.floor(
@@ -19,7 +19,7 @@ export function resetRun(state: GameState) {
   legacy.lifetime += reward
   legacy.points += reward
   legacy.highestEra = Math.max(legacy.highestEra, state.era)
-  Object.assign(state, createDefaultState(), { legacy, welcome, savedAt })
+  resetState(state, { legacy, welcome, savedAt })
   return true
 }
 export function buyPerk(state: GameState, id: PerkId) {

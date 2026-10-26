@@ -1,7 +1,10 @@
 import { expect, type Page, test } from '@playwright/test'
 import { STORAGE_KEY } from '../../src/persistence'
 import { createDefaultState } from '../../src/state'
+import { required } from '../../src/test-helpers'
 import type { GameState } from '../../src/types'
+
+const founder = required(createDefaultState().people[0]).name
 
 async function open(page: Page, state = createDefaultState()) {
   await page.clock.install({ time: new Date('2026-10-20T10:00:00Z') })
@@ -65,8 +68,14 @@ for (const width of [320, 390, 1280]) {
         name: 'Gather food',
         exact: true,
       })
-      const health = page.getByRole('img', { name: /^You health:/ })
-      await expect(health).toHaveAttribute('aria-label', 'You health: 5 of 5')
+      const health = page.getByRole('img', {
+        name: `${founder} health:`,
+        exact: false,
+      })
+      await expect(health).toHaveAttribute(
+        'aria-label',
+        `${founder} health: 5 of 5`,
+      )
       const anchors = {
         gather: await gather.boundingBox(),
       }
@@ -76,7 +85,7 @@ for (const width of [320, 390, 1280]) {
         page.getByRole('region', { name: 'Food resource', exact: true }),
       ).toContainText('-1/min')
       await expect(
-        page.getByRole('article', { name: 'You', exact: true }),
+        page.getByRole('article', { name: founder, exact: true }),
       ).toContainText('Foraging aptitude · +5%')
       expect(await gather.boundingBox()).toEqual(anchors.gather)
 
@@ -136,7 +145,10 @@ for (const width of [320, 390, 1280]) {
       await expect(foodAction).toContainText('Level 3')
       await expect(foodAction).toContainText('1/6 XP')
       await page.clock.runFor(360000)
-      await expect(health).toHaveAttribute('aria-label', 'You health: 3 of 5')
+      await expect(health).toHaveAttribute(
+        'aria-label',
+        `${founder} health: 3 of 5`,
+      )
       expect(await gather.boundingBox()).toEqual(anchors.gather)
       expect(
         await page.evaluate(
@@ -154,12 +166,18 @@ for (const width of [320, 390, 1280]) {
       if (!person) throw new Error('Founder missing')
       person.health = 1
       await open(page, state)
-      const health = page.getByRole('img', { name: /^You health:/ })
+      const health = page.getByRole('img', {
+        name: `${founder} health:`,
+        exact: false,
+      })
       const gather = page.getByRole('button', {
         name: 'Gather food',
         exact: true,
       })
-      await expect(health).toHaveAttribute('aria-label', 'You health: 1 of 5')
+      await expect(health).toHaveAttribute(
+        'aria-label',
+        `${founder} health: 1 of 5`,
+      )
       await page.screenshot({ path: info.outputPath('hungry.png') })
       const before = await gather.boundingBox()
       await expect(
@@ -169,12 +187,21 @@ for (const width of [320, 390, 1280]) {
         .getByRole('button', { name: 'Feast · 4 food', exact: true })
         .click()
       await expect(
-        page.getByRole('img', { name: 'You health: 5 of 5', exact: true }),
+        page.getByRole('img', {
+          name: `${founder} health: 5 of 5`,
+          exact: true,
+        }),
       ).toBeVisible()
-      await expect(health).toHaveAttribute('aria-label', 'You health: 5 of 5')
+      await expect(health).toHaveAttribute(
+        'aria-label',
+        `${founder} health: 5 of 5`,
+      )
       expect(await gather.boundingBox()).toEqual(before)
       await page.reload()
-      await expect(health).toHaveAttribute('aria-label', 'You health: 5 of 5')
+      await expect(health).toHaveAttribute(
+        'aria-label',
+        `${founder} health: 5 of 5`,
+      )
       await page.screenshot({ path: info.outputPath('recovered.png') })
     })
   })

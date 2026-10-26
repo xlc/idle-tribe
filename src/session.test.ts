@@ -142,7 +142,11 @@ test('a productive return highlights gains even without arrivals or completed pr
   expect(report.completed).toBe(0)
   expect(awayHighlight(report)).toMatch(/^\+.* food$/)
   report.expertise = [
-    { index: 0, name: 'You', gains: [{ job: 'farmer', before: 0, after: 1 }] },
+    {
+      index: 0,
+      name: 'Founder',
+      gains: [{ job: 'farmer', before: 0, after: 1 }],
+    },
   ]
   expect(awayHighlight(report)).toBe('+1 expertise level')
   report.completed = 1

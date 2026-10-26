@@ -10,6 +10,7 @@ import {
   SPECIALIZATION_IDS,
   WORKING_JOB_IDS,
 } from './ids'
+import { normalizePersonName } from './names'
 import { createRecord } from './records'
 import { QUEUES } from './research'
 import { jobUnlocked } from './settlement'
@@ -117,11 +118,12 @@ function queue(v: JsonValue | undefined): ProjectQueue {
   const q = object(v)
   return { active: active(q.active), waiting: list(q.waiting).map(entry) }
 }
-export function parseSave(serialized: string | null): GameState {
+export function parseSave(serialized: string | null, nameSeed = 0): GameState {
   try {
     const decoded: JsonValue = JSON.parse(serialized ?? 'null'),
       p = object(decoded),
-      s = createDefaultState()
+      s = createDefaultState(nameSeed)
+    s.nameSeed = number(p.nameSeed, 0, 0xffffffff, true)
     const resources = object(p.resources),
       facilities = object(p.facilities),
       research = object(p.research),
@@ -161,9 +163,11 @@ export function parseSave(serialized: string | null): GameState {
     }
     s.people = list(p.people).map((v) => {
       const person = object(v),
-        practice = object(person.practice)
+        practice = object(person.practice),
+        name = normalizePersonName(string(person.name))
+      if (!name) throw new Error('Invalid person name')
       return {
-        name: string(person.name),
+        name,
         health: number(person.health, 0, 5),
         job: member(person.job, JOB_IDS),
         progress: number(person.progress, 0, 1),
@@ -257,14 +261,15 @@ export function parseSave(serialized: string | null): GameState {
     cancelManual(s)
     return s
   } catch {
-    return createDefaultState()
+    return createDefaultState(nameSeed)
   }
 }
 export function loadState() {
+  const nameSeed = Math.floor(Math.random() * 0x100000000)
   try {
-    return parseSave(localStorage.getItem(STORAGE_KEY))
+    return parseSave(localStorage.getItem(STORAGE_KEY), nameSeed)
   } catch {
-    return createDefaultState()
+    return createDefaultState(nameSeed)
   }
 }
 export function saveState(state: GameState) {

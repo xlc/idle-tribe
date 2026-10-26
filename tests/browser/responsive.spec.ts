@@ -57,7 +57,7 @@ for (const width of [320, 390, 768, 1024, 1280, 1920]) {
       ).toBeInViewport()
     await views.getByRole('tab', { name: 'Settlement', exact: true }).click()
     await views.getByRole('tab', { name: 'People', exact: true }).click()
-    await expect(page.getByLabel('You occupation')).toBeInViewport()
+    await expect(page.getByLabel('Founder occupation')).toBeInViewport()
     await page.getByLabel('Settler 36 occupation').selectOption('farmer')
     await expect(page.getByLabel('Settler 36 occupation')).toHaveValue('farmer')
     await page.screenshot({

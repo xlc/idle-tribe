@@ -40,7 +40,7 @@ export function settlement(branch: Specialization = 'forestry') {
 export function people(state: GameState, ...jobs: JobId[]) {
   state.people = jobs.map((job, i) => ({
     ...createPerson(
-      i === 0 ? 'You' : `Settler ${i + 1}`,
+      i === 0 ? 'Founder' : `Settler ${i + 1}`,
       required(WORKING_JOB_IDS.find((id) => id !== job)),
     ),
     job,

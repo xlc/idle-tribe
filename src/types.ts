@@ -190,6 +190,7 @@ export interface GameState {
   facilities: Record<BuildingId, Facility>
   research: Record<ResearchId, boolean>
   people: Person[]
+  nameSeed: number
   discovered: { wood: boolean; stone: boolean }
   exploreUnlocked: boolean
   researchUnlocked: boolean

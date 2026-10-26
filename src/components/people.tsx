@@ -1,9 +1,12 @@
+import { Button as RadixButton } from '@radix-ui/themes'
+import { useEffect, useRef, useState } from 'react'
 import { actionOutputRate, actionWorkers } from '../actions'
 import { ACTIONS, JOBS, OCCUPATIONS, RESOURCE_INFO } from '../definitions'
 import { feastCost } from '../food'
 import { formatDuration, formatResource } from '../format'
 import { ACTION_IDS, isWorkingJob, JOB_IDS, WORKING_JOB_IDS } from '../ids'
 import { isProductionJob } from '../jobs'
+import { normalizePersonName, PERSON_NAME_MAX_LENGTH } from '../names'
 import type { GameSession } from '../session'
 import {
   happinessMultiplier,
@@ -20,6 +23,96 @@ import {
 } from '../skills'
 import type { GameState, Person } from '../types'
 import { Button } from './common'
+
+function PersonName({
+  session,
+  person,
+  index,
+}: {
+  session: GameSession
+  person: Person
+  index: number
+}) {
+  const [editing, setEditing] = useState(false),
+    [draft, setDraft] = useState(person.name),
+    normalizedDraft = normalizePersonName(draft),
+    input = useRef<HTMLInputElement>(null),
+    trigger = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (editing) {
+      input.current?.focus()
+      input.current?.select()
+    }
+  }, [editing])
+  function close() {
+    setEditing(false)
+    // The trigger stays mounted while editing, so keyboard focus is restored.
+    trigger.current?.focus()
+  }
+  return (
+    <div className="person-name">
+      <div className="person-name-heading">
+        <strong>{person.name}</strong>
+        <RadixButton
+          ref={trigger}
+          type="button"
+          color="gray"
+          size="1"
+          variant="ghost"
+          aria-label={`Rename ${person.name}`}
+          aria-expanded={editing}
+          onClick={() => {
+            if (editing) close()
+            else {
+              setDraft(person.name)
+              setEditing(true)
+            }
+          }}
+        >
+          Rename
+        </RadixButton>
+      </div>
+      {editing && (
+        <form
+          className="person-name-form"
+          aria-label={`Rename ${person.name}`}
+          onSubmit={(event) => {
+            event.preventDefault()
+            if (!normalizedDraft) return
+            session.change(() => session.game.rename(index, normalizedDraft))
+            close()
+          }}
+        >
+          <input
+            ref={input}
+            className="select"
+            aria-label="Name"
+            maxLength={PERSON_NAME_MAX_LENGTH}
+            required
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') {
+                event.preventDefault()
+                close()
+              }
+            }}
+          />
+          <div className="person-name-actions">
+            <RadixButton
+              type="submit"
+              variant="soft"
+              disabled={!normalizedDraft}
+            >
+              Save
+            </RadixButton>
+            <Button onClick={close}>Cancel</Button>
+          </div>
+        </form>
+      )}
+    </div>
+  )
+}
 
 function output(state: GameState, person: Person) {
   const job = person.job
@@ -66,7 +159,7 @@ export function People({ session }: { session: GameSession }) {
           // biome-ignore lint/suspicious/noArrayIndexKey: People are append-only during a run; roster positions are their stable identity.
           <article className="person-row" key={i} aria-label={p.name}>
             <div className="person-heading">
-              <strong>{p.name}</strong>
+              <PersonName session={session} person={p} index={i} />
               <span
                 className="person-health"
                 role="img"
