@@ -1,5 +1,6 @@
 import { Tabs } from '@radix-ui/themes'
 import { useEffect, useRef, useState } from 'react'
+import { MIN_AWAY_REPORT_SECONDS } from './clock'
 import { ActionCards } from './components/actions'
 import { ViewIcon } from './components/art'
 import { AwayNotification } from './components/away-report'
@@ -75,10 +76,10 @@ export function App({ session }: { session: GameSession }) {
             if (next) showView(next.id)
           }}
         >
+          {away && away.wallSeconds > MIN_AWAY_REPORT_SECONDS && (
+            <AwayNotification session={session} report={away} />
+          )}
           <div className="view-scroll" ref={content}>
-            {away && away.wallSeconds >= 60 && (
-              <AwayNotification session={session} report={away} />
-            )}
             {s.notice && (
               <p className="feedback" role="status">
                 {s.notice}

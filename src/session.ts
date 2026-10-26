@@ -2,6 +2,7 @@ import {
   type AwayProgress,
   awaySummary,
   beginAbsence,
+  MIN_AWAY_REPORT_SECONDS,
   settleAbsence,
 } from './clock'
 import { formatDuration } from './format'
@@ -29,7 +30,7 @@ export function createSession(
     if (events.length > 300) events.splice(0, events.length - 300)
   }
   function logAway(report: AwayProgress) {
-    if (report.wallSeconds < 60) return
+    if (report.wallSeconds <= MIN_AWAY_REPORT_SECONDS) return
     logEvent(
       `Away ${formatDuration(report.wallSeconds)} · ${awaySummary(report)}`,
     )

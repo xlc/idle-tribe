@@ -127,21 +127,25 @@ export function AwayReport({
             <dt>Simulated</dt>
             <dd>{formatDuration(report.effectiveSeconds)}</dd>
           </div>
-          <div>
-            <dt>Arrivals</dt>
-            <dd>{report.arrivals}</dd>
-          </div>
-          <div>
-            <dt>Projects completed</dt>
-            <dd>{report.completed}</dd>
-          </div>
+          {report.arrivals > 0 && (
+            <div>
+              <dt>Arrivals</dt>
+              <dd>{report.arrivals}</dd>
+            </div>
+          )}
+          {report.completed > 0 && (
+            <div>
+              <dt>Projects completed</dt>
+              <dd>{report.completed}</dd>
+            </div>
+          )}
         </dl>
         {report.effectiveSeconds < report.wallSeconds && (
           <p className="away-note">Longer absences progress more slowly.</p>
         )}
-        <section className="away-section" aria-label="Resource changes">
-          <h3>Resource changes</h3>
-          {changedResources.length ? (
+        {changedResources.length > 0 && (
+          <section className="away-section" aria-label="Resource changes">
+            <h3>Resource changes</h3>
             <ul className="away-resources">
               {changedResources.map((r) => (
                 <li key={r} data-negative={report.gains[r] < 0}>
@@ -153,10 +157,8 @@ export function AwayReport({
                 </li>
               ))}
             </ul>
-          ) : (
-            <p className="away-note">No net resource change.</p>
-          )}
-        </section>
+          </section>
+        )}
         {report.expertise.length > 0 && (
           <section className="away-section" aria-label="Growing expertise">
             <h3>Growing expertise</h3>

@@ -1,8 +1,10 @@
 import { expect, test } from 'bun:test'
 import {
   awayHighlight,
+  awaySummary,
   beginAbsence,
   effectiveOfflineSeconds,
+  MIN_AWAY_REPORT_SECONDS,
   offlineWindow,
   settleAbsence,
 } from './clock'
@@ -141,6 +143,7 @@ test('a productive return highlights gains even without arrivals or completed pr
   expect(report.arrivals).toBe(0)
   expect(report.completed).toBe(0)
   expect(awayHighlight(report)).toMatch(/^\+.* food$/)
+  expect(awaySummary(report)).toMatch(/^\+.* food$/)
   report.expertise = [
     {
       index: 0,
@@ -161,7 +164,9 @@ test('session events use the settled timeline for actions and returning from an 
   }, hour + 2000)
   expect(session.events.at(-1)?.at).toBe(hour + 2000)
   session.setVisible(false, hour + 3000)
-  session.setVisible(true, hour + 63000)
-  expect(session.events.at(-1)?.text).toMatch(/^Away 1m/)
-  expect(session.events.at(-1)?.at).toBe(hour + 63000)
+  session.setVisible(true, hour + 3000 + (MIN_AWAY_REPORT_SECONDS + 1) * 1000)
+  expect(session.events.at(-1)?.text).toMatch(/^Away 6m/)
+  expect(session.events.at(-1)?.at).toBe(
+    hour + 3000 + (MIN_AWAY_REPORT_SECONDS + 1) * 1000,
+  )
 })

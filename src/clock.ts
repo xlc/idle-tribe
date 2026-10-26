@@ -6,6 +6,7 @@ import { createRecord } from './records'
 import { advanceTime } from './simulation'
 import { expertiseLevel } from './skills'
 import type { GameState, ResourceId } from './types'
+export const MIN_AWAY_REPORT_SECONDS = 5 * 60
 export function offlineWindow(state: GameState) {
   let hours = 8 + (state.legacy.perks['longer-preparations'] ? 2 : 0)
   for (const id of BUILDING_IDS)
@@ -66,7 +67,17 @@ export function settleAbsence(state: GameState, time: number) {
 }
 export type AwayProgress = NonNullable<ReturnType<typeof settleAbsence>>
 export function awaySummary(report: AwayProgress) {
-  return `${report.arrivals} ${report.arrivals === 1 ? 'arrival' : 'arrivals'} · ${report.completed} ${report.completed === 1 ? 'project' : 'projects'} completed`
+  const milestones = [
+    ...(report.arrivals
+      ? [`${report.arrivals} ${report.arrivals === 1 ? 'arrival' : 'arrivals'}`]
+      : []),
+    ...(report.completed
+      ? [
+          `${report.completed} ${report.completed === 1 ? 'project' : 'projects'} completed`,
+        ]
+      : []),
+  ]
+  return milestones.length ? milestones.join(' · ') : awayHighlight(report)
 }
 
 export function awayHighlight(report: AwayProgress) {

@@ -26,6 +26,7 @@
   gap: 12px;
 }
 .game-content {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-width: 0;
