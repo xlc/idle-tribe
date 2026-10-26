@@ -1,7 +1,6 @@
 import { expect, test } from 'bun:test'
 import { startAction } from './actions'
 import { parseSave } from './persistence'
-import { parseResourcePins } from './preferences'
 import { enqueue, nextExpansion } from './research'
 import { advanceTime } from './simulation'
 import { createDefaultState } from './state'
@@ -56,12 +55,4 @@ test('current saves preserve unlimited levels and overstaffing', () => {
   expect(loaded.facilities.housing.level).toBe(100)
   expect(loaded.facilities.lumber.equipment).toBe(20)
   expect(loaded.people.every((p) => p.job === 'woodcutter')).toBe(true)
-})
-
-test('resource pins retain player ordering and reject malformed browser preferences', () => {
-  expect(
-    parseResourcePins('["charge","food","charge",null,"fake","data"]'),
-  ).toEqual(['charge', 'food', 'data'])
-  for (const input of [null, '{', '{}', 'false'])
-    expect(parseResourcePins(input)).toEqual([])
 })

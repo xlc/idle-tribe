@@ -60,36 +60,6 @@
   .resource-value {
     font-size: 18px;
   }
-  .stockpile[data-pinned="true"] {
-    overflow: hidden;
-  }
-  .stockpile[data-pinned="true"] .resource {
-    flex: 1 1 0;
-    min-width: 0;
-    grid-template-columns: minmax(0, 1fr);
-    padding: 0 6px;
-  }
-  .stockpile[data-pinned="true"] .painted-art {
-    display: none;
-  }
-  .stockpile[data-pinned="true"] .resource-name {
-    white-space: normal;
-    font-size: 11px;
-    min-height: 2.5em;
-  }
-  .stockpile[data-pinned="true"] .resource-value {
-    font-size: 16px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .stockpile[data-pinned="true"] .resource-meta {
-    grid-column: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .stockpile[data-pinned="true"] .resource-rate {
-    font-size: 11px;
-  }
   .settlement-layout {
     grid-template-columns: minmax(0, 1fr);
     gap: 16px;

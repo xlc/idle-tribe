@@ -21,7 +21,7 @@ Open the printed local URL. No environment variables or external services are re
 
 The playable catalog covers **all eight eras**, through Causal synthesis. Start by gathering food, wood, and stone by hand; research **Shelters** to unlock builders, workplaces, and arriving settlers. Staff workplaces, keep people fed and housed, and queue construction and research toward towns and beyond. After **Writing**, choose a permanent specialization — **Forestry** or **Stonecraft** — that shapes every later era. Later, the mysterious time box offers an optional reset for permanent legacy points and perks.
 
-Gathering reaches a player-controlled **Repeat** option at level 2. It stops when you leave the game. The resource menu lets you pin up to three balances; pins are stored separately from the settlement save.
+Gathering reaches a player-controlled **Repeat** option at level 2. It stops when you leave the game.
 
 Every villager has a permanent occupation aptitude and earns per-occupation expertise through practice. Progress saves automatically in your browser, and time away from the game is simulated when you return — the first 8 hours run at full speed, longer absences progressively slower.
 
@@ -32,6 +32,8 @@ See the [design decisions](docs/GAME_DESIGN.md) and [villager expertise decision
 ## Saves and offline progress
 
 The game autosaves to your browser's local storage. Incompatible prototype saves reset; there are no migrations or save versions.
+
+The Settings view can check for a newer service-worker build and reload the app, including when it is installed as a PWA.
 
 The production build installs as a standalone PWA. On iPhone or iPad, open it in Safari and choose **Share → Add to Home Screen**. Open the installed app online once to cache the complete game; after that it can reopen and play without a connection. Installation and caching require HTTPS or localhost.
 

@@ -34,6 +34,10 @@ self.addEventListener('activate', (event) => {
   )
 })
 
+self.addEventListener('message', (event) => {
+  if (event.data === 'SKIP_WAITING') event.waitUntil(self.skipWaiting())
+})
+
 self.addEventListener('fetch', (event) => {
   const request = event.request
   const url = new URL(request.url)

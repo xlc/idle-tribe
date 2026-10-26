@@ -1,21 +1,14 @@
-import { useRef, useState } from 'react'
 import { MIN_VISIBLE_RESOURCE_CHANGE } from '../constants'
 import { ACTIONS, BUILDINGS, JOBS, RESOURCE_INFO } from '../definitions'
 import { formatCompactResource, formatResource } from '../format'
 import { ACTION_IDS, BUILDING_IDS, RESOURCES } from '../ids'
 import { isProductionJob } from '../jobs'
-import {
-  loadResourcePins,
-  MAX_RESOURCE_PINS,
-  saveResourcePins,
-} from '../preferences'
 import { storageMultiplier } from '../resources'
 import type { GameSession } from '../session'
 import { requirementBlocker } from '../settlement'
 import { resourceFlows } from '../simulation'
 import type { ResourceId } from '../types'
 import { ResourceArt } from './art'
-import { Button } from './common'
 
 export function Stockpile({ session }: { session: GameSession }) {
   const s = session.game.state,
@@ -34,9 +27,6 @@ export function Stockpile({ session }: { session: GameSession }) {
           !requirementBlocker(s, BUILDINGS[id].forms[0]?.requires ?? {}),
       ),
   )
-  const [pins, setPins] = useState(loadResourcePins)
-  const picker = useRef<HTMLDialogElement>(null)
-  const visiblePins = pins.filter((r) => visibleResources.includes(r))
   function resource(r: ResourceId) {
     const pressure = storageMultiplier(s, r),
       flow = flows[r],
@@ -71,59 +61,9 @@ export function Stockpile({ session }: { session: GameSession }) {
   }
   return (
     <section className="stockpile-panel panel" aria-label="Stockpile">
-      <div className="stockpile-bar">
-        <div
-          className="stockpile"
-          id="stockpile-resources"
-          data-pinned={visiblePins.length > 0}
-        >
-          {(visiblePins.length ? visiblePins : visibleResources).map(resource)}
-        </div>
-        <button
-          type="button"
-          className="resource-picker"
-          aria-label="All resources and pins"
-          onClick={() => picker.current?.showModal()}
-        >
-          <span aria-hidden="true">≡</span>
-        </button>
+      <div className="stockpile" id="stockpile-resources">
+        {visibleResources.map(resource)}
       </div>
-      <dialog ref={picker} className="modal resource-dialog panel">
-        <div className="modal-box">
-          <h2>Resources</h2>
-          <p className="resource-pin-count">
-            Pinned · {visiblePins.length}/{MAX_RESOURCE_PINS}
-          </p>
-          <div className="resource-choices">
-            {visibleResources.map((r) => (
-              <div className="resource-choice" key={r}>
-                <label className="resource-pin">
-                  <input
-                    type="checkbox"
-                    aria-label={`Pin ${RESOURCE_INFO[r].name.toLowerCase()}`}
-                    checked={visiblePins.includes(r)}
-                    disabled={
-                      !visiblePins.includes(r) &&
-                      visiblePins.length >= MAX_RESOURCE_PINS
-                    }
-                    onChange={(e) => {
-                      const next = e.target.checked
-                        ? [...visiblePins, r]
-                        : visiblePins.filter((pin) => pin !== r)
-                      setPins(next)
-                      saveResourcePins(next)
-                    }}
-                  />
-                </label>
-                {resource(r)}
-              </div>
-            ))}
-          </div>
-          <div className="modal-action">
-            <Button onClick={() => picker.current?.close()}>Close</Button>
-          </div>
-        </div>
-      </dialog>
     </section>
   )
 }
