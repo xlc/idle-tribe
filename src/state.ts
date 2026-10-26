@@ -71,30 +71,5 @@ export function resetState(
   preserved: Pick<GameState, 'legacy' | 'welcome' | 'savedAt'>,
 ) {
   const fresh = createDefaultState((state.nameSeed + 1) >>> 0)
-  state.actionSkills = fresh.actionSkills
-  state.actionProgress = fresh.actionProgress
-  state.resources = fresh.resources
-  state.facilities = fresh.facilities
-  state.research = fresh.research
-  state.people = fresh.people
-  state.nameSeed = fresh.nameSeed
-  state.discovered = fresh.discovered
-  state.exploreUnlocked = fresh.exploreUnlocked
-  state.researchUnlocked = fresh.researchUnlocked
-  state.expeditionUnlocked = fresh.expeditionUnlocked
-  state.exploreRolls = fresh.exploreRolls
-  state.queues = fresh.queues
-  state.nextSequence = fresh.nextSequence
-  state.manual = fresh.manual
-  state.minuteProgress = fresh.minuteProgress
-  state.arrivalProgress = fresh.arrivalProgress
-  state.welcome = preserved.welcome
-  state.happiness = fresh.happiness
-  state.era = fresh.era
-  state.specialization = fresh.specialization
-  state.savedAt = preserved.savedAt
-  state.absence = fresh.absence
-  state.completedProjects = fresh.completedProjects
-  state.notice = fresh.notice
-  state.legacy = preserved.legacy
+  Object.assign(state, fresh, preserved)
 }
