@@ -6,7 +6,6 @@ import { research } from './research'
 import { resources } from './resources'
 
 export const DIGITAL = {
-  index: 4,
   name: 'Digital',
   landscape: 'future',
   description: 'The blinking lights insist everything is under control.',
@@ -17,5 +16,6 @@ export const DIGITAL = {
   jobs,
   occupations: {},
   actions: {},
+  equipment: [],
   perks: {},
 } satisfies EraDefinition

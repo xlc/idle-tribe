@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { BUILDINGS, ERA_DEFINITIONS } from './definitions'
+import { BUILDINGS, EQUIPMENT, ERA_DEFINITIONS } from './definitions'
 import type { EraDefinition } from './definitions/types'
 import {
   ACTION_IDS,
@@ -60,13 +60,13 @@ test.each(catalogs)(
 )
 
 const researchEras = new Map(
-  ERA_DEFINITIONS.flatMap((era) =>
-    Object.keys(era.research).map((id) => [id, era.index] as const),
+  ERA_DEFINITIONS.flatMap((era, index) =>
+    Object.keys(era.research).map((id) => [id, index] as const),
   ),
 )
 const buildingEras = new Map(
-  ERA_DEFINITIONS.flatMap((era) =>
-    Object.keys(era.buildings).map((id) => [id, era.index] as const),
+  ERA_DEFINITIONS.flatMap((era, index) =>
+    Object.keys(era.buildings).map((id) => [id, index] as const),
   ),
 )
 
@@ -89,7 +89,6 @@ function requirementEra(requirements: Requirements) {
 
 test('research and building forms are owned by the era that unlocks them', () => {
   ERA_DEFINITIONS.forEach((era, index) => {
-    expect(era.index).toBe(index)
     for (const definition of Object.values(era.research))
       expect(
         Math.max(definition.era ?? 0, requirementEra(definition.requires)),
@@ -106,21 +105,32 @@ test('research and building forms are owned by the era that unlocks them', () =>
 })
 
 test('jobs and resources are owned by their first production era', () => {
-  for (const era of ERA_DEFINITIONS) {
+  for (const [index, era] of ERA_DEFINITIONS.entries()) {
     for (const job of Object.keys(era.jobs)) {
       const workplace = BUILDING_IDS.find((id) => BUILDINGS[id].job === job)
-      expect(workplace && buildingEras.get(workplace)).toBe(era.index)
+      expect(workplace && buildingEras.get(workplace)).toBe(index)
     }
     for (const resource of Object.keys(era.resources)) {
-      const sources = ERA_DEFINITIONS.flatMap((sourceEra) => [
+      const sources = ERA_DEFINITIONS.flatMap((sourceEra, sourceIndex) => [
         ...Object.values(sourceEra.actions)
           .filter((definition) => definition.resource === resource)
-          .map(() => sourceEra.index),
+          .map(() => sourceIndex),
         ...Object.values(sourceEra.jobs)
           .filter((definition) => definition.output === resource)
-          .map(() => sourceEra.index),
+          .map(() => sourceIndex),
       ])
-      expect(Math.min(...sources)).toBe(era.index)
+      expect(Math.min(...sources)).toBe(index)
     }
   }
+})
+
+test('equipment tiers follow era order and their unlocking research', () => {
+  expect(EQUIPMENT.length).toBeGreaterThan(0)
+  const research = new Set<string>()
+  for (const [index, era] of ERA_DEFINITIONS.entries())
+    for (const equipment of era.equipment) {
+      expect(researchEras.get(equipment.research)).toBe(index)
+      expect(research.has(equipment.research)).toBe(false)
+      research.add(equipment.research)
+    }
 })

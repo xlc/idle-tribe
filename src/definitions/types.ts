@@ -10,6 +10,7 @@ import type {
 import type {
   ActionDefinition,
   BuildingDefinition,
+  EquipmentDefinition,
   FormDefinition,
   JobDefinition,
   OccupationDefinition,
@@ -19,7 +20,6 @@ import type {
 } from '../types'
 
 export interface EraDefinition {
-  index: number
   name: string
   description: string
   landscape: 'camp' | 'town' | 'future'
@@ -30,5 +30,6 @@ export interface EraDefinition {
   jobs: Partial<Record<ProductionJob, JobDefinition>>
   occupations: Partial<Record<WorkingJob, OccupationDefinition>>
   actions: Partial<Record<ActionId, ActionDefinition>>
+  equipment: EquipmentDefinition[]
   perks: Partial<Record<PerkId, PerkDefinition>>
 }

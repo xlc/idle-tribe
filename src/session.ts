@@ -24,8 +24,8 @@ export function createSession(
   let eventId = 0,
     lastNotice = state.notice,
     lastPeople = state.people.length
-  function logEvent(text: string, time = Date.now()) {
-    events.push({ id: eventId++, at: time, text })
+  function logEvent(text: string) {
+    events.push({ id: eventId++, at, text })
     if (events.length > 300) events.splice(0, events.length - 300)
   }
   function logAway(report: AwayProgress) {

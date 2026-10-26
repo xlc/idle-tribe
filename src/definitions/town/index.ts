@@ -1,12 +1,12 @@
 import type { EraDefinition } from '../types'
 import { buildingUpgrades } from './building-upgrades'
 import { buildings } from './buildings'
+import { equipment } from './equipment'
 import { jobs } from './jobs'
 import { research } from './research'
 import { resources } from './resources'
 
 export const TOWN = {
-  index: 2,
   name: 'Town',
   landscape: 'town',
   description:
@@ -18,5 +18,6 @@ export const TOWN = {
   jobs,
   occupations: {},
   actions: {},
+  equipment,
   perks: {},
 } satisfies EraDefinition

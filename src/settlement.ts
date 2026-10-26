@@ -1,6 +1,6 @@
 import { actionOutputRate } from './actions'
 import { WORKERS_PER_BUILDING_LEVEL } from './constants'
-import { BUILDINGS, JOBS, OCCUPATIONS, RESEARCH } from './definitions'
+import { BUILDINGS, JOBS, OCCUPATIONS, PERKS, RESEARCH } from './definitions'
 import { healthMultiplier } from './food'
 import {
   BUILDING_IDS,
@@ -34,7 +34,7 @@ export function requirementBlocker(
     if (state.facilities[id].level < (req.facilities?.[id] ?? 0))
       return `Requires ${BUILDINGS[id].forms[0]?.name} level ${req.facilities?.[id]}`
   if (req.perk && !state.legacy.perks[req.perk])
-    return 'Requires permanent Early astronomy perk'
+    return `Requires permanent ${PERKS[req.perk].name} perk`
   const missing = req.research?.filter((id) => !state.research[id]) ?? []
   if (missing.length)
     return `Requires ${missing.map((id) => RESEARCH[id].name).join(', ')}`

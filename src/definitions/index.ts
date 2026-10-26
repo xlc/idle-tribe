@@ -39,6 +39,8 @@ export const ERA_DEFINITIONS: readonly EraDefinition[] = [
   BEYOND_QUANTUM,
 ]
 
+export const EQUIPMENT = ERA_DEFINITIONS.flatMap((era) => era.equipment)
+
 export const ERAS = ERA_DEFINITIONS.map(({ name, landscape, description }) => ({
   name,
   landscape,

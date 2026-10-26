@@ -6,7 +6,6 @@ import { research } from './research'
 import { resources } from './resources'
 
 export const BEYOND_QUANTUM = {
-  index: 7,
   name: 'Beyond quantum',
   landscape: 'future',
   description: 'The laws of physics have received your suggested edits.',
@@ -17,5 +16,6 @@ export const BEYOND_QUANTUM = {
   jobs,
   occupations: {},
   actions: {},
+  equipment: [],
   perks: {},
 } satisfies EraDefinition

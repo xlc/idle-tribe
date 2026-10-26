@@ -7,7 +7,6 @@ import { research } from './research'
 import { resources } from './resources'
 
 export const INDUSTRIAL = {
-  index: 3,
   name: 'Industrial',
   landscape: 'future',
   description: 'The settlement has discovered a louder way to work.',
@@ -18,5 +17,6 @@ export const INDUSTRIAL = {
   jobs,
   occupations: {},
   actions: {},
+  equipment: [],
   perks,
 } satisfies EraDefinition

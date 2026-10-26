@@ -29,6 +29,12 @@ export interface ResourceDefinition {
   description: string
   threshold: number
 }
+export interface EquipmentDefinition {
+  research: ResearchId
+  cost: Cost
+  work: number
+  description: string
+}
 export interface PerkDefinition {
   name: string
   cost: number

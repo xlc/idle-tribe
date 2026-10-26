@@ -1,9 +1,15 @@
 import { expect, test } from 'bun:test'
+import { PERKS } from './definitions'
 import { feast, feastCost } from './food'
-import { BUILDING_IDS, RESOURCES } from './ids'
+import { BUILDING_IDS, PERK_IDS, RESOURCES } from './ids'
 import { createRecord } from './records'
 import { enqueue, nextExpansion } from './research'
-import { arrivalStatus, happinessTarget, workerRate } from './settlement'
+import {
+  arrivalStatus,
+  happinessTarget,
+  requirementBlocker,
+  workerRate,
+} from './settlement'
 import { advanceTime, resourceFlows, resourceRates } from './simulation'
 import { createDefaultState } from './state'
 import { complete, people, required, settlement } from './test-helpers'
@@ -227,4 +233,13 @@ test('spending from an above-threshold stockpile immediately relieves production
   const slow = workerRate(s, required(s.people[0]))
   s.resources.food = 1
   expect(workerRate(s, required(s.people[0]))).toBeGreaterThan(slow)
+})
+
+test.each(PERK_IDS)('a %s requirement names the actual missing perk', (id) => {
+  const state = createDefaultState()
+  expect(requirementBlocker(state, { perk: id })).toBe(
+    `Requires permanent ${PERKS[id].name} perk`,
+  )
+  state.legacy.perks[id] = true
+  expect(requirementBlocker(state, { perk: id })).toBe('')
 })

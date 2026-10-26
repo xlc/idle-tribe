@@ -148,3 +148,16 @@ test('a productive return highlights gains even without arrivals or completed pr
   report.completed = 1
   expect(awayHighlight(report)).toBe('1 project completed')
 })
+
+test('session events use the settled timeline for actions and returning from an absence', () => {
+  const state = createDefaultState()
+  const session = createSession(state, () => {}, hour, true)
+  session.change(() => {
+    state.notice = 'A local action'
+  }, hour + 2000)
+  expect(session.events.at(-1)?.at).toBe(hour + 2000)
+  session.setVisible(false, hour + 3000)
+  session.setVisible(true, hour + 63000)
+  expect(session.events.at(-1)?.text).toMatch(/^Away 1m/)
+  expect(session.events.at(-1)?.at).toBe(hour + 63000)
+})

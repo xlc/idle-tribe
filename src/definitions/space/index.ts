@@ -6,7 +6,6 @@ import { research } from './research'
 import { resources } from './resources'
 
 export const SPACE = {
-  index: 5,
   name: 'Space',
   landscape: 'future',
   description: 'The roof was becoming a limitation.',
@@ -17,5 +16,6 @@ export const SPACE = {
   jobs,
   occupations: {},
   actions: {},
+  equipment: [],
   perks: {},
 } satisfies EraDefinition

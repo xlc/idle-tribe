@@ -289,30 +289,10 @@ export function finishManual(state: GameState) {
 
 // One automated completion. Explore pays its cost here (with pause) instead
 // of upfront, mirroring how workplaces pay recipe inputs.
-export function completeAction(state: GameState, id: ActionId, count = 1) {
+export function completeAction(state: GameState, id: ActionId) {
   const def = ACTIONS[id]
   if (!def.visible(state) || actionWorkers(state, id) < 1) return false
   if (!canAfford(state, def.cost)) return false
-  if (count > 1 && def.resource && Object.keys(def.cost).length === 0) {
-    let remaining = count
-    const xp = xpFactor(state, id)
-    // Skill level changes per batch below; automation and happiness do not.
-    const factor = automationFactor(state, id) * happinessMultiplier(state)
-    while (remaining > 0) {
-      const toLevel = Math.max(
-        1,
-        Math.ceil(
-          (actionRequiredXp(state, id) - state.actionSkills[id].xp) / xp,
-        ),
-      )
-      const batch = Math.min(remaining, toLevel)
-      state.resources[def.resource] += actionYield(state, id) * factor * batch
-      grantActionXp(state, id, xp * batch)
-      remaining -= batch
-    }
-    syncUnlocks(state)
-    return true
-  }
   pay(state, def.cost)
   grantActionXp(state, id, xpFactor(state, id))
   if (def.resource) {

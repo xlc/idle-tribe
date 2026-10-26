@@ -6,7 +6,6 @@ import { research } from './research'
 import { resources } from './resources'
 
 export const QUANTUM = {
-  index: 6,
   name: 'Quantum',
   landscape: 'future',
   description: 'Very small things are making very large demands.',
@@ -17,5 +16,6 @@ export const QUANTUM = {
   jobs,
   occupations: {},
   actions: {},
+  equipment: [],
   perks: {},
 } satisfies EraDefinition

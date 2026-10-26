@@ -1,4 +1,4 @@
-import { BUILDINGS, RESEARCH } from './definitions'
+import { BUILDINGS, EQUIPMENT, RESEARCH } from './definitions'
 import { RESEARCH_IDS, RESOURCES } from './ids'
 import {
   canAfford,
@@ -70,18 +70,20 @@ export function quoteProject(
   if (!form) throw new Error('Invalid facility form')
   if (project.kind === 'equip') {
     const tier = project.target
-    const milestone = EQUIPMENT[Math.min(3, tier) - 1]
+    const milestone = EQUIPMENT[Math.min(EQUIPMENT.length, tier) - 1]
     if (!milestone) throw new Error('Invalid equipment tier')
-    const factor = (tier / 3) ** 2
+    const refinement = tier > EQUIPMENT.length
+    const factor = refinement ? (tier / EQUIPMENT.length) ** 2 : 1
     return {
-      cost:
-        tier <= 3
-          ? milestone.cost
-          : {
-              tools: Math.ceil(80 * factor),
-              knowledge: Math.ceil(150 * factor),
-            },
-      total: tier <= 3 ? milestone.work : 40 * factor,
+      cost: refinement
+        ? Object.fromEntries(
+            RESOURCES.filter((r) => milestone.cost[r]).map((r) => [
+              r,
+              Math.ceil((milestone.cost[r] ?? 0) * factor),
+            ]),
+          )
+        : milestone.cost,
+      total: milestone.work * factor,
       obsolete: f.equipment >= tier,
       blocker: !def.job
         ? 'Not a production facility'
@@ -122,46 +124,26 @@ export function quoteProject(
           : requirementBlocker(state, target.requires),
   }
 }
-export const EQUIPMENT = [
-  {
-    research: 'toolmaking',
-    cost: { tools: 10 },
-    work: 10,
-    description: 'Finally, the right tool is more than a hopeful expression.',
-  },
-  {
-    research: 'organized-work',
-    cost: { tools: 30, knowledge: 50 },
-    work: 20,
-    description: 'Fewer awkward handles between you and a job well done.',
-  },
-  {
-    research: 'civic-engineering',
-    cost: { tools: 80, knowledge: 150 },
-    work: 40,
-    description: 'Even the tools have become specialists.',
-  },
-] satisfies {
-  research: import('./ids').ResearchId
-  cost: Cost
-  work: number
-  description: string
-}[]
 export function allEntries(state: GameState) {
   return QUEUES.flatMap((id) => {
     const q = state.queues[id]
     return [...(q.active ? [q.active] : []), ...q.waiting]
   })
 }
+function sameProject(a: Project, b: Project) {
+  return (
+    a.kind === b.kind &&
+    a.id === b.id &&
+    ('target' in a ? a.target : undefined) ===
+      ('target' in b ? b.target : undefined) &&
+    ('form' in a ? a.form : undefined) === ('form' in b ? b.form : undefined)
+  )
+}
 export function enqueue(state: GameState, project: Project) {
   const queue: QueueId =
     project.kind === 'research' ? 'research' : 'construction'
   if (quoteProject(state, project).obsolete) return false
-  if (
-    allEntries(state).some(
-      (e) => JSON.stringify(e.project) === JSON.stringify(project),
-    )
-  )
+  if (allEntries(state).some((e) => sameProject(e.project, project)))
     return false
   if (project.kind === 'research') {
     const branch = RESEARCH[project.id].branch
