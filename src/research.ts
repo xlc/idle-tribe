@@ -1,6 +1,5 @@
-import { BUILDINGS } from './buildings'
+import { BUILDINGS, RESEARCH } from './definitions'
 import { RESEARCH_IDS, RESOURCES } from './ids'
-import { RESEARCH } from './research-definitions'
 import {
   canAfford,
   capital,

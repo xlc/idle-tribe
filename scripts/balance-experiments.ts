@@ -1,15 +1,15 @@
 import { mkdir } from 'node:fs/promises'
 import { parseArgs } from 'node:util'
-import { BUILDINGS } from '../src/buildings'
 import {
   beginAbsence,
   effectiveOfflineSeconds,
   offlineWindow,
   settleAbsence,
 } from '../src/clock'
+import { BUILDINGS, JOBS } from '../src/definitions'
 import { createGame } from '../src/game'
 import { PERK_IDS, RESOURCES } from '../src/ids'
-import { isProductionJob, JOBS } from '../src/jobs'
+import { isProductionJob } from '../src/jobs'
 import { buyPerk, resetRun } from '../src/prestige'
 import {
   cancelProject,

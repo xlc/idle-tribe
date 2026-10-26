@@ -1,7 +1,6 @@
-import { BUILDINGS } from './buildings'
+import { BUILDINGS, RESEARCH } from './definitions'
 import { BUILDING_IDS, RESEARCH_IDS, RESOURCES, WORKING_JOB_IDS } from './ids'
 import { completeProject } from './research'
-import { RESEARCH } from './research-definitions'
 import { requirementBlocker } from './settlement'
 import { createDefaultState, createPerson } from './state'
 import type { GameState, JobId, ResearchId, Specialization } from './types'

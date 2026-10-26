@@ -1,5 +1,4 @@
 import {
-  ACTIONS,
   actionDuration,
   actionJobActive,
   actionOutputRate,
@@ -18,6 +17,7 @@ import {
   xpFactor,
 } from './actions'
 import { EPSILON } from './constants'
+import { ACTIONS, JOBS, OCCUPATIONS, RESEARCH } from './definitions'
 import { consumeMeal, healthMultiplier, mealCost } from './food'
 import {
   ACTION_IDS,
@@ -28,10 +28,9 @@ import {
   RESOURCES,
   WORKING_JOB_IDS,
 } from './ids'
-import { isProductionJob, JOBS, OCCUPATIONS } from './jobs'
+import { isProductionJob } from './jobs'
 import { createRecord } from './records'
 import { completeProject, projectName, QUEUES, startQueues } from './research'
-import { RESEARCH } from './research-definitions'
 import { canAfford, pay, storageMultiplier, threshold } from './resources'
 import {
   arrivalAptitude,

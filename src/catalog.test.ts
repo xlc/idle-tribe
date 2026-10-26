@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
-import { ACTIONS, actionSlots } from './actions'
-import { BUILDINGS } from './buildings'
+import { actionSlots } from './actions'
+import { ACTIONS, BUILDINGS, JOBS, RESEARCH } from './definitions'
 import {
   ACTION_IDS,
   BUILDING_IDS,
@@ -11,10 +11,9 @@ import {
   type ResourceId,
   SPECIALIZATION_IDS,
 } from './ids'
-import { isProductionJob, JOBS } from './jobs'
+import { isProductionJob } from './jobs'
 import { createRecord } from './records'
 import { completeProject, quoteProject } from './research'
-import { RESEARCH } from './research-definitions'
 import { storageMultiplier, threshold } from './resources'
 import { jobCapacity, requirementBlocker } from './settlement'
 import { createDefaultState } from './state'

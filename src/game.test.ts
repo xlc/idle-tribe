@@ -7,7 +7,7 @@ import {
   canRepeatAction,
   startAction,
 } from './actions'
-import { BUILDINGS } from './buildings'
+import { BUILDINGS, RESEARCH } from './definitions'
 import { createGame, removeFacility } from './game'
 import { BUILDING_IDS, RESEARCH_IDS } from './ids'
 import { parseSave } from './persistence'
@@ -22,7 +22,6 @@ import {
   quoteProject,
   startQueues,
 } from './research'
-import { RESEARCH } from './research-definitions'
 import {
   canAfford,
   capital,

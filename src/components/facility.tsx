@@ -1,20 +1,19 @@
 import { useState } from 'react'
 import {
   ACTION_BALANCE,
-  ACTIONS,
   actionCompletionDuration,
   actionJobActive,
   actionOutputRate,
   actionSlots,
   automationFactor,
 } from '../actions'
-import { BUILDINGS } from '../buildings'
-import { MIN_VISIBLE_RESOURCE_CHANGE, RESOURCE_INFO } from '../constants'
+import { MIN_VISIBLE_RESOURCE_CHANGE } from '../constants'
+import { ACTIONS, BUILDINGS, JOBS, RESOURCE_INFO } from '../definitions'
 import { formatCost, formatResource } from '../format'
 import { removeFacility } from '../game'
 import { ACTION_IDS, RESOURCES } from '../ids'
 import { investmentOutcome } from '../investment'
-import { isProductionJob, JOBS } from '../jobs'
+import { isProductionJob } from '../jobs'
 import {
   allEntries,
   nextEquipment,

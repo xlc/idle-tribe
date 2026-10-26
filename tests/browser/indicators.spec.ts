@@ -1,5 +1,5 @@
 import { expect, type Page, test } from '@playwright/test'
-import { ACTIONS } from '../../src/actions'
+import { ACTIONS } from '../../src/definitions'
 import { formatResource } from '../../src/format'
 import { STORAGE_KEY } from '../../src/persistence'
 import { enqueue, nextExpansion } from '../../src/research'

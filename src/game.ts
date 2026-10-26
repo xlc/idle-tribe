@@ -1,5 +1,5 @@
 import { cancelManual, startAction, syncUnlocks } from './actions'
-import { BUILDINGS } from './buildings'
+import { BUILDINGS } from './definitions'
 import { feast } from './food'
 import {
   cancelProject,

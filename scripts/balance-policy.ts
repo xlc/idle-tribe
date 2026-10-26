@@ -1,13 +1,12 @@
-import { BUILDINGS } from '../src/buildings'
+import { BUILDINGS, JOBS, RESEARCH } from '../src/definitions'
 import { BUILDING_IDS, JOB_IDS, RESEARCH_IDS, RESOURCES } from '../src/ids'
-import { isProductionJob, JOBS } from '../src/jobs'
+import { isProductionJob } from '../src/jobs'
 import {
   allEntries,
   nextExpansion,
   quoteProject,
   researchVisible,
 } from '../src/research'
-import { RESEARCH } from '../src/research-definitions'
 import {
   arrivalStatus,
   assigned,

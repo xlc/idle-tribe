@@ -1,7 +1,7 @@
+import { RESEARCH } from '../definitions'
 import { formatDuration } from '../format'
 import { RESEARCH_IDS } from '../ids'
 import { allEntries, quoteProject, researchVisible } from '../research'
-import { RESEARCH } from '../research-definitions'
 import { automationUnlocked } from '../settlement'
 import { Button, Costs, type ViewProps } from './common'
 import { Queue } from './queues'

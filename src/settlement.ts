@@ -1,16 +1,17 @@
 import { actionOutputRate } from './actions'
-import { BUILDINGS, WORKERS_PER_BUILDING_LEVEL } from './buildings'
+import { WORKERS_PER_BUILDING_LEVEL } from './constants'
+import { BUILDINGS, JOBS, OCCUPATIONS, RESEARCH } from './definitions'
 import { healthMultiplier } from './food'
 import {
   BUILDING_IDS,
   isActionJob,
   isWorkingJob,
+  type ProductionJob,
   RESEARCH_IDS,
   RESOURCES,
   WORKING_JOB_IDS,
 } from './ids'
-import { isProductionJob, JOBS, OCCUPATIONS, type ProductionJob } from './jobs'
-import { RESEARCH } from './research-definitions'
+import { isProductionJob } from './jobs'
 import { canAfford, storageMultiplier } from './resources'
 import { personalWork, workContribution } from './skills'
 import type {

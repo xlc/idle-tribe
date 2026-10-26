@@ -1,15 +1,14 @@
 import {
-  ACTIONS,
   actionCompletionDuration,
   actionJobActive,
   actionOutputRate,
   automationFactor,
 } from './actions'
-import { BUILDINGS } from './buildings'
 import { offlineWindow } from './clock'
-import { MIN_VISIBLE_RESOURCE_CHANGE, RESOURCE_INFO } from './constants'
+import { MIN_VISIBLE_RESOURCE_CHANGE } from './constants'
+import { ACTIONS, BUILDINGS, JOBS, RESOURCE_INFO } from './definitions'
 import { ACTION_IDS, RESOURCES } from './ids'
-import { isProductionJob, JOBS } from './jobs'
+import { isProductionJob } from './jobs'
 import { completeProject, constructionPlan } from './research'
 import { threshold } from './resources'
 import {

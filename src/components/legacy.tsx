@@ -1,6 +1,7 @@
+import { PERKS } from '../definitions'
 import { formatResource } from '../format'
 import { PERK_IDS } from '../ids'
-import { buyPerk, canReset, legacyReward, PERKS, resetRun } from '../prestige'
+import { buyPerk, canReset, legacyReward, resetRun } from '../prestige'
 import { prestigeMultiplier } from '../settlement'
 import { Button, type ViewProps } from './common'
 

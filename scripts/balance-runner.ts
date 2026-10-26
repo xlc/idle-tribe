@@ -1,11 +1,11 @@
 import { startAction } from '../src/actions'
 import { beginAbsence, settleAbsence } from '../src/clock'
+import { RESEARCH } from '../src/definitions'
 import { createGame } from '../src/game'
 import { JOB_IDS, RESEARCH_IDS, RESOURCES } from '../src/ids'
 import { isProductionJob } from '../src/jobs'
 import { buyPerk, canReset, legacyReward, resetRun } from '../src/prestige'
 import { queueBlocker } from '../src/research'
-import { RESEARCH } from '../src/research-definitions'
 import {
   canAfford,
   committed,

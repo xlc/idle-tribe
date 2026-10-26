@@ -1,5 +1,6 @@
 import type {
   ActionId,
+  ActionJob,
   BuildingId,
   JobId,
   PerkId,
@@ -22,6 +23,42 @@ export type {
 } from './ids'
 export type Cost = Partial<Record<ResourceId, number>>
 export type Specialization = SpecializationId
+
+export interface ResourceDefinition {
+  name: string
+  description: string
+  threshold: number
+}
+export interface PerkDefinition {
+  name: string
+  cost: number
+  effect: string
+  description: string
+}
+interface ActionDefinitionBase {
+  name: string
+  description: string
+  levelEffect: string
+  seconds: number
+  baseXp: number
+  repeatAtLevel?: number
+  cost: Cost
+  building: BuildingId
+  job: ActionJob
+  visible: (state: GameState) => boolean
+}
+export type ActionDefinition =
+  | (ActionDefinitionBase & {
+      kind: 'resource'
+      resource: ResourceId
+      amount: number
+    })
+  | (ActionDefinitionBase & {
+      kind: 'exploration'
+      resource?: never
+      amount?: never
+    })
+
 export interface Requirements {
   research?: ResearchId[]
   anyResearch?: ResearchId[]

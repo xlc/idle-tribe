@@ -5,7 +5,8 @@ import {
   useLayoutEffect,
   useRef,
 } from 'react'
-import { EPSILON, RESOURCE_INFO } from '../constants'
+import { EPSILON } from '../constants'
+import { RESOURCE_INFO } from '../definitions'
 import { RESOURCES } from '../ids'
 import type { GameSession } from '../session'
 import type { Cost } from '../types'

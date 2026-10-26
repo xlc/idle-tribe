@@ -1,4 +1,5 @@
-import { RESOURCE_DISPLAY_DECIMALS, RESOURCE_INFO } from './constants'
+import { RESOURCE_DISPLAY_DECIMALS } from './constants'
+import { RESOURCE_INFO } from './definitions'
 import { RESOURCES } from './ids'
 import type { Cost } from './types'
 export function formatResource(value: number) {

@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { ACTIONS } from '../actions'
-import { BUILDINGS } from '../buildings'
+import { ACTIONS, BUILDINGS } from '../definitions'
 import { ACTION_IDS, BUILDING_IDS } from '../ids'
 import { researchPlan } from '../research'
 import { assigned, requirementBlocker } from '../settlement'

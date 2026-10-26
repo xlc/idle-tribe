@@ -1,40 +1,15 @@
-import { BUILDINGS, WORKERS_PER_BUILDING_LEVEL } from './buildings'
-import { EPSILON } from './constants'
+import { EPSILON, WORKERS_PER_BUILDING_LEVEL } from './constants'
+import { ACTIONS, BUILDINGS, RESEARCH } from './definitions'
 import {
-  type ActionId,
-  type ActionJob,
-  type BuildingId,
-  RESEARCH_IDS,
-  type ResourceId,
-} from './ids'
-import { RESEARCH } from './research-definitions'
+  type Discovery,
+  EXPLORE_DISCOVERIES,
+  EXPLORE_FINDS,
+} from './definitions/tribal/exploration'
+import { type ActionId, RESEARCH_IDS } from './ids'
 import { canAfford, pay, refund, storageMultiplier } from './resources'
 import { happinessMultiplier } from './settlement'
 import type { Cost, GameState } from './types'
 
-type ActionDefinitionBase = {
-  name: string
-  description: string
-  levelEffect: string
-  seconds: number
-  baseXp: number
-  repeatAtLevel?: number
-  cost: Cost
-  building: BuildingId
-  job: ActionJob
-  visible: (state: GameState) => boolean
-}
-type ActionDefinition =
-  | (ActionDefinitionBase & {
-      kind: 'resource'
-      resource: ResourceId
-      amount: number
-    })
-  | (ActionDefinitionBase & {
-      kind: 'exploration'
-      resource?: never
-      amount?: never
-    })
 // Shared action balance. Keep cadence, displayed output, and simulation on the
 // same curve when tuning progression or equipment.
 export const ACTION_BALANCE = {
@@ -47,77 +22,9 @@ export const ACTION_BALANCE = {
   rateModeSeconds: 2,
 }
 
-export const ACTIONS: Record<ActionId, ActionDefinition> = {
-  gather: {
-    kind: 'resource',
-    name: 'Gather food',
-    description:
-      'Investigate the bushes for something that counts as breakfast.',
-    levelEffect: 'Each level: +2% output · −2% cycle time',
-    seconds: 1,
-    baseXp: 4,
-    repeatAtLevel: 2,
-    cost: {},
-    building: 'foraging',
-    job: 'forager',
-    resource: 'food',
-    amount: 1,
-    visible: (s) => !gatherRetired(s),
-  },
-  sticks: {
-    kind: 'resource',
-    name: 'Gather wood',
-    description: 'Find a branch with a promising future.',
-    levelEffect: 'Each level: +2% output · −2% cycle time',
-    seconds: 2,
-    baseXp: 3,
-    repeatAtLevel: 2,
-    cost: {},
-    building: 'lumber',
-    job: 'woodcutter',
-    resource: 'wood',
-    amount: 1,
-    visible: (s) => s.discovered.wood,
-  },
-  stone: {
-    kind: 'resource',
-    name: 'Gather stone',
-    description: 'Pick up a rock and call it the start of something.',
-    levelEffect: 'Each level: +2% output · −2% cycle time',
-    seconds: 3,
-    baseXp: 5,
-    repeatAtLevel: 2,
-    cost: {},
-    building: 'quarry',
-    job: 'stoneworker',
-    resource: 'stone',
-    amount: 1,
-    visible: (s) => s.discovered.stone,
-  },
-  explore: {
-    kind: 'exploration',
-    name: 'Explore',
-    description:
-      'The edge of the clearing is doing an excellent job of looking interesting.',
-    levelEffect: 'Each level: faster trips · better finds',
-    seconds: 4,
-    baseXp: 1,
-    cost: { food: 6 },
-    building: 'expedition-camp',
-    job: 'explorer',
-    visible: (s) => s.exploreUnlocked,
-  },
-}
-
 export function syncUnlocks(state: GameState) {
   if (state.resources.food >= 5) state.exploreUnlocked = true
   if (state.resources.wood >= 2) state.researchUnlocked = true
-}
-
-// Farming graduates the settlement off wild gathering. Foragers stay
-// assignable at the camp; the gather action itself stops producing.
-export function gatherRetired(state: GameState) {
-  return state.research.agriculture && state.facilities.farm.level >= 1
 }
 
 export function actionSlots(state: GameState, id: ActionId) {
@@ -287,18 +194,6 @@ function exploreRand(state: GameState) {
 
 // Explore finds are data-driven: an entry joins the pool once its discovery
 // (if any) has happened, so new resource kinds only extend these tables.
-type Discovery = keyof GameState['discovered']
-const EXPLORE_DISCOVERIES: Discovery[] = ['wood', 'stone']
-type ExploreFind = {
-  resource: ResourceId
-  amount: (level: number) => number
-  discovery?: Discovery
-}
-const EXPLORE_FINDS: ExploreFind[] = [
-  { resource: 'food', amount: (level) => 2 + level },
-  { resource: 'wood', amount: (level) => 1 + level, discovery: 'wood' },
-  { resource: 'stone', amount: (level) => 1 + level, discovery: 'stone' },
-]
 function explorePool(state: GameState) {
   return EXPLORE_FINDS.filter(
     (find) => !find.discovery || state.discovered[find.discovery],

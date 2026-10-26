@@ -153,6 +153,7 @@ export type ResearchId = (typeof RESEARCH_IDS)[number]
 export type JobId = (typeof JOB_IDS)[number]
 export type ActionId = (typeof ACTION_IDS)[number]
 export type ActionJob = (typeof ACTION_JOB_IDS)[number]
+export type ProductionJob = Exclude<JobId, 'idle' | 'builder' | ActionJob>
 export type PerkId = (typeof PERK_IDS)[number]
 export type SpecializationId = (typeof SPECIALIZATION_IDS)[number]
 

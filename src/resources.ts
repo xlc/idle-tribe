@@ -1,7 +1,6 @@
-import { BUILDINGS } from './buildings'
-import { EPSILON, RESOURCE_INFO } from './constants'
+import { EPSILON } from './constants'
+import { BUILDINGS, RESEARCH, RESOURCE_INFO } from './definitions'
 import { BUILDING_IDS, RESEARCH_IDS, RESOURCES } from './ids'
-import { RESEARCH } from './research-definitions'
 import type { Cost, GameState, ResourceId } from './types'
 export function cumulative(level: number) {
   return (

@@ -35,6 +35,18 @@ The production build installs as a standalone PWA. On iPhone or iPad, open it in
 
 ## Development
 
+Game content lives in `src/definitions/`, grouped into the eight era folders:
+`tribal`, `agricultural`, `town`, `industrial`, `digital`, `space`, `quantum`, and
+`beyond-quantum`. Each folder owns its era description, resources, buildings,
+research, jobs, and any actions or perks introduced in that era. Later forms of
+an existing building belong in the unlocking era's `building-upgrades.ts`.
+Permanent time-box perks live in Industrial, where the time box is discovered.
+
+`src/definitions/index.ts` assembles the typed runtime catalogs. Keep costs,
+recipes, prerequisites, and flavor text in the era files; shared evaluation and
+simulation stay in the rule modules. `src/ids.ts` preserves canonical iteration
+order, and building upgrades append chronologically to preserve form indexes.
+
 Run the same checks as CI before submitting changes:
 
 ```sh

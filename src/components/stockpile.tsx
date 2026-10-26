@@ -1,10 +1,9 @@
 import { useRef, useState } from 'react'
-import { ACTIONS } from '../actions'
-import { BUILDINGS } from '../buildings'
-import { MIN_VISIBLE_RESOURCE_CHANGE, RESOURCE_INFO } from '../constants'
+import { MIN_VISIBLE_RESOURCE_CHANGE } from '../constants'
+import { ACTIONS, BUILDINGS, JOBS, RESOURCE_INFO } from '../definitions'
 import { formatCompactResource, formatResource } from '../format'
 import { ACTION_IDS, BUILDING_IDS, RESOURCES } from '../ids'
-import { isProductionJob, JOBS } from '../jobs'
+import { isProductionJob } from '../jobs'
 import {
   loadResourcePins,
   MAX_RESOURCE_PINS,

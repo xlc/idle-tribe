@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-  ACTIONS,
   actionCompletionDuration,
   actionJobActive,
   actionOutputRate,
@@ -12,6 +11,7 @@ import {
   canRepeatAction,
   isRateMode,
 } from '../actions'
+import { ACTIONS } from '../definitions'
 import { formatCost, formatResource } from '../format'
 import { ACTION_IDS, type ActionId } from '../ids'
 import { canAfford } from '../resources'
