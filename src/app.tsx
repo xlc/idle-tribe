@@ -4,18 +4,18 @@ import { ActionCards } from './components/actions'
 import { ViewIcon } from './components/art'
 import { AwayNotification } from './components/away-report'
 import { Button, type Confirm } from './components/common'
+import { Legacy } from './components/legacy'
 import { OfflineStatus } from './components/offline-status'
 import { People } from './components/people'
+import { Production } from './components/production'
 import { Construction, Queue } from './components/queues'
-import { Production, Stockpile, Workforce } from './components/settlement'
+import { Settings } from './components/settings'
+import { Stockpile } from './components/stockpile'
 import { Technology } from './components/technology'
+import { Workforce } from './components/workforce'
 import { ERAS } from './constants'
-import { formatResource } from './format'
-import { PERK_IDS } from './ids'
-import { wipeSave } from './persistence'
-import { buyPerk, canReset, legacyReward, PERKS, resetRun } from './prestige'
 import type { GameSession } from './session'
-import { automationUnlocked, prestigeMultiplier } from './settlement'
+import { automationUnlocked } from './settlement'
 import { useSession } from './use-session'
 
 type View = 'settlement' | 'research' | 'people' | 'legacy' | 'settings'
@@ -142,58 +142,7 @@ export function App({ session }: { session: GameSession }) {
                     forceMount
                     hidden={view !== 'legacy'}
                   >
-                    <h2>
-                      Mysterious time box · {s.legacy.points} legacy points
-                    </h2>
-                    <p>
-                      A small box with a very unreasonable relationship to time.
-                    </p>
-                    <p>
-                      {s.legacy.lifetime} lifetime points · efficiency ×
-                      {formatResource(prestigeMultiplier(s))}
-                      {!canReset(s) && ' · Reset requires Writing'}
-                    </p>
-                    <p className="legacy-note">
-                      Lifetime points improve worker, construction, and research
-                      speed for every settlement.
-                    </p>
-                    <Button
-                      disabled={!canReset(s)}
-                      onClick={() =>
-                        confirm(
-                          'Begin a new settlement?',
-                          `Gain ${legacyReward(s)} legacy points. Lose all resources, people, facilities, equipment, assignments, aptitudes, personal expertise, action levels, discoveries, research, branch choices, and queued work. Keep lifetime points, perks, settings, and the time box.`,
-                          () => {
-                            resetRun(s)
-                            setView('settlement')
-                          },
-                        )
-                      }
-                    >
-                      Reset settlement · +{legacyReward(s)}
-                    </Button>
-                    <div className="tech-grid">
-                      {PERK_IDS.map((id) => (
-                        <article className="tech-card panel" key={id}>
-                          <h3>{PERKS[id].name}</h3>
-                          <p className="flavor">{PERKS[id].description}</p>
-                          <p>{PERKS[id].effect}</p>
-                          <Button
-                            variant="solid"
-                            color="grass"
-                            disabled={
-                              s.legacy.perks[id] ||
-                              s.legacy.points < PERKS[id].cost
-                            }
-                            onClick={() => session.change(() => buyPerk(s, id))}
-                          >
-                            {s.legacy.perks[id]
-                              ? 'Owned'
-                              : `${PERKS[id].cost} points`}
-                          </Button>
-                        </article>
-                      ))}
-                    </div>
+                    <Legacy {...props} onReset={() => setView('settlement')} />
                   </Tabs.Content>
                 )}
                 <Tabs.Content
@@ -201,50 +150,7 @@ export function App({ session }: { session: GameSession }) {
                   forceMount
                   hidden={view !== 'settings'}
                 >
-                  <h2>Settings</h2>
-                  <p>Manage this browser's local game data.</p>
-                  <div className="settings-actions">
-                    <Button
-                      color="amber"
-                      onClick={() =>
-                        confirm(
-                          'Wipe local save?',
-                          'This permanently deletes the settlement saved in this browser and starts a new game.',
-                          () => {
-                            wipeSave()
-                            window.location.reload()
-                          },
-                          { direct: true },
-                        )
-                      }
-                    >
-                      Wipe local save
-                    </Button>
-                  </div>
-                  <section className="event-log-section">
-                    <h2>Event log</h2>
-                    <p className="event-log-note">
-                      Events from this session. Refreshing the page clears the
-                      log.
-                    </p>
-                    {session.events.length ? (
-                      <ul className="event-log">
-                        {[...session.events].reverse().map((event) => (
-                          <li key={event.id}>
-                            <time>
-                              {new Date(event.at).toLocaleTimeString([], {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
-                            </time>
-                            <span>{event.text}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="event-log-note">No events yet.</p>
-                    )}
-                  </section>
+                  <Settings {...props} />
                 </Tabs.Content>
               </div>
               <aside className="camp-aside" hidden={view === 'settings'}>

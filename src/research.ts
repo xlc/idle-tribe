@@ -1,4 +1,4 @@
-import { BUILDINGS } from './economy'
+import { BUILDINGS } from './buildings'
 import { RESEARCH_IDS, RESOURCES } from './ids'
 import { RESEARCH } from './research-definitions'
 import {

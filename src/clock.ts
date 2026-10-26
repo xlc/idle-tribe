@@ -1,5 +1,5 @@
-import { RESOURCE_INFO } from './constants'
-import { BUILDINGS } from './economy'
+import { BUILDINGS } from './buildings'
+import { MIN_VISIBLE_RESOURCE_CHANGE, RESOURCE_INFO } from './constants'
 import { formatCompactResource } from './format'
 import { BUILDING_IDS, RESEARCH_IDS, RESOURCES, WORKING_JOB_IDS } from './ids'
 import { createRecord } from './records'
@@ -93,7 +93,8 @@ export function awayHighlight(report: AwayProgress) {
   if (levels) return `+${levels} expertise ${levels === 1 ? 'level' : 'levels'}`
   const best = RESOURCES.reduce<ResourceId | null>(
     (chosen, r) =>
-      report.gains[r] > Math.max(0.0005, chosen ? report.gains[chosen] : 0)
+      report.gains[r] >
+      Math.max(MIN_VISIBLE_RESOURCE_CHANGE, chosen ? report.gains[chosen] : 0)
         ? r
         : chosen,
     null,

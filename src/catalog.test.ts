@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 import { ACTIONS, actionSlots } from './actions'
-import { BUILDINGS, isProductionJob, JOBS } from './economy'
+import { BUILDINGS } from './buildings'
 import {
   ACTION_IDS,
   BUILDING_IDS,
@@ -11,6 +11,7 @@ import {
   type ResourceId,
   SPECIALIZATION_IDS,
 } from './ids'
+import { isProductionJob, JOBS } from './jobs'
 import { createRecord } from './records'
 import { completeProject, quoteProject } from './research'
 import { RESEARCH } from './research-definitions'

@@ -1,6 +1,6 @@
 import { actionRequiredXp, cancelManual } from './actions'
+import { BUILDINGS } from './buildings'
 import { ERAS } from './constants'
-import { BUILDINGS } from './economy'
 import {
   ACTION_IDS,
   BUILDING_IDS,

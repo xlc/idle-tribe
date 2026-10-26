@@ -1,11 +1,5 @@
 import { actionOutputRate } from './actions'
-import {
-  BUILDINGS,
-  isProductionJob,
-  JOBS,
-  OCCUPATIONS,
-  type ProductionJob,
-} from './economy'
+import { BUILDINGS, WORKERS_PER_BUILDING_LEVEL } from './buildings'
 import { healthMultiplier } from './food'
 import {
   BUILDING_IDS,
@@ -15,6 +9,7 @@ import {
   RESOURCES,
   WORKING_JOB_IDS,
 } from './ids'
+import { isProductionJob, JOBS, OCCUPATIONS, type ProductionJob } from './jobs'
 import { RESEARCH } from './research-definitions'
 import { canAfford, storageMultiplier } from './resources'
 import { personalWork, workContribution } from './skills'
@@ -91,7 +86,7 @@ export function jobCapacity(state: GameState, job: JobId) {
   return isWorkingJob(job) && OCCUPATIONS[job].learning === 'construction'
     ? crewSize(state)
     : id
-      ? 2 * state.facilities[id].level
+      ? WORKERS_PER_BUILDING_LEVEL * state.facilities[id].level
       : 0
 }
 export function jobUnlocked(state: GameState, job: JobId) {

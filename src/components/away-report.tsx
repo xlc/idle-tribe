@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react'
 import { type AwayProgress, awayHighlight } from '../clock'
-import { RESOURCE_INFO } from '../constants'
-import { OCCUPATIONS } from '../economy'
+import { MIN_VISIBLE_RESOURCE_CHANGE, RESOURCE_INFO } from '../constants'
 import { formatDuration, formatResource } from '../format'
 import { RESOURCES } from '../ids'
+import { OCCUPATIONS } from '../jobs'
 import { QUEUES, queueBlocker } from '../research'
 import { storageMultiplier } from '../resources'
 import type { GameSession } from '../session'
@@ -90,7 +90,7 @@ export function AwayReport({
   const [open, setOpen] = useState(false)
   const s = session.game.state,
     changedResources = RESOURCES.filter(
-      (r) => Math.abs(report.gains[r]) > 0.0005,
+      (r) => Math.abs(report.gains[r]) > MIN_VISIBLE_RESOURCE_CHANGE,
     ),
     blockers = QUEUES.flatMap((id) => {
       const blocker = queueBlocker(s, id)

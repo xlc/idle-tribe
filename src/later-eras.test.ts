@@ -4,8 +4,8 @@ import {
   automationFactor,
   exploreExpectedRewards,
 } from './actions'
+import { BUILDINGS } from './buildings'
 import { offlineWindow } from './clock'
-import { BUILDINGS } from './economy'
 import { RESOURCES } from './ids'
 import { parseSave } from './persistence'
 import { buyPerk, canReset, legacyReward, resetRun } from './prestige'

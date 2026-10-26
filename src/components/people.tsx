@@ -1,9 +1,9 @@
 import { ACTIONS, actionOutputRate, actionWorkers } from '../actions'
 import { RESOURCE_INFO } from '../constants'
-import { isProductionJob, JOBS, OCCUPATIONS } from '../economy'
 import { feastCost } from '../food'
 import { formatDuration, formatResource } from '../format'
 import { ACTION_IDS, isWorkingJob, JOB_IDS, WORKING_JOB_IDS } from '../ids'
+import { isProductionJob, JOBS, OCCUPATIONS } from '../jobs'
 import type { GameSession } from '../session'
 import {
   happinessMultiplier,

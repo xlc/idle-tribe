@@ -1,0 +1,84 @@
+import { formatResource } from '../format'
+import type { GameSession } from '../session'
+import {
+  arrivalStatus,
+  assigned,
+  comfortablePlaces,
+  constructionSpeed,
+  happinessTarget,
+  happinessUnlocked,
+} from '../settlement'
+import { WorkerControls } from './worker-controls'
+
+export function Workforce({ session }: { session: GameSession }) {
+  const s = session.game.state,
+    arrival = arrivalStatus(s),
+    target = happinessTarget(s)
+  return (
+    <section className="workforce-bar" aria-label="Population">
+      <div>
+        <h2>{s.people.length} people</h2>
+        <p>{assigned(s, 'idle')} unassigned</p>
+        {happinessUnlocked(s) && (
+          <div className="happiness-status">
+            <span>
+              Happiness {formatResource(s.happiness)} · target{' '}
+              {formatResource(target)}
+            </span>
+            <span className="status-meter happiness-meter">
+              <meter
+                min={0}
+                max={100}
+                value={s.happiness}
+                aria-label="Happiness"
+                aria-valuetext={`${formatResource(s.happiness)}, target ${formatResource(target)}`}
+              />
+              <span className="meter-marker" style={{ left: `${target}%` }} />
+            </span>
+          </div>
+        )}
+      </div>
+      <details className="arrival-details">
+        <summary>Arrivals & housing</summary>
+        <p>{comfortablePlaces(s)} comfortable places</p>
+        <div className="arrival-control">
+          <label>
+            <input
+              className="checkbox"
+              type="checkbox"
+              checked={s.welcome}
+              onChange={() =>
+                session.change(() => {
+                  s.welcome = !s.welcome
+                })
+              }
+            />{' '}
+            Welcome arrivals
+          </label>
+          <small>
+            {arrival.blocker ||
+              `Next arrival · ${Math.ceil((1 - s.arrivalProgress) * arrival.interval)}m`}
+          </small>
+          <small className="arrival-supply">
+            Food {formatResource(arrival.foodOutput)} /{' '}
+            {formatResource(arrival.required)} per minute
+          </small>
+          <progress className="progress" value={s.arrivalProgress} max={1} />
+        </div>
+      </details>
+    </section>
+  )
+}
+export function Builders({ session }: { session: GameSession }) {
+  const s = session.game.state,
+    speed = constructionSpeed(s)
+  return (
+    <section className="builders">
+      <div>
+        <h3>Builders</h3>
+        <p>{formatResource(speed)} work/min</p>
+      </div>
+      <WorkerControls session={session} job="builder" />
+    </section>
+  )
+}

@@ -1,5 +1,6 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import {
+  ACTION_BALANCE,
   ACTIONS,
   actionCompletionDuration,
   actionJobActive,
@@ -7,17 +8,13 @@ import {
   actionSlots,
   automationFactor,
 } from '../actions'
-import { RESOURCE_INFO } from '../constants'
-import { BUILDINGS, isProductionJob, JOBS } from '../economy'
-import { formatCompactResource, formatCost, formatResource } from '../format'
+import { BUILDINGS } from '../buildings'
+import { MIN_VISIBLE_RESOURCE_CHANGE, RESOURCE_INFO } from '../constants'
+import { formatCost, formatResource } from '../format'
 import { removeFacility } from '../game'
-import { ACTION_IDS, BUILDING_IDS, RESOURCES } from '../ids'
+import { ACTION_IDS, RESOURCES } from '../ids'
 import { investmentOutcome } from '../investment'
-import {
-  loadResourcePins,
-  MAX_RESOURCE_PINS,
-  saveResourcePins,
-} from '../preferences'
+import { isProductionJob, JOBS } from '../jobs'
 import {
   allEntries,
   nextEquipment,
@@ -26,208 +23,21 @@ import {
   researchPlan,
 } from '../research'
 import { storageMultiplier, threshold } from '../resources'
-import type { GameSession } from '../session'
 import {
-  arrivalStatus,
   assigned,
   comfortablePlaces,
-  constructionSpeed,
   equipmentMultiplier,
-  happinessTarget,
-  happinessUnlocked,
   jobInput,
   requirementBlocker,
   workerRate,
 } from '../settlement'
-import { resourceFlows, resourceRates } from '../simulation'
-import type { BuildingId, GameState, Project, ResourceId } from '../types'
+import { resourceRates } from '../simulation'
+import type { BuildingId, GameState, Project } from '../types'
 import { ActionCard } from './actions'
-import { BuildingArt, ResourceArt } from './art'
+import { BuildingArt } from './art'
 import { Button, Costs, type ViewProps } from './common'
 import { WorkerControls } from './worker-controls'
-export function Stockpile({ session }: { session: GameSession }) {
-  const s = session.game.state,
-    flows = resourceFlows(s)
-  const visibleResources = RESOURCES.filter(
-    (r) =>
-      ACTION_IDS.some(
-        (id) => ACTIONS[id].resource === r && ACTIONS[id].visible(s),
-      ) ||
-      s.resources[r] > 0 ||
-      BUILDING_IDS.some(
-        (id) =>
-          BUILDINGS[id].job &&
-          isProductionJob(BUILDINGS[id].job) &&
-          JOBS[BUILDINGS[id].job].output === r &&
-          !requirementBlocker(s, BUILDINGS[id].forms[0]?.requires ?? {}),
-      ),
-  )
-  const [pins, setPins] = useState(loadResourcePins)
-  const picker = useRef<HTMLDialogElement>(null)
-  const visiblePins = pins.filter((r) => visibleResources.includes(r))
-  function resource(r: ResourceId) {
-    const pressure = storageMultiplier(s, r),
-      flow = flows[r],
-      net = flow.production - flow.inputs - flow.meals,
-      rate = Math.abs(net) < 0.0005 ? 0 : net
-    return (
-      <section
-        className="resource"
-        aria-label={`${RESOURCE_INFO[r].name} resource`}
-        key={r}
-      >
-        <ResourceArt resource={r} />
-        <span className="resource-name">{RESOURCE_INFO[r].name}</span>
-        <strong className="resource-value">
-          {formatCompactResource(s.resources[r])}
-        </strong>
-        <div className="resource-meta">
-          <span
-            className="resource-rate"
-            data-negative={rate < 0}
-            data-zero={rate === 0}
-          >
-            {rate > 0 ? '+' : ''}
-            {formatCompactResource(rate)}/min
-          </span>
-          <small className="storage-effect" data-idle={pressure >= 1}>
-            Storage ×{formatResource(pressure)}
-          </small>
-        </div>
-      </section>
-    )
-  }
-  return (
-    <section className="stockpile-panel panel" aria-label="Stockpile">
-      <div className="stockpile-bar">
-        <div
-          className="stockpile"
-          id="stockpile-resources"
-          data-pinned={visiblePins.length > 0}
-        >
-          {(visiblePins.length ? visiblePins : visibleResources).map(resource)}
-        </div>
-        <button
-          type="button"
-          className="resource-picker"
-          aria-label="All resources and pins"
-          onClick={() => picker.current?.showModal()}
-        >
-          <span aria-hidden="true">≡</span>
-        </button>
-      </div>
-      <dialog ref={picker} className="modal resource-dialog panel">
-        <div className="modal-box">
-          <h2>Resources</h2>
-          <p className="resource-pin-count">
-            Pinned · {visiblePins.length}/{MAX_RESOURCE_PINS}
-          </p>
-          <div className="resource-choices">
-            {visibleResources.map((r) => (
-              <div className="resource-choice" key={r}>
-                <label className="resource-pin">
-                  <input
-                    type="checkbox"
-                    aria-label={`Pin ${RESOURCE_INFO[r].name.toLowerCase()}`}
-                    checked={visiblePins.includes(r)}
-                    disabled={
-                      !visiblePins.includes(r) &&
-                      visiblePins.length >= MAX_RESOURCE_PINS
-                    }
-                    onChange={(e) => {
-                      const next = e.target.checked
-                        ? [...visiblePins, r]
-                        : visiblePins.filter((pin) => pin !== r)
-                      setPins(next)
-                      saveResourcePins(next)
-                    }}
-                  />
-                </label>
-                {resource(r)}
-              </div>
-            ))}
-          </div>
-          <div className="modal-action">
-            <Button onClick={() => picker.current?.close()}>Close</Button>
-          </div>
-        </div>
-      </dialog>
-    </section>
-  )
-}
 
-export function Workforce({ session }: { session: GameSession }) {
-  const s = session.game.state,
-    arrival = arrivalStatus(s),
-    target = happinessTarget(s)
-  return (
-    <section className="workforce-bar" aria-label="Population">
-      <div>
-        <h2>{s.people.length} people</h2>
-        <p>{assigned(s, 'idle')} unassigned</p>
-        {happinessUnlocked(s) && (
-          <div className="happiness-status">
-            <span>
-              Happiness {formatResource(s.happiness)} · target{' '}
-              {formatResource(target)}
-            </span>
-            <span className="status-meter happiness-meter">
-              <meter
-                min={0}
-                max={100}
-                value={s.happiness}
-                aria-label="Happiness"
-                aria-valuetext={`${formatResource(s.happiness)}, target ${formatResource(target)}`}
-              />
-              <span className="meter-marker" style={{ left: `${target}%` }} />
-            </span>
-          </div>
-        )}
-      </div>
-      <details className="arrival-details">
-        <summary>Arrivals & housing</summary>
-        <p>{comfortablePlaces(s)} comfortable places</p>
-        <div className="arrival-control">
-          <label>
-            <input
-              className="checkbox"
-              type="checkbox"
-              checked={s.welcome}
-              onChange={() =>
-                session.change(() => {
-                  s.welcome = !s.welcome
-                })
-              }
-            />{' '}
-            Welcome arrivals
-          </label>
-          <small>
-            {arrival.blocker ||
-              `Next arrival · ${Math.ceil((1 - s.arrivalProgress) * arrival.interval)}m`}
-          </small>
-          <small className="arrival-supply">
-            Food {formatResource(arrival.foodOutput)} /{' '}
-            {formatResource(arrival.required)} per minute
-          </small>
-          <progress className="progress" value={s.arrivalProgress} max={1} />
-        </div>
-      </details>
-    </section>
-  )
-}
-export function Builders({ session }: { session: GameSession }) {
-  const s = session.game.state,
-    speed = constructionSpeed(s)
-  return (
-    <section className="builders">
-      <div>
-        <h3>Builders</h3>
-        <p>{formatResource(speed)} work/min</p>
-      </div>
-      <WorkerControls session={session} job="builder" />
-    </section>
-  )
-}
 function InvestmentChange({
   state,
   project,
@@ -246,7 +56,11 @@ function InvestmentChange({
   )
 }
 
-function Facility({ session, confirm, id }: ViewProps & { id: BuildingId }) {
+export function Facility({
+  session,
+  confirm,
+  id,
+}: ViewProps & { id: BuildingId }) {
   const s = session.game.state,
     def = BUILDINGS[id],
     f = s.facilities[id],
@@ -305,7 +119,8 @@ function Facility({ session, confirm, id }: ViewProps & { id: BuildingId }) {
     const beforeRates = resourceRates(s),
       afterRates = resourceRates(after)
     const rateChanges = RESOURCES.filter(
-      (r) => Math.abs(beforeRates[r] - afterRates[r]) > 0.0005,
+      (r) =>
+        Math.abs(beforeRates[r] - afterRates[r]) > MIN_VISIBLE_RESOURCE_CHANGE,
     )
       .map(
         (r) =>
@@ -428,7 +243,7 @@ function Facility({ session, confirm, id }: ViewProps & { id: BuildingId }) {
             {form.rate ? `Base ${form.rate}/min per worker. ` : ''}
             {job && f.equipment
               ? action
-                ? `Tools +${formatResource(0.05 * f.equipment * 100)}pp automation. `
+                ? `Tools +${formatResource(ACTION_BALANCE.automationPerEquipment * f.equipment * 100)}pp automation. `
                 : `Tools ×${formatResource(equipmentMultiplier(f.equipment))}. `
               : ''}
             {quote.blocker}
@@ -523,66 +338,5 @@ function Facility({ session, confirm, id }: ViewProps & { id: BuildingId }) {
         )}
       </details>
     </article>
-  )
-}
-export function Production(props: ViewProps) {
-  const s = props.session.game.state
-  const [filter, setFilter] = useState('Production')
-  const planned = researchPlan(s)
-  const available = BUILDING_IDS.filter((id) => {
-    const action = ACTION_IDS.find((a) => ACTIONS[a].building === id)
-    if (
-      action &&
-      !ACTIONS[action].visible(s) &&
-      !assigned(s, ACTIONS[action].job)
-    )
-      return false
-    return (
-      s.facilities[id].level > 0 ||
-      BUILDINGS[id].forms.some((f) => !requirementBlocker(planned, f.requires))
-    )
-  })
-  return (
-    <section>
-      <div className="section-heading">
-        <h2>Workplaces</h2>
-      </div>
-      <fieldset className="facility-filters" aria-label="Facility filters">
-        {['All', 'Production', 'Storage', 'Housing & support'].map((value) => (
-          <Button
-            key={value}
-            aria-pressed={filter === value}
-            variant={filter === value ? 'solid' : 'soft'}
-            onClick={() => setFilter(value)}
-          >
-            {value}
-          </Button>
-        ))}
-      </fieldset>
-      <div className="building-grid">
-        {(filter === 'All' || filter === 'Production') &&
-          ACTION_IDS.filter(
-            (id) =>
-              ACTIONS[id].visible(s) &&
-              !available.includes(ACTIONS[id].building),
-          ).map((id) => (
-            <ActionCard key={id} session={props.session} id={id} />
-          ))}
-        {available
-          .filter(
-            (id) =>
-              filter === 'All' ||
-              (filter === 'Production'
-                ? BUILDINGS[id].job
-                : filter === 'Storage'
-                  ? BUILDINGS[id].forms.some((form) => form.storage)
-                  : !BUILDINGS[id].job &&
-                    !BUILDINGS[id].forms.some((form) => form.storage)),
-          )
-          .map((id) => (
-            <Facility key={id} {...props} id={id} />
-          ))}
-      </div>
-    </section>
   )
 }

@@ -7,6 +7,7 @@ import {
   actionWorkers,
   actionYield,
   automationFactor,
+  baseActionDuration,
   completeAction,
   exploreExpectedRewards,
   finishManual,
@@ -17,7 +18,6 @@ import {
   xpFactor,
 } from './actions'
 import { EPSILON } from './constants'
-import { isProductionJob, JOBS, OCCUPATIONS } from './economy'
 import { consumeMeal, healthMultiplier, mealCost } from './food'
 import {
   ACTION_IDS,
@@ -28,6 +28,7 @@ import {
   RESOURCES,
   WORKING_JOB_IDS,
 } from './ids'
+import { isProductionJob, JOBS, OCCUPATIONS } from './jobs'
 import { createRecord } from './records'
 import { completeProject, projectName, QUEUES, startQueues } from './research'
 import { RESEARCH } from './research-definitions'
@@ -148,7 +149,7 @@ function actionRules(state: GameState): ActionRule[] {
     const def = ACTIONS[id],
       n = actionWorkers(state, id)
     if (n < 1 || !def.visible(state) || !canAfford(state, def.cost)) return []
-    const base = def.seconds * 0.98 ** (state.actionSkills[id].level - 1),
+    const base = baseActionDuration(state, id),
       speed = n / base,
       rateMode = isRateMode(state, id)
     return [

@@ -1,10 +1,10 @@
-import { RESOURCE_INFO } from './constants'
+import { RESOURCE_DISPLAY_DECIMALS, RESOURCE_INFO } from './constants'
 import { RESOURCES } from './ids'
 import type { Cost } from './types'
 export function formatResource(value: number) {
-  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 3 }).format(
-    value,
-  )
+  return new Intl.NumberFormat('en-US', {
+    maximumFractionDigits: RESOURCE_DISPLAY_DECIMALS,
+  }).format(value)
 }
 export function formatCompactResource(value: number) {
   return Math.abs(value) < 10000

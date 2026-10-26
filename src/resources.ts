@@ -1,5 +1,5 @@
+import { BUILDINGS } from './buildings'
 import { EPSILON, RESOURCE_INFO } from './constants'
-import { BUILDINGS } from './economy'
 import { BUILDING_IDS, RESEARCH_IDS, RESOURCES } from './ids'
 import { RESEARCH } from './research-definitions'
 import type { Cost, GameState, ResourceId } from './types'

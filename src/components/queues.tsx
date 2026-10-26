@@ -4,7 +4,7 @@ import { plannedQuotes, projectName, queueBlocker } from '../research'
 import { constructionSpeed } from '../settlement'
 import type { QueueId } from '../types'
 import { Button, Costs, type ViewProps } from './common'
-import { Builders } from './settlement'
+import { Builders } from './workforce'
 
 export function Construction(props: ViewProps) {
   return (

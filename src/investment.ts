@@ -5,10 +5,11 @@ import {
   actionOutputRate,
   automationFactor,
 } from './actions'
+import { BUILDINGS } from './buildings'
 import { offlineWindow } from './clock'
-import { RESOURCE_INFO } from './constants'
-import { BUILDINGS, isProductionJob, JOBS } from './economy'
+import { MIN_VISIBLE_RESOURCE_CHANGE, RESOURCE_INFO } from './constants'
 import { ACTION_IDS, RESOURCES } from './ids'
+import { isProductionJob, JOBS } from './jobs'
 import { completeProject, constructionPlan } from './research'
 import { threshold } from './resources'
 import {
@@ -38,7 +39,7 @@ export function investmentOutcome(
   const after = structuredClone(state)
   completeProject(after, project)
   const compare = (label: string, beforeValue: number, afterValue: number) =>
-    Math.abs(afterValue - beforeValue) > 0.0005
+    Math.abs(afterValue - beforeValue) > MIN_VISIBLE_RESOURCE_CHANGE
       ? { label, before: beforeValue, after: afterValue }
       : null
   const job = BUILDINGS[project.id].job

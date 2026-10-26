@@ -1,5 +1,5 @@
+import { BUILDINGS, WORKERS_PER_BUILDING_LEVEL } from './buildings'
 import { EPSILON } from './constants'
-import { BUILDINGS } from './economy'
 import {
   type ActionId,
   type ActionJob,
@@ -35,6 +35,18 @@ type ActionDefinition =
       resource?: never
       amount?: never
     })
+// Shared action balance. Keep cadence, displayed output, and simulation on the
+// same curve when tuning progression or equipment.
+export const ACTION_BALANCE = {
+  durationPerLevel: 0.98,
+  yieldPerLevel: 1.02,
+  xpPerLevel: 1.2,
+  baseAutomation: 0.1,
+  automationPerEquipment: 0.05,
+  automatedXp: 0.1,
+  rateModeSeconds: 2,
+}
+
 export const ACTIONS: Record<ActionId, ActionDefinition> = {
   gather: {
     kind: 'resource',
@@ -109,7 +121,9 @@ export function gatherRetired(state: GameState) {
 }
 
 export function actionSlots(state: GameState, id: ActionId) {
-  return 2 * state.facilities[ACTIONS[id].building].level
+  return (
+    WORKERS_PER_BUILDING_LEVEL * state.facilities[ACTIONS[id].building].level
+  )
 }
 export function actionWorkers(state: GameState, id: ActionId) {
   const job = ACTIONS[id].job
@@ -137,7 +151,8 @@ export function startAction(state: GameState, id: ActionId, repeat = false) {
 }
 export function actionRequiredXp(state: GameState, id: ActionId) {
   return Math.ceil(
-    ACTIONS[id].baseXp * 1.2 ** (state.actionSkills[id].level - 1),
+    ACTIONS[id].baseXp *
+      ACTION_BALANCE.xpPerLevel ** (state.actionSkills[id].level - 1),
   )
 }
 export function actionYield(state: GameState, id: ActionId) {
@@ -146,14 +161,24 @@ export function actionYield(state: GameState, id: ActionId) {
   for (const r of RESEARCH_IDS)
     if (state.research[r]) bonus += RESEARCH[r].effects.actionYield?.[id] ?? 0
   return def.resource
-    ? def.amount * 1.02 ** (state.actionSkills[id].level - 1) * bonus
+    ? def.amount *
+        ACTION_BALANCE.yieldPerLevel ** (state.actionSkills[id].level - 1) *
+        bonus
     : 0
+}
+// Skill-adjusted cadence before live storage pressure. The simulation caches
+// this between discrete events; displays and mode selection use the same rule.
+export function baseActionDuration(state: GameState, id: ActionId) {
+  return (
+    ACTIONS[id].seconds *
+    ACTION_BALANCE.durationPerLevel ** (state.actionSkills[id].level - 1)
+  )
 }
 // Duration of one completion by a single worker at the current skill level.
 export function actionDuration(state: GameState, id: ActionId) {
   const def = ACTIONS[id]
   return (
-    (def.seconds * 0.98 ** (state.actionSkills[id].level - 1)) /
+    baseActionDuration(state, id) /
     (def.resource ? storageMultiplier(state, def.resource) : 1)
   )
 }
@@ -169,9 +194,7 @@ export function isRateMode(state: GameState, id: ActionId) {
   return (
     Boolean(ACTIONS[id].resource) &&
     workers > 0 &&
-    (ACTIONS[id].seconds * 0.98 ** (state.actionSkills[id].level - 1)) /
-      workers <=
-      2
+    baseActionDuration(state, id) / workers <= ACTION_BALANCE.rateModeSeconds
   )
 }
 
@@ -179,7 +202,7 @@ export function isRateMode(state: GameState, id: ActionId) {
 // completion, raised by research, building forms and equipment, with
 // happiness as the final multiplier. Manual clicks give full yield.
 export function automationFactor(state: GameState, id: ActionId) {
-  let factor = 0.1
+  let factor = ACTION_BALANCE.baseAutomation
   for (const r of RESEARCH_IDS)
     if (state.research[r])
       factor += RESEARCH[r].effects.actionAutomation?.[id] ?? 0
@@ -187,13 +210,13 @@ export function automationFactor(state: GameState, id: ActionId) {
   if (facility.level > 0) {
     const form = BUILDINGS[ACTIONS[id].building].forms[facility.form]
     factor += form?.actionAutomation?.[id] ?? 0
-    factor += 0.05 * facility.equipment
+    factor += ACTION_BALANCE.automationPerEquipment * facility.equipment
   }
   return factor
 }
 // Automated skill XP is its own dial, separate from the output factor.
 export function xpFactor(state: GameState, id: ActionId) {
-  let factor = 0.1
+  let factor = ACTION_BALANCE.automatedXp
   for (const r of RESEARCH_IDS)
     if (state.research[r]) factor += RESEARCH[r].effects.actionXp?.[id] ?? 0
   return factor
@@ -218,10 +241,9 @@ export function actionOutputRate(
   const def = ACTIONS[id],
     n = actionWorkers(state, id)
   if (!def.resource || n < 1 || !def.visible(state)) return 0
-  const level = state.actionSkills[id].level,
-    storage = options.storage ?? storageMultiplier(state, def.resource)
+  const storage = options.storage ?? storageMultiplier(state, def.resource)
   return (
-    ((n * storage) / (def.seconds * 0.98 ** (level - 1))) *
+    ((n * storage) / baseActionDuration(state, id)) *
     actionYield(state, id) *
     automationFactor(state, id) *
     (options.happiness ?? happinessMultiplier(state))

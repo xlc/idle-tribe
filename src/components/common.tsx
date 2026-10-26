@@ -5,7 +5,7 @@ import {
   useLayoutEffect,
   useRef,
 } from 'react'
-import { RESOURCE_INFO } from '../constants'
+import { EPSILON, RESOURCE_INFO } from '../constants'
 import { RESOURCES } from '../ids'
 import type { GameSession } from '../session'
 import type { Cost } from '../types'
@@ -132,7 +132,7 @@ export function Costs({ session, cost }: { session: GameSession; cost: Cost }) {
         <span
           key={r}
           className={
-            session.game.state.resources[r] + 1e-9 < (cost[r] ?? 0)
+            session.game.state.resources[r] + EPSILON < (cost[r] ?? 0)
               ? 'cost-missing'
               : 'cost-enough'
           }

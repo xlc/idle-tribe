@@ -1,5 +1,6 @@
-import { BUILDINGS, isProductionJob, JOBS } from '../src/economy'
+import { BUILDINGS } from '../src/buildings'
 import { BUILDING_IDS, JOB_IDS, RESEARCH_IDS, RESOURCES } from '../src/ids'
+import { isProductionJob, JOBS } from '../src/jobs'
 import {
   allEntries,
   nextExpansion,
