@@ -122,10 +122,6 @@ export function actionAvailability(
     : { kind: 'manual', state: 'ready', missing: {}, reason: 'Ready to start' }
 }
 
-export function canRepeatAction(state: GameState, id: ActionId) {
-  return !actionRepeatBlocker(state, id)
-}
-
 export function actionRepeatBlocker(state: GameState, id: ActionId) {
   const def = ACTIONS[id]
   const level = def.repeatAtLevel

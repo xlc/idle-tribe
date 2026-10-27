@@ -5,7 +5,6 @@ import {
   actionWorkers,
   actionYield,
   applyExploreReward,
-  canRepeatAction,
   startAction,
 } from './actions'
 import { BUILDINGS, RESEARCH } from './definitions'
@@ -507,7 +506,6 @@ test('automated exploration can discover raw resources before manual exploration
 
 test('repeat workers require progression and use the shared assignment controls', () => {
   const s = createDefaultState()
-  expect(canRepeatAction(s, 'gather')).toBe(false)
   expect(actionRepeatBlocker(s, 'gather')).toBe('Requires level 2')
   s.actionSkills.gather.level = 2
   expect(actionRepeatBlocker(s, 'gather')).toBe(
@@ -517,7 +515,7 @@ test('repeat workers require progression and use the shared assignment controls'
   expect(actionRepeatBlocker(s, 'gather')).toBe('Requires Shelters')
   s.research.shelters = true
   people(s, 'idle', 'idle')
-  expect(canRepeatAction(s, 'gather')).toBe(true)
+  expect(actionRepeatBlocker(s, 'gather')).toBe('')
   expect(actionWorkers(s, 'gather')).toBe(0)
   expect(adjustWorkers(s, 'forager', 1)).toBe(true)
   expect(actionWorkers(s, 'gather')).toBe(1)
