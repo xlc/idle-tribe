@@ -5,10 +5,9 @@ import {
   actionCompletionDuration,
   actionJobActive,
   actionOutputRate,
-  actionRepeatBlocker,
   actionRequiredXp,
   actionSlots,
-  actionWorkers,
+  actionWorkerBlocker,
   actionYield,
   automationFactor,
   isRateMode,
@@ -121,13 +120,12 @@ export function ActionCard({
     active = s.manual
   const def = ACTIONS[id],
     availability = actionAvailability(s, id),
-    workers = actionWorkers(s, id),
     slots = actionSlots(s, id),
     running = active?.id === id,
     rateMode = isRateMode(s, id),
     duration = actionCompletionDuration(s, id),
     skill = s.actionSkills[id],
-    repeatBlocker = actionRepeatBlocker(s, id)
+    workerBlocker = actionWorkerBlocker(s, id)
   const working =
     availability.kind === 'automated' &&
     availability.state === 'active' &&
@@ -253,18 +251,12 @@ export function ActionCard({
           <Chevron />
         </button>
       </div>
-      {availability.kind !== 'locked' && (
+      {availability.kind !== 'locked' && !workerBlocker && (
         <div className="action-workers">
-          {(!workers || repeatBlocker) && (
-            <div className="action-worker-copy">
-              {!workers && <strong>Repeat workers</strong>}
-              {repeatBlocker && <small>{repeatBlocker}</small>}
-            </div>
-          )}
           <WorkerControls
             session={session}
             job={def.job}
-            assignable={!repeatBlocker && !active}
+            assignable={!active}
             showFill={false}
           />
         </div>
@@ -289,9 +281,12 @@ export function ActionCard({
 }
 
 export function ActionCards({ session }: { session: GameSession }) {
+  const state = session.game.state
   return (
     <div className="manual-actions">
-      {ACTION_IDS.map((id) => (
+      {ACTION_IDS.filter(
+        (id) => actionAvailability(state, id).kind !== 'locked',
+      ).map((id) => (
         <ActionCard key={id} session={session} id={id} />
       ))}
     </div>

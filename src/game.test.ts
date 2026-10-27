@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 import {
   actionDuration,
-  actionRepeatBlocker,
+  actionWorkerBlocker,
   actionWorkers,
   actionYield,
   applyExploreReward,
@@ -504,18 +504,16 @@ test('automated exploration can discover raw resources before manual exploration
   expect(s.expeditionUnlocked).toBe(true)
 })
 
-test('repeat workers require progression and use the shared assignment controls', () => {
+test('workers unlock when the corresponding workplace is available', () => {
   const s = createDefaultState()
-  expect(actionRepeatBlocker(s, 'gather')).toBe('Requires level 2')
-  s.actionSkills.gather.level = 2
-  expect(actionRepeatBlocker(s, 'gather')).toBe(
+  expect(actionWorkerBlocker(s, 'gather')).toBe(
     'Requires Foraging camp level 1',
   )
   s.facilities.foraging.level = 1
-  expect(actionRepeatBlocker(s, 'gather')).toBe('Requires Shelters')
+  expect(actionWorkerBlocker(s, 'gather')).toBe('Requires Shelters')
   s.research.shelters = true
   people(s, 'idle', 'idle')
-  expect(actionRepeatBlocker(s, 'gather')).toBe('')
+  expect(actionWorkerBlocker(s, 'gather')).toBe('')
   expect(actionWorkers(s, 'gather')).toBe(0)
   expect(adjustWorkers(s, 'forager', 1)).toBe(true)
   expect(actionWorkers(s, 'gather')).toBe(1)

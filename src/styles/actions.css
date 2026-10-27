@@ -159,22 +159,6 @@
   padding: 8px 12px;
   border-top: 1px solid var(--color-base-300);
 }
-.action-worker-copy {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-  flex: 1;
-  color: var(--color-neutral);
-  font-size: 12px;
-}
-.action-worker-copy strong {
-  color: var(--color-primary);
-  font-size: 12px;
-}
-.action-worker-copy small {
-  color: var(--color-warning);
-  font-size: 11px;
-}
 .action-facility > .manual-action {
   margin: -14px -14px 0;
   border: 0;

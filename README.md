@@ -21,7 +21,7 @@ Open the printed local URL. No environment variables or external services are re
 
 The playable catalog covers **all eight eras**, through Causal synthesis. Start by gathering food, wood, and stone by hand; research **Shelters** to unlock builders, workplaces, and arriving settlers. Staff workplaces, keep people fed and housed, and queue construction and research toward towns and beyond. After **Writing**, choose a permanent specialization — **Forestry** or **Stonecraft** — that shapes every later era. Later, the mysterious time box offers an optional reset for permanent legacy points and perks.
 
-Gathering reaches a player-controlled **Repeat** option at level 2. It stops when you leave the game.
+Build the corresponding workplace to assign workers to gathering and exploration; assigned workers continue while the game is closed.
 
 Every villager has a permanent occupation aptitude and earns per-occupation expertise through practice. Progress saves automatically in your browser, and time away from the game is simulated when you return — the first 8 hours run at full speed, longer absences progressively slower.
 

@@ -122,11 +122,8 @@ export function actionAvailability(
     : { kind: 'manual', state: 'ready', missing: {}, reason: 'Ready to start' }
 }
 
-export function actionRepeatBlocker(state: GameState, id: ActionId) {
+export function actionWorkerBlocker(state: GameState, id: ActionId) {
   const def = ACTIONS[id]
-  const level = def.repeatAtLevel
-  if (level === undefined) return 'Manual only'
-  if (state.actionSkills[id].level < level) return `Requires level ${level}`
   const form = BUILDINGS[def.building].forms[0]
   if (state.facilities[def.building].level < 1)
     return `Requires ${form?.name ?? 'workplace'} level 1`

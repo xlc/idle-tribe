@@ -47,7 +47,6 @@ interface ActionDefinitionBase {
   levelEffect: string
   seconds: number
   baseXp: number
-  repeatAtLevel?: number
   cost: Cost
   building: BuildingId
   job: ActionJob
