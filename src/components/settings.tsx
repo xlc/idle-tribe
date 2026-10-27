@@ -8,44 +8,17 @@ async function refreshApp(session: ViewProps['session']) {
   session.change(() => undefined)
   try {
     if ('serviceWorker' in navigator) {
-      const registration = await navigator.serviceWorker.getRegistration()
-      if (registration) {
-        await registration.update()
-        const worker = await waitingWorker(registration)
-        if (worker) {
-          const controllerChanged = new Promise<void>((resolve) => {
-            navigator.serviceWorker.addEventListener(
-              'controllerchange',
-              () => resolve(),
-              { once: true },
-            )
-          })
-          worker.postMessage('SKIP_WAITING')
-          await controllerChanged
-        }
-      }
+      const registration = await navigator.serviceWorker.getRegistration('/')
+      await registration?.unregister()
+      await Promise.all(
+        (await caches.keys())
+          .filter((key) => key.startsWith('tribe-app-'))
+          .map((key) => caches.delete(key)),
+      )
     }
   } finally {
     window.location.reload()
   }
-}
-
-async function waitingWorker(
-  registration: ServiceWorkerRegistration,
-): Promise<ServiceWorker | null> {
-  if (registration.waiting) return registration.waiting
-  const installing = registration.installing
-  if (!installing) return null
-  const worker = installing
-  return new Promise((resolve) => {
-    function checkState() {
-      if (worker.state !== 'installed' && worker.state !== 'redundant') return
-      worker.removeEventListener('statechange', checkState)
-      resolve(worker.state === 'installed' ? registration.waiting : null)
-    }
-    worker.addEventListener('statechange', checkState)
-    checkState()
-  })
 }
 
 export function Settings({ session, confirm }: ViewProps) {

@@ -161,6 +161,37 @@ test('a downloaded update waits for the running game and activates after it clos
   }
 })
 
+test('settings can check for a worker update and reload into it', async ({
+  page,
+}) => {
+  const origin = await offlineServer()
+  try {
+    await page.clock.install({ time: new Date('2026-10-20T10:00:00Z') })
+    await page.goto(origin.url)
+    await offlineReady(page)
+    await page.getByRole('tab', { name: 'Settings', exact: true }).tap()
+    origin.update()
+
+    await page
+      .getByRole('button', {
+        name: 'Check for updates & reload',
+        exact: true,
+      })
+      .tap()
+    await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible()
+    await offlineReady(page)
+    await expect
+      .poll(() =>
+        page.evaluate(async () =>
+          (await caches.keys()).filter((key) => key.startsWith('tribe-app-')),
+        ),
+      )
+      .toEqual(['tribe-app-browser-update'])
+  } finally {
+    await origin.close()
+  }
+})
+
 test('touch controls and long lists stay within the viewport in portrait and landscape', async ({
   page,
   context,
