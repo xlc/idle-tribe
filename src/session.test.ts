@@ -153,6 +153,9 @@ test('a productive return highlights gains even without arrivals or completed pr
   expect(awayHighlight(report)).toBe('+1 expertise level')
   report.completed = 1
   expect(awayHighlight(report)).toBe('1 project completed')
+  report.arrivals = 1
+  expect(awaySummary(report)).toBe('1 project completed · 1 new settler')
+  expect(awayHighlight(report)).toBe(awaySummary(report))
 })
 
 test('session events use the settled timeline for actions and returning from an absence', () => {

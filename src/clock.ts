@@ -65,22 +65,8 @@ export function settleAbsence(state: GameState, time: number) {
   }
 }
 export type AwayProgress = NonNullable<ReturnType<typeof settleAbsence>>
-export function awaySummary(report: AwayProgress) {
-  const milestones = [
-    ...(report.arrivals
-      ? [`${report.arrivals} ${report.arrivals === 1 ? 'arrival' : 'arrivals'}`]
-      : []),
-    ...(report.completed
-      ? [
-          `${report.completed} ${report.completed === 1 ? 'project' : 'projects'} completed`,
-        ]
-      : []),
-  ]
-  return milestones.length ? milestones.join(' · ') : awayHighlight(report)
-}
-
-export function awayHighlight(report: AwayProgress) {
-  const milestones = [
+function awayMilestones(report: AwayProgress) {
+  return [
     ...(report.completed
       ? [
           `${report.completed} ${report.completed === 1 ? 'project' : 'projects'} completed`,
@@ -92,6 +78,15 @@ export function awayHighlight(report: AwayProgress) {
         ]
       : []),
   ]
+}
+
+export function awaySummary(report: AwayProgress) {
+  const milestones = awayMilestones(report)
+  return milestones.length ? milestones.join(' · ') : awayHighlight(report)
+}
+
+export function awayHighlight(report: AwayProgress) {
+  const milestones = awayMilestones(report)
   if (milestones.length) return milestones.join(' · ')
   const levels = report.expertise.reduce(
     (total, person) =>
