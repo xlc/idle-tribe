@@ -7,7 +7,7 @@ import {
   actionOutputRate,
   actionRequiredXp,
   actionSlots,
-  actionWorkerBlocker,
+  actionWorkersUnlocked,
   actionYield,
   automationFactor,
   isRateMode,
@@ -125,7 +125,7 @@ export function ActionCard({
     rateMode = isRateMode(s, id),
     duration = actionCompletionDuration(s, id),
     skill = s.actionSkills[id],
-    workerBlocker = actionWorkerBlocker(s, id)
+    workersUnlocked = actionWorkersUnlocked(s, id)
   const working =
     availability.kind === 'automated' &&
     availability.state === 'active' &&
@@ -251,7 +251,7 @@ export function ActionCard({
           <Chevron />
         </button>
       </div>
-      {availability.kind !== 'locked' && !workerBlocker && (
+      {availability.kind !== 'locked' && workersUnlocked && (
         <div className="action-workers">
           <WorkerControls
             session={session}

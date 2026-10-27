@@ -1,8 +1,8 @@
 import { expect, test } from 'bun:test'
 import {
   actionDuration,
-  actionWorkerBlocker,
   actionWorkers,
+  actionWorkersUnlocked,
   actionYield,
   applyExploreReward,
   startAction,
@@ -506,14 +506,12 @@ test('automated exploration can discover raw resources before manual exploration
 
 test('workers unlock when the corresponding workplace is available', () => {
   const s = createDefaultState()
-  expect(actionWorkerBlocker(s, 'gather')).toBe(
-    'Requires Foraging camp level 1',
-  )
+  expect(actionWorkersUnlocked(s, 'gather')).toBe(false)
   s.facilities.foraging.level = 1
-  expect(actionWorkerBlocker(s, 'gather')).toBe('Requires Shelters')
+  expect(actionWorkersUnlocked(s, 'gather')).toBe(false)
   s.research.shelters = true
   people(s, 'idle', 'idle')
-  expect(actionWorkerBlocker(s, 'gather')).toBe('')
+  expect(actionWorkersUnlocked(s, 'gather')).toBe(true)
   expect(actionWorkers(s, 'gather')).toBe(0)
   expect(adjustWorkers(s, 'forager', 1)).toBe(true)
   expect(actionWorkers(s, 'gather')).toBe(1)
