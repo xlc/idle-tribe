@@ -140,11 +140,7 @@ export function actionRepeatBlocker(state: GameState, id: ActionId) {
 export function startAction(state: GameState, id: ActionId) {
   const def = ACTIONS[id]
   const availability = actionAvailability(state, id)
-  if (
-    availability.kind !== 'manual' ||
-    availability.state !== 'ready' ||
-    !canAfford(state, def.cost)
-  )
+  if (availability.kind !== 'manual' || availability.state !== 'ready')
     return false
   pay(state, def.cost)
   state.manual = { id, paid: { ...def.cost }, progress: 0 }

@@ -133,11 +133,7 @@ export function ActionCard({
     availability.state === 'active' &&
     actionJobActive(s, id)
   const statusKind =
-    availability.kind === 'manual'
-      ? availability.state
-      : availability.kind === 'automated'
-        ? availability.state
-        : availability.kind
+    availability.kind === 'locked' ? 'locked' : availability.state
   const statusId = `${id}-status`
   const icon = (
     <span
