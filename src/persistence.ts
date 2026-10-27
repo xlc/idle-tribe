@@ -10,7 +10,6 @@ import {
   SPECIALIZATION_IDS,
   WORKING_JOB_IDS,
 } from './ids'
-import { normalizePersonName } from './names'
 import { createRecord } from './records'
 import { QUEUES } from './research'
 import { jobUnlocked } from './settlement'
@@ -67,6 +66,13 @@ function bool(v: JsonValue | undefined): boolean {
 function string(v: JsonValue | undefined): string {
   if (typeof v !== 'string') throw new Error('Invalid string')
   return v
+}
+function personName(v: JsonValue | undefined): string {
+  const name = string(v),
+    normalized = name.trim().replace(/\s+/gu, ' ')
+  if (!name || name.length > 40 || name !== normalized)
+    throw new Error('Invalid person name')
+  return name
 }
 function member<T extends string>(
   v: JsonValue | undefined,
@@ -164,8 +170,7 @@ export function parseSave(serialized: string | null, nameSeed = 0): GameState {
     s.people = list(p.people).map((v) => {
       const person = object(v),
         practice = object(person.practice),
-        name = normalizePersonName(string(person.name))
-      if (!name) throw new Error('Invalid person name')
+        name = personName(person.name)
       return {
         name,
         health: number(person.health, 0, 5),

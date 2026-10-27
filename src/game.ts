@@ -1,7 +1,6 @@
 import { cancelManual, startAction, syncUnlocks } from './actions'
 import { BUILDINGS } from './definitions'
 import { feast } from './food'
-import { renamePerson } from './names'
 import {
   cancelProject,
   enqueue,
@@ -43,7 +42,6 @@ export function createGame(state: GameState) {
     move: (id: QueueId, seq: number, direction: number) =>
       moveProject(state, id, seq, direction),
     assign: (index: number, job: JobId) => assignJob(state, index, job),
-    rename: (index: number, name: string) => renamePerson(state, index, name),
     adjust: (job: JobId, n: number) => adjustWorkers(state, job, n),
     fill: (job: JobId) => fillWorkers(state, job),
     startAction: (id: import('./ids').ActionId, repeat = false) =>
