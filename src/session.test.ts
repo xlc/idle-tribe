@@ -169,3 +169,28 @@ test('session events use the settled timeline for actions and returning from an 
     hour + 3000 + (MIN_AWAY_REPORT_SECONDS + 1) * 1000,
   )
 })
+
+test('notifications are dismissible without removing their session history', () => {
+  const state = createDefaultState()
+  const session = createSession(state, () => {}, hour, true)
+  session.change(() => {
+    state.notice = 'A local action'
+  }, hour + 2000)
+  const notice = session.notification
+  expect(notice?.kind).toBe('notice')
+  expect(session.events.at(-1)?.text).toBe('A local action')
+  if (!notice) throw new Error('Missing notice notification')
+  session.setVisible(false, hour + 3000)
+  expect(session.notification).toBeNull()
+  expect(session.events.at(-1)?.text).toBe('A local action')
+
+  session.setVisible(true, hour + 3000 + (MIN_AWAY_REPORT_SECONDS + 1) * 1000)
+  const away = session.notification
+  expect(away?.kind).toBe('away')
+  expect(session.events.at(-1)?.report).toBeDefined()
+  if (!away) throw new Error('Missing away notification')
+  session.dismissNotification(notice.id)
+  expect(session.notification?.id).toBe(away.id)
+  session.dismissNotification(away.id)
+  expect(session.notification).toBeNull()
+})

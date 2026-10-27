@@ -1,4 +1,7 @@
+import { useEffect, useRef, useState } from 'react'
+import type { AwayProgress } from '../clock'
 import { wipeSave } from '../persistence'
+import { AwayReport } from './away-report'
 import { Button, type ViewProps } from './common'
 
 async function refreshApp(session: ViewProps['session']) {
@@ -46,6 +49,13 @@ async function waitingWorker(
 }
 
 export function Settings({ session, confirm }: ViewProps) {
+  const [selectedReport, setSelectedReport] = useState<AwayProgress | null>(
+    null,
+  )
+  const reportDialog = useRef<HTMLDialogElement>(null)
+  useEffect(() => {
+    if (selectedReport) reportDialog.current?.showModal()
+  }, [selectedReport])
   return (
     <>
       <h2>Settings</h2>
@@ -86,7 +96,17 @@ export function Settings({ session, confirm }: ViewProps) {
                     minute: '2-digit',
                   })}
                 </time>
-                <span>{event.text}</span>
+                <span className="event-log-entry">
+                  <span>{event.text}</span>
+                  {event.report && (
+                    <Button
+                      variant="ghost"
+                      onClick={() => setSelectedReport(event.report ?? null)}
+                    >
+                      View report
+                    </Button>
+                  )}
+                </span>
               </li>
             ))}
           </ul>
@@ -94,6 +114,22 @@ export function Settings({ session, confirm }: ViewProps) {
           <p className="event-log-note">No events yet.</p>
         )}
       </section>
+      {selectedReport && (
+        <dialog
+          ref={reportDialog}
+          className="modal away-modal panel"
+          onClose={() => setSelectedReport(null)}
+        >
+          <div className="modal-box">
+            <AwayReport session={session} report={selectedReport} />
+            <div className="modal-action">
+              <Button onClick={() => reportDialog.current?.close()}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </dialog>
+      )}
     </>
   )
 }

@@ -58,23 +58,6 @@
   font-size: 11px;
   font-weight: 600;
 }
-/* Overlaid so appearing notices never shift the controls below. */
-.feedback {
-  position: absolute;
-  z-index: 2;
-  top: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  max-width: min(90%, 480px);
-  margin: 0;
-  padding: 10px 14px;
-  background: var(--color-chip);
-  border-radius: 5px;
-  box-shadow: 0 2px 8px rgb(0 0 0 / 12%);
-  color: var(--color-primary);
-  font-size: 13px;
-  text-align: center;
-}
 .opening-shell {
   max-width: 760px;
 }

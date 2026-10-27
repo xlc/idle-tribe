@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { type AwayProgress, awayHighlight } from '../clock'
 import { MIN_VISIBLE_RESOURCE_CHANGE } from '../constants'
 import { OCCUPATIONS, RESOURCE_INFO } from '../definitions'
@@ -6,7 +6,7 @@ import { formatDuration, formatResource } from '../format'
 import { RESOURCES } from '../ids'
 import { QUEUES, queueBlocker } from '../research'
 import { storageMultiplier } from '../resources'
-import type { GameSession } from '../session'
+import type { GameSession, SessionNotification } from '../session'
 import { Button } from './common'
 
 function ExpertiseGains({ people }: { people: AwayProgress['expertise'] }) {
@@ -29,53 +29,91 @@ function ExpertiseGains({ people }: { people: AwayProgress['expertise'] }) {
   )
 }
 
-export function AwayNotification({
+export function SessionNotificationToast({
   session,
-  report,
+  notification,
+  onDismiss,
 }: {
   session: GameSession
-  report: AwayProgress
+  notification: SessionNotification
+  onDismiss: () => void
 }) {
-  const [seen, setSeen] = useState(report)
-  const [shown, setShown] = useState(true)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const dismiss = useRef(onDismiss)
+  const timerStarted = useRef<number | null>(null)
+  const remaining = useRef(20_000)
   const dialog = useRef<HTMLDialogElement>(null)
-  if (report !== seen) {
-    setSeen(report)
-    setShown(true)
-  }
-  if (!shown) return null
+  dismiss.current = onDismiss
+  useEffect(() => {
+    if (dialogOpen) return
+    if (remaining.current <= 0) {
+      dismiss.current()
+      return
+    }
+    timerStarted.current = Date.now()
+    const timer = window.setTimeout(() => dismiss.current(), remaining.current)
+    return () => {
+      window.clearTimeout(timer)
+      if (timerStarted.current !== null) {
+        remaining.current = Math.max(
+          0,
+          remaining.current - (Date.now() - timerStarted.current),
+        )
+        timerStarted.current = null
+      }
+    }
+  }, [dialogOpen])
+
+  const report = notification.report
+  const away = notification.kind === 'away' && report
   return (
     <div
-      className="away-toast panel panel-raised"
+      className="event-toast panel panel-raised"
       role="status"
-      aria-label="Away report"
+      aria-label={away ? 'Away report' : 'Game notification'}
     >
+      {away ? (
+        <button
+          type="button"
+          className="event-toast-body"
+          onClick={() => {
+            dialog.current?.showModal()
+            setDialogOpen(true)
+          }}
+        >
+          <strong>Welcome back</strong>
+          <span className="event-toast-counts">
+            Away for {formatDuration(report.wallSeconds)} ·{' '}
+            {awayHighlight(report)}
+          </span>
+        </button>
+      ) : (
+        <div className="event-toast-body event-toast-message">
+          <strong>{notification.text}</strong>
+        </div>
+      )}
       <button
         type="button"
-        className="away-toast-body"
-        onClick={() => {
-          dialog.current?.showModal()
-        }}
-      >
-        <strong>Away · {formatDuration(report.wallSeconds)}</strong>
-        <span className="away-toast-counts">{awayHighlight(report)}</span>
-      </button>
-      <button
-        type="button"
-        className="away-toast-close"
-        aria-label="Dismiss away report"
-        onClick={() => setShown(false)}
+        className="event-toast-close"
+        aria-label="Dismiss notification"
+        onClick={onDismiss}
       >
         ×
       </button>
-      <dialog ref={dialog} className="modal away-modal panel">
-        <div className="modal-box">
-          <AwayReport session={session} report={report} />
-          <div className="modal-action">
-            <Button onClick={() => dialog.current?.close()}>Close</Button>
+      {away && (
+        <dialog
+          ref={dialog}
+          className="modal away-modal panel"
+          onClose={() => setDialogOpen(false)}
+        >
+          <div className="modal-box">
+            <AwayReport session={session} report={report} />
+            <div className="modal-action">
+              <Button onClick={() => dialog.current?.close()}>Close</Button>
+            </div>
           </div>
-        </div>
-      </dialog>
+        </dialog>
+      )}
     </div>
   )
 }
@@ -109,8 +147,10 @@ export function AwayReport({
         onClick={() => setOpen(!open)}
       >
         <span>
-          <strong>Away · {formatDuration(report.wallSeconds)}</strong>
-          <small className="away-subtitle">While you were away</small>
+          <strong>Welcome back</strong>
+          <small className="away-subtitle">
+            Away for {formatDuration(report.wallSeconds)}
+          </small>
         </span>
         <span className="away-summary-counts">{awayHighlight(report)}</span>
         <span className="away-chevron" aria-hidden="true">

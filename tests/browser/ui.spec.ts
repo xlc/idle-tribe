@@ -422,7 +422,7 @@ for (const width of [1280, 390]) {
       await open(page, s)
       const toast = page.getByRole('status', { name: 'Away report' })
       await expect(toast).toBeVisible()
-      await toast.getByRole('button', { name: /Away ·/ }).click()
+      await toast.getByRole('button', { name: /Welcome back/ }).click()
       const dialog = page.getByRole('dialog')
       const report = dialog.getByRole('region', { name: 'Offline progress' })
       await report.getByRole('button', { name: /Away ·/ }).click()
@@ -438,6 +438,39 @@ for (const width of [1280, 390]) {
       await page.screenshot({ path: info.outputPath('away.png') })
       await dialog.getByRole('button', { name: 'Close' }).click()
       await expect(toast).toBeVisible()
+      await page.getByRole('tab', { name: 'Settings', exact: true }).click()
+      await expect(
+        page.getByRole('status', { name: 'Away report' }),
+      ).toHaveCount(0)
+      await expect(
+        page.getByRole('button', { name: 'View report' }),
+      ).toBeVisible()
+      await page.getByRole('button', { name: 'View report' }).click()
+      await expect(
+        page.getByRole('region', { name: 'Offline progress' }),
+      ).toBeVisible()
+      await page
+        .getByRole('dialog')
+        .getByRole('button', { name: 'Close' })
+        .click()
+      await page.getByRole('tab', { name: 'Settlement', exact: true }).click()
+      await expect(
+        page.getByRole('status', { name: 'Away report' }),
+      ).toHaveCount(0)
+    })
+    test('away notification auto-dismisses after twenty seconds', async ({
+      page,
+    }) => {
+      const s = settlement()
+      people(s, 'builder', 'idle')
+      s.savedAt = new Date('2026-10-19T09:00:00Z').getTime()
+      enqueue(s, nextExpansion(s, 'housing'))
+      advanceTime(s, 0)
+      await open(page, s)
+      const toast = page.getByRole('status', { name: 'Away report' })
+      await expect(toast).toBeVisible()
+      await page.clock.runFor(20_001)
+      await expect(toast).toHaveCount(0)
     })
   })
 }

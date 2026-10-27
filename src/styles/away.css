@@ -1,4 +1,4 @@
-.away-toast {
+.event-toast {
   position: absolute;
   z-index: 3;
   top: 8px;
@@ -10,7 +10,7 @@
   margin: 0;
   overflow: hidden;
 }
-.away-toast-body {
+.event-toast-body {
   flex: 1;
   display: grid;
   gap: 3px;
@@ -19,14 +19,18 @@
   text-align: left;
   cursor: pointer;
 }
-.away-toast-body strong {
+.event-toast-body strong {
   font-size: 14px;
 }
-.away-toast-counts {
+.event-toast-counts {
   color: var(--color-neutral);
   font-size: 12px;
 }
-.away-toast-close {
+.event-toast-message {
+  align-content: center;
+  cursor: default;
+}
+.event-toast-close {
   flex-shrink: 0;
   width: 44px;
   border: 0;
@@ -36,7 +40,7 @@
   font-size: 22px;
   cursor: pointer;
 }
-.away-toast-close:hover {
+.event-toast-close:hover {
   background: var(--color-hover);
 }
 .away-modal {
@@ -62,6 +66,20 @@
   border-bottom: 1px solid var(--color-base-300);
   font-size: 13px;
   line-height: 1.5;
+}
+.event-log-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+.event-log-entry > span {
+  min-width: 0;
+}
+.event-log-entry .rt-Button {
+  flex-shrink: 0;
 }
 .event-log time {
   flex-shrink: 0;

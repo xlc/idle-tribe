@@ -8,7 +8,18 @@ import {
 import { formatDuration } from './format'
 import { createGame } from './game'
 
-export type SessionEvent = { id: number; at: number; text: string }
+export type SessionEventKind = 'notice' | 'arrival' | 'away'
+export type SessionEvent = {
+  id: number
+  at: number
+  kind: SessionEventKind
+  text: string
+  report?: AwayProgress
+}
+export type SessionNotification = Pick<
+  SessionEvent,
+  'id' | 'kind' | 'text' | 'report'
+>
 export function createSession(
   state: import('./types').GameState,
   save: (state: import('./types').GameState) => void,
@@ -20,19 +31,32 @@ export function createSession(
   let showing = visible,
     at = Math.max(now, state.savedAt),
     revision = 0,
-    away: AwayProgress | null = null
+    away: AwayProgress | null = null,
+    notification: SessionNotification | null = null
   const events: SessionEvent[] = []
   let eventId = 0,
     lastNotice = state.notice,
     lastPeople = state.people.length
-  function logEvent(text: string) {
-    events.push({ id: eventId++, at, text })
+  function logEvent(
+    kind: SessionEventKind,
+    text: string,
+    report?: AwayProgress,
+    notify = showing,
+  ) {
+    const event: SessionEvent = report
+      ? { id: eventId++, at, kind, text, report }
+      : { id: eventId++, at, kind, text }
+    events.push(event)
     if (events.length > 300) events.splice(0, events.length - 300)
+    if (notify) notification = event
   }
-  function logAway(report: AwayProgress) {
+  function logAway(report: AwayProgress, notify = showing) {
     if (report.wallSeconds <= MIN_AWAY_REPORT_SECONDS) return
     logEvent(
+      'away',
       `Away ${formatDuration(report.wallSeconds)} · ${awaySummary(report)}`,
+      report,
+      notify,
     )
   }
   // Events that happen while hidden are covered by the away report.
@@ -42,16 +66,20 @@ export function createSession(
   }
   function trackEvents() {
     if (showing) {
-      if (state.notice && state.notice !== lastNotice) logEvent(state.notice)
+      if (state.notice && state.notice !== lastNotice)
+        logEvent('notice', state.notice)
       if (state.people.length > lastPeople)
-        logEvent(`A new settler arrived · ${state.people.length} people`)
+        logEvent(
+          'arrival',
+          `A new settler arrived · ${state.people.length} people`,
+        )
     }
     syncEventBaselines()
   }
   if (state.savedAt > 0 || state.absence) {
     beginAbsence(state, state.savedAt || at)
     away = settleAbsence(state, at)
-    if (away) logAway(away)
+    if (away) logAway(away, visible)
     syncEventBaselines()
   }
   if (visible) state.absence = null
@@ -105,10 +133,13 @@ export function createSession(
       if (next !== showing) {
         if (next) {
           away = settleAbsence(state, state.savedAt)
-          if (away) logAway(away)
+          if (away) logAway(away, true)
           syncEventBaselines()
           state.absence = null
-        } else beginAbsence(state, state.savedAt)
+        } else {
+          beginAbsence(state, state.savedAt)
+          notification = null
+        }
         showing = next
       }
       persist()
@@ -116,6 +147,16 @@ export function createSession(
     },
     get away() {
       return away
+    },
+    get notification() {
+      return notification
+    },
+    dismissNotification(id?: number) {
+      if (notification && (id === undefined || notification.id === id)) {
+        notification = null
+        revision++
+        for (const listener of listeners) listener()
+      }
     },
     get events() {
       return events

@@ -1,9 +1,8 @@
 import { Tabs } from '@radix-ui/themes'
 import { useEffect, useRef, useState } from 'react'
-import { MIN_AWAY_REPORT_SECONDS } from './clock'
 import { ActionCards } from './components/actions'
 import { ViewIcon } from './components/art'
-import { AwayNotification } from './components/away-report'
+import { SessionNotificationToast } from './components/away-report'
 import { Button, type Confirm } from './components/common'
 import { Legacy } from './components/legacy'
 import { OfflineStatus } from './components/offline-status'
@@ -24,7 +23,7 @@ export function App({ session }: { session: GameSession }) {
   useSession(session)
   const s = session.game.state,
     automated = automationUnlocked(s),
-    away = session.away
+    notification = session.notification
   const [view, setView] = useState<View>('settlement')
   const views: {
     id: View
@@ -46,6 +45,7 @@ export function App({ session }: { session: GameSession }) {
   const availableViews = views.filter((entry) => entry.available)
   const content = useRef<HTMLDivElement>(null)
   function showView(next: typeof view) {
+    if (next !== view) session.dismissNotification()
     setView(next)
     content.current?.scrollTo({ top: 0 })
   }
@@ -76,15 +76,15 @@ export function App({ session }: { session: GameSession }) {
             if (next) showView(next.id)
           }}
         >
-          {away && away.wallSeconds > MIN_AWAY_REPORT_SECONDS && (
-            <AwayNotification session={session} report={away} />
+          {view === 'settlement' && notification && (
+            <SessionNotificationToast
+              key={notification.id}
+              session={session}
+              notification={notification}
+              onDismiss={() => session.dismissNotification(notification.id)}
+            />
           )}
           <div className="view-scroll" ref={content}>
-            {s.notice && (
-              <p className="feedback" role="status">
-                {s.notice}
-              </p>
-            )}
             {view === 'settlement' && automated && (
               <Workforce session={session} />
             )}
