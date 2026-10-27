@@ -183,12 +183,7 @@ export function ActionCard({
                   running={working}
                 />
               )}
-              <WorkerControls
-                session={session}
-                job={def.job}
-                assignable={!repeatBlocker && !active}
-                showFill={false}
-              />
+              {rateMode && <span className="action-live-rate">Live rate</span>}
             </span>
           </fieldset>
         ) : (
@@ -258,12 +253,14 @@ export function ActionCard({
           <Chevron />
         </button>
       </div>
-      {!workers && availability.kind !== 'locked' && (
-        <div className="action-unassigned">
-          <div className="action-worker-copy">
-            <strong>Repeat workers</strong>
-            {repeatBlocker && <small>{repeatBlocker}</small>}
-          </div>
+      {availability.kind !== 'locked' && (
+        <div className="action-workers">
+          {(!workers || repeatBlocker) && (
+            <div className="action-worker-copy">
+              {!workers && <strong>Repeat workers</strong>}
+              {repeatBlocker && <small>{repeatBlocker}</small>}
+            </div>
+          )}
           <WorkerControls
             session={session}
             job={def.job}

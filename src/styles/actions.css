@@ -8,10 +8,21 @@
   padding: 10px 12px;
 }
 .action-automation-controls {
-  display: grid;
-  justify-items: end;
-  gap: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
   margin-left: auto;
+  flex: 0 0 132px;
+  min-width: 132px;
+}
+.action-automation-controls > .progress {
+  width: 132px;
+}
+.action-live-rate {
+  color: var(--color-neutral);
+  font-size: 11px;
+  white-space: nowrap;
 }
 .action-hint {
   color: var(--color-neutral);
@@ -139,11 +150,12 @@
 .manual-action[data-action-state="locked"] {
   opacity: 0.78;
 }
-.action-unassigned {
+.action-workers {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  min-height: 76px;
   padding: 8px 12px;
   border-top: 1px solid var(--color-base-300);
 }
@@ -151,6 +163,7 @@
   display: grid;
   gap: 2px;
   min-width: 0;
+  flex: 1;
   color: var(--color-neutral);
   font-size: 12px;
 }
