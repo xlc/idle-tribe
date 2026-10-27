@@ -14,10 +14,12 @@ export function WorkerControls({
   session,
   job,
   assignable = true,
+  showFill = true,
 }: {
   session: GameSession
   job: JobId
   assignable?: boolean
+  showFill?: boolean
 }) {
   const s = session.game.state,
     n = assigned(s, job),
@@ -27,6 +29,7 @@ export function WorkerControls({
     <div className="worker-allocation">
       <fieldset className="worker-control" aria-label={`${job} staffing`}>
         <Button
+          aria-label={`Remove worker from ${job}`}
           disabled={!n}
           onClick={() => session.change(() => session.game.adjust(job, -1))}
         >
@@ -34,19 +37,24 @@ export function WorkerControls({
         </Button>
         <output className="worker-count">{n}</output>
         <Button
+          aria-label={`Assign worker to ${job}`}
           disabled={!assignable || !available || !jobUnlocked(s, job)}
           onClick={() => session.change(() => session.game.adjust(job, 1))}
         >
           +
         </Button>
-        <Button
-          disabled={
-            !assignable || !available || n >= cap || !jobUnlocked(s, job)
-          }
-          onClick={() => session.change(() => session.game.fill(job))}
-        >
-          Fill
-        </Button>
+        {showFill && (
+          <Button
+            className="worker-fill"
+            aria-label={`Fill ${job} workers`}
+            disabled={
+              !assignable || !available || n >= cap || !jobUnlocked(s, job)
+            }
+            onClick={() => session.change(() => session.game.fill(job))}
+          >
+            Fill
+          </Button>
+        )}
       </fieldset>
       <small className="staffing-target">{cap} efficient</small>
       {n > 0 && isWorkingJob(job) && staffingMultiplier(s, job) < 1 && (

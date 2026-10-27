@@ -116,14 +116,13 @@ test('a backwards wall clock cannot settle the same interval twice or invalidate
   expect(s.resources.food).toBeGreaterThan(before.food)
 })
 
-test('leaving stops repetition while preserving the unfinished manual cycle', () => {
+test('leaving preserves the unfinished manual cycle', () => {
   const s = createDefaultState()
   s.actionSkills.gather.level = 2
   const session = createSession(s, () => {}, hour, true)
-  session.change(() => session.game.startAction('gather', true), hour)
+  session.change(() => session.game.startAction('gather'), hour)
   session.setVisible(false, hour + 200)
   const paused = s.manual?.progress
-  expect(s.manual?.repeat).toBe(false)
   session.tick(hour + 10000)
   expect(s.manual?.progress).toBe(paused)
   session.setVisible(true, hour + 10000)

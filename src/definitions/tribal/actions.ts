@@ -57,6 +57,7 @@ export const actions = {
     levelEffect: 'Each level: faster trips · better finds',
     seconds: 4,
     baseXp: 1,
+    repeatAtLevel: 2,
     cost: { food: 6 },
     building: 'expedition-camp',
     job: 'explorer',

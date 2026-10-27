@@ -1,9 +1,10 @@
 import { expect, test } from 'bun:test'
 import {
   actionDuration,
+  actionRepeatBlocker,
+  actionWorkers,
   actionYield,
   applyExploreReward,
-  cancelManual,
   canRepeatAction,
   startAction,
 } from './actions'
@@ -30,6 +31,7 @@ import {
   threshold,
 } from './resources'
 import {
+  adjustWorkers,
   assignJob,
   comfortablePlaces,
   constructionSpeed,
@@ -503,41 +505,24 @@ test('automated exploration can discover raw resources before manual exploration
   expect(s.expeditionUnlocked).toBe(true)
 })
 
-test('practiced gathering repeats only when selected and can be stopped immediately', () => {
+test('repeat workers require progression and use the shared assignment controls', () => {
   const s = createDefaultState()
   expect(canRepeatAction(s, 'gather')).toBe(false)
-  expect(startAction(s, 'gather', true)).toBe(false)
-  for (let i = 0; i < 4; i++) {
-    expect(startAction(s, 'gather')).toBe(true)
-    advanceTime(s, actionDuration(s, 'gather'), true)
-  }
+  expect(actionRepeatBlocker(s, 'gather')).toBe('Requires level 2')
+  s.actionSkills.gather.level = 2
+  expect(actionRepeatBlocker(s, 'gather')).toBe(
+    'Requires Foraging camp level 1',
+  )
+  s.facilities.foraging.level = 1
+  expect(actionRepeatBlocker(s, 'gather')).toBe('Requires Shelters')
+  s.research.shelters = true
+  people(s, 'idle', 'idle')
   expect(canRepeatAction(s, 'gather')).toBe(true)
-  expect(startAction(s, 'gather', true)).toBe(true)
-  const before = s.resources.food
-  const sliced = structuredClone(s)
-  advanceTime(s, 10, true)
-  for (let i = 0; i < 100; i++) advanceTime(sliced, 0.1, true)
-  expect(s.resources.food).toBeGreaterThan(before + 5)
-  expect(s.resources.food).toBeCloseTo(sliced.resources.food, 7)
-  expect(s.actionSkills).toEqual(sliced.actionSkills)
-  expect(s.manual?.repeat).toBe(true)
-  cancelManual(s)
-  const stopped = s.resources.food
-  advanceTime(s, 5, true)
-  expect(s.resources.food).toBe(stopped)
-  expect(s.manual).toBeNull()
-  expect(startAction(s, 'explore', true)).toBe(false)
-})
-
-test('repeated gathering hands over to assigned workers without starting another manual cycle', () => {
-  const s = createDefaultState()
-  s.discovered.wood = true
-  s.actionSkills.sticks.level = 2
-  expect(startAction(s, 'sticks', true)).toBe(true)
-  s.facilities.lumber.level = 1
-  people(s, 'woodcutter')
-  advanceTime(s, actionDuration(s, 'sticks'), true)
-  expect(s.manual).toBeNull()
+  expect(actionWorkers(s, 'gather')).toBe(0)
+  expect(adjustWorkers(s, 'forager', 1)).toBe(true)
+  expect(actionWorkers(s, 'gather')).toBe(1)
+  expect(adjustWorkers(s, 'forager', -1)).toBe(true)
+  expect(actionWorkers(s, 'gather')).toBe(0)
 })
 
 test('the first researched stick immediately improves manual food gathering', () => {

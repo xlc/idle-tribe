@@ -3,12 +3,12 @@ import {
   actionCompletionDuration,
   actionJobActive,
   actionOutputRate,
+  actionRepeatBlocker,
   actionRequiredXp,
   actionSlots,
   actionWorkers,
   actionYield,
   automationFactor,
-  canRepeatAction,
   isRateMode,
 } from '../actions'
 import { ACTIONS } from '../definitions'
@@ -94,7 +94,6 @@ export function ActionCard({
   id: ActionId
 }) {
   const [expanded, setExpanded] = useState(false)
-  const [repeat, setRepeat] = useState(false)
   const s = session.game.state,
     active = s.manual
   const def = ACTIONS[id],
@@ -103,9 +102,9 @@ export function ActionCard({
     running = active?.id === id,
     rateMode = isRateMode(s, id),
     duration = actionCompletionDuration(s, id),
-    skill = s.actionSkills[id]
+    skill = s.actionSkills[id],
+    repeatBlocker = actionRepeatBlocker(s, id)
   const working = actionJobActive(s, id)
-  const repeating = running && Boolean(active?.repeat)
   const icon = (
     <span
       className="action-icon"
@@ -143,32 +142,32 @@ export function ActionCard({
                   running={working}
                 />
               )}
-              <WorkerControls session={session} job={def.job} />
+              <WorkerControls
+                session={session}
+                job={def.job}
+                assignable={!repeatBlocker}
+                showFill={false}
+              />
             </span>
           </fieldset>
         ) : (
           <button
             type="button"
             className="manual-trigger"
-            aria-label={repeating ? `Stop ${def.name.toLowerCase()}` : def.name}
-            disabled={
-              !repeating && (Boolean(active) || !canAfford(s, def.cost))
-            }
+            aria-label={running ? `Stop ${def.name.toLowerCase()}` : def.name}
+            disabled={!running && (Boolean(active) || !canAfford(s, def.cost))}
             onClick={() =>
               session.change(() =>
-                repeating
+                running
                   ? session.game.cancelAction()
-                  : session.game.startAction(
-                      id,
-                      repeat && canRepeatAction(s, id),
-                    ),
+                  : session.game.startAction(id),
               )
             }
           >
             {icon}
             <span className="action-copy">
               <strong className="action-name">
-                {repeating ? `Stop · ${def.name}` : def.name}
+                {running ? `Stop · ${def.name}` : def.name}
               </strong>
               <span className="action-yield">
                 {def.resource
@@ -208,26 +207,19 @@ export function ActionCard({
           <Chevron />
         </button>
       </div>
-      {!workers && slots > 0 && (
+      {!workers && (
         <div className="action-unassigned">
-          <WorkerControls session={session} job={def.job} />
-        </div>
-      )}
-      {!workers && canRepeatAction(s, id) && (
-        <label className="action-repeat">
-          <input
-            type="checkbox"
-            checked={running ? Boolean(active?.repeat) : repeat}
-            onChange={(e) => {
-              const enabled = e.target.checked
-              setRepeat(enabled)
-              session.change(() => {
-                if (s.manual?.id === id) s.manual.repeat = enabled
-              })
-            }}
+          <div className="action-worker-copy">
+            <strong>Repeat workers</strong>
+            {repeatBlocker && <small>{repeatBlocker}</small>}
+          </div>
+          <WorkerControls
+            session={session}
+            job={def.job}
+            assignable={!repeatBlocker}
+            showFill={false}
           />
-          Repeat
-        </label>
+        </div>
       )}
       {expanded && (
         <div className="action-details" id={`${id}-details`}>

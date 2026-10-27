@@ -341,7 +341,8 @@ export function runBalance(
       after: snapshot(state),
     })
     if (!state.research.shelters && wall < horizon) {
-      // Account for all repeated manual work; never hide it in an 8-minute visit.
+      // Account for all manual and automated action work; never hide it in an
+      // 8-minute visit.
       const resetStart = wall,
         resetActions = actions.length,
         beforeOpening = snapshot(state)

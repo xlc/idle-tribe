@@ -27,7 +27,6 @@ export function effectiveOfflineSeconds(
   return t <= b ? t : b * (2 * Math.sqrt(t / b) - 1)
 }
 export function beginAbsence(state: GameState, time: number) {
-  if (state.manual) state.manual.repeat = false
   if (state.absence) return
   state.absence = {
     start: time,

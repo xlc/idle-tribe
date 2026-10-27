@@ -44,8 +44,7 @@ export function createGame(state: GameState) {
     assign: (index: number, job: JobId) => assignJob(state, index, job),
     adjust: (job: JobId, n: number) => adjustWorkers(state, job, n),
     fill: (job: JobId) => fillWorkers(state, job),
-    startAction: (id: import('./ids').ActionId, repeat = false) =>
-      startAction(state, id, repeat),
+    startAction: (id: import('./ids').ActionId) => startAction(state, id),
     cancelAction: () => cancelManual(state),
     feast: () => feast(state),
   }

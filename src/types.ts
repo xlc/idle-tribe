@@ -172,7 +172,6 @@ export interface ManualAction {
   id: ActionId
   paid: Cost
   progress: number
-  repeat: boolean
 }
 export interface Absence {
   start: number

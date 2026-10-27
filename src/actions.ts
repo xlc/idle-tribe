@@ -7,7 +7,7 @@ import {
 } from './definitions/tribal/exploration'
 import { type ActionId, RESEARCH_IDS } from './ids'
 import { canAfford, pay, refund, storageMultiplier } from './resources'
-import { happinessMultiplier } from './settlement'
+import { happinessMultiplier, requirementBlocker } from './settlement'
 import type { Cost, GameState } from './types'
 
 // Shared action balance. Keep cadence, displayed output, and simulation on the
@@ -38,22 +38,31 @@ export function actionWorkers(state: GameState, id: ActionId) {
 }
 
 export function canRepeatAction(state: GameState, id: ActionId) {
-  const level = ACTIONS[id].repeatAtLevel
-  return level !== undefined && state.actionSkills[id].level >= level
+  return !actionRepeatBlocker(state, id)
 }
 
-export function startAction(state: GameState, id: ActionId, repeat = false) {
+export function actionRepeatBlocker(state: GameState, id: ActionId) {
+  const def = ACTIONS[id]
+  const level = def.repeatAtLevel
+  if (level === undefined) return 'Manual only'
+  if (state.actionSkills[id].level < level) return `Requires level ${level}`
+  const form = BUILDINGS[def.building].forms[0]
+  if (state.facilities[def.building].level < 1)
+    return `Requires ${form?.name ?? 'workplace'} level 1`
+  return requirementBlocker(state, form?.requires ?? {})
+}
+
+export function startAction(state: GameState, id: ActionId) {
   const def = ACTIONS[id]
   if (
     state.manual ||
-    (repeat && !canRepeatAction(state, id)) ||
     !def.visible(state) ||
     actionWorkers(state, id) > 0 ||
     !canAfford(state, def.cost)
   )
     return false
   pay(state, def.cost)
-  state.manual = { id, paid: { ...def.cost }, progress: 0, repeat }
+  state.manual = { id, paid: { ...def.cost }, progress: 0 }
   return true
 }
 export function actionRequiredXp(state: GameState, id: ActionId) {
@@ -284,7 +293,6 @@ export function finishManual(state: GameState) {
   }
   if (def.kind === 'exploration') applyExploreReward(state, 1)
   syncUnlocks(state)
-  if (active.repeat) startAction(state, active.id, true)
 }
 
 // One automated completion. Explore pays its cost here (with pause) instead
