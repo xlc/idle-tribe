@@ -14,7 +14,7 @@ import {
   prestigeMultiplier,
   requirementBlocker,
 } from './settlement'
-import type { Cost, GameState, Project, QueueEntry, QueueId } from './types'
+import type { Cost, GameState, Project, QueueId } from './types'
 export const QUEUES: QueueId[] = ['research', 'construction']
 export function projectName(state: GameState, project: Project) {
   if (project.kind === 'research') return RESEARCH[project.id].name
@@ -351,7 +351,4 @@ export function researchVisible(
 }
 export function completedTechnologies(state: GameState) {
   return RESEARCH_IDS.filter((id) => state.research[id]).length
-}
-export function entryQueue(entry: QueueEntry): QueueId {
-  return entry.project.kind === 'research' ? 'research' : 'construction'
 }
