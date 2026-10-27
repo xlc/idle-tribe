@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import {
+  type ActionAvailability,
+  actionAvailability,
   actionCompletionDuration,
   actionJobActive,
   actionOutputRate,
@@ -11,10 +13,9 @@ import {
   automationFactor,
   isRateMode,
 } from '../actions'
-import { ACTIONS } from '../definitions'
+import { ACTIONS, RESOURCE_INFO } from '../definitions'
 import { formatCost, formatResource } from '../format'
-import { ACTION_IDS, type ActionId } from '../ids'
-import { canAfford } from '../resources'
+import { ACTION_IDS, type ActionId, RESOURCES } from '../ids'
 import type { GameSession } from '../session'
 import { ResourceArt } from './art'
 import { ActionCountdown, ActionProgress, Costs } from './common'
@@ -86,6 +87,28 @@ function Chevron() {
   )
 }
 
+function missingCostLabel(availability: ActionAvailability) {
+  if (!('missing' in availability)) return ''
+  return RESOURCES.filter((resource) => availability.missing[resource])
+    .map(
+      (resource) =>
+        `${formatResource(availability.missing[resource] ?? 0)} ${RESOURCE_INFO[resource].name.toLowerCase()}`,
+    )
+    .join(', ')
+}
+
+function actionStatusLabel(availability: ActionAvailability) {
+  if (availability.kind === 'locked') return availability.reason
+  if (availability.kind === 'manual') {
+    if (availability.state === 'missing-cost')
+      return `${availability.reason} · ${missingCostLabel(availability)}`
+    return availability.reason
+  }
+  if (availability.state === 'paused')
+    return `${availability.reason} · ${missingCostLabel(availability)}`
+  return availability.reason
+}
+
 export function ActionCard({
   session,
   id,
@@ -97,6 +120,7 @@ export function ActionCard({
   const s = session.game.state,
     active = s.manual
   const def = ACTIONS[id],
+    availability = actionAvailability(s, id),
     workers = actionWorkers(s, id),
     slots = actionSlots(s, id),
     running = active?.id === id,
@@ -104,7 +128,17 @@ export function ActionCard({
     duration = actionCompletionDuration(s, id),
     skill = s.actionSkills[id],
     repeatBlocker = actionRepeatBlocker(s, id)
-  const working = actionJobActive(s, id)
+  const working =
+    availability.kind === 'automated' &&
+    availability.state === 'active' &&
+    actionJobActive(s, id)
+  const statusKind =
+    availability.kind === 'manual'
+      ? availability.state
+      : availability.kind === 'automated'
+        ? availability.state
+        : availability.kind
+  const statusId = `${id}-status`
   const icon = (
     <span
       className="action-icon"
@@ -119,16 +153,27 @@ export function ActionCard({
       className="manual-action panel"
       aria-label={def.name}
       data-running={running}
+      data-action-state={statusKind}
     >
       <div className="action-row">
-        {workers > 0 ? (
-          <fieldset className="action-automated" aria-label={def.name}>
+        {availability.kind === 'automated' ? (
+          <fieldset
+            className="action-automated"
+            aria-label={def.name}
+            aria-describedby={statusId}
+          >
             {icon}
             <span className="action-copy">
               <strong className="action-name">{def.name}</strong>
+              <span
+                id={statusId}
+                className={`action-status action-status-${statusKind}`}
+              >
+                {actionStatusLabel(availability)}
+              </span>
               <span className="action-yield">
                 {def.resource
-                  ? `+${formatResource(actionOutputRate(s, id) * 60)} ${def.resource}/min · automation ${Math.round(automationFactor(s, id) * 100)}%`
+                  ? `+${formatResource((working ? actionOutputRate(s, id) : 0) * 60)} ${def.resource}/min · automation ${Math.round(automationFactor(s, id) * 100)}%`
                   : `${formatResource(working ? (1 / duration) * 60 : 0)} explores/min`}
               </span>
             </span>
@@ -145,7 +190,7 @@ export function ActionCard({
               <WorkerControls
                 session={session}
                 job={def.job}
-                assignable={!repeatBlocker}
+                assignable={!repeatBlocker && !active}
                 showFill={false}
               />
             </span>
@@ -155,7 +200,11 @@ export function ActionCard({
             type="button"
             className="manual-trigger"
             aria-label={running ? `Stop ${def.name.toLowerCase()}` : def.name}
-            disabled={!running && (Boolean(active) || !canAfford(s, def.cost))}
+            aria-describedby={statusId}
+            disabled={
+              !running &&
+              (availability.kind !== 'manual' || availability.state !== 'ready')
+            }
             onClick={() =>
               session.change(() =>
                 running
@@ -169,6 +218,12 @@ export function ActionCard({
               <strong className="action-name">
                 {running ? `Stop · ${def.name}` : def.name}
               </strong>
+              <span
+                id={statusId}
+                className={`action-status action-status-${statusKind}`}
+              >
+                {actionStatusLabel(availability)}
+              </span>
               <span className="action-yield">
                 {def.resource
                   ? `+${formatResource(actionYield(s, id))} ${def.resource} · `
@@ -207,7 +262,7 @@ export function ActionCard({
           <Chevron />
         </button>
       </div>
-      {!workers && (
+      {!workers && availability.kind !== 'locked' && (
         <div className="action-unassigned">
           <div className="action-worker-copy">
             <strong>Repeat workers</strong>
@@ -216,7 +271,7 @@ export function ActionCard({
           <WorkerControls
             session={session}
             job={def.job}
-            assignable={!repeatBlocker}
+            assignable={!repeatBlocker && !active}
             showFill={false}
           />
         </div>
@@ -243,11 +298,9 @@ export function ActionCard({
 export function ActionCards({ session }: { session: GameSession }) {
   return (
     <div className="manual-actions">
-      {ACTION_IDS.filter((id) => ACTIONS[id].visible(session.game.state)).map(
-        (id) => (
-          <ActionCard key={id} session={session} id={id} />
-        ),
-      )}
+      {ACTION_IDS.map((id) => (
+        <ActionCard key={id} session={session} id={id} />
+      ))}
     </div>
   )
 }

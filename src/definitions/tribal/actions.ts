@@ -18,6 +18,7 @@ export const actions = {
     amount: 1,
     // The first farm retires wild gathering; existing camp assignments remain.
     visible: (s) => !(s.research.agriculture && s.facilities.farm.level >= 1),
+    hiddenReason: () => 'Retired after farming is built',
   },
   sticks: {
     kind: 'resource',
@@ -33,6 +34,7 @@ export const actions = {
     resource: 'wood',
     amount: 1,
     visible: (s) => s.discovered.wood,
+    hiddenReason: () => 'Discover wood by exploring',
   },
   stone: {
     kind: 'resource',
@@ -48,6 +50,7 @@ export const actions = {
     resource: 'stone',
     amount: 1,
     visible: (s) => s.discovered.stone,
+    hiddenReason: () => 'Discover stone by exploring',
   },
   explore: {
     kind: 'exploration',
@@ -62,5 +65,6 @@ export const actions = {
     building: 'expedition-camp',
     job: 'explorer',
     visible: (s) => s.exploreUnlocked,
+    hiddenReason: () => 'Reach 5 food to unlock',
   },
 } satisfies Partial<Record<ActionId, ActionDefinition>>

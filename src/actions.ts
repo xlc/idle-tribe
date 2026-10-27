@@ -5,7 +5,7 @@ import {
   EXPLORE_DISCOVERIES,
   EXPLORE_FINDS,
 } from './definitions/tribal/exploration'
-import { type ActionId, RESEARCH_IDS } from './ids'
+import { type ActionId, RESEARCH_IDS, RESOURCES } from './ids'
 import { canAfford, pay, refund, storageMultiplier } from './resources'
 import { happinessMultiplier, requirementBlocker } from './settlement'
 import type { Cost, GameState } from './types'
@@ -37,6 +37,91 @@ export function actionWorkers(state: GameState, id: ActionId) {
   return state.people.reduce((n, person) => (person.job === job ? n + 1 : n), 0)
 }
 
+export type ActionAvailability =
+  | { kind: 'locked'; reason: string }
+  | {
+      kind: 'manual'
+      state: 'ready' | 'running' | 'blocked' | 'missing-cost'
+      missing: Cost
+      reason: string
+    }
+  | {
+      kind: 'automated'
+      state: 'active' | 'paused'
+      missing: Cost
+      reason: string
+      workers: number
+    }
+
+function missingCost(state: GameState, cost: Cost): Cost {
+  const missing: Cost = {}
+  for (const resource of RESOURCES) {
+    const amount = (cost[resource] ?? 0) - state.resources[resource]
+    if (amount > EPSILON) missing[resource] = amount
+  }
+  return missing
+}
+
+export function actionAvailability(
+  state: GameState,
+  id: ActionId,
+): ActionAvailability {
+  const def = ACTIONS[id]
+  if (state.manual?.id === id) {
+    return {
+      kind: 'manual',
+      state: 'running',
+      missing: {},
+      reason: 'Running · Stop to cancel',
+    }
+  }
+
+  if (!def.visible(state))
+    return {
+      kind: 'locked',
+      reason: def.hiddenReason?.(state) ?? 'Not available yet',
+    }
+
+  const workers = actionWorkers(state, id)
+  if (workers > 0) {
+    const missing = missingCost(state, def.cost)
+    if (Object.keys(missing).length > 0)
+      return {
+        kind: 'automated',
+        state: 'paused',
+        missing,
+        reason: 'Paused until its costs are available',
+        workers,
+      }
+    return {
+      kind: 'automated',
+      state: 'active',
+      missing: {},
+      reason: `Automated by ${workers} worker${workers === 1 ? '' : 's'}`,
+      workers,
+    }
+  }
+
+  if (state.manual) {
+    return {
+      kind: 'manual',
+      state: 'blocked',
+      missing: {},
+      reason: `Finish ${ACTIONS[state.manual.id].name} first`,
+    }
+  }
+
+  const missing = missingCost(state, def.cost)
+  return Object.keys(missing).length
+    ? {
+        kind: 'manual',
+        state: 'missing-cost',
+        missing,
+        reason: 'Needs more resources',
+      }
+    : { kind: 'manual', state: 'ready', missing: {}, reason: 'Ready to start' }
+}
+
 export function canRepeatAction(state: GameState, id: ActionId) {
   return !actionRepeatBlocker(state, id)
 }
@@ -54,10 +139,10 @@ export function actionRepeatBlocker(state: GameState, id: ActionId) {
 
 export function startAction(state: GameState, id: ActionId) {
   const def = ACTIONS[id]
+  const availability = actionAvailability(state, id)
   if (
-    state.manual ||
-    !def.visible(state) ||
-    actionWorkers(state, id) > 0 ||
+    availability.kind !== 'manual' ||
+    availability.state !== 'ready' ||
     !canAfford(state, def.cost)
   )
     return false
