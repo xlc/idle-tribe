@@ -116,6 +116,17 @@ test('a backwards wall clock cannot settle the same interval twice or invalidate
   expect(s.resources.food).toBeGreaterThan(before.food)
 })
 
+test('disabled persistence does not rewrite a wiped save during page teardown', () => {
+  const state = createDefaultState()
+  let writes = 0
+  const session = createSession(state, () => writes++, hour, true)
+  expect(writes).toBe(1)
+  session.disablePersistence()
+  session.setVisible(false, hour + 1000)
+  session.tick(hour + 2000)
+  expect(writes).toBe(1)
+})
+
 test('leaving preserves the unfinished manual cycle', () => {
   const s = createDefaultState()
   s.actionSkills.gather.level = 2

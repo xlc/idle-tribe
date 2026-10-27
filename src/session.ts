@@ -90,7 +90,9 @@ export function createSession(
   // changes and visibility flips always write immediately.
   const WRITE_INTERVAL = 3000
   let lastWrite = at
+  let persistenceEnabled = true
   function persist(force = true) {
+    if (!persistenceEnabled) return
     if (!force && at - lastWrite < WRITE_INTERVAL) return
     lastWrite = at
     save(structuredClone(state))
@@ -144,6 +146,9 @@ export function createSession(
       }
       persist()
       publish()
+    },
+    disablePersistence() {
+      persistenceEnabled = false
     },
     get away() {
       return away

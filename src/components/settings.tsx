@@ -71,6 +71,7 @@ export function Settings({ session, confirm }: ViewProps) {
               'Wipe local save?',
               'This permanently deletes the settlement saved in this browser and starts a new game.',
               () => {
+                session.disablePersistence()
                 wipeSave()
                 window.location.reload()
               },
