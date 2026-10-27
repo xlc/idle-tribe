@@ -87,6 +87,21 @@
   .plan-status {
     font-size: 11px;
   }
+  .research-active {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr);
+    gap: 8px 10px;
+    padding: 10px 10px 16px;
+  }
+  .research-active .research-icon {
+    flex-basis: 36px;
+    width: 36px;
+    height: 36px;
+  }
+  .research-active-cancel.rt-Button {
+    grid-column: 2;
+    justify-self: start;
+  }
   .plan-details {
     padding: 10px;
   }

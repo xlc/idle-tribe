@@ -3,7 +3,14 @@ import { formatCost, formatDuration } from '../format'
 import { plannedQuotes, projectName, queueBlocker } from '../research'
 import { constructionSpeed } from '../settlement'
 import type { QueueId } from '../types'
-import { Button, Costs, type ViewProps } from './common'
+import { ViewIcon } from './art'
+import {
+  ActionCountdown,
+  ActionProgress,
+  Button,
+  Costs,
+  type ViewProps,
+} from './common'
 import { Builders } from './workforce'
 
 export function Construction(props: ViewProps) {
@@ -33,6 +40,8 @@ export function Queue({ session, confirm, id }: { id: QueueId } & ViewProps) {
       : q.waiting.length
         ? queueBlocker(s, id)
         : 'No project'
+  const researchName =
+    id === 'research' && active ? projectName(s, active.project) : undefined
   return (
     <section className="queue-panel panel" aria-label={`${id} queue`}>
       <button
@@ -48,8 +57,15 @@ export function Queue({ session, confirm, id }: { id: QueueId } & ViewProps) {
             {open ? '⌃' : '⌄'}
           </span>
         </span>
-        {current && <strong>{projectName(s, current)}</strong>}
-        {current && (
+        {id === 'research' && active ? (
+          <span className="plan-status">
+            Researching
+            {q.waiting.length > 0 && ` · ${q.waiting.length} waiting`}
+          </span>
+        ) : (
+          current && <strong>{projectName(s, current)}</strong>
+        )}
+        {id !== 'research' && current && (
           <progress
             className="progress"
             value={active?.progress ?? 0}
@@ -57,14 +73,66 @@ export function Queue({ session, confirm, id }: { id: QueueId } & ViewProps) {
             aria-label={`${id} progress`}
           />
         )}
-        <span className="plan-status">
-          {status}
-          {q.waiting.length > 0 && <span> · {q.waiting.length} waiting</span>}
-        </span>
+        {!(id === 'research' && active) && (
+          <span className="plan-status">
+            {status}
+            {q.waiting.length > 0 && <span> · {q.waiting.length} waiting</span>}
+          </span>
+        )}
       </button>
+      {id === 'research' && active && researchName && (
+        <article
+          className="research-active"
+          data-running="true"
+          aria-label={`Researching ${researchName}`}
+        >
+          <span className="action-icon research-icon">
+            <ViewIcon name="research" />
+          </span>
+          <span className="action-copy">
+            <strong className="action-name">{researchName}</strong>
+            <span className="action-status action-status-active">
+              Researching
+            </span>
+            <span className="action-yield">
+              <ActionCountdown
+                session={session}
+                duration={active.total}
+                value={active.progress / active.total}
+                running
+              />{' '}
+              remaining
+            </span>
+          </span>
+          <Button
+            className="research-active-cancel"
+            onClick={() =>
+              confirm(
+                'Cancel research?',
+                `Refund ${formatCost(active.paid)}. Research progress will be lost.`,
+                () => game.cancel(id, active.sequence),
+              )
+            }
+          >
+            Cancel
+          </Button>
+          <span
+            className="project-progress research-progress"
+            data-running="true"
+          >
+            <ActionProgress
+              session={session}
+              duration={active.total}
+              label="Research progress"
+              value={active.progress / active.total}
+              running
+            />
+          </span>
+        </article>
+      )}
       <div className="plan-details" hidden={!open}>
         {id === 'construction' && <Builders session={session} />}
-        {active && (
+        {active && id === 'construction' && (
           <div className="active-project">
             <Button
               onClick={() =>
