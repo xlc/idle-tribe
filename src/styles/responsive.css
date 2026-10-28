@@ -71,6 +71,22 @@
     grid-template-columns: minmax(0, 1fr);
     gap: 16px;
   }
+  .settlement-brief {
+    gap: 12px;
+    padding: 14px;
+    margin-bottom: 18px;
+  }
+  .settlement-brief-heading {
+    align-items: center;
+  }
+  .settlement-brief-heading .rt-Button {
+    min-height: 40px;
+    min-width: auto;
+    padding-inline: 10px;
+  }
+  .settlement-status-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .camp-aside {
     grid-row: 2;
     order: 2;
@@ -207,12 +223,6 @@
   .arrival-details summary {
     white-space: normal;
   }
-  .settlement-landscape {
-    height: auto;
-    aspect-ratio: 4.5;
-    max-height: 90px;
-    margin-bottom: 14px;
-  }
   .facility-filters {
     flex-wrap: nowrap;
     overflow-x: auto;
@@ -319,9 +329,6 @@
   }
 }
 @media (max-height: 760px) and (max-width: 719px) {
-  .settlement-landscape {
-    display: none;
-  }
   .plan-toggle {
     gap: 5px;
     padding: 10px;

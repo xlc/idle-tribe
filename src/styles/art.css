@@ -17,26 +17,3 @@
   width: 100%;
   height: 100%;
 }
-/* Each landscape is one third of the atlas. Crop within that band without stretching it. */
-.settlement-landscape {
-  position: relative;
-  overflow: hidden;
-  height: 130px;
-  margin-bottom: 20px;
-  border-radius: 8px;
-}
-.settlement-landscape::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  width: 100%;
-  aspect-ratio: 1.5;
-  background: url("../assets/settlement-landscapes.png") center / 100% 100%;
-  transform: translateY(-16.6667%);
-}
-.settlement-landscape[data-landscape="town"]::before {
-  transform: translateY(-50%);
-}
-.settlement-landscape[data-landscape="future"]::before {
-  transform: translateY(-83.3333%);
-}

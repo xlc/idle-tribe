@@ -15,11 +15,72 @@ import { Stockpile } from './components/stockpile'
 import { Technology } from './components/technology'
 import { Workforce } from './components/workforce'
 import { ERAS } from './definitions'
+import { projectName } from './research'
 import type { GameSession } from './session'
-import { automationUnlocked } from './settlement'
+import { assigned, automationUnlocked, comfortablePlaces } from './settlement'
 import { useSession } from './use-session'
 
 type View = 'settlement' | 'research' | 'people' | 'legacy' | 'settings'
+
+function SettlementBrief({
+  session,
+  onPeople,
+}: {
+  session: GameSession
+  onPeople: () => void
+}) {
+  const s = session.game.state
+  const construction = s.queues.construction.active
+    ? projectName(s, s.queues.construction.active.project)
+    : s.queues.construction.waiting.length
+      ? `${s.queues.construction.waiting.length} planned`
+      : 'No project'
+  const research = s.queues.research.active
+    ? projectName(s, s.queues.research.active.project)
+    : s.queues.research.waiting.length
+      ? `${s.queues.research.waiting.length} planned`
+      : 'No project'
+  const rooms = comfortablePlaces(s)
+  return (
+    <section className="settlement-brief panel" aria-label="Settlement status">
+      <div className="settlement-brief-heading">
+        <div>
+          <span className="eyebrow">Current era</span>
+          <h1>{ERAS[s.era]?.name ?? 'Settlement'}</h1>
+        </div>
+        <Button variant="soft" onClick={onPeople}>
+          Manage people
+        </Button>
+      </div>
+      <p className="settlement-brief-description">{ERAS[s.era]?.description}</p>
+      <dl className="settlement-status-grid">
+        <div>
+          <dt>People</dt>
+          <dd>
+            {s.people.length} <small>{assigned(s, 'idle')} unassigned</small>
+          </dd>
+        </div>
+        <div>
+          <dt>Housing</dt>
+          <dd>
+            {s.people.length}/{rooms} <small>capacity</small>
+          </dd>
+        </div>
+        <div>
+          <dt>Construction</dt>
+          <dd>{construction}</dd>
+        </div>
+        {s.researchUnlocked && (
+          <div>
+            <dt>Research</dt>
+            <dd>{research}</dd>
+          </div>
+        )}
+      </dl>
+    </section>
+  )
+}
+
 export function App({ session }: { session: GameSession }) {
   useSession(session)
   const s = session.game.state,
@@ -127,15 +188,11 @@ export function App({ session }: { session: GameSession }) {
                   <ExpeditionEncounter session={session} />
                   {automated ? (
                     <>
+                      <SettlementBrief
+                        session={session}
+                        onPeople={() => showView('people')}
+                      />
                       <Production {...props} />
-                      <details className="settlement-scenery">
-                        <summary>Settlement view</summary>
-                        <div
-                          className="settlement-landscape"
-                          data-landscape={ERAS[s.era]?.landscape}
-                          aria-hidden="true"
-                        />
-                      </details>
                     </>
                   ) : (
                     <p className="opening-flavor">{ERAS[0]?.description}</p>

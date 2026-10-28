@@ -1,3 +1,69 @@
+.settlement-brief {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+.settlement-brief-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.settlement-brief-heading h1 {
+  font-size: clamp(25px, 4vw, 32px);
+}
+.eyebrow {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--color-neutral);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.settlement-brief-description {
+  max-width: 58ch;
+  color: var(--color-neutral);
+  font-family: Georgia, serif;
+  font-size: 14px;
+  font-style: italic;
+  line-height: 1.45;
+}
+.settlement-status-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--color-base-300);
+  border-radius: 8px;
+  background: var(--color-base-300);
+}
+.settlement-status-grid > div {
+  min-width: 0;
+  padding: 10px;
+  background: var(--color-base-100);
+}
+.settlement-status-grid dt {
+  margin-bottom: 5px;
+  color: var(--color-neutral);
+  font-size: 11px;
+}
+.settlement-status-grid dd {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.settlement-status-grid dd small {
+  display: block;
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 400;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .building-card,
 .tech-card {
   padding: 14px;
@@ -81,9 +147,6 @@
   font-size: 13px;
   margin-top: 5px;
   font-weight: 600;
-}
-.settlement-scenery {
-  margin-top: 16px;
 }
 .staffing-target,
 .staffing-efficiency {
