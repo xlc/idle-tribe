@@ -1,5 +1,5 @@
 import * as Toast from '@radix-ui/react-toast'
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 import { type AwayProgress, awayHighlight } from '../clock'
 import { MIN_VISIBLE_RESOURCE_CHANGE } from '../constants'
 import { OCCUPATIONS, RESOURCE_INFO } from '../definitions'
@@ -103,7 +103,6 @@ export function AwayReport({
   session: GameSession
   report: AwayProgress
 }) {
-  const [open, setOpen] = useState(false)
   const s = session.game.state,
     changedResources = RESOURCES.filter(
       (r) => Math.abs(report.gains[r]) > MIN_VISIBLE_RESOURCE_CHANGE,
@@ -116,14 +115,8 @@ export function AwayReport({
     }),
     crowded = RESOURCES.filter((r) => storageMultiplier(s, r) < 1)
   return (
-    <section className="away-report panel" aria-label="Offline progress">
-      <button
-        type="button"
-        className="away-summary"
-        aria-expanded={open}
-        aria-controls="away-details"
-        onClick={() => setOpen(!open)}
-      >
+    <section className="away-report" aria-label="Offline progress">
+      <div className="away-summary">
         <span>
           <strong>Welcome back</strong>
           <small className="away-subtitle">
@@ -131,11 +124,8 @@ export function AwayReport({
           </small>
         </span>
         <span className="away-summary-counts">{awayHighlight(report)}</span>
-        <span className="away-chevron" aria-hidden="true">
-          {open ? '−' : '+'}
-        </span>
-      </button>
-      <div id="away-details" className="away-details" hidden={!open}>
+      </div>
+      <div className="away-details">
         <dl className="away-stats">
           <div>
             <dt>Time away</dt>

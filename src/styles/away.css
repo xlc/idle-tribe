@@ -166,9 +166,7 @@
 }
 .away-report {
   margin-bottom: 16px;
-  border-radius: 12px;
   font-size: 12px;
-  overflow: hidden;
 }
 .away-modal .away-report {
   margin-bottom: 0;
@@ -181,7 +179,6 @@
   min-height: 64px;
   padding: 12px 16px;
   text-align: left;
-  cursor: pointer;
 }
 .away-summary > span:first-child {
   flex: 1;
@@ -195,10 +192,6 @@
 }
 .away-summary-counts {
   color: var(--color-neutral);
-}
-.away-chevron {
-  font-size: 20px;
-  color: var(--color-primary);
 }
 .away-details {
   padding: 0 16px 16px;
