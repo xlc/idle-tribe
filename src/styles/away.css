@@ -37,6 +37,9 @@
   background: var(--color-accent);
   animation: event-toast-progress 20s linear both;
 }
+.event-toast[data-paused="true"]::after {
+  animation-play-state: paused;
+}
 .event-toast-mark {
   display: grid;
   place-items: center;
