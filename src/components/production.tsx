@@ -24,9 +24,8 @@ export function Production(props: ViewProps) {
       BUILDINGS[id].forms.some((f) => !requirementBlocker(planned, f.requires))
     )
   })
-  const actions = ACTION_IDS.filter(
-    (id) => ACTIONS[id].visible(s) && !available.includes(ACTIONS[id].building),
-  )
+  // Keep action placement stable; workplaces only describe the facility.
+  const actions = ACTION_IDS.filter((id) => ACTIONS[id].visible(s))
   return (
     <section className="production-view">
       {actions.length > 0 && (

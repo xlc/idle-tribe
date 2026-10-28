@@ -32,7 +32,6 @@ import {
 } from '../settlement'
 import { resourceRates } from '../simulation'
 import type { BuildingId, GameState, Project } from '../types'
-import { ActionCard } from './actions'
 import { BuildingArt } from './art'
 import { Button, Costs, type ViewProps } from './common'
 import { WorkerControls } from './worker-controls'
@@ -157,76 +156,67 @@ export function Facility({
   )
   return (
     <article
-      className={`building-card panel${action ? ' action-facility' : ''}`}
+      className="building-card panel"
       data-built={f.level > 0}
       aria-label={form.name}
     >
-      {action && actionDefinition?.visible(s) ? (
-        <>
-          <ActionCard session={session} id={action} />
-          <small className="action-workplace">
-            {form.name} · {f.level ? `Level ${f.level}` : 'Not built'}
-          </small>
-        </>
-      ) : (
-        <div className="facility-overview">
-          <BuildingArt building={id} />
-          <div className="facility-info">
-            <h3>{form.name}</h3>
-            <span className="facility-level">
-              {f.level ? `Level ${f.level}` : 'Not built'}
-              {f.equipment ? ` · tools ${f.equipment}` : ''}
-            </span>
-            {action && actionDefinition ? (
-              <div className="building-recipe">
-                <span className="recipe-output" data-zero={production === 0}>
-                  +{formatResource(production)}{' '}
-                  {actionDefinition.resource ?? 'explores'}/s
+      <div className="facility-overview">
+        <BuildingArt building={id} />
+        <div className="facility-info">
+          <h3>{form.name}</h3>
+          <span className="facility-level">
+            {f.level ? `Level ${f.level}` : 'Not built'}
+            {f.equipment ? ` · tools ${f.equipment}` : ''}
+          </span>
+          {action && actionDefinition ? (
+            <div className="building-recipe">
+              <span className="recipe-output" data-zero={production === 0}>
+                +{formatResource(production)}{' '}
+                {actionDefinition.resource ?? 'explores'}/s
+              </span>
+              <span className="recipe-input">
+                {n}/{actionSlots(s, action)} slots · automation{' '}
+                {Math.round(automationFactor(s, action) * 100)}%
+              </span>
+            </div>
+          ) : job ? (
+            <div className="building-recipe">
+              <span className="recipe-output" data-zero={production === 0}>
+                +{formatResource(production)}{' '}
+                {output ? RESOURCE_INFO[output].name.toLowerCase() : 'work'}
+                /s
+              </span>
+              {RESOURCES.filter((r) => input[r]).map((r) => (
+                <span className="recipe-input" key={r}>
+                  −{formatResource(production * (input[r] ?? 0))}{' '}
+                  {RESOURCE_INFO[r].name.toLowerCase()}/s
                 </span>
-                <span className="recipe-input">
-                  {n}/{actionSlots(s, action)} slots · automation{' '}
-                  {Math.round(automationFactor(s, action) * 100)}%
-                </span>
-              </div>
-            ) : job ? (
-              <div className="building-recipe">
-                <span className="recipe-output" data-zero={production === 0}>
-                  +{formatResource(production)}{' '}
-                  {output ? RESOURCE_INFO[output].name.toLowerCase() : 'work'}
-                  /s
-                </span>
-                {RESOURCES.filter((r) => input[r]).map((r) => (
-                  <span className="recipe-input" key={r}>
-                    −{formatResource(production * (input[r] ?? 0))}{' '}
-                    {RESOURCE_INFO[r].name.toLowerCase()}/s
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <p className="building-recipe">
-                {form.housing
-                  ? `Base +${form.housing} places/level`
-                  : form.storage
-                    ? RESOURCES.filter((r) => form.storage?.[r])
-                        .map(
-                          (r) =>
-                            `Base +${form.storage?.[r]} ${RESOURCE_INFO[r].name.toLowerCase()} storage`,
-                        )
-                        .join(' · ')
-                    : def.effect}
-              </p>
-            )}
-            {blocked && <p className="building-status">{blocked}</p>}
-          </div>
-          {job && f.level > 0 && (
-            <WorkerControls
-              session={session}
-              job={job}
-              assignable={!actionDefinition || actionDefinition.visible(s)}
-            />
+              ))}
+            </div>
+          ) : (
+            <p className="building-recipe">
+              {form.housing
+                ? `Base +${form.housing} places/level`
+                : form.storage
+                  ? RESOURCES.filter((r) => form.storage?.[r])
+                      .map(
+                        (r) =>
+                          `Base +${form.storage?.[r]} ${RESOURCE_INFO[r].name.toLowerCase()} storage`,
+                      )
+                      .join(' · ')
+                  : def.effect}
+            </p>
           )}
+          {blocked && <p className="building-status">{blocked}</p>}
         </div>
-      )}
+        {job && f.level > 0 && !action && (
+          <WorkerControls
+            session={session}
+            job={job}
+            assignable={!actionDefinition || actionDefinition.visible(s)}
+          />
+        )}
+      </div>
       {!f.level && investment}
       <details className="facility-detail">
         <summary>Details & upgrades</summary>
