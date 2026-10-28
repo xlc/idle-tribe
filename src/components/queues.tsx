@@ -13,18 +13,26 @@ import {
 } from './common'
 import { Builders } from './workforce'
 
-export function Construction(props: ViewProps) {
+export function Construction({
+  compact = false,
+  ...props
+}: ViewProps & { compact?: boolean }) {
   return (
     <section
-      className="construction-panel"
+      className={`construction-panel${compact ? ' compact' : ''}`}
       aria-label="Construction management"
     >
-      <Queue {...props} id="construction" />
+      <Queue {...props} id="construction" compact={compact} />
     </section>
   )
 }
 
-export function Queue({ session, confirm, id }: { id: QueueId } & ViewProps) {
+export function Queue({
+  session,
+  confirm,
+  id,
+  compact = false,
+}: { id: QueueId; compact?: boolean } & ViewProps) {
   const { game } = session,
     s = game.state,
     q = s.queues[id],
@@ -43,7 +51,10 @@ export function Queue({ session, confirm, id }: { id: QueueId } & ViewProps) {
   const researchName =
     id === 'research' && active ? projectName(s, active.project) : undefined
   return (
-    <section className="queue-panel panel" aria-label={`${id} queue`}>
+    <section
+      className={`queue-panel panel${compact ? ' queue-panel-compact' : ''}`}
+      aria-label={`${id} queue`}
+    >
       <button
         type="button"
         className="plan-toggle"

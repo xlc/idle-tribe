@@ -10,12 +10,28 @@ import {
 } from '../settlement'
 import { WorkerControls } from './worker-controls'
 
-export function Workforce({ session }: { session: GameSession }) {
+export function Workforce({
+  session,
+  compact = false,
+}: {
+  session: GameSession
+  compact?: boolean
+}) {
   const s = session.game.state,
     arrival = arrivalStatus(s),
-    target = happinessTarget(s)
+    target = happinessTarget(s),
+    rooms = comfortablePlaces(s),
+    roomMessage =
+      rooms > s.people.length
+        ? `${rooms - s.people.length} free room${rooms - s.people.length === 1 ? '' : 's'}`
+        : rooms === s.people.length
+          ? 'No free rooms'
+          : `${s.people.length - rooms} over room capacity`
   return (
-    <section className="workforce-bar" aria-label="Population">
+    <section
+      className={`workforce-bar${compact ? ' workforce-compact' : ''}`}
+      aria-label="Population"
+    >
       <div>
         <h2>{s.people.length} people</h2>
         <p>{assigned(s, 'idle')} unassigned</p>
@@ -40,7 +56,9 @@ export function Workforce({ session }: { session: GameSession }) {
       </div>
       <details className="arrival-details">
         <summary>Arrivals & housing</summary>
-        <p>{comfortablePlaces(s)} comfortable places</p>
+        <p>
+          {s.people.length}/{rooms} people · {roomMessage}
+        </p>
         <div className="arrival-control">
           <label>
             <input

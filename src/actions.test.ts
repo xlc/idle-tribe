@@ -153,6 +153,47 @@ test('automated encounters use their declared default and pause while a report i
   expect(state.actionProgress.explore).toBeLessThan(1)
 })
 
+test('exploration can bring travelers to the next available room', () => {
+  const state = encounterState()
+  for (const id of EXPEDITION_ENCOUNTER_IDS)
+    state.completedEncounters[id] = id !== 'ridge-travelers'
+
+  triggerEncounter(state, 'manual')
+  expect(state.pendingEncounter).toBe('ridge-travelers')
+  expect(resolveEncounter(state, 0)).toBe(true)
+  expect(state.arrivalProgress).toBe(1)
+})
+
+test('a traveler lead becomes an idle settler when food and a room are ready', () => {
+  const state = encounterState()
+  for (const id of EXPEDITION_ENCOUNTER_IDS)
+    state.completedEncounters[id] = id !== 'ridge-travelers'
+  state.research.shelters = true
+  state.facilities.housing.level = 1
+  state.facilities.foraging.level = 1
+  const founder = state.people[0]
+  if (!founder) throw new Error('Default state has no founder')
+  founder.job = 'forager'
+
+  triggerEncounter(state, 'manual')
+  expect(resolveEncounter(state, 0)).toBe(true)
+  advanceTime(state, 0)
+  expect(state.people).toHaveLength(2)
+  expect(state.people[1]?.job).toBe('idle')
+})
+
+test('experienced explorers can find repeatable traveler leads', () => {
+  const state = encounterState()
+  for (const id of EXPEDITION_ENCOUNTER_IDS)
+    state.completedEncounters[id] = true
+
+  for (let attempt = 0; attempt < 100 && state.arrivalProgress === 0; attempt++)
+    applyExploreReward(state, 1, 'manual')
+
+  expect(state.arrivalProgress).toBeGreaterThan(0)
+  expect(state.notice).toBe('Explorers met travelers heading this way')
+})
+
 test('exploration rates include automated encounter resources', () => {
   const state = encounterState()
   for (const id of EXPEDITION_ENCOUNTER_IDS.slice(1))

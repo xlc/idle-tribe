@@ -72,7 +72,8 @@ function ActionSkill({
 function exploreHint(level: number) {
   if (level >= 10)
     return 'Finds: resources · discoveries · rare finds · travelers and stories'
-  if (level >= 5) return 'Finds: resources · discoveries · rare finds'
+  if (level >= 5)
+    return 'Finds: resources · discoveries · rare finds · travelers'
   return 'Finds: resources · discoveries · sometimes nothing'
 }
 
@@ -145,6 +146,16 @@ export function ActionCard({
               )}
               {rateMode && <span className="action-live-rate">Live rate</span>}
             </span>
+            {workersUnlocked && (
+              <span className="action-worker-inline">
+                <WorkerControls
+                  session={session}
+                  job={def.job}
+                  assignable={!active}
+                  showFill={false}
+                />
+              </span>
+            )}
           </fieldset>
         ) : (
           <button
@@ -200,16 +211,18 @@ export function ActionCard({
           onToggle={() => setExpanded((value) => !value)}
         />
       </div>
-      {availability.kind !== 'locked' && workersUnlocked && (
-        <div className="action-workers">
-          <WorkerControls
-            session={session}
-            job={def.job}
-            assignable={!active}
-            showFill={false}
-          />
-        </div>
-      )}
+      {availability.kind !== 'locked' &&
+        availability.kind !== 'automated' &&
+        workersUnlocked && (
+          <div className="action-workers">
+            <WorkerControls
+              session={session}
+              job={def.job}
+              assignable={!active}
+              showFill={false}
+            />
+          </div>
+        )}
       {expanded && (
         <div className="action-details" id={`${id}-details`}>
           <p className="action-description">{def.description}</p>
@@ -233,15 +246,21 @@ export function ActionCard({
   )
 }
 
-export function ActionCards({ session }: { session: GameSession }) {
+export function ActionCards({
+  session,
+  ids = ACTION_IDS,
+}: {
+  session: GameSession
+  ids?: readonly ActionId[]
+}) {
   const state = session.game.state
   return (
     <div className="manual-actions">
-      {ACTION_IDS.filter(
-        (id) => actionAvailability(state, id).kind !== 'locked',
-      ).map((id) => (
-        <ActionCard key={id} session={session} id={id} />
-      ))}
+      {ids
+        .filter((id) => actionAvailability(state, id).kind !== 'locked')
+        .map((id) => (
+          <ActionCard key={id} session={session} id={id} />
+        ))}
     </div>
   )
 }

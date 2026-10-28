@@ -86,9 +86,6 @@ export function App({ session }: { session: GameSession }) {
             />
           )}
           <div className="view-scroll" ref={content}>
-            {view === 'settlement' && automated && (
-              <Workforce session={session} />
-            )}
             {view === 'settlement' && !automated && (
               <section className="discoveries" aria-label="Actions">
                 <h2>Actions</h2>
@@ -160,8 +157,13 @@ export function App({ session }: { session: GameSession }) {
                 {!automated && <People session={session} />}
                 {automated && (
                   <div className="project-plans">
-                    <Construction {...props} />
-                    <Queue {...props} id="research" />
+                    <section className="camp-summary panel" aria-label="Camp">
+                      <Construction {...props} compact />
+                      <Workforce {...props} compact />
+                    </section>
+                    <div className="camp-research">
+                      <Queue {...props} id="research" />
+                    </div>
                   </div>
                 )}
               </aside>

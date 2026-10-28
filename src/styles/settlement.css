@@ -344,3 +344,24 @@
 .facility-detail .select {
   width: 100%;
 }
+.workforce-compact {
+  padding: 12px 14px;
+  align-items: center;
+}
+.workforce-compact > div {
+  display: grid;
+  gap: 2px;
+}
+.workforce-compact h2 {
+  font: 700 16px var(--default-font-family);
+}
+.workforce-compact .happiness-status {
+  display: none;
+}
+.workforce-compact .arrival-details {
+  max-width: none;
+}
+.workforce-compact .arrival-details summary {
+  padding: 8px 0;
+  color: var(--color-primary);
+}

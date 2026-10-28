@@ -415,7 +415,7 @@ export function applyExploreReward(
     rare = level >= 5 ? 0.1 : 0,
     encounter = encounterChance(state),
     resources = 0.5 - rare - encounter,
-    mini = level >= 10 ? 0.1 : 0
+    mini = level >= 5 ? 0.1 : 0
   const next = nextDiscovery(state)
   if ((next && scale >= 1) || roll < discover) {
     if (next) {

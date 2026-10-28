@@ -41,37 +41,50 @@
   }
   .stockpile {
     flex-wrap: nowrap;
-    padding: 6px 0;
+    padding: 7px 0;
     overflow-x: auto;
     touch-action: pan-x;
     overscroll-behavior: none;
     scrollbar-width: thin;
   }
   .resource {
-    min-width: 120px;
-    padding: 0 10px;
-    grid-template-columns: 30px auto;
-    gap: 0 7px;
+    min-width: 96px;
+    padding: 0 8px;
+    grid-template-columns: 26px auto;
+    gap: 0 6px;
   }
   .resource .painted-art {
-    width: 30px;
-    height: 30px;
+    width: 26px;
+    height: 26px;
+  }
+  .resource-name,
+  .storage-effect {
+    display: none;
   }
   .resource-value {
-    font-size: 17px;
+    font-size: 16px;
+  }
+  .resource-meta {
+    grid-column: 2;
   }
   .settlement-layout {
     grid-template-columns: minmax(0, 1fr);
     gap: 16px;
   }
   .camp-aside {
-    grid-row: 1;
+    grid-row: 2;
+    order: 2;
     position: static;
   }
   .project-plans {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
+    display: block;
     align-items: start;
+  }
+  .camp-summary {
+    border-radius: 10px;
+  }
+  .camp-research {
+    display: none;
   }
   .plan-toggle {
     padding: 12px;
@@ -136,6 +149,9 @@
   .workforce-bar {
     margin-bottom: 12px;
   }
+  .workforce-compact {
+    margin-bottom: 0;
+  }
   .workforce-bar > div {
     gap: 6px 10px;
   }
@@ -176,6 +192,58 @@
   }
   .away-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .production-view {
+    gap: 18px;
+  }
+  .action-section .section-heading,
+  .workplace-section .section-heading {
+    margin-bottom: 10px;
+  }
+  .action-section .section-heading h2 {
+    font-size: 22px;
+  }
+  .workplace-section {
+    padding-top: 4px;
+  }
+  .action-automated {
+    gap: 8px;
+    padding: 8px 10px;
+  }
+  .action-automated .action-icon,
+  .action-automated .action-icon .painted-art {
+    width: 32px;
+    height: 32px;
+    flex-basis: 32px;
+  }
+  .action-automated .action-name {
+    font-size: 15px;
+  }
+  .action-automated .action-yield,
+  .action-automated .action-skill {
+    font-size: 11px;
+  }
+  .action-automation-controls {
+    flex: 0 1 88px;
+    min-width: 70px;
+    gap: 6px;
+  }
+  .action-automation-controls > .progress {
+    width: auto;
+  }
+  .action-worker-inline .worker-control .rt-Button {
+    min-width: 32px;
+    min-height: 36px;
+  }
+  .action-worker-inline .worker-count {
+    min-width: 22px;
+    font-size: 15px;
+  }
+  .action-section .manual-actions {
+    gap: 8px;
+  }
+  .workplace-section .facility-filters {
+    margin-bottom: 8px;
   }
 }
 @media (max-width: 440px) {

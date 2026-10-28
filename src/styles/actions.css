@@ -278,3 +278,21 @@
     grid-template-columns: 1fr;
   }
 }
+.action-worker-inline {
+  flex: 0 0 auto;
+}
+.action-worker-inline .worker-allocation {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.action-worker-inline .worker-allocation > small {
+  display: none;
+}
+.action-worker-inline .worker-control {
+  min-height: 36px;
+}
+.action-worker-inline .worker-control .rt-Button {
+  min-width: 34px;
+  min-height: 36px;
+}

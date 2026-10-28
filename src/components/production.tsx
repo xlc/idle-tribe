@@ -3,7 +3,7 @@ import { ACTIONS, BUILDINGS } from '../definitions'
 import { ACTION_IDS, BUILDING_IDS } from '../ids'
 import { researchPlan } from '../research'
 import { assigned, requirementBlocker } from '../settlement'
-import { ActionCard } from './actions'
+import { ActionCards } from './actions'
 import { Button, type ViewProps } from './common'
 import { Facility } from './facility'
 
@@ -24,47 +24,54 @@ export function Production(props: ViewProps) {
       BUILDINGS[id].forms.some((f) => !requirementBlocker(planned, f.requires))
     )
   })
+  const actions = ACTION_IDS.filter(
+    (id) => ACTIONS[id].visible(s) && !available.includes(ACTIONS[id].building),
+  )
   return (
-    <section>
-      <div className="section-heading">
-        <h2>Workplaces</h2>
-      </div>
-      <fieldset className="facility-filters" aria-label="Facility filters">
-        {['All', 'Production', 'Storage', 'Housing & support'].map((value) => (
-          <Button
-            key={value}
-            aria-pressed={filter === value}
-            variant={filter === value ? 'solid' : 'soft'}
-            onClick={() => setFilter(value)}
-          >
-            {value}
-          </Button>
-        ))}
-      </fieldset>
-      <div className="building-grid">
-        {(filter === 'All' || filter === 'Production') &&
-          ACTION_IDS.filter(
-            (id) =>
-              ACTIONS[id].visible(s) &&
-              !available.includes(ACTIONS[id].building),
-          ).map((id) => (
-            <ActionCard key={id} session={props.session} id={id} />
-          ))}
-        {available
-          .filter(
-            (id) =>
-              filter === 'All' ||
-              (filter === 'Production'
-                ? BUILDINGS[id].job
-                : filter === 'Storage'
-                  ? BUILDINGS[id].forms.some((form) => form.storage)
-                  : !BUILDINGS[id].job &&
-                    !BUILDINGS[id].forms.some((form) => form.storage)),
-          )
-          .map((id) => (
-            <Facility key={id} {...props} id={id} />
-          ))}
-      </div>
+    <section className="production-view">
+      {actions.length > 0 && (
+        <section className="action-section" aria-label="Actions">
+          <div className="section-heading">
+            <h2>Actions</h2>
+          </div>
+          <ActionCards session={props.session} ids={actions} />
+        </section>
+      )}
+      <section className="workplace-section" aria-label="Workplaces">
+        <div className="section-heading">
+          <h2>Workplaces</h2>
+        </div>
+        <fieldset className="facility-filters" aria-label="Facility filters">
+          {['All', 'Production', 'Storage', 'Housing & support'].map(
+            (value) => (
+              <Button
+                key={value}
+                aria-pressed={filter === value}
+                variant={filter === value ? 'solid' : 'soft'}
+                onClick={() => setFilter(value)}
+              >
+                {value}
+              </Button>
+            ),
+          )}
+        </fieldset>
+        <div className="building-grid">
+          {available
+            .filter(
+              (id) =>
+                filter === 'All' ||
+                (filter === 'Production'
+                  ? BUILDINGS[id].job
+                  : filter === 'Storage'
+                    ? BUILDINGS[id].forms.some((form) => form.storage)
+                    : !BUILDINGS[id].job &&
+                      !BUILDINGS[id].forms.some((form) => form.storage)),
+            )
+            .map((id) => (
+              <Facility key={id} {...props} id={id} />
+            ))}
+        </div>
+      </section>
     </section>
   )
 }

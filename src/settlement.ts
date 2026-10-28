@@ -366,9 +366,11 @@ export function arrivalBlocker(
     ? 'Requires Shelters'
     : !state.welcome
       ? 'Arrivals paused'
-      : state.resources.food < buffer
-        ? `Needs ${buffer} food buffer`
-        : foodOutput < required
-          ? 'Needs sustainable food production'
-          : ''
+      : comfortablePlaces(state) <= state.people.length
+        ? 'Population full · build more housing'
+        : state.resources.food < buffer
+          ? `Needs ${buffer} food buffer`
+          : foodOutput < required
+            ? 'Needs sustainable food production'
+            : ''
 }

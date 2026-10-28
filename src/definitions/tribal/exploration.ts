@@ -51,9 +51,9 @@ export const EXPEDITION_ENCOUNTERS: Record<
     automatedOption: 0,
     options: [
       {
-        label: 'Invite them onward',
-        description: 'Bring the next arrival closer',
-        effect: { kind: 'arrival-progress', amount: 0.35 },
+        label: 'Invite them to settle',
+        description: 'Bring the next arrival all the way to your doorstep',
+        effect: { kind: 'arrival-progress', amount: 1 },
       },
       {
         label: 'Share a meal',
