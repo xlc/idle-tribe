@@ -1,4 +1,4 @@
-import { MIN_VISIBLE_RESOURCE_CHANGE } from '../constants'
+import { EPSILON, MIN_VISIBLE_RESOURCE_CHANGE } from '../constants'
 import { ACTIONS, BUILDINGS, JOBS, RESOURCE_INFO } from '../definitions'
 import { formatCompactResource, formatResource } from '../format'
 import { ACTION_IDS, BUILDING_IDS, RESOURCES } from '../ids'
@@ -59,11 +59,19 @@ export function Stockpile({ session }: { session: GameSession }) {
       </section>
     )
   }
+  const foodNet = flows.food.production - flows.food.inputs - flows.food.meals
+  const foodShortage =
+    flows.food.meals > 0 &&
+    foodNet < -EPSILON &&
+    s.resources.food + EPSILON < flows.food.meals
   return (
     <section className="stockpile-panel panel" aria-label="Stockpile">
       <div className="stockpile" id="stockpile-resources">
         {visibleResources.map(resource)}
       </div>
+      {foodShortage && (
+        <p className="stockpile-warning">Starving · health at risk</p>
+      )}
     </section>
   )
 }

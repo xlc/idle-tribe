@@ -120,6 +120,11 @@
     transition: none;
   }
 }
+@media (max-width: 719px) {
+  .event-toast-viewport {
+    bottom: calc(18px + env(safe-area-inset-bottom) + 56px);
+  }
+}
 .away-modal {
   width: min(560px, calc(100% - 32px));
 }

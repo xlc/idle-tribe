@@ -57,7 +57,10 @@
     width: 26px;
     height: 26px;
   }
-  .resource-name,
+  .resource-name {
+    display: block;
+    font-size: 10px;
+  }
   .storage-effect {
     display: none;
   }
