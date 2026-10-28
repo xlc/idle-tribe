@@ -7,6 +7,38 @@
   gap: 12px;
   align-items: start;
 }
+.research-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.research-list .research-card {
+  padding: 0;
+}
+.research-trigger {
+  gap: 12px;
+}
+.research-plan-status {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--color-neutral);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.research-card[data-action-state="ready"] .research-plan-status {
+  color: var(--color-primary);
+}
+.research-card[data-action-state="blocked"] .research-plan-status {
+  color: var(--color-warning);
+}
+.research-effect {
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 0;
+}
+.research-card .branch-identity {
+  margin-top: 0;
+}
 .tech-effect {
   font-size: 13px;
   line-height: 1.6;
