@@ -104,9 +104,6 @@
 .camp-summary .construction-panel + .workforce-bar {
   border-top: 1px solid var(--color-base-300);
 }
-.camp-research {
-  margin-top: 12px;
-}
 .production-view {
   display: grid;
   gap: 24px;

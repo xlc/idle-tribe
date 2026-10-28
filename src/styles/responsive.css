@@ -103,9 +103,6 @@
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     border-radius: 10px;
   }
-  .camp-research {
-    display: none;
-  }
   .plan-toggle {
     padding: 12px;
     gap: 7px;

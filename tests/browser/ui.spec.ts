@@ -188,7 +188,7 @@ for (const width of [1280, 390]) {
         exact: true,
       })
       await forestry
-        .getByRole('button', { name: 'Choose path', exact: true })
+        .getByRole('button', { name: 'Forestry', exact: true })
         .click()
       await expect(page.getByRole('dialog')).toContainText(
         'This choice lasts for this run',
@@ -197,9 +197,14 @@ for (const width of [1280, 390]) {
         .getByRole('dialog')
         .getByRole('button', { name: 'Confirm', exact: true })
         .click()
+      await page.getByRole('tab', { name: 'Queue', exact: true }).click()
       await expect(
         page.getByRole('region', { name: 'research queue' }),
       ).toContainText('Forestry')
+      await page.getByRole('tab', { name: /Technology/ }).click()
+      await expect(
+        page.getByRole('progressbar', { name: 'Forestry progress' }),
+      ).toBeVisible()
       await page.clock.runFor(3000)
       const before = await readState(page)
       await page.reload()
@@ -241,7 +246,7 @@ for (const width of [1280, 390]) {
       await page.clock.fastForward(16 * 60_000)
       await expect(writing).toContainText('Enter town era')
       await writing
-        .getByRole('button', { name: 'Queue research', exact: true })
+        .getByRole('button', { name: 'Writing', exact: true })
         .click()
       const state = await readState(page)
       expect(state.facilities.farm.level).toBe(1)

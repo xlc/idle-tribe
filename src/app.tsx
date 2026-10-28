@@ -9,7 +9,7 @@ import { Legacy } from './components/legacy'
 import { OfflineStatus } from './components/offline-status'
 import { People } from './components/people'
 import { Production } from './components/production'
-import { Construction, Queue } from './components/queues'
+import { Construction, QueueView } from './components/queues'
 import { Settings } from './components/settings'
 import { Stockpile } from './components/stockpile'
 import { Technology } from './components/technology'
@@ -20,7 +20,13 @@ import type { GameSession } from './session'
 import { assigned, automationUnlocked, comfortablePlaces } from './settlement'
 import { useSession } from './use-session'
 
-type View = 'settlement' | 'research' | 'people' | 'legacy' | 'settings'
+type View =
+  | 'settlement'
+  | 'research'
+  | 'queue'
+  | 'people'
+  | 'legacy'
+  | 'settings'
 
 function SettlementBrief({
   session,
@@ -108,6 +114,15 @@ export function App({ session }: { session: GameSession }) {
       working: Boolean(s.queues.research.active),
     },
     {
+      id: 'queue',
+      label: 'Queue',
+      mobileLabel: 'Queue',
+      available: s.researchUnlocked,
+      working: Boolean(
+        s.queues.research.active || s.queues.research.waiting.length,
+      ),
+    },
+    {
       id: 'people',
       label: 'People',
       mobileLabel: 'People',
@@ -177,7 +192,7 @@ export function App({ session }: { session: GameSession }) {
             )}
             <div
               className={automated ? 'settlement-layout' : 'opening'}
-              data-aside={view !== 'settings'}
+              data-aside={view !== 'settings' && view !== 'queue'}
             >
               <div className="view-panel">
                 <Tabs.Content
@@ -204,6 +219,13 @@ export function App({ session }: { session: GameSession }) {
                   hidden={view !== 'research'}
                 >
                   <Technology {...props} />
+                </Tabs.Content>
+                <Tabs.Content
+                  value="queue"
+                  forceMount
+                  hidden={view !== 'queue'}
+                >
+                  <QueueView {...props} />
                 </Tabs.Content>
                 {automated && (
                   <Tabs.Content
@@ -232,7 +254,10 @@ export function App({ session }: { session: GameSession }) {
                   <Settings {...props} />
                 </Tabs.Content>
               </div>
-              <aside className="camp-aside" hidden={view === 'settings'}>
+              <aside
+                className="camp-aside"
+                hidden={view === 'settings' || view === 'queue'}
+              >
                 {!automated && <People session={session} />}
                 {automated && (
                   <div className="project-plans">
@@ -240,9 +265,6 @@ export function App({ session }: { session: GameSession }) {
                       <Construction {...props} compact />
                       <Workforce {...props} compact />
                     </section>
-                    <div className="camp-research">
-                      <Queue {...props} id="research" />
-                    </div>
                   </div>
                 )}
               </aside>

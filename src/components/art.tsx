@@ -99,6 +99,7 @@ export function BuildingArt({ building }: { building: BuildingId }) {
 const symbols = {
   settlement: 'M3 10 12 3l9 7M5 9v12h5v-7h4v7h5V9',
   research: 'M12 6v15M3 4c4-1 7 0 9 2 2-2 5-3 9-2v15c-4-1-7 0-9 2-2-2-5-3-9-2Z',
+  queue: 'M4 5h16M4 12h16M4 19h16',
   people:
     'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75',
   legacy: 'M4 8h16v13H4ZM3 4h18v4H3ZM12 4v17M9 12h6',

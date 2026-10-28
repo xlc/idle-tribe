@@ -35,6 +35,30 @@
 .research-card[data-action-state="blocked"] .research-plan-status {
   color: var(--color-warning);
 }
+.research-card[data-action-state="running"] {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent);
+}
+.research-card[data-action-state="running"] .research-plan-status {
+  color: var(--color-primary);
+}
+.research-card .project-progress small {
+  color: var(--color-neutral);
+}
+.research-card .action-details .rt-Button {
+  justify-self: start;
+}
+.queue-view {
+  display: grid;
+  gap: 24px;
+}
+.queue-section {
+  min-width: 0;
+}
+.queue-section h2 {
+  font-size: 18px;
+  margin: 0 0 10px;
+}
 .research-effect {
   font-size: 13px;
   line-height: 1.45;

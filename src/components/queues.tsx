@@ -27,6 +27,20 @@ export function Construction({
   )
 }
 
+export function QueueView({ session, confirm }: ViewProps) {
+  return (
+    <div className="queue-view">
+      <section
+        className="queue-section"
+        aria-labelledby="research-queue-heading"
+      >
+        <h2 id="research-queue-heading">Research queue</h2>
+        <Queue session={session} confirm={confirm} id="research" />
+      </section>
+    </div>
+  )
+}
+
 export function Queue({
   session,
   confirm,
