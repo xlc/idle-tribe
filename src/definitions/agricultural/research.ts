@@ -5,7 +5,7 @@ export const research = {
   agriculture: {
     name: 'Agriculture',
     cost: { knowledge: 180, food: 500, wood: 200, stone: 100, tools: 30 },
-    minutes: 120,
+    seconds: 21600,
     effect:
       'Enter agricultural era; unlock Farm, Cottages and Granary. Building a Farm retires wild food gathering.',
     description: 'Convince dinner to put down roots.',
@@ -16,7 +16,7 @@ export const research = {
   irrigation: {
     name: 'Irrigation',
     cost: { knowledge: 1200, planks: 480, blocks: 360, tools: 120 },
-    minutes: 90,
+    seconds: 16200,
     effect: 'Unlock Irrigation works.',
     description: 'Teach water a route that includes the vegetables.',
     requires: { research: ['agriculture'] },
@@ -25,7 +25,7 @@ export const research = {
   'forestry-methods': {
     name: 'Forestry methods',
     cost: { knowledge: 900, wood: 600, planks: 360, tools: 120 },
-    minutes: 60,
+    seconds: 10800,
     effect: 'Unlock Timber yard conversion.',
     description: 'A little planning saves a lot of arguing with trees.',
     requires: { research: ['agriculture'] },
@@ -34,7 +34,7 @@ export const research = {
   'stone-lifting': {
     name: 'Stone lifting',
     cost: { knowledge: 900, stone: 600, blocks: 360, tools: 120 },
-    minutes: 60,
+    seconds: 10800,
     effect: 'Unlock Stone pit conversion.',
     description: 'The rock remains heavy, but fewer people have to mention it.',
     requires: { research: ['agriculture'] },
@@ -43,7 +43,7 @@ export const research = {
   'organized-work': {
     name: 'Organized work',
     cost: { knowledge: 1500, planks: 600, blocks: 480, tools: 180 },
-    minutes: 120,
+    seconds: 21600,
     effect: 'Unlock tier-2 equipment.',
     description: 'Everyone knows which end of the job they are holding.',
     requires: { research: ['irrigation'] },
@@ -52,7 +52,7 @@ export const research = {
   'inventory-keeping': {
     name: 'Inventory keeping',
     cost: { knowledge: 1200, planks: 480, blocks: 360 },
-    minutes: 90,
+    seconds: 16200,
     effect: 'All storage thresholds \u00d71.50; full-speed offline window +4h.',
     description:
       'We have counted the piles, and some of them were surprisingly large.',

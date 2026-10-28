@@ -12,7 +12,7 @@ export const research = {
       'quantum-components': 120,
       charge: 3000,
     },
-    minutes: 240,
+    seconds: 43200,
     effect:
       'Enter beyond quantum; unlock Causal laboratory and Temporal vault.',
     description: 'Cause and effect have been invited to a design meeting.',
@@ -28,7 +28,7 @@ export const research = {
       'causal-models': 30,
       'quantum-components': 60,
     },
-    minutes: 180,
+    seconds: 32400,
     effect:
       'Unlock Stellar foundry, a high-output metal route using exotic material and charge.',
     description:
@@ -39,7 +39,7 @@ export const research = {
     name: 'Causal archives',
     requires: { research: ['causal-engineering'] },
     cost: { knowledge: 7000, data: 1500, 'causal-models': 25, circuits: 200 },
-    minutes: 120,
+    seconds: 21600,
     effect:
       'Unlock Causal archive and Causal data center; full-speed offline window +4h.',
     description:
@@ -50,7 +50,7 @@ export const research = {
     name: 'Predictive fabrication',
     requires: { research: ['stellar-synthesis', 'causal-archives'] },
     cost: { knowledge: 10000, data: 2500, 'causal-models': 60, machinery: 250 },
-    minutes: 180,
+    seconds: 32400,
     effect:
       'Unlock Predictive machine shop; selected processing technology +20%.',
     description:
@@ -68,7 +68,7 @@ export const research = {
       'causal-models': 80,
       'quantum-components': 150,
     },
-    minutes: 240,
+    seconds: 43200,
     effect:
       'Unlock Causal synthesis lab: faster models with reduced recipe inputs. Continue expanding without a final reset requirement.',
     description:

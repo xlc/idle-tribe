@@ -5,7 +5,7 @@ export const research = {
   mechanization: {
     name: 'Mechanization',
     cost: { knowledge: 2500, planks: 600, blocks: 600, tools: 200 },
-    minutes: 120,
+    seconds: 21600,
     effect:
       'Enter the industrial era; unlock mines, foundries, machine shops, and industrial storage.',
     description: 'The heavy lifting has been offered to something with gears.',
@@ -17,7 +17,7 @@ export const research = {
     name: 'Powered workshops',
     requires: { research: ['mechanization'] },
     cost: { knowledge: 1200, metal: 100, machinery: 30 },
-    minutes: 90,
+    seconds: 16200,
     effect:
       'Unlock mechanical extraction, processing, and tool workshop forms.',
     description: 'The river has agreed to take the heavier shifts.',
@@ -27,7 +27,7 @@ export const research = {
     name: 'Precision instruments',
     requires: { research: ['mechanization'] },
     cost: { knowledge: 1400, metal: 80, machinery: 20, tools: 50 },
-    minutes: 90,
+    seconds: 16200,
     effect: 'Unlock Chronometry and a controlled investigation of time.',
     description: 'The measurements have become too precise to blame the ruler.',
     effects: {},
@@ -36,7 +36,7 @@ export const research = {
     name: 'Chronometry',
     requires: { research: ['precision-instruments'] },
     cost: { knowledge: 2000, metal: 120, machinery: 40 },
-    minutes: 120,
+    seconds: 21600,
     effect: 'Discover the mysterious time box and optional prestige.',
     description:
       'One instrument keeps recording tomorrow before anyone has ordered it.',
@@ -47,7 +47,7 @@ export const research = {
     name: 'Lean fabrication',
     requires: { research: ['forestry', 'mechanization'] },
     cost: { knowledge: 1800, metal: 80, machinery: 20 },
-    minutes: 90,
+    seconds: 16200,
     effect: 'Toolmaker, machinist, and electronics recipe inputs \u00d70.80.',
     description: 'Even the leftovers have been given something useful to do.',
     effects: {
@@ -62,7 +62,7 @@ export const research = {
     name: 'Structural systems',
     requires: { research: ['architecture', 'mechanization'] },
     cost: { knowledge: 1800, metal: 100, machinery: 30 },
-    minutes: 90,
+    seconds: 16200,
     effect: 'Housing contribution and all storage thresholds \u00d71.20.',
     description:
       'The foundations are prepared for a rather ambitious conversation.',

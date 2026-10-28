@@ -5,7 +5,7 @@ export const research = {
   'sharpened-stick': {
     name: 'Sharpened stick',
     cost: { wood: 6, food: 5 },
-    minutes: 1,
+    seconds: 8,
     effect: 'Food gathering output +25%; automation +2 percentage points.',
     description: 'A stick with a surprisingly convincing point.',
     requires: { research: [], discovery: 'wood' },
@@ -17,7 +17,7 @@ export const research = {
   shelters: {
     name: 'Shelters',
     cost: { wood: 15, food: 10 },
-    minutes: 2,
+    seconds: 16,
     effect:
       'Unlock housing, camps, basic storage, immigration; grant first Foraging camp.',
     description: 'The weather can conduct its business outside.',
@@ -28,7 +28,7 @@ export const research = {
   'stone-tools': {
     name: 'Stone tools',
     cost: { wood: 20, stone: 15, food: 10 },
-    minutes: 8,
+    seconds: 36,
     effect: 'Unlock Quarry.',
     description: 'Some rocks are better at convincing other rocks.',
     requires: { research: ['sharpened-stick'], discovery: 'stone' },
@@ -37,7 +37,7 @@ export const research = {
   carpentry: {
     name: 'Carpentry',
     cost: { wood: 60, stone: 30 },
-    minutes: 10,
+    seconds: 48,
     effect: 'Unlock Sawmill and Storehouse.',
     description: 'Wood behaves better once you explain the corners.',
     requires: { research: ['shelters', 'stone-tools'] },
@@ -46,7 +46,7 @@ export const research = {
   masonry: {
     name: 'Masonry',
     cost: { wood: 40, stone: 80 },
-    minutes: 15,
+    seconds: 72,
     effect: "Unlock Stoneworks and Builders' lodge; organized crew size +1.",
     description: 'The trick is putting the heavy bit on another heavy bit.',
     requires: { research: ['stone-tools'] },
@@ -55,7 +55,7 @@ export const research = {
   'oral-tradition': {
     name: 'Oral tradition',
     cost: { food: 100, planks: 20 },
-    minutes: 30,
+    seconds: 144,
     effect:
       'Unlock Learning circle and Records shelter; automated gathering XP +2 percentage points.',
     description:
@@ -66,7 +66,7 @@ export const research = {
   toolmaking: {
     name: 'Toolmaking',
     cost: { planks: 50, blocks: 30 },
-    minutes: 30,
+    seconds: 144,
     effect: 'Unlock Tool workshop and tier-1 equipment.',
     description: "Perhaps the next difficult job could be the tool's problem.",
     requires: { research: ['carpentry', 'masonry'] },
@@ -75,7 +75,7 @@ export const research = {
   preparedness: {
     name: 'Preparedness',
     cost: { knowledge: 40, tools: 20, food: 150 },
-    minutes: 60,
+    seconds: 240,
     effect: 'Unlock Supply post.',
     description:
       "Tomorrow's problems have been asked to arrive by appointment.",
@@ -85,7 +85,7 @@ export const research = {
   'seasonal-knowledge': {
     name: 'Seasonal knowledge',
     cost: { knowledge: 120, planks: 50, blocks: 30, tools: 10 },
-    minutes: 90,
+    seconds: 360,
     effect: 'Food gathering automation +3 percentage points.',
     description: 'The bushes have a schedule, and we are finally catching on.',
     requires: { research: ['oral-tradition', 'toolmaking'] },

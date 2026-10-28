@@ -12,7 +12,7 @@ export const research = {
       circuits: 300,
       charge: 2000,
     },
-    minutes: 240,
+    seconds: 43200,
     effect:
       'Enter the quantum era; unlock Quantum laboratory, fabricator, vault, and archives.',
     description:
@@ -29,7 +29,7 @@ export const research = {
       'quantum-components': 30,
       machinery: 100,
     },
-    minutes: 120,
+    seconds: 21600,
     effect:
       'Quantum component production technology +25%; unlock Quantum habitat.',
     description:
@@ -40,7 +40,7 @@ export const research = {
     name: 'Closed-cycle fabrication',
     requires: { research: ['lean-fabrication', 'quantum-engineering'] },
     cost: { knowledge: 6000, data: 1000, 'quantum-components': 40 },
-    minutes: 120,
+    seconds: 21600,
     effect:
       'Toolmaker, machinist, and electronics recipe inputs multiply by a further 0.85.',
     description:
@@ -57,7 +57,7 @@ export const research = {
     name: 'Resilient megastructures',
     requires: { research: ['structural-systems', 'quantum-engineering'] },
     cost: { knowledge: 6000, data: 1000, 'quantum-components': 40 },
-    minutes: 120,
+    seconds: 21600,
     effect:
       'Housing contribution and all storage thresholds multiply by a further 1.25.',
     description:

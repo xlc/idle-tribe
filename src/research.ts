@@ -52,7 +52,7 @@ export function quoteProject(
       : def.cost
     return {
       cost,
-      total: (def.minutes * 60) / prestigeMultiplier(state),
+      total: def.seconds / prestigeMultiplier(state),
       blocker:
         (otherBranchPlanned ? 'Other path planned' : '') ||
         requirementBlocker(state, def.requires) ||

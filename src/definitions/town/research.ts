@@ -5,7 +5,7 @@ export const research = {
   writing: {
     name: 'Writing',
     cost: { knowledge: 3600, planks: 1200, blocks: 900, tools: 360 },
-    minutes: 180,
+    seconds: 32400,
     effect:
       'Enter town era; unlock School, Library, Meeting place, happiness, and first specialization.',
     description:
@@ -26,7 +26,7 @@ export const research = {
   'town-planning': {
     name: 'Town planning',
     cost: { knowledge: 500, planks: 150, blocks: 150, tools: 40 },
-    minutes: 60,
+    seconds: 10800,
     effect: 'Unlock Town houses and Public well.',
     description:
       'Someone should probably decide where all these neighbors are going.',
@@ -36,7 +36,7 @@ export const research = {
   forestry: {
     name: 'Forestry',
     cost: { knowledge: 400, planks: 150, tools: 40 },
-    minutes: 45,
+    seconds: 8100,
     effect:
       'Plank workplace rates ×1.40; wood gathering automation +5 percentage points.',
     description: 'A proud tradition of knowing exactly what to do with a tree.',
@@ -51,7 +51,7 @@ export const research = {
   stonecraft: {
     name: 'Stonecraft',
     cost: { knowledge: 400, blocks: 150, tools: 40 },
-    minutes: 45,
+    seconds: 8100,
     effect:
       'Block workplace rates ×1.40; stone gathering automation +5 percentage points.',
     description: 'Our ancestors saw rocks; we see a promising career.',
@@ -66,7 +66,7 @@ export const research = {
   joinery: {
     name: 'Precision joinery',
     cost: { knowledge: 800, planks: 300, blocks: 150, tools: 80 },
-    minutes: 90,
+    seconds: 16200,
     effect: 'Plank recipes use 1 less wood; block recipes use 1 less stone.',
     description:
       'Measure carefully enough and even the offcuts start pulling their weight.',
@@ -76,7 +76,7 @@ export const research = {
   architecture: {
     name: 'Architecture',
     cost: { knowledge: 800, planks: 150, blocks: 300, tools: 80 },
-    minutes: 90,
+    seconds: 16200,
     effect:
       'Housing contribution +25%; block production technology bonus +50%.',
     description:
@@ -87,7 +87,7 @@ export const research = {
   'civic-engineering': {
     name: 'Civic engineering',
     cost: { knowledge: 1200, planks: 400, blocks: 400, tools: 100 },
-    minutes: 120,
+    seconds: 21600,
     effect: 'Unlock Great Hall and tier-3 equipment.',
     description: "A whole town's ambition now comes with a set of plans.",
     requires: {
@@ -99,7 +99,7 @@ export const research = {
   'record-keeping': {
     name: 'Record keeping',
     cost: { knowledge: 600, planks: 200, blocks: 100 },
-    minutes: 60,
+    seconds: 10800,
     effect:
       'Knowledge threshold \u00d71.50 in addition to other storage effects; full-speed offline window +4h.',
     description:
@@ -110,7 +110,7 @@ export const research = {
   'ceramic-craft': {
     name: 'Ceramic craft',
     cost: { knowledge: 900, planks: 260, blocks: 220, tools: 70 },
-    minutes: 75,
+    seconds: 13500,
     effect: 'Unlock Kiln and ceramics production.',
     description:
       'A hot kiln turns careful shapes into vessels that can outlast a season.',
@@ -126,7 +126,7 @@ export const research = {
       tools: 90,
       ceramics: 80,
     },
-    minutes: 90,
+    seconds: 16200,
     effect: 'Unlock Bathhouse for amenities and leisure.',
     description:
       'A town is easier to share when its water and washing have a plan.',
@@ -139,7 +139,7 @@ export const research = {
   'early-astronomy': {
     name: 'Early astronomy',
     cost: { knowledge: 300, planks: 100, blocks: 50 },
-    minutes: 90,
+    seconds: 16200,
     effect: 'Unlock Observatory.',
     description: 'The sky has been showing off for ages; time to take notes.',
     requires: { research: ['writing'], perk: 'early-astronomy' },

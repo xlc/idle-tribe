@@ -10,7 +10,7 @@ import {
 } from './clock'
 import { RESOURCES } from './ids'
 import { parseSave } from './persistence'
-import { enqueue } from './research'
+import { enqueue, quoteProject } from './research'
 import { createSession } from './session'
 import { createDefaultState } from './state'
 import { people, settlement } from './test-helpers'
@@ -76,17 +76,22 @@ test('manual work pauses while hidden; research continues; duplicate restoration
     enqueue(s, { kind: 'research', id: 'record-keeping' })
   }, hour)
   session.setVisible(false, hour + 500)
+  const researchDuration = quoteProject(s, {
+    kind: 'research',
+    id: 'record-keeping',
+  }).total
+  const completionAt = hour + 500 + (researchDuration + 1) * 1000
   const manual = s.manual?.progress
   expect(manual).toBeGreaterThan(0)
   expect(manual).toBeLessThan(1)
-  session.tick(3 * hour)
+  session.tick(completionAt)
   expect(s.manual?.progress).toBe(manual)
   expect(s.research['record-keeping']).toBe(true)
-  session.setVisible(true, 3 * hour)
+  session.setVisible(true, completionAt)
   const before = { ...s.resources }
-  session.setVisible(true, 3 * hour)
+  session.setVisible(true, completionAt)
   expect(s.resources).toEqual(before)
-  session.tick(3 * hour + 30000)
+  session.tick(completionAt + 30000)
   expect(s.manual).toBeNull()
 })
 

@@ -293,7 +293,9 @@ for (const branch of ['forestry', 'stonecraft'] as const)
     people(s, 'forager')
     const game = createGame(s)
     expect(game.enqueue({ kind: 'research', id: 'mechanization' })).toBe(true)
-    game.advanceTime(7200)
+    game.advanceTime(
+      quoteProject(s, { kind: 'research', id: 'mechanization' }).total,
+    )
     expect(s.research.mechanization).toBe(true)
     expect(s.era).toBe(3)
     expect(s.facilities['great-hall'].level).toBe(0)
@@ -310,7 +312,9 @@ test('queued branches can be cancelled before choosing the other path', () => {
   if (!entry) throw new Error('No choice')
   cancelProject(s, 'research', entry.sequence)
   expect(enqueue(s, { kind: 'research', id: 'stonecraft' })).toBe(true)
-  advanceTime(s, 2700)
+  const active = s.queues.research.waiting[0]
+  if (!active) throw new Error('No replacement research')
+  advanceTime(s, quoteProject(s, active.project).total)
   expect(s).toMatchObject({ specialization: 'stonecraft' })
 })
 
@@ -456,7 +460,9 @@ test('queued Writing follows a paid farm investment and retains its research cos
   expect(s.queues.research.active?.paid.knowledge).toBe(
     before - s.resources.knowledge,
   )
-  advanceTime(s, 180 * 60)
+  const active = s.queues.research.active
+  if (!active) throw new Error('Writing did not start')
+  advanceTime(s, active.total)
   expect(s.research.writing).toBe(true)
 })
 

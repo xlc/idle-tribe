@@ -125,9 +125,12 @@ test('queue snapshots retain their original payment and progress after simulatio
   game.enqueue({ kind: 'research', id: 'sharpened-stick' })
   game.advanceTime(0)
   const before = snapshot(s)
-  game.advanceTime(30)
+  const active = s.queues.research.active
+  if (!active) throw new Error('Research did not start')
+  const total = active.total
+  game.advanceTime(total / 2)
   expect(before.queues.research?.active?.progress).toBe(0)
-  expect(s.queues.research.active?.progress).toBe(30)
+  expect(s.queues.research.active?.progress).toBeCloseTo(total / 2)
 })
 
 test('fixed-horizon comparisons continue after a milestone already present in the checkpoint', () => {

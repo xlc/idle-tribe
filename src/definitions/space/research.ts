@@ -12,7 +12,7 @@ export const research = {
       circuits: 200,
       charge: 1500,
     },
-    minutes: 180,
+    seconds: 32400,
     effect:
       'Enter space; unlock Launch complex and Cargo depot. Build a Launch complex for orbital extraction, Habitat and Deep-space array.',
     description:
@@ -27,7 +27,7 @@ export const research = {
       facilities: { 'launch-complex': 1 },
     },
     cost: { knowledge: 4000, data: 600, 'exotic-material': 40, circuits: 100 },
-    minutes: 120,
+    seconds: 21600,
     effect: 'Unlock Orbital mining network; exotic extraction technology +20%.',
     description:
       'The distant rocks have been asked to describe their qualifications.',
@@ -42,7 +42,7 @@ export const research = {
       'exotic-material': 30,
       machinery: 60,
     },
-    minutes: 90,
+    seconds: 16200,
     effect: 'Unlock Solar array: double base charge rate with no wood input.',
     description: 'The largest furnace nearby has declined to send a fuel bill.',
     effects: {},

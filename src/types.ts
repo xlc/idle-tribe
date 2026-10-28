@@ -113,7 +113,7 @@ export interface ResearchDefinition {
   description: string
   requires: Requirements
   cost: Cost
-  minutes: number
+  seconds: number
   effect: string
   effects: Effects
   branch?: Specialization
