@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import * as Toast from '@radix-ui/react-toast'
+import { useRef, useState } from 'react'
 import { type AwayProgress, awayHighlight } from '../clock'
 import { MIN_VISIBLE_RESOURCE_CHANGE } from '../constants'
 import { OCCUPATIONS, RESOURCE_INFO } from '../definitions'
@@ -38,74 +39,51 @@ export function SessionNotificationToast({
   notification: SessionNotification
   onDismiss: () => void
 }) {
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const dismiss = useRef(onDismiss)
-  const timerStarted = useRef<number | null>(null)
-  const remaining = useRef(20_000)
   const dialog = useRef<HTMLDialogElement>(null)
-  dismiss.current = onDismiss
-  useEffect(() => {
-    if (dialogOpen) return
-    if (remaining.current <= 0) {
-      dismiss.current()
-      return
-    }
-    timerStarted.current = Date.now()
-    const timer = window.setTimeout(() => dismiss.current(), remaining.current)
-    return () => {
-      window.clearTimeout(timer)
-      if (timerStarted.current !== null) {
-        remaining.current = Math.max(
-          0,
-          remaining.current - (Date.now() - timerStarted.current),
-        )
-        timerStarted.current = null
-      }
-    }
-  }, [dialogOpen])
 
   const report = notification.report
   const away = notification.kind === 'away' && report
   return (
-    <div
+    <Toast.Root
       className="event-toast panel panel-raised"
-      role="status"
-      aria-label={away ? 'Away report' : 'Game notification'}
+      duration={20_000}
+      onOpenChange={(open) => {
+        if (!open) onDismiss()
+      }}
     >
+      <span className="event-toast-mark" aria-hidden="true">
+        {away ? '↺' : '✦'}
+      </span>
       {away ? (
+        <Toast.Description asChild>
+          <button
+            type="button"
+            className="event-toast-body"
+            onClick={() => dialog.current?.showModal()}
+          >
+            <strong>Welcome back</strong>
+            <span className="event-toast-counts">
+              Away for {formatDuration(report.wallSeconds)} ·{' '}
+              {awayHighlight(report)}
+            </span>
+          </button>
+        </Toast.Description>
+      ) : (
+        <Toast.Description className="event-toast-body event-toast-message">
+          <strong>{notification.text}</strong>
+        </Toast.Description>
+      )}
+      <Toast.Close asChild>
         <button
           type="button"
-          className="event-toast-body"
-          onClick={() => {
-            dialog.current?.showModal()
-            setDialogOpen(true)
-          }}
+          className="event-toast-close"
+          aria-label="Dismiss notification"
         >
-          <strong>Welcome back</strong>
-          <span className="event-toast-counts">
-            Away for {formatDuration(report.wallSeconds)} ·{' '}
-            {awayHighlight(report)}
-          </span>
+          ×
         </button>
-      ) : (
-        <div className="event-toast-body event-toast-message">
-          <strong>{notification.text}</strong>
-        </div>
-      )}
-      <button
-        type="button"
-        className="event-toast-close"
-        aria-label="Dismiss notification"
-        onClick={onDismiss}
-      >
-        ×
-      </button>
+      </Toast.Close>
       {away && (
-        <dialog
-          ref={dialog}
-          className="modal away-modal panel"
-          onClose={() => setDialogOpen(false)}
-        >
+        <dialog ref={dialog} className="modal away-modal panel">
           <div className="modal-box">
             <AwayReport session={session} report={report} />
             <div className="modal-action">
@@ -114,7 +92,7 @@ export function SessionNotificationToast({
           </div>
         </dialog>
       )}
-    </div>
+    </Toast.Root>
   )
 }
 

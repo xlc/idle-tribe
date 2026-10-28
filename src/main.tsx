@@ -1,4 +1,5 @@
 import './styles.css'
+import * as Toast from '@radix-ui/react-toast'
 import { Theme } from '@radix-ui/themes'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -24,7 +25,10 @@ createRoot(container).render(
       radius="small"
       hasBackground={false}
     >
-      <App session={session} />
+      <Toast.Provider duration={20_000} label="Game notification">
+        <App session={session} />
+        <Toast.Viewport className="event-toast-viewport" />
+      </Toast.Provider>
     </Theme>
   </StrictMode>,
 )
