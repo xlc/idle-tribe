@@ -19,6 +19,7 @@ import { ResourceArt } from './art'
 import {
   ActionCountdown,
   ActionProgress,
+  Button,
   Costs,
   DisclosureToggle,
 } from './common'
@@ -149,24 +150,17 @@ export function ActionCard({
           <button
             type="button"
             className="manual-trigger"
-            aria-label={running ? `Stop ${def.name.toLowerCase()}` : def.name}
+            aria-label={def.name}
             disabled={
-              !running &&
-              (availability.kind !== 'manual' || availability.state !== 'ready')
+              running ||
+              availability.kind !== 'manual' ||
+              availability.state !== 'ready'
             }
-            onClick={() =>
-              session.change(() =>
-                running
-                  ? session.game.cancelAction()
-                  : session.game.startAction(id),
-              )
-            }
+            onClick={() => session.change(() => session.game.startAction(id))}
           >
             {icon}
             <span className="action-copy">
-              <strong className="action-name">
-                {running ? `Stop · ${def.name}` : def.name}
-              </strong>
+              <strong className="action-name">{def.name}</strong>
               <span className="action-yield">
                 {def.resource
                   ? `+${formatResource(actionYield(s, id))} ${def.resource} · `
@@ -221,6 +215,15 @@ export function ActionCard({
           <p className="action-description">{def.description}</p>
           <p className="action-skill-rules">{def.levelEffect}</p>
           {!def.resource && <Costs session={session} cost={def.cost} />}
+          {running && (
+            <Button
+              className="action-stop"
+              color="amber"
+              onClick={() => session.change(() => session.game.cancelAction())}
+            >
+              Stop {def.name}
+            </Button>
+          )}
           {def.kind === 'exploration' && (
             <p className="action-hint">{exploreHint(skill.level)}</p>
           )}

@@ -40,6 +40,22 @@ test('action progress animates between ticks and resumes from paused work', asyn
     expect(current - previous).toBeLessThan(0.3)
     previous = current
   }
+  await page
+    .getByRole('button', { name: 'Gather food details', exact: true })
+    .click()
+  const stop = page.getByRole('button', {
+    name: 'Stop Gather food',
+    exact: true,
+  })
+  await expect(stop).toBeVisible()
+  await expect(gather).toBeDisabled()
+  await stop.click()
+  await expect(gather).toBeEnabled()
+  expect(await progress()).toBe(0)
+  await page
+    .getByRole('button', { name: 'Gather food details', exact: true })
+    .click()
+  await gather.click()
   await page.evaluate(() => window.dispatchEvent(new Event('pagehide')))
   const paused = await progress()
   await page.clock.runFor(2000)

@@ -29,8 +29,6 @@ Every villager has a permanent occupation aptitude and earns per-occupation expe
 
 Everyone, including the founder, starts with a generated given name and family name. Names persist through reloads; new arrivals avoid existing full names. The two-pool naming approach takes inspiration from [Kittens Game](https://github.com/nuclear-unicorn/kittensgame/blob/master/js/village.js), with a separate name pool for this settlement.
 
-See the [design decisions](docs/GAME_DESIGN.md) and [villager expertise decisions](docs/VILLAGER_EXPERTISE.md) for details, and the [visual guide](docs/VISUAL_GUIDE.md) for the interface.
-
 ## Saves and offline progress
 
 The game autosaves to your browser's local storage. Incompatible prototype saves reset; there are no migrations or save versions.

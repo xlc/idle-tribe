@@ -2,6 +2,7 @@ import { expect, test } from 'bun:test'
 import {
   actionAvailability,
   applyExploreReward,
+  exploreExpectedRewards,
   resolveEncounter,
   startAction,
 } from './actions'
@@ -150,4 +151,14 @@ test('automated encounters use their declared default and pause while a report i
   expect(resolveEncounter(state, 0)).toBe(true)
   advanceTime(state, 0)
   expect(state.actionProgress.explore).toBeLessThan(1)
+})
+
+test('exploration rates include automated encounter resources', () => {
+  const state = encounterState()
+  for (const id of EXPEDITION_ENCOUNTER_IDS.slice(1))
+    state.completedEncounters[id] = true
+
+  const expected = exploreExpectedRewards(state)
+  expect(expected.wood).toBeCloseTo(0.27)
+  expect(expected.stone).toBeCloseTo(0.22)
 })

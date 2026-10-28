@@ -87,6 +87,9 @@
 .action-details .costs {
   margin: 0;
 }
+.action-stop {
+  justify-self: start;
+}
 .manual-trigger {
   position: relative;
   overflow: hidden;

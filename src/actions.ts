@@ -346,6 +346,23 @@ function encounterChance(state: GameState) {
     : 0
 }
 
+function encounterExpectedResources(state: GameState, scale: number): Cost {
+  const encounters = eligibleEncounters(state),
+    total = encounters.reduce((sum, encounter) => sum + encounter.weight, 0),
+    result: Cost = {}
+  if (!total) return result
+  for (const encounter of encounters) {
+    const effect = encounter.options[encounter.automatedOption].effect
+    if (effect.kind !== 'resources') continue
+    const chance = (encounterChance(state) * encounter.weight) / total
+    for (const resource of RESOURCES)
+      result[resource] =
+        (result[resource] ?? 0) +
+        (effect.amount[resource] ?? 0) * chance * scale
+  }
+  return result
+}
+
 function applyEncounterEffect(
   state: GameState,
   id: ExpeditionEncounterId,
@@ -464,6 +481,10 @@ export function exploreExpectedRewards(state: GameState): Cost {
     result[find.resource] = (chance / pool.length) * find.amount(level) * scale
   if (level >= 5 && state.researchUnlocked)
     result.knowledge = (result.knowledge ?? 0) + 0.1 * scale
+  const encounterResources = encounterExpectedResources(state, scale)
+  for (const resource of RESOURCES)
+    result[resource] =
+      (result[resource] ?? 0) + (encounterResources[resource] ?? 0)
   return result
 }
 
