@@ -1,4 +1,5 @@
 import { expect, test } from 'bun:test'
+import { RESEARCH } from './definitions'
 import { parseSave } from './persistence'
 import {
   completeProject,
@@ -82,6 +83,24 @@ test('repeatable effects do not repeat one-time offline bonuses', () => {
   const effects = researchEffects(state, 'record-keeping')
   expect(effects.offlineHours).toBe(4)
   expect(effects.resourceStorage?.knowledge).toBeCloseTo(1.5 * 1.08 ** 2)
+})
+
+test('repeatable recipe reductions accumulate per additional level', () => {
+  const upgrade = RESEARCH['inventory-keeping'].upgrade
+  if (!upgrade) throw new Error('Inventory keeping should be upgradeable')
+  const original = upgrade.effects
+  upgrade.effects = { ...original, recipeReduction: { sawyer: { wood: 0.5 } } }
+  try {
+    const state = createDefaultState()
+    state.research['inventory-keeping'] = 3
+    expect(researchEffects(state, 'inventory-keeping').recipeReduction).toEqual(
+      {
+        sawyer: { wood: 1 },
+      },
+    )
+  } finally {
+    upgrade.effects = original
+  }
 })
 
 function maximumProject(id: 'inventory-keeping', target: number) {

@@ -1,6 +1,6 @@
 import { RESEARCH } from './definitions'
 import type { ActionId, JobId, ResourceId } from './ids'
-import type { Effects, GameState } from './types'
+import type { Cost, Effects, GameState } from './types'
 
 type NumericMap<K extends string> = Partial<Record<K, number>>
 
@@ -25,6 +25,24 @@ function multiplyMap<K extends string>(
   if (upgrade)
     for (const key of Object.keys(upgrade) as K[])
       result[key] = (result[key] ?? 1) * (upgrade[key] ?? 1) ** levels
+  return result
+}
+
+function addCostMap(
+  base: Partial<Record<JobId, Cost>> | undefined,
+  upgrade: Partial<Record<JobId, Cost>> | undefined,
+  levels: number,
+) {
+  const result: Partial<Record<JobId, Cost>> = { ...base }
+  if (upgrade)
+    for (const job of Object.keys(upgrade) as JobId[]) {
+      const increments = upgrade[job] ?? {},
+        cost = { ...(base?.[job] ?? {}) }
+      for (const resource of Object.keys(increments) as ResourceId[])
+        cost[resource] =
+          (cost[resource] ?? 0) + (increments[resource] ?? 0) * levels
+      result[job] = cost
+    }
   return result
 }
 
@@ -53,6 +71,12 @@ export function researchEffects(
   const result: Effects = { ...base }
   if (base.jobBonus || extra.jobBonus)
     result.jobBonus = addMap<JobId>(base.jobBonus, extra.jobBonus, extraLevels)
+  if (base.recipeReduction || extra.recipeReduction)
+    result.recipeReduction = addCostMap(
+      base.recipeReduction,
+      extra.recipeReduction,
+      extraLevels,
+    )
   if (base.specialization || extra.specialization)
     result.specialization = multiplyMap<JobId>(
       base.specialization,
