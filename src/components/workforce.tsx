@@ -60,8 +60,8 @@ export function Workforce({ session }: { session: GameSession }) {
               `Next arrival · ${Math.ceil((1 - s.arrivalProgress) * arrival.interval)}m`}
           </small>
           <small className="arrival-supply">
-            Food {formatResource(arrival.foodOutput)} /{' '}
-            {formatResource(arrival.required)} per minute
+            Food {formatResource(arrival.foodOutput / 60)} /{' '}
+            {formatResource(arrival.required / 60)} per second
           </small>
           <progress className="progress" value={s.arrivalProgress} max={1} />
         </div>
@@ -76,7 +76,7 @@ export function Builders({ session }: { session: GameSession }) {
     <section className="builders">
       <div>
         <h3>Builders</h3>
-        <p>{formatResource(speed)} work/min</p>
+        <p>{formatResource(speed / 60)} work/s</p>
       </div>
       <WorkerControls session={session} job="builder" />
     </section>

@@ -123,8 +123,8 @@ export function ActionCard({
               <strong className="action-name">{def.name}</strong>
               <span className="action-yield">
                 {def.resource
-                  ? `+${formatResource((working ? actionOutputRate(s, id) : 0) * 60)} ${def.resource}/min · automation ${Math.round(automationFactor(s, id) * 100)}%`
-                  : `${formatResource(working ? (1 / duration) * 60 : 0)} explores/min`}
+                  ? `+${formatResource(working ? actionOutputRate(s, id) : 0)} ${def.resource}/s · automation ${Math.round(automationFactor(s, id) * 100)}%`
+                  : `${formatResource(working ? 1 / duration : 0)} explores/s`}
               </span>
               <ActionSkill
                 level={skill.level}

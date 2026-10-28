@@ -31,7 +31,7 @@ export function Stockpile({ session }: { session: GameSession }) {
     const pressure = storageMultiplier(s, r),
       flow = flows[r],
       net = flow.production - flow.inputs - flow.meals,
-      rate = Math.abs(net) < MIN_VISIBLE_RESOURCE_CHANGE ? 0 : net
+      rate = Math.abs(net) < MIN_VISIBLE_RESOURCE_CHANGE ? 0 : net / 60
     return (
       <section
         className="resource"
@@ -50,7 +50,7 @@ export function Stockpile({ session }: { session: GameSession }) {
             data-zero={rate === 0}
           >
             {rate > 0 ? '+' : ''}
-            {formatCompactResource(rate)}/min
+            {formatCompactResource(rate)}/s
           </span>
           <small className="storage-effect" data-idle={pressure >= 1}>
             Storage ×{formatResource(pressure)}

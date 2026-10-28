@@ -77,14 +77,14 @@ export function Facility({
   const production =
     action && actionDefinition
       ? actionDefinition.resource
-        ? actionOutputRate(s, action) * 60
+        ? actionOutputRate(s, action)
         : actionJobActive(s, action)
-          ? 60 / actionCompletionDuration(s, action)
+          ? 1 / actionCompletionDuration(s, action)
           : 0
       : job
         ? s.people
             .filter((p) => p.job === job)
-            .reduce((sum, p) => sum + workerRate(s, p), 0)
+            .reduce((sum, p) => sum + workerRate(s, p) / 60, 0)
         : 0
   const input = actionDefinition?.cost ?? (job ? jobInput(s, job) : {}),
     output = job && isProductionJob(job) ? JOBS[job].output : null
@@ -123,7 +123,7 @@ export function Facility({
     )
       .map(
         (r) =>
-          `${RESOURCE_INFO[r].name} net ${formatResource(beforeRates[r])} → ${formatResource(afterRates[r])}/min`,
+          `${RESOURCE_INFO[r].name} net ${formatResource(beforeRates[r] / 60)} → ${formatResource(afterRates[r] / 60)}/s`,
       )
       .join('; ')
     const housing =
@@ -132,7 +132,7 @@ export function Facility({
         : ''
     confirm(
       `Remove ${form.name}?`,
-      `${housing}${losses.join('; ')}${losses.length ? '. ' : ''}${job ? `${n} workers become unassigned;${output ? ` ${formatResource(production)} ${RESOURCE_INFO[output].name.toLowerCase()}/min production removed. ` : ' '}` : ''}${rateChanges ? `${rateChanges}. ` : ''}Levels and equipment are lost with no refund. People and stockpiles remain.`,
+      `${housing}${losses.join('; ')}${losses.length ? '. ' : ''}${job ? `${n} workers become unassigned;${output ? ` ${formatResource(production)} ${RESOURCE_INFO[output].name.toLowerCase()}/s production removed. ` : ' '}` : ''}${rateChanges ? `${rateChanges}. ` : ''}Levels and equipment are lost with no refund. People and stockpiles remain.`,
       () => session.game.remove(id),
     )
   }
@@ -181,7 +181,7 @@ export function Facility({
               <div className="building-recipe">
                 <span className="recipe-output" data-zero={production === 0}>
                   +{formatResource(production)}{' '}
-                  {actionDefinition.resource ?? 'explores'}/min
+                  {actionDefinition.resource ?? 'explores'}/s
                 </span>
                 <span className="recipe-input">
                   {n}/{actionSlots(s, action)} slots · automation{' '}
@@ -193,12 +193,12 @@ export function Facility({
                 <span className="recipe-output" data-zero={production === 0}>
                   +{formatResource(production)}{' '}
                   {output ? RESOURCE_INFO[output].name.toLowerCase() : 'work'}
-                  /min
+                  /s
                 </span>
                 {RESOURCES.filter((r) => input[r]).map((r) => (
                   <span className="recipe-input" key={r}>
                     −{formatResource(production * (input[r] ?? 0))}{' '}
-                    {RESOURCE_INFO[r].name.toLowerCase()}/min
+                    {RESOURCE_INFO[r].name.toLowerCase()}/s
                   </span>
                 ))}
               </div>
@@ -239,7 +239,9 @@ export function Facility({
         )}
         {(form.rate || (job && f.equipment) || quote.blocker) && (
           <p>
-            {form.rate ? `Base ${form.rate}/min per worker. ` : ''}
+            {form.rate
+              ? `Base ${formatResource(form.rate / 60)}/s per worker. `
+              : ''}
             {job && f.equipment
               ? action
                 ? `Tools +${formatResource(ACTION_BALANCE.automationPerEquipment * f.equipment * 100)}pp automation. `
@@ -277,7 +279,9 @@ export function Facility({
                     {v.name} · {v.description}
                   </p>
                   <p>
-                    {v.rate ? `${v.rate}/min per worker before bonuses. ` : ''}
+                    {v.rate
+                      ? `${formatResource(v.rate / 60)}/s per worker before bonuses. `
+                      : ''}
                     {v.housing ? `${v.housing} base places per level. ` : ''}
                     {v.storage
                       ? `Base storage: ${formatCost(v.storage)}. `

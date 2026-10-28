@@ -41,24 +41,24 @@
   }
   .stockpile {
     flex-wrap: nowrap;
-    padding: 10px 0;
+    padding: 6px 0;
     overflow-x: auto;
     touch-action: pan-x;
     overscroll-behavior: none;
     scrollbar-width: thin;
   }
   .resource {
-    min-width: 136px;
-    padding: 0 12px;
-    grid-template-columns: 36px auto;
-    gap: 0 8px;
+    min-width: 120px;
+    padding: 0 10px;
+    grid-template-columns: 30px auto;
+    gap: 0 7px;
   }
   .resource .painted-art {
-    width: 36px;
-    height: 36px;
+    width: 30px;
+    height: 30px;
   }
   .resource-value {
-    font-size: 18px;
+    font-size: 17px;
   }
   .settlement-layout {
     grid-template-columns: minmax(0, 1fr);

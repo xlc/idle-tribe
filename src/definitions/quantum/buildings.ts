@@ -63,7 +63,7 @@ export const buildings = {
         rate: 0.1,
       },
     ],
-    effect: 'Quantum workplace; 0.1 components/min per worker.',
+    effect: 'Quantum workplace; 0.002 components/s per worker.',
     job: 'quantum-engineer',
   },
 } satisfies Partial<Record<BuildingId, BuildingDefinition>>

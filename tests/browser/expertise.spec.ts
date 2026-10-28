@@ -86,7 +86,7 @@ for (const width of [1280, 390]) {
         rowan.getByRole('option', { name: 'Unassigned', exact: true }),
       ).toHaveJSProperty('selected', true)
       await page.getByLabel('Rowan occupation').selectOption('forager')
-      await expect(rowan).toContainText('food/min')
+      await expect(rowan).toContainText('food/s')
       await page.getByLabel('Rowan occupation').selectOption('idle')
       expect(required((await saved(page)).people[3]).job).toBe('idle')
       await page.getByLabel('Tavi occupation').selectOption('sawyer')

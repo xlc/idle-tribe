@@ -48,12 +48,12 @@ export function investmentOutcome(
       const def = ACTIONS[action]
       const rate = (s: GameState) =>
         def.resource
-          ? actionOutputRate(s, action) * 60
+          ? actionOutputRate(s, action)
           : actionJobActive(s, action)
-            ? 60 / actionCompletionDuration(s, action)
+            ? 1 / actionCompletionDuration(s, action)
             : 0
       const outcome = compare(
-        `${def.resource ? RESOURCE_INFO[def.resource].name : 'Explores'}/min`,
+        `${def.resource ? RESOURCE_INFO[def.resource].name : 'Explores'}/s`,
         rate(state),
         rate(after),
       )
@@ -68,19 +68,22 @@ export function investmentOutcome(
       const rate = (s: GameState) =>
         s.people
           .filter((p) => p.job === job)
-          .reduce((sum, p) => sum + workerRate(s, p, { ignoreInputs: true }), 0)
+          .reduce(
+            (sum, p) => sum + workerRate(s, p, { ignoreInputs: true }) / 60,
+            0,
+          )
       const outcome = compare(
-        `${RESOURCE_INFO[JOBS[job].output].name}/min`,
+        `${RESOURCE_INFO[JOBS[job].output].name}/s`,
         rate(state),
         rate(after),
       )
       if (outcome) return outcome
       const base = compare(
-        `${RESOURCE_INFO[JOBS[job].output].name}/min base`,
-        BUILDINGS[project.id].forms[state.facilities[project.id].form]?.rate ??
-          0,
-        BUILDINGS[project.id].forms[after.facilities[project.id].form]?.rate ??
-          0,
+        `${RESOURCE_INFO[JOBS[job].output].name}/s base`,
+        (BUILDINGS[project.id].forms[state.facilities[project.id].form]?.rate ??
+          0) / 60,
+        (BUILDINGS[project.id].forms[after.facilities[project.id].form]?.rate ??
+          0) / 60,
       )
       if (base) return base
       const tools = compare(
@@ -135,9 +138,9 @@ export function investmentOutcome(
     afterRates = resourceRates(after, { ignoreInputs: true })
   for (const r of RESOURCES) {
     const outcome = compare(
-      `${RESOURCE_INFO[r].name}/min`,
-      beforeRates[r],
-      afterRates[r],
+      `${RESOURCE_INFO[r].name}/s`,
+      beforeRates[r] / 60,
+      afterRates[r] / 60,
     )
     if (outcome) return outcome
   }

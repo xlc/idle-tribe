@@ -29,17 +29,17 @@ function output(state: GameState, person: Person) {
     const def = ACTIONS[action],
       workers = actionWorkers(state, action)
     return def.resource
-      ? `${formatResource(workers ? (actionOutputRate(state, action) / workers) * 60 : 0)} ${RESOURCE_INFO[def.resource].name.toLowerCase()}/min`
+      ? `${formatResource(workers ? actionOutputRate(state, action) / workers : 0)} ${RESOURCE_INFO[def.resource].name.toLowerCase()}/s`
       : `Works ${def.name.toLowerCase()}`
   }
   if (isProductionJob(job))
-    return `${formatResource(workerRate(state, person))} ${RESOURCE_INFO[JOBS[job].output].name.toLowerCase()}/min`
+    return `${formatResource(workerRate(state, person) / 60)} ${RESOURCE_INFO[JOBS[job].output].name.toLowerCase()}/s`
   const rate =
     workContribution(person, job) *
     staffingMultiplier(state, job) *
     happinessMultiplier(state) *
     prestigeMultiplier(state)
-  return `${formatResource(rate)} work/min`
+  return `${formatResource(rate / 60)} work/s`
 }
 
 export function People({ session }: { session: GameSession }) {

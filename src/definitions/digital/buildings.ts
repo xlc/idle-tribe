@@ -56,7 +56,7 @@ export const buildings = {
         rate: 0.5,
       },
     ],
-    effect: 'Electronics workplace; 0.5 circuits/min per worker.',
+    effect: 'Electronics workplace; 0.008 circuits/s per worker.',
     job: 'electronics-worker',
   },
   'computing-center': {
@@ -71,7 +71,7 @@ export const buildings = {
         rate: 1,
       },
     ],
-    effect: 'Analyst workplace; 1 data/min per worker.',
+    effect: 'Analyst workplace; 0.017 data/s per worker.',
     job: 'analyst',
   },
 } satisfies Partial<Record<BuildingId, BuildingDefinition>>

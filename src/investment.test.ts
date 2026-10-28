@@ -15,15 +15,15 @@ test('output previews compare the current workforce through expansions and equip
     target: 2,
     form: 0,
   })
-  expect(expansion?.label).toBe('Food/min')
-  expect(expansion?.before).toBeCloseTo(18)
-  expect(expansion?.after).toBeCloseTo(19.8)
+  expect(expansion?.label).toBe('Food/s')
+  expect(expansion?.before).toBeCloseTo(0.3)
+  expect(expansion?.after).toBeCloseTo(0.33)
   const equipment = investmentOutcome(s, {
     kind: 'equip',
     id: 'farm',
     target: 1,
   })
-  expect(equipment?.after).toBeCloseTo(21.6)
+  expect(equipment?.after).toBeCloseTo(0.36)
   expect(s).toEqual(original)
 })
 
@@ -61,7 +61,7 @@ test('investment comparisons account for preceding queued construction', () => {
     target: 3,
     form: 0,
   })
-  expect(outcome?.before).toBeCloseTo(19.8)
-  expect(outcome?.after).toBeCloseTo(21.6)
+  expect(outcome?.before).toBeCloseTo(0.33)
+  expect(outcome?.after).toBeCloseTo(0.36)
   expect(s.facilities.farm.level).toBe(1)
 })

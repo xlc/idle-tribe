@@ -26,7 +26,7 @@ export const buildings = {
         rate: 18,
       },
     ],
-    effect: 'Farmer workplace; 18 food/min per worker',
+    effect: 'Farmer workplace; 0.3 food/s per worker',
     job: 'farmer',
   },
 } satisfies Partial<Record<BuildingId, BuildingDefinition>>

@@ -83,7 +83,7 @@ for (const width of [320, 390, 1280]) {
 
       await expect(
         page.getByRole('region', { name: 'Food resource', exact: true }),
-      ).toContainText('-1/min')
+      ).toContainText('-0.017/s')
       await expect(
         page.getByRole('article', { name: founder, exact: true }),
       ).toContainText('Foraging aptitude · +5%')
@@ -182,7 +182,7 @@ for (const width of [320, 390, 1280]) {
       const before = await gather.boundingBox()
       await expect(
         page.getByRole('region', { name: 'Food resource', exact: true }),
-      ).toContainText('-0.1/min')
+      ).toContainText('-0.002/s')
       await page
         .getByRole('button', { name: 'Feast · 4 food', exact: true })
         .click()

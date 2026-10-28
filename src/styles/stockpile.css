@@ -1,23 +1,23 @@
 .stockpile-panel {
   min-width: 0;
-  max-height: 172px;
+  max-height: 112px;
   overflow-y: auto;
   flex-shrink: 0;
 }
 .stockpile {
   display: flex;
   flex-wrap: wrap;
-  padding: 12px 8px;
-  gap: 12px 0;
+  padding: 6px 4px;
+  gap: 6px 0;
 }
 .resource {
   display: grid;
-  grid-template-columns: 42px auto;
+  grid-template-columns: 32px auto;
   align-items: center;
-  gap: 0 10px;
-  padding: 0 14px;
+  gap: 0 7px;
+  padding: 0 10px;
   flex: 0 0 auto;
-  min-width: 138px;
+  min-width: 122px;
   border-right: 1px solid var(--color-base-300);
   font-variant-numeric: tabular-nums;
 }
@@ -26,16 +26,16 @@
 }
 .resource .painted-art {
   grid-row: 1 / 4;
-  width: 42px;
-  height: 42px;
+  width: 32px;
+  height: 32px;
 }
 .resource-name {
   white-space: nowrap;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--color-neutral);
 }
 .resource-value {
-  font-size: 20px;
+  font-size: 17px;
   line-height: 1.25;
   white-space: nowrap;
 }
@@ -44,7 +44,7 @@
   white-space: nowrap;
 }
 .resource-rate {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--color-success);
 }
 .resource-rate[data-negative="true"] {
@@ -57,7 +57,7 @@
 /* The line reserves space even when idle so appearing never shifts controls. */
 .storage-effect {
   display: block;
-  font-size: 10px;
+  font-size: 9px;
   color: var(--color-warning);
 }
 .storage-effect[data-idle="true"] {

@@ -14,7 +14,7 @@ export const buildings = {
         rate: 6,
       },
     ],
-    effect: 'Miner workplace; 6 ore/min per worker.',
+    effect: 'Miner workplace; 0.1 ore/s per worker.',
     job: 'miner',
   },
   foundry: {
