@@ -157,7 +157,7 @@ for (const width of [320, 390, 1280]) {
       ).toBe(true)
     })
 
-    test('poor health, meal portions and recovery stay visible through reload', async ({
+    test('fixed meals recover health through reload', async ({
       page,
     }, info) => {
       const state: GameState = createDefaultState()
@@ -183,24 +183,22 @@ for (const width of [320, 390, 1280]) {
       await expect(
         page.getByRole('region', { name: 'Food resource', exact: true }),
       ).toContainText('-0.002/s')
-      await page
-        .getByRole('button', { name: 'Feast · 4 food', exact: true })
-        .click()
+      await page.clock.runFor(120000)
       await expect(
         page.getByRole('img', {
-          name: `${founder} health: 5 of 5`,
+          name: `${founder} health: 3 of 5`,
           exact: true,
         }),
       ).toBeVisible()
       await expect(health).toHaveAttribute(
         'aria-label',
-        `${founder} health: 5 of 5`,
+        `${founder} health: 3 of 5`,
       )
       expect(await gather.boundingBox()).toEqual(before)
       await page.reload()
       await expect(health).toHaveAttribute(
         'aria-label',
-        `${founder} health: 5 of 5`,
+        `${founder} health: 3 of 5`,
       )
       await page.screenshot({ path: info.outputPath('recovered.png') })
     })

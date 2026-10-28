@@ -1,6 +1,5 @@
 import { expect, test } from 'bun:test'
 import { beginAbsence, effectiveOfflineSeconds, settleAbsence } from './clock'
-import { feast } from './food'
 import { RESOURCES, WORKING_JOB_IDS } from './ids'
 import { parseSave } from './persistence'
 import { resetRun } from './prestige'
@@ -102,21 +101,18 @@ test('crowding and storage pressure slow practice and expansion restores efficie
   expect(required(stock.people[0]).practice.farmer - before).toBeCloseTo(30, 8)
 })
 
-test('meals and a feast recover health and the normal learning rate', () => {
+test('injured villagers spend two food to recover one heart per minute', () => {
   const s = camp()
-  people(s, 'farmer')
+  people(s, 'idle')
   const p = required(s.people[0])
   p.health = 2
-  advanceTime(s, 30)
-  expect(p.practice.farmer).toBeCloseTo(15, 8)
-  expect(feast(s)).toBe(true)
-  advanceTime(s, 30)
-  expect(p.health).toBe(5)
-  expect(p.practice.farmer).toBeCloseTo(45, 8)
-  p.health = 3
+  s.resources.food = 4
+  advanceTime(s, 60)
+  expect(p.health).toBe(3)
+  expect(s.resources.food).toBe(2)
   advanceTime(s, 60)
   expect(p.health).toBe(4)
-  expect(p.practice.farmer).toBeCloseTo(93, 8)
+  expect(s.resources.food).toBe(0)
 })
 
 test('builders learn through active work, preserve practice on cancellation, and stop after completion', () => {

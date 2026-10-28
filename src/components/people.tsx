@@ -1,6 +1,5 @@
 import { actionOutputRate, actionWorkers } from '../actions'
 import { ACTIONS, JOBS, OCCUPATIONS, RESOURCE_INFO } from '../definitions'
-import { feastCost } from '../food'
 import { formatDuration, formatResource } from '../format'
 import { ACTION_IDS, isWorkingJob, JOB_IDS, WORKING_JOB_IDS } from '../ids'
 import { isProductionJob } from '../jobs'
@@ -19,7 +18,6 @@ import {
   workContribution,
 } from '../skills'
 import type { GameState, Person } from '../types'
-import { Button } from './common'
 
 function output(state: GameState, person: Person) {
   const job = person.job
@@ -44,7 +42,6 @@ function output(state: GameState, person: Person) {
 
 export function People({ session }: { session: GameSession }) {
   const s = session.game.state,
-    cost = feastCost(s),
     occupations = JOB_IDS.filter((job) => jobUnlocked(s, job))
   return (
     <section className="people" aria-label="People">
@@ -52,14 +49,6 @@ export function People({ session }: { session: GameSession }) {
         <h2>
           People <span>· {s.people.length}</span>
         </h2>
-        <Button
-          className="feast-button"
-          data-missing={cost > 0 && s.resources.food < cost}
-          disabled={!cost || s.resources.food < cost}
-          onClick={() => session.change(() => session.game.feast())}
-        >
-          {cost > 0 ? `Feast · ${cost} food` : 'Full health'}
-        </Button>
       </div>
       <div className="people-grid panel">
         {s.people.map((p, i) => (

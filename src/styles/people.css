@@ -9,10 +9,6 @@
   margin-bottom: 12px;
   align-items: center;
 }
-.feast-button[data-missing="true"]:disabled {
-  color: var(--color-warning);
-  opacity: 0.9;
-}
 .people-grid {
   max-height: 60svh;
   overflow-y: auto;

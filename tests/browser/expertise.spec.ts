@@ -140,7 +140,7 @@ for (const width of [1280, 390]) {
       expect(required(restored.people[2]).job).toBe('farmer')
     })
 
-    test('a feast restores work and the first expertise milestone appears through practice', async ({
+    test('fixed meals restore work and the first expertise milestone appears through practice', async ({
       page,
     }, info) => {
       // Pre-farm settlement so wild gathering is still the active food work.
@@ -159,9 +159,7 @@ for (const width of [1280, 390]) {
       await expect(
         row.getByRole('img', { name: 'Neri health: 2 of 5', exact: true }),
       ).toHaveText('♥♥♡♡♡')
-      await page
-        .getByRole('button', { name: 'Feast · 3 food', exact: true })
-        .click()
+      await page.clock.runFor(180000)
       await expect(
         row.getByRole('img', { name: 'Neri health: 5 of 5', exact: true }),
       ).toHaveText('♥♥♥♥♥')

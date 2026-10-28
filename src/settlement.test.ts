@@ -1,6 +1,5 @@
 import { expect, test } from 'bun:test'
 import { PERKS } from './definitions'
-import { feast, feastCost } from './food'
 import { BUILDING_IDS, PERK_IDS, RESOURCES } from './ids'
 import { createRecord } from './records'
 import { enqueue, nextExpansion } from './research'
@@ -145,22 +144,17 @@ test('food security guard accounts for scholarship at maximum happiness and igno
   expect(arrivalStatus(s).required).toBe(high.required)
 })
 
-test('hunger remains recoverable and feasts consume exactly missing health', () => {
+test('injured villagers recover one heart for two food when affordable', () => {
   const s = createDefaultState()
   complete(s, 'sharpened-stick', 'shelters')
   people(s, 'idle', 'idle')
   s.welcome = false
-  advanceTime(s, 300)
-  expect(s.people.map((p) => p.health)).toEqual([0, 0])
-  expect(feastCost(s)).toBe(10)
-  required(s.people[0]).job = 'forager'
-  advanceTime(s, 600)
-  expect(s.people.map((p) => p.health)).toEqual([5, 5])
   required(s.people[0]).health = 2
-  s.resources.food = 3
-  expect(feast(s)).toBe(true)
+  required(s.people[1]).health = 3
+  s.resources.food = 4
+  advanceTime(s, 60)
+  expect(s.people.map((p) => p.health)).toEqual([3, 4])
   expect(s.resources.food).toBe(0)
-  expect(s.people[0]?.health).toBe(5)
 })
 
 test('happiness begins at Writing and moves gradually after the shared meal', () => {

@@ -5,7 +5,6 @@ import {
   syncUnlocks,
 } from './actions'
 import { BUILDINGS } from './definitions'
-import { feast } from './food'
 import {
   cancelProject,
   enqueue,
@@ -60,7 +59,6 @@ export function createGame(state: GameState) {
     cancelAction: () => cancelManual(state),
     resolveEncounter: (option: EncounterOptionIndex) =>
       resolveEncounter(state, option),
-    feast: () => feast(state),
   }
 }
 export type Game = ReturnType<typeof createGame>
