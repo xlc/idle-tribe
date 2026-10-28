@@ -58,5 +58,13 @@ export const research = {
       'We have counted the piles, and some of them were surprisingly large.',
     requires: { research: ['agriculture'] },
     effects: { storage: 1.5, offlineHours: 4 },
+    upgrade: {
+      maxLevel: 3,
+      requires: { research: ['writing'] },
+      costMultiplier: 1.75,
+      timeMultiplier: 1.2,
+      effect: 'Storage thresholds ×1.08 per additional level.',
+      effects: { storage: 1.08 },
+    },
   },
 } satisfies Partial<Record<ResearchId, ResearchDefinition>>

@@ -9,7 +9,7 @@ import { people, settlement } from './test-helpers'
 test('current saves preserve active paid projects and queued ordering without refunding', () => {
   const s = settlement()
   people(s, 'builder', 'sawyer')
-  s.research['record-keeping'] = false
+  s.research['record-keeping'] = 0
   enqueue(s, nextExpansion(s, 'housing'))
   enqueue(s, nextExpansion(s, 'housing'))
   enqueue(s, { kind: 'research', id: 'record-keeping' })
@@ -43,6 +43,15 @@ test('incompatible and incomplete saves reset projects and absence timestamps to
   s.savedAt = 1000
   const malformed = { ...s, queues: { research: null, construction: null } }
   expect(parseSave(JSON.stringify(malformed))).toEqual(createDefaultState())
+})
+
+test('boolean research saves reset after the level schema change', () => {
+  const state = createDefaultState()
+  const old = JSON.parse(JSON.stringify(state)) as {
+    research: Record<string, unknown>
+  }
+  old.research.writing = true
+  expect(parseSave(JSON.stringify(old))).toEqual(createDefaultState())
 })
 
 test('current saves preserve unlimited levels and overstaffing', () => {

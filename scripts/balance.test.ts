@@ -82,7 +82,7 @@ test('diagnostic snapshots observe resources and paid commitments without changi
   expect(observation.resources.wood).toBe(4)
   expect(s).toEqual(before)
   game.advanceTime(60)
-  expect(s.research['sharpened-stick']).toBe(true)
+  expect(s.research['sharpened-stick']).toBe(1)
   expect(snapshot(s).commitments.wood).toBe(0)
 })
 
@@ -141,7 +141,7 @@ test('fixed-horizon comparisons continue after a milestone already present in th
   )
   expect(result.wallSeconds).toBe(start.wallSeconds + 43200)
   expect(result.effectiveSeconds).toBeGreaterThan(start.effectiveSeconds)
-  expect(result.finalCheckpoint.state.research.shelters).toBe(true)
+  expect(result.finalCheckpoint.state.research.shelters).toBe(1)
 })
 
 test('a frontier reached and reset during one visit remains in the earned era record', () => {

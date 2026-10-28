@@ -51,13 +51,13 @@ test('hidden callbacks and reloads preserve one snapshotted absence', () => {
 test('an offline upgrade extends the next absence without changing this one', () => {
   const s = settlement()
   people(s, 'forager')
-  s.research['record-keeping'] = false
+  s.research['record-keeping'] = 0
   s.savedAt = hour
   enqueue(s, { kind: 'research', id: 'record-keeping' })
   const before = offlineWindow(s)
   beginAbsence(s, hour)
   settleAbsence(s, 25 * hour)
-  expect(s.research['record-keeping']).toBe(true)
+  expect(s.research['record-keeping']).toBe(1)
   expect(offlineWindow(s)).toBe(before + 4)
   expect(s.absence?.windowHours).toBe(before)
   expect(s.absence?.settledSeconds).toBeCloseTo(
@@ -69,7 +69,7 @@ test('an offline upgrade extends the next absence without changing this one', ()
 test('manual work pauses while hidden; research continues; duplicate restoration settles once', () => {
   const s = settlement()
   people(s, 'idle')
-  s.research['record-keeping'] = false
+  s.research['record-keeping'] = 0
   const session = createSession(s, () => {}, hour, true)
   session.change(() => {
     session.game.startAction('sticks')
@@ -86,7 +86,7 @@ test('manual work pauses while hidden; research continues; duplicate restoration
   expect(manual).toBeLessThan(1)
   session.tick(completionAt)
   expect(s.manual?.progress).toBe(manual)
-  expect(s.research['record-keeping']).toBe(true)
+  expect(s.research['record-keeping']).toBe(1)
   session.setVisible(true, completionAt)
   const before = { ...s.resources }
   session.setVisible(true, completionAt)

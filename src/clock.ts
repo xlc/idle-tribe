@@ -1,8 +1,9 @@
 import { MIN_VISIBLE_RESOURCE_CHANGE } from './constants'
-import { BUILDINGS, RESEARCH, RESOURCE_INFO } from './definitions'
+import { BUILDINGS, RESOURCE_INFO } from './definitions'
 import { formatCompactResource } from './format'
 import { BUILDING_IDS, RESEARCH_IDS, RESOURCES, WORKING_JOB_IDS } from './ids'
 import { createRecord } from './records'
+import { hasResearch, researchEffects } from './research-effects'
 import { advanceTime } from './simulation'
 import { expertiseLevel } from './skills'
 import type { GameState, ResourceId } from './types'
@@ -15,7 +16,8 @@ export function offlineWindow(state: GameState) {
         (BUILDINGS[id].forms[state.facilities[id].form]?.offlineHours ?? 0)) *
       Math.sqrt(state.facilities[id].level)
   for (const id of RESEARCH_IDS)
-    if (state.research[id]) hours += RESEARCH[id].effects.offlineHours ?? 0
+    if (hasResearch(state, id))
+      hours += researchEffects(state, id).offlineHours ?? 0
   return hours
 }
 export function effectiveOfflineSeconds(

@@ -170,8 +170,8 @@ for (const width of [1280, 390]) {
     }, info) => {
       const s = settlement()
       people(s, 'forager', 'builder', 'woodcutter', 'scholar')
-      s.research.forestry = false
-      s.research.joinery = false
+      s.research.forestry = 0
+      s.research.joinery = 0
       s.specialization = null
       await open(page, s)
       const tabs = page.getByRole('tablist', { name: 'Game views' })
@@ -227,7 +227,7 @@ for (const width of [1280, 390]) {
       page,
     }, info) => {
       const s = settlement()
-      s.research.writing = false
+      s.research.writing = 0
       s.facilities.farm.level = 0
       people(s, 'builder', 'forager', 'idle')
       await open(page, s)

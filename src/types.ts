@@ -108,6 +108,14 @@ export interface Effects {
   crew?: number
   offlineHours?: number
 }
+export interface ResearchUpgradeDefinition {
+  maxLevel: number
+  requires: Requirements
+  costMultiplier: number
+  timeMultiplier: number
+  effect: string
+  effects: Effects
+}
 export interface ResearchDefinition {
   name: string
   description: string
@@ -116,6 +124,7 @@ export interface ResearchDefinition {
   seconds: number
   effect: string
   effects: Effects
+  upgrade?: ResearchUpgradeDefinition
   branch?: Specialization
   branchIdentity?: string
   grant?: { building: BuildingId; job: JobId }
@@ -171,7 +180,7 @@ export interface Facility {
   equipment: number
 }
 export type Project =
-  | { kind: 'research'; id: ResearchId }
+  | { kind: 'research'; id: ResearchId; target?: number }
   | { kind: 'expand'; id: BuildingId; target: number; form: number }
   | { kind: 'convert'; id: BuildingId; form: number }
   | { kind: 'equip'; id: BuildingId; target: number }
@@ -209,7 +218,7 @@ export interface GameState {
   actionProgress: Record<ActionId, number>
   resources: Record<ResourceId, number>
   facilities: Record<BuildingId, Facility>
-  research: Record<ResearchId, boolean>
+  research: Record<ResearchId, number>
   people: Person[]
   nameSeed: number
   discovered: { wood: boolean; stone: boolean }

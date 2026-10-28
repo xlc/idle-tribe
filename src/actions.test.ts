@@ -89,7 +89,7 @@ test('automated actions report active and paused states from their live inputs',
 
 test('retired gathering explains why the action disappeared', () => {
   const state = createDefaultState()
-  state.research.agriculture = true
+  state.research.agriculture = 1
   state.facilities.farm.level = 1
 
   expect(actionAvailability(state, 'gather')).toEqual({
@@ -168,7 +168,7 @@ test('a traveler lead becomes an idle settler when food and a room are ready', (
   const state = encounterState()
   for (const id of EXPEDITION_ENCOUNTER_IDS)
     state.completedEncounters[id] = id !== 'ridge-travelers'
-  state.research.shelters = true
+  state.research.shelters = 1
   state.facilities.housing.level = 1
   state.facilities.foraging.level = 1
   const founder = state.people[0]

@@ -58,6 +58,20 @@ export const research = {
     effects: {
       jobBonus: { machinist: 0.2, 'electronics-worker': 0.2, toolmaker: 0.2 },
     },
+    upgrade: {
+      maxLevel: 3,
+      requires: { research: ['causal-synthesis'] },
+      costMultiplier: 1.75,
+      timeMultiplier: 1.2,
+      effect: 'Selected workshop technology bonus +0.04 per additional level.',
+      effects: {
+        jobBonus: {
+          machinist: 0.04,
+          'electronics-worker': 0.04,
+          toolmaker: 0.04,
+        },
+      },
+    },
   },
   'causal-synthesis': {
     name: 'Causal synthesis',

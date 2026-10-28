@@ -70,7 +70,7 @@ test('the opening discovers resources and grants a working camp once', () => {
   enqueue(s, { kind: 'research', id: 'sharpened-stick' })
   enqueue(s, { kind: 'research', id: 'shelters' })
   advanceTime(s, 180)
-  expect(s.research.shelters).toBe(true)
+  expect(s.research.shelters).toBe(1)
   expect(s.facilities.foraging.level).toBe(1)
   expect(s.people[0]?.job).toBe('forager')
   expect(s.facilities.housing.level).toBe(0)
@@ -143,7 +143,7 @@ test('an older ready queue pays first, but a blocked queue does not reserve stoc
 test('both eligible queue heads use enqueue order and preserve it through reorder', () => {
   const s = settlement()
   people(s, 'builder')
-  s.research['record-keeping'] = false
+  s.research['record-keeping'] = 0
   s.resources.planks = 200
   s.resources.blocks = 100
   enqueue(s, { kind: 'research', id: 'record-keeping' })
@@ -296,7 +296,7 @@ for (const branch of ['forestry', 'stonecraft'] as const)
     game.advanceTime(
       quoteProject(s, { kind: 'research', id: 'mechanization' }).total,
     )
-    expect(s.research.mechanization).toBe(true)
+    expect(s.research.mechanization).toBe(1)
     expect(s.era).toBe(3)
     expect(s.facilities['great-hall'].level).toBe(0)
     expect(jobInput(s, 'sawyer').wood).toBe(branch === 'forestry' ? 2 : 3)
@@ -304,7 +304,7 @@ for (const branch of ['forestry', 'stonecraft'] as const)
 
 test('queued branches can be cancelled before choosing the other path', () => {
   const s = settlement()
-  s.research.forestry = false
+  s.research.forestry = 0
   s.specialization = null
   expect(enqueue(s, { kind: 'research', id: 'forestry' })).toBe(true)
   expect(enqueue(s, { kind: 'research', id: 'stonecraft' })).toBe(false)
@@ -359,7 +359,7 @@ test('the common research graph is reachable independently of either branch', ()
       const id = pending.splice(index, 1)[0]
       if (id) complete(s, id)
     }
-    expect(s.research['causal-synthesis']).toBe(true)
+    expect(s.research['causal-synthesis']).toBe(1)
     expect(s.legacy.discovered).toBe(true)
   }
 })
@@ -446,7 +446,7 @@ test('automated gathering follows the same storage pressure timeline across tick
 
 test('queued Writing follows a paid farm investment and retains its research cost', () => {
   const s = settlement()
-  s.research.writing = false
+  s.research.writing = 0
   s.facilities.farm.level = 0
   people(s, 'builder', 'forager')
   const before = s.resources.knowledge
@@ -463,7 +463,7 @@ test('queued Writing follows a paid farm investment and retains its research cos
   const active = s.queues.research.active
   if (!active) throw new Error('Writing did not start')
   advanceTime(s, active.total)
-  expect(s.research.writing).toBe(true)
+  expect(s.research.writing).toBe(1)
 })
 
 test('completed gathering levels up, compounds yield and speed, and persists', () => {
@@ -515,7 +515,7 @@ test('workers unlock when the corresponding workplace is available', () => {
   expect(actionWorkersUnlocked(s, 'gather')).toBe(false)
   s.facilities.foraging.level = 1
   expect(actionWorkersUnlocked(s, 'gather')).toBe(false)
-  s.research.shelters = true
+  s.research.shelters = 1
   people(s, 'idle', 'idle')
   expect(actionWorkersUnlocked(s, 'gather')).toBe(true)
   expect(actionWorkers(s, 'gather')).toBe(0)

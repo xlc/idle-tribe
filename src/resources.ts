@@ -1,6 +1,7 @@
 import { EPSILON } from './constants'
-import { BUILDINGS, RESEARCH, RESOURCE_INFO } from './definitions'
+import { BUILDINGS, RESOURCE_INFO } from './definitions'
 import { BUILDING_IDS, RESEARCH_IDS, RESOURCES } from './ids'
+import { hasResearch, researchEffects } from './research-effects'
 import type { Cost, GameState, ResourceId } from './types'
 export function cumulative(level: number) {
   return (
@@ -50,10 +51,10 @@ export function threshold(state: GameState, r: ResourceId) {
       (BUILDINGS[id].forms[f.form]?.storage?.[r] ?? 0) * cumulative(f.level)
   }
   for (const id of RESEARCH_IDS)
-    if (state.research[id])
-      total *=
-        (RESEARCH[id].effects.storage ?? 1) *
-        (RESEARCH[id].effects.resourceStorage?.[r] ?? 1)
+    if (hasResearch(state, id)) {
+      const effects = researchEffects(state, id)
+      total *= (effects.storage ?? 1) * (effects.resourceStorage?.[r] ?? 1)
+    }
   return Math.floor(total * (state.legacy.perks['organized-records'] ? 1.1 : 1))
 }
 export function storageMultiplier(

@@ -32,6 +32,14 @@ export const research = {
     description:
       'The distant rocks have been asked to describe their qualifications.',
     effects: { jobBonus: { 'orbital-worker': 0.2 } },
+    upgrade: {
+      maxLevel: 3,
+      requires: { research: ['quantum-engineering'] },
+      costMultiplier: 1.75,
+      timeMultiplier: 1.2,
+      effect: 'Orbital worker technology bonus +0.04 per additional level.',
+      effects: { jobBonus: { 'orbital-worker': 0.04 } },
+    },
   },
   'solar-collection': {
     name: 'Solar collection',

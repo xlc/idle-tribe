@@ -12,6 +12,7 @@ import {
   WORKING_JOB_IDS,
 } from './ids'
 import { isProductionJob } from './jobs'
+import { hasResearch, researchEffects } from './research-effects'
 import { canAfford, storageMultiplier } from './resources'
 import { personalWork, workContribution } from './skills'
 import type {
@@ -35,19 +36,19 @@ export function requirementBlocker(
       return `Requires ${BUILDINGS[id].forms[0]?.name} level ${req.facilities?.[id]}`
   if (req.perk && !state.legacy.perks[req.perk])
     return `Requires permanent ${PERKS[req.perk].name} perk`
-  const missing = req.research?.filter((id) => !state.research[id]) ?? []
+  const missing = req.research?.filter((id) => !hasResearch(state, id)) ?? []
   if (missing.length)
     return `Requires ${missing.map((id) => RESEARCH[id].name).join(', ')}`
-  if (req.anyResearch && !req.anyResearch.some((id) => state.research[id]))
+  if (req.anyResearch && !req.anyResearch.some((id) => hasResearch(state, id)))
     return `Requires ${req.anyResearch.map((id) => RESEARCH[id].name).join(' or ')}`
   return ''
 }
 export function automationUnlocked(state: GameState) {
-  return RESEARCH_IDS.some((id) => state.research[id] && RESEARCH[id].grant)
+  return RESEARCH_IDS.some((id) => hasResearch(state, id) && RESEARCH[id].grant)
 }
 export function happinessUnlocked(state: GameState) {
   return RESEARCH_IDS.some(
-    (id) => state.research[id] && RESEARCH[id].unlockHappiness,
+    (id) => hasResearch(state, id) && RESEARCH[id].unlockHappiness,
   )
 }
 export function happinessMultiplier(state: GameState) {
@@ -73,7 +74,8 @@ export function crewSize(state: GameState) {
     1 +
     RESEARCH_IDS.reduce(
       (n, id) =>
-        n + (state.research[id] ? (RESEARCH[id].effects.crew ?? 0) : 0),
+        n +
+        (hasResearch(state, id) ? (researchEffects(state, id).crew ?? 0) : 0),
       0,
     ) +
     BUILDING_IDS.reduce(
@@ -157,15 +159,15 @@ export function jobInput(state: GameState, job: JobId): Cost {
   const form = id && facility ? BUILDINGS[id].forms[facility.form] : null
   const input = { ...(form?.input ?? JOBS[job].input) }
   for (const id of RESEARCH_IDS)
-    if (state.research[id]) {
-      const reduction = RESEARCH[id].effects.recipeReduction?.[job]
+    if (hasResearch(state, id)) {
+      const reduction = researchEffects(state, id).recipeReduction?.[job]
       if (reduction)
         for (const r of RESOURCES)
           input[r] = Math.max(0, (input[r] ?? 0) - (reduction[r] ?? 0))
     }
   for (const id of RESEARCH_IDS)
-    if (state.research[id]) {
-      const multiplier = RESEARCH[id].effects.recipeMultiplier?.[job]
+    if (hasResearch(state, id)) {
+      const multiplier = researchEffects(state, id).recipeMultiplier?.[job]
       if (multiplier === undefined) continue
       for (const resource of RESOURCES)
         if (input[resource])
@@ -212,9 +214,10 @@ function workplaceRate(
   let technology = 1,
     specialization = 1
   for (const tech of RESEARCH_IDS)
-    if (state.research[tech]) {
-      technology += RESEARCH[tech].effects.jobBonus?.[job] ?? 0
-      specialization *= RESEARCH[tech].effects.specialization?.[job] ?? 1
+    if (hasResearch(state, tech)) {
+      const effects = researchEffects(state, tech)
+      technology += effects.jobBonus?.[job] ?? 0
+      specialization *= effects.specialization?.[job] ?? 1
     }
   // Facility effects are declared by the owning building; consumers use roles.
   for (const b of BUILDING_IDS) {
@@ -278,7 +281,8 @@ export function comfortablePlaces(state: GameState) {
     housing += (BUILDINGS[id].forms[f.form]?.housing ?? 0) * f.level
   }
   for (const id of RESEARCH_IDS)
-    if (state.research[id]) multiplier *= RESEARCH[id].effects.housing ?? 1
+    if (hasResearch(state, id))
+      multiplier *= researchEffects(state, id).housing ?? 1
   return 1 + Math.floor(housing * multiplier)
 }
 export function happinessTarget(state: GameState) {

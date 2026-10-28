@@ -95,7 +95,12 @@ function cost(v: JsonValue | undefined): Cost {
 function project(v: JsonValue | undefined): Project {
   const p = object(v),
     kind = member(p.kind, ['research', 'expand', 'convert', 'equip'] as const)
-  if (kind === 'research') return { kind, id: member(p.id, RESEARCH_IDS) }
+  if (kind === 'research')
+    return {
+      kind,
+      id: member(p.id, RESEARCH_IDS),
+      target: number(p.target, 1, Infinity, true),
+    }
   const id = member(p.id, BUILDING_IDS)
   if (kind === 'equip')
     return { kind, id, target: number(p.target, 1, Infinity, true) }
@@ -154,7 +159,9 @@ export function parseSave(serialized: string | null, nameSeed = 0): GameState {
       if (s.actionSkills[id].xp >= actionRequiredXp(s, id))
         throw new Error('Invalid action experience')
     s.resources = createRecord(RESOURCES, (r) => number(resources[r]))
-    s.research = createRecord(RESEARCH_IDS, (id) => bool(research[id]))
+    s.research = createRecord(RESEARCH_IDS, (id) =>
+      number(research[id], 0, Infinity, true),
+    )
     s.facilities = createRecord(BUILDING_IDS, (id) => {
       const f = object(facilities[id]),
         level = number(f.level, 0, BUILDINGS[id].unique ? 1 : Infinity, true),

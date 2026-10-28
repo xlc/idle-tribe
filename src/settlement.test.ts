@@ -69,7 +69,7 @@ test('live and sliced simulations have the same resources, projects, meals and a
   initial.welcome = true
   initial.resources.food = 400
   enqueue(initial, nextExpansion(initial, 'food-store'))
-  initial.research['record-keeping'] = false
+  initial.research['record-keeping'] = 0
   enqueue(initial, { kind: 'research', id: 'record-keeping' })
   const one = structuredClone(initial),
     many = structuredClone(initial)

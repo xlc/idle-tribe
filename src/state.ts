@@ -33,7 +33,7 @@ export function createDefaultState(nameSeed = 0): GameState {
       form: 0,
       equipment: 0,
     })),
-    research: createRecord(RESEARCH_IDS, () => false),
+    research: createRecord(RESEARCH_IDS, () => 0),
     nameSeed,
     people: [createPerson(generatePersonName(nameSeed))],
     discovered: { wood: false, stone: false },

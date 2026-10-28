@@ -1,5 +1,6 @@
 import { PERKS } from './definitions'
 import { completedTechnologies } from './research'
+import { hasResearch } from './research-effects'
 import { resetState } from './state'
 import type { GameState, PerkId } from './types'
 export function legacyReward(state: GameState) {
@@ -8,7 +9,7 @@ export function legacyReward(state: GameState) {
   )
 }
 export function canReset(state: GameState) {
-  return state.legacy.discovered && state.research.writing
+  return state.legacy.discovered && hasResearch(state, 'writing')
 }
 export function resetRun(state: GameState) {
   if (!canReset(state)) return false

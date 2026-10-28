@@ -62,7 +62,7 @@ export function advancedSettlement(branch: Specialization = 'forestry') {
     )
       complete(state, id)
     // Spaceflight requires a constructed launch site before orbital research.
-    if (state.research['orbital-flight'])
+    if (state.research['orbital-flight'] > 0)
       state.facilities['launch-complex'].level = 1
   }
   for (const id of BUILDING_IDS) {

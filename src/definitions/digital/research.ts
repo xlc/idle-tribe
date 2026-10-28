@@ -46,5 +46,15 @@ export const research = {
       offlineHours: 4,
       resourceStorage: { knowledge: 1.25, data: 1.25 },
     },
+    upgrade: {
+      maxLevel: 2,
+      requires: { research: ['orbital-flight'] },
+      costMultiplier: 1.75,
+      timeMultiplier: 1.2,
+      effect: 'Knowledge and data thresholds ×1.08 per additional level.',
+      effects: {
+        resourceStorage: { knowledge: 1.08, data: 1.08 },
+      },
+    },
   },
 } satisfies Partial<Record<ResearchId, ResearchDefinition>>

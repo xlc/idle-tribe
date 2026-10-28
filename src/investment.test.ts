@@ -51,7 +51,7 @@ test('unstaffed workplaces, housing and storage show a useful investment consequ
 
 test('investment comparisons account for preceding queued construction', () => {
   const s = createDefaultState()
-  s.research.agriculture = true
+  s.research.agriculture = 1
   s.facilities.farm.level = 1
   people(s, 'farmer')
   enqueue(s, { kind: 'expand', id: 'farm', target: 2, form: 0 })

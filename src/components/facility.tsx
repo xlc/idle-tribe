@@ -309,7 +309,7 @@ export function Facility({
                 </div>
               ),
           )}
-        {job && f.level > 0 && s.research.toolmaking && (
+        {job && f.level > 0 && s.research.toolmaking > 0 && (
           <div>
             <Costs session={session} cost={equipmentQuote.cost} />
             <InvestmentChange state={s} project={equipment} />

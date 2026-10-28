@@ -1,6 +1,10 @@
 .tech-section {
   margin: 0 0 24px;
 }
+.tech-section h2 {
+  font-size: 15px;
+  margin: 0 0 10px;
+}
 .tech-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));

@@ -16,7 +16,8 @@ export const actions = {
     resource: 'food',
     amount: 1,
     // The first farm retires wild gathering; existing camp assignments remain.
-    visible: (s) => !(s.research.agriculture && s.facilities.farm.level >= 1),
+    visible: (s) =>
+      !(s.research.agriculture > 0 && s.facilities.farm.level >= 1),
     hiddenReason: () => 'Retired after farming is built',
   },
   sticks: {

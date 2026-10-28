@@ -106,6 +106,14 @@ export const research = {
       "Tomorrow's workers would appreciate knowing what today's workers were thinking.",
     requires: { research: ['writing'] },
     effects: { resourceStorage: { knowledge: 1.5 }, offlineHours: 4 },
+    upgrade: {
+      maxLevel: 3,
+      requires: { research: ['mechanization'] },
+      costMultiplier: 1.75,
+      timeMultiplier: 1.2,
+      effect: 'Knowledge storage threshold ×1.08 per additional level.',
+      effects: { resourceStorage: { knowledge: 1.08 } },
+    },
   },
   'ceramic-craft': {
     name: 'Ceramic craft',

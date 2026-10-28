@@ -136,7 +136,7 @@ export function runBalance(
     wallSeconds: number
     state: ReturnType<typeof snapshot>
   }[] = []
-  let observed = new Set(RESEARCH_IDS.filter((id) => state.research[id]))
+  let observed = new Set(RESEARCH_IDS.filter((id) => state.research[id] > 0))
   let longestAbsenceMs = 0
   const calculationStart = performance.now()
   function checkpoint(): Checkpoint {
@@ -149,7 +149,7 @@ export function runBalance(
   }
   function observe() {
     for (const id of RESEARCH_IDS) {
-      if (!state.research[id] || observed.has(id)) continue
+      if (state.research[id] <= 0 || observed.has(id)) continue
       milestones.push({ run, id, time: { after: lastObserved, by: wall } })
       observed.add(id)
       if (
@@ -224,11 +224,11 @@ export function runBalance(
     advance(0)
     gather('wood', 20, deadline)
     gather('food', 25, deadline)
-    while (!state.research['sharpened-stick'] && wall < deadline) advance(1)
+    while (state.research['sharpened-stick'] <= 0 && wall < deadline) advance(1)
     controls.plan({ kind: 'research', id: 'shelters' })
     advance(0)
     gather('wood', 35, deadline)
-    while (!state.research.shelters && wall < deadline) advance(1)
+    while (state.research.shelters <= 0 && wall < deadline) advance(1)
     gather('food', 60, deadline)
     controls.plan({ kind: 'expand', id: 'housing', target: 1, form: 0 })
     controls.plan({ kind: 'expand', id: 'lumber', target: 1, form: 0 })
@@ -257,7 +257,7 @@ export function runBalance(
     nextVisit < horizon &&
     (options.finishAtHorizon ||
       options.resetAt ||
-      !state.research[options.goal])
+      state.research[options.goal] <= 0)
   ) {
     visit++
     progress?.(
@@ -290,7 +290,7 @@ export function runBalance(
     while (wall < deadline) {
       if (
         options.resetAt &&
-        state.research[options.resetAt] &&
+        state.research[options.resetAt] > 0 &&
         canReset(state)
       ) {
         const reward = legacyReward(state)
@@ -319,7 +319,7 @@ export function runBalance(
         break
       }
       // A reset's manual opening is deliberately a separate session below.
-      if (!state.research.shelters) break
+      if (state.research.shelters <= 0) break
       const key = allocationKey(state)
       makeDecisions(
         state,
@@ -340,7 +340,7 @@ export function runBalance(
       before,
       after: snapshot(state),
     })
-    if (!state.research.shelters && wall < horizon) {
+    if (state.research.shelters <= 0 && wall < horizon) {
       // Account for all manual and automated action work; never hide it in an
       // 8-minute visit.
       const resetStart = wall,
@@ -363,7 +363,7 @@ export function runBalance(
   if (
     (options.finishAtHorizon ||
       options.resetAt ||
-      !state.research[options.goal]) &&
+      state.research[options.goal] <= 0) &&
     wall < horizon
   ) {
     beginAbsence(state, epoch + wall * 1000)
@@ -375,9 +375,10 @@ export function runBalance(
   }
   return {
     options,
-    status: state.research[options.goal]
-      ? 'completed'
-      : ('unfinished' as 'completed' | 'unfinished'),
+    status:
+      state.research[options.goal] > 0
+        ? 'completed'
+        : ('unfinished' as 'completed' | 'unfinished'),
     openingSeconds,
     openingControls,
     wallSeconds: wall,

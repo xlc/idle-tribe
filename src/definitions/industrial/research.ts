@@ -57,6 +57,20 @@ export const research = {
         'electronics-worker': 0.8,
       },
     },
+    upgrade: {
+      maxLevel: 3,
+      requires: { research: ['electronics'] },
+      costMultiplier: 1.75,
+      timeMultiplier: 1.2,
+      effect: 'Selected workshop inputs ×0.96 per additional level.',
+      effects: {
+        recipeMultiplier: {
+          toolmaker: 0.96,
+          machinist: 0.96,
+          'electronics-worker': 0.96,
+        },
+      },
+    },
   },
   'structural-systems': {
     name: 'Structural systems',
@@ -67,5 +81,13 @@ export const research = {
     description:
       'The foundations are prepared for a rather ambitious conversation.',
     effects: { housing: 1.2, storage: 1.2 },
+    upgrade: {
+      maxLevel: 2,
+      requires: { research: ['electronics'] },
+      costMultiplier: 1.75,
+      timeMultiplier: 1.2,
+      effect: 'Housing and storage ×1.08 per additional level.',
+      effects: { housing: 1.08, storage: 1.08 },
+    },
   },
 } satisfies Partial<Record<ResearchId, ResearchDefinition>>

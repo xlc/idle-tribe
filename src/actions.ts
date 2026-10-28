@@ -1,5 +1,5 @@
 import { EPSILON, WORKERS_PER_BUILDING_LEVEL } from './constants'
-import { ACTIONS, BUILDINGS, RESEARCH } from './definitions'
+import { ACTIONS, BUILDINGS } from './definitions'
 import {
   type Discovery,
   EXPEDITION_ENCOUNTERS,
@@ -7,6 +7,7 @@ import {
   EXPLORE_FINDS,
 } from './definitions/tribal/exploration'
 import { type ActionId, RESEARCH_IDS, RESOURCES } from './ids'
+import { hasResearch, researchEffects } from './research-effects'
 import { canAfford, pay, refund, storageMultiplier } from './resources'
 import { happinessMultiplier, requirementBlocker } from './settlement'
 import type {
@@ -172,7 +173,8 @@ export function actionYield(state: GameState, id: ActionId) {
   const def = ACTIONS[id]
   let bonus = 1
   for (const r of RESEARCH_IDS)
-    if (state.research[r]) bonus += RESEARCH[r].effects.actionYield?.[id] ?? 0
+    if (hasResearch(state, r))
+      bonus += researchEffects(state, r).actionYield?.[id] ?? 0
   return def.resource
     ? def.amount *
         ACTION_BALANCE.yieldPerLevel ** (state.actionSkills[id].level - 1) *
@@ -217,8 +219,8 @@ export function isRateMode(state: GameState, id: ActionId) {
 export function automationFactor(state: GameState, id: ActionId) {
   let factor = ACTION_BALANCE.baseAutomation
   for (const r of RESEARCH_IDS)
-    if (state.research[r])
-      factor += RESEARCH[r].effects.actionAutomation?.[id] ?? 0
+    if (hasResearch(state, r))
+      factor += researchEffects(state, r).actionAutomation?.[id] ?? 0
   const facility = state.facilities[ACTIONS[id].building]
   if (facility.level > 0) {
     const form = BUILDINGS[ACTIONS[id].building].forms[facility.form]
@@ -231,7 +233,8 @@ export function automationFactor(state: GameState, id: ActionId) {
 export function xpFactor(state: GameState, id: ActionId) {
   let factor = ACTION_BALANCE.automatedXp
   for (const r of RESEARCH_IDS)
-    if (state.research[r]) factor += RESEARCH[r].effects.actionXp?.[id] ?? 0
+    if (hasResearch(state, r))
+      factor += researchEffects(state, r).actionXp?.[id] ?? 0
   return factor
 }
 export function automatedOutput(state: GameState, id: ActionId) {

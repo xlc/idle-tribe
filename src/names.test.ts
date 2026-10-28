@@ -51,7 +51,7 @@ test('arrivals keep the same names across tick sizes and reloads', () => {
 test('a time-box reset starts a new name sequence', () => {
   const state = createDefaultState(42)
   state.legacy.discovered = true
-  state.research.writing = true
+  state.research.writing = 1
   expect(resetRun(state)).toBe(true)
   expect(state.nameSeed).toBe(43)
   expect(required(state.people[0]).name).toBe(
