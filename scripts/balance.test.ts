@@ -97,6 +97,39 @@ test('a longer first return builds and staffs the first stone source before opti
   expect(result.final.resources.stone).toBeGreaterThan(10)
 })
 
+test('the balance allocator reserves construction capacity without stalling the opening', () => {
+  const result = runBalance({
+    ...options,
+    schedule: 'concentrated',
+    days: 10,
+  })
+  expect(result.final.people).toBeGreaterThan(3)
+  expect(result.finalCheckpoint.state.research.agriculture).toBeGreaterThan(0)
+  expect(
+    Math.min(
+      ...result.visits.map(
+        (visit) => visit.before.healthy / visit.before.people,
+      ),
+    ),
+  ).toBeGreaterThan(0)
+})
+
+test('the first farm transition keeps the settlement healthy during frequent visits', () => {
+  const result = runBalance({
+    ...options,
+    policy: 'simple',
+    days: 5,
+  })
+  expect(result.finalCheckpoint.state.facilities.farm.level).toBeGreaterThan(0)
+  expect(
+    Math.min(
+      ...result.visits.map(
+        (visit) => visit.before.healthy / visit.before.people,
+      ),
+    ),
+  ).toBeGreaterThan(0)
+})
+
 test('the deliberate planner expands overcrowded food capacity and releases people for other work', () => {
   const s = settlement()
   s.facilities.farm.level = 1

@@ -15,10 +15,12 @@ export const actions = {
     job: 'forager',
     resource: 'food',
     amount: 1,
-    // The first farm retires wild gathering; existing camp assignments remain.
+    // Keep wild gathering as a fallback until the settlement has expanded
+    // beyond its first farm. This prevents a hidden farm completion from
+    // turning off the only active food source before a farmer is assigned.
     visible: (s) =>
-      !(s.research.agriculture > 0 && s.facilities.farm.level >= 1),
-    hiddenReason: () => 'Retired after farming is built',
+      !(s.research.agriculture > 0 && s.facilities.farm.level >= 2),
+    hiddenReason: () => 'Retired after the second farm is built',
   },
   sticks: {
     kind: 'resource',

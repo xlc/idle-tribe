@@ -7,6 +7,7 @@ import {
   quoteProject,
   researchVisible,
 } from '../src/research'
+import { canAfford } from '../src/resources'
 import {
   arrivalStatus,
   assigned,
@@ -202,11 +203,21 @@ export function makeDecisions(
     assigned(s, 'idle') > 2
   )
     if (!add(food)) break
-  // Gathering workplaces use action jobs rather than production definitions;
-  // keep their discovered sources staffed so the policy can fund its queues.
-  for (const job of ['woodcutter', 'stoneworker'] as const)
-    if (jobUnlocked(s, job)) add(job)
-  if (allEntries(s).some((e) => e.project.kind !== 'research')) {
+  const constructionHead = s.queues.construction.active
+    ? s.queues.construction.active.project
+    : s.queues.construction.waiting[0]?.project
+  const constructionReady = constructionHead
+    ? s.queues.construction.active !== null ||
+      (() => {
+        const quote = quoteProject(s, constructionHead)
+        return !quote.blocker && canAfford(s, quote.cost)
+      })()
+    : false
+  if (constructionReady) {
+    // Keep one worker available for the construction queue before staffing
+    // optional gathering and production roles. Without this reservation, a
+    // three-person settlement can fill food, wood, and stone roles and leave
+    // every queued building permanently blocked by "No builders".
     add('builder')
     // The deliberate planner uses the displayed efficient crew size, just as
     // Fill does. The simple policy keeps one builder and more producers.
@@ -217,6 +228,10 @@ export function makeDecisions(
       )
         if (!add('builder')) break
   }
+  // Gathering workplaces use action jobs rather than production definitions;
+  // keep their discovered sources staffed so the policy can fund its queues.
+  for (const job of ['woodcutter', 'stoneworker'] as const)
+    if (jobUnlocked(s, job)) add(job)
   const roles = JOB_IDS.filter(isProductionJob).filter(
     (job) => JOBS[job].output !== 'food',
   )

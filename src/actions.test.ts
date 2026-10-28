@@ -92,9 +92,16 @@ test('retired gathering explains why the action disappeared', () => {
   state.research.agriculture = 1
   state.facilities.farm.level = 1
 
+  expect(actionAvailability(state, 'gather')).toMatchObject({
+    kind: 'manual',
+    state: 'ready',
+  })
+
+  state.facilities.farm.level = 2
+
   expect(actionAvailability(state, 'gather')).toEqual({
     kind: 'locked',
-    reason: 'Retired after farming is built',
+    reason: 'Retired after the second farm is built',
   })
 })
 

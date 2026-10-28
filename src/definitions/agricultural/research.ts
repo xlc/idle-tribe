@@ -7,7 +7,7 @@ export const research = {
     cost: { knowledge: 180, food: 500, wood: 200, stone: 100, tools: 30 },
     seconds: 21600,
     effect:
-      'Enter agricultural era; unlock Farm, Cottages and Granary. Building a Farm retires wild food gathering.',
+      'Enter agricultural era; unlock Farm, Cottages and Granary. A second Farm retires wild food gathering.',
     description: 'Convince dinner to put down roots.',
     requires: { research: ['preparedness', 'seasonal-knowledge'] },
     effects: {},
