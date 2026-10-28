@@ -146,7 +146,12 @@ function actionRules(state: GameState): ActionRule[] {
   return ACTION_IDS.flatMap((id): ActionRule[] => {
     const def = ACTIONS[id],
       n = actionWorkers(state, id)
-    if (n < 1 || !def.visible(state)) return []
+    if (
+      n < 1 ||
+      !def.visible(state) ||
+      (id === 'explore' && state.pendingEncounter)
+    )
+      return []
     const base = baseActionDuration(state, id),
       speed = n / base,
       rateMode = isRateMode(state, id)
@@ -349,7 +354,13 @@ export function resourceFlows(
       continue
     }
     const n = actionWorkers(state, id)
-    if (n < 1 || !def.visible(state) || !canAfford(state, def.cost)) continue
+    if (
+      n < 1 ||
+      !def.visible(state) ||
+      (id === 'explore' && state.pendingEncounter) ||
+      !canAfford(state, def.cost)
+    )
+      continue
     const rate = (n / actionDuration(state, id)) * 60
     for (const r of RESOURCES) flows[r].inputs += rate * (def.cost[r] ?? 0)
     const expected = exploreExpectedRewards(state)

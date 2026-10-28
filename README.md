@@ -23,6 +23,8 @@ The playable catalog covers **all eight eras**, through Causal synthesis. Start 
 
 Build the corresponding workplace to assign workers to gathering and exploration; assigned workers continue while the game is closed.
 
+Experienced explorers can uncover one-time expedition reports with two possible responses. Manual expeditions let you choose; automated and offline expeditions use their documented default response and record the discovery in the return report.
+
 Every villager has a permanent occupation aptitude and earns per-occupation expertise through practice. Progress saves automatically in your browser, and time away from the game is simulated when you return — the first 8 hours run at full speed, longer absences progressively slower.
 
 Everyone, including the founder, starts with a generated given name and family name. Names persist through reloads; new arrivals avoid existing full names. The two-pool naming approach takes inspiration from [Kittens Game](https://github.com/nuclear-unicorn/kittensgame/blob/master/js/village.js), with a separate name pool for this settlement.

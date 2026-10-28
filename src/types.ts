@@ -2,6 +2,7 @@ import type {
   ActionId,
   ActionJob,
   BuildingId,
+  ExpeditionEncounterId,
   JobId,
   PerkId,
   ResearchId,
@@ -15,6 +16,7 @@ export type ActionBonus = Partial<Record<ActionId, number>>
 export type {
   ActionId,
   BuildingId,
+  ExpeditionEncounterId,
   JobId,
   PerkId,
   ResearchId,
@@ -23,6 +25,25 @@ export type {
 } from './ids'
 export type Cost = Partial<Record<ResourceId, number>>
 export type Specialization = SpecializationId
+export type EncounterOptionIndex = 0 | 1
+export type EncounterEffect =
+  | { kind: 'resources'; amount: Cost }
+  | { kind: 'happiness'; amount: number }
+  | { kind: 'arrival-progress'; amount: number }
+export interface EncounterOption {
+  label: string
+  description: string
+  effect: EncounterEffect
+}
+export interface ExpeditionEncounter {
+  id: ExpeditionEncounterId
+  title: string
+  description: string
+  minimumLevel: number
+  weight: number
+  automatedOption: EncounterOptionIndex
+  options: readonly [EncounterOption, EncounterOption]
+}
 
 export interface ResourceDefinition {
   name: string
@@ -181,6 +202,7 @@ export interface Absence {
   population: number
   expertise: Record<WorkingJob, number>[]
   completed: number
+  encounters: number
 }
 export interface GameState {
   actionSkills: Record<ActionId, { level: number; xp: number }>
@@ -195,6 +217,8 @@ export interface GameState {
   researchUnlocked: boolean
   expeditionUnlocked: boolean
   exploreRolls: number
+  pendingEncounter: ExpeditionEncounterId | null
+  completedEncounters: Record<ExpeditionEncounterId, boolean>
   queues: Record<QueueId, ProjectQueue>
   nextSequence: number
   manual: ManualAction | null

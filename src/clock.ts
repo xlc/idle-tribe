@@ -38,6 +38,7 @@ export function beginAbsence(state: GameState, time: number) {
       createRecord(WORKING_JOB_IDS, (job) => expertiseLevel(p.practice[job])),
     ),
     completed: state.completedProjects,
+    encounters: Object.values(state.completedEncounters).filter(Boolean).length,
   }
 }
 export function settleAbsence(state: GameState, time: number) {
@@ -54,6 +55,9 @@ export function settleAbsence(state: GameState, time: number) {
     gains: createRecord(RESOURCES, (r) => state.resources[r] - a.resources[r]),
     arrivals: state.people.length - a.population,
     completed: state.completedProjects - a.completed,
+    encounters:
+      Object.values(state.completedEncounters).filter(Boolean).length -
+      a.encounters,
     expertise: state.people.flatMap((person, index) => {
       const gains = WORKING_JOB_IDS.flatMap((job) => {
         const before = a.expertise[index]?.[job] ?? 0
@@ -75,6 +79,11 @@ function awayMilestones(report: AwayProgress) {
     ...(report.arrivals
       ? [
           `${report.arrivals} ${report.arrivals === 1 ? 'new settler' : 'new settlers'}`,
+        ]
+      : []),
+    ...(report.encounters
+      ? [
+          `${report.encounters} expedition ${report.encounters === 1 ? 'discovery' : 'discoveries'}`,
         ]
       : []),
   ]

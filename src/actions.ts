@@ -2,13 +2,14 @@ import { EPSILON, WORKERS_PER_BUILDING_LEVEL } from './constants'
 import { ACTIONS, BUILDINGS, RESEARCH } from './definitions'
 import {
   type Discovery,
+  EXPEDITION_ENCOUNTERS,
   EXPLORE_DISCOVERIES,
   EXPLORE_FINDS,
 } from './definitions/tribal/exploration'
 import { type ActionId, RESEARCH_IDS, RESOURCES } from './ids'
 import { canAfford, pay, refund, storageMultiplier } from './resources'
 import { happinessMultiplier, requirementBlocker } from './settlement'
-import type { Cost, GameState } from './types'
+import type { Cost, EncounterOptionIndex, GameState } from './types'
 
 // Shared action balance. Keep cadence, displayed output, and simulation on the
 // same curve when tuning progression or equipment.
@@ -85,6 +86,14 @@ export function actionAvailability(
   const workers = actionWorkers(state, id)
   if (workers > 0) {
     const missing = missingCost(state, def.cost)
+    if (id === 'explore' && state.pendingEncounter)
+      return {
+        kind: 'automated',
+        state: 'paused',
+        missing: {},
+        reason: 'Paused until the expedition report is resolved',
+        workers,
+      }
     if (Object.keys(missing).length > 0)
       return {
         kind: 'automated',
@@ -110,6 +119,14 @@ export function actionAvailability(
       reason: `Finish ${ACTIONS[state.manual.id].name} first`,
     }
   }
+
+  if (id === 'explore' && state.pendingEncounter)
+    return {
+      kind: 'manual',
+      state: 'blocked',
+      missing: {},
+      reason: 'Resolve the pending expedition report first',
+    }
 
   const missing = missingCost(state, def.cost)
   return Object.keys(missing).length
@@ -252,6 +269,7 @@ export function actionJobActive(state: GameState, id: ActionId) {
   return Boolean(
     def.visible(state) &&
       actionWorkers(state, id) > 0 &&
+      !(id === 'explore' && state.pendingEncounter) &&
       canAfford(state, def.cost),
   )
 }
@@ -296,16 +314,76 @@ function exploreResourceReward(state: GameState, level: number, scale: number) {
   if (find) state.resources[find.resource] += find.amount(level) * scale
 }
 
+function eligibleEncounters(state: GameState) {
+  return Object.values(EXPEDITION_ENCOUNTERS).filter(
+    (encounter) =>
+      state.actionSkills.explore.level >= encounter.minimumLevel &&
+      !state.completedEncounters[encounter.id],
+  )
+}
+
+function nextEncounter(state: GameState, roll: number) {
+  const encounters = eligibleEncounters(state),
+    total = encounters.reduce((sum, encounter) => sum + encounter.weight, 0)
+  if (!total) return null
+  let remaining = roll * total
+  for (const encounter of encounters) {
+    remaining -= encounter.weight
+    if (remaining < 1e-9) return encounter
+  }
+  return encounters.at(-1) ?? null
+}
+
+function applyEncounterEffect(
+  state: GameState,
+  option: EncounterOptionIndex,
+  scale = 1,
+) {
+  const id = state.pendingEncounter
+  if (!id) return false
+  const encounter = EXPEDITION_ENCOUNTERS[id]
+  if (!encounter) return false
+  const effect = encounter.options[option].effect
+  if (effect.kind === 'resources')
+    for (const resource of RESOURCES)
+      state.resources[resource] += (effect.amount[resource] ?? 0) * scale
+  if (effect.kind === 'happiness')
+    state.happiness = Math.min(100, state.happiness + effect.amount * scale)
+  if (effect.kind === 'arrival-progress')
+    state.arrivalProgress = Math.min(
+      1,
+      state.arrivalProgress + effect.amount * scale,
+    )
+  state.completedEncounters[id] = true
+  state.pendingEncounter = null
+  state.notice = encounter.options[option].label
+  return true
+}
+
+export function resolveEncounter(
+  state: GameState,
+  option: EncounterOptionIndex,
+) {
+  const resolved = applyEncounterEffect(state, option)
+  if (resolved) syncUnlocks(state)
+  return resolved
+}
+
 // One explore completion: roll the reward table. `scale` is 1 for manual
 // runs and the automation factor for workers; discoveries always land in
 // full. A manual run always finds the next pending discovery; workers roll.
 // Any non-empty result unlocks the expedition camp.
-export function applyExploreReward(state: GameState, scale: number) {
+export function applyExploreReward(
+  state: GameState,
+  scale: number,
+  mode: 'manual' | 'automated' = 'automated',
+) {
   const level = state.actionSkills.explore.level
   const roll = exploreRand(state)
   const discover = 0.25,
     rare = level >= 5 ? 0.1 : 0,
-    resources = 0.5 - rare,
+    encounter = eligibleEncounters(state).length > 0 && level >= 5 ? 0.05 : 0,
+    resources = 0.5 - rare - encounter,
     mini = level >= 10 ? 0.1 : 0
   const next = nextDiscovery(state)
   if ((next && scale >= 1) || roll < discover) {
@@ -331,7 +409,21 @@ export function applyExploreReward(state: GameState, scale: number) {
     state.expeditionUnlocked = true
     return
   }
-  if (roll < discover + resources + rare + mini) {
+  if (roll < discover + resources + rare + encounter) {
+    const found = nextEncounter(state, exploreRand(state))
+    if (found) {
+      if (mode === 'manual') {
+        state.pendingEncounter = found.id
+        state.notice = 'Explorers found something unusual'
+      } else {
+        state.pendingEncounter = found.id
+        applyEncounterEffect(state, found.automatedOption, scale)
+      }
+      state.expeditionUnlocked = true
+      return
+    }
+  }
+  if (roll < discover + resources + rare + encounter + mini) {
     if (exploreRand(state) < 0.5) {
       state.arrivalProgress = Math.min(1, state.arrivalProgress + 0.25 * scale)
       state.notice = 'Explorers met travelers heading this way'
@@ -348,7 +440,13 @@ export function exploreExpectedRewards(state: GameState): Cost {
   const level = state.actionSkills.explore.level,
     scale = automationFactor(state, 'explore'),
     pool = explorePool(state),
-    chance = 0.5 - (level >= 5 ? 0.1 : 0) + (nextDiscovery(state) ? 0 : 0.25)
+    encounterChance =
+      eligibleEncounters(state).length > 0 && level >= 5 ? 0.05 : 0,
+    chance =
+      0.5 -
+      (level >= 5 ? 0.1 : 0) -
+      encounterChance +
+      (nextDiscovery(state) ? 0 : 0.25)
   const result: Cost = {}
   for (const find of pool)
     result[find.resource] = (chance / pool.length) * find.amount(level) * scale
@@ -366,7 +464,7 @@ export function finishManual(state: GameState) {
   if (def.resource) {
     state.resources[def.resource] += actionYield(state, active.id)
   }
-  if (def.kind === 'exploration') applyExploreReward(state, 1)
+  if (def.kind === 'exploration') applyExploreReward(state, 1, 'manual')
   syncUnlocks(state)
 }
 
@@ -374,7 +472,12 @@ export function finishManual(state: GameState) {
 // of upfront, mirroring how workplaces pay recipe inputs.
 export function completeAction(state: GameState, id: ActionId) {
   const def = ACTIONS[id]
-  if (!def.visible(state) || actionWorkers(state, id) < 1) return false
+  if (
+    !def.visible(state) ||
+    actionWorkers(state, id) < 1 ||
+    (id === 'explore' && state.pendingEncounter)
+  )
+    return false
   if (!canAfford(state, def.cost)) return false
   pay(state, def.cost)
   grantActionXp(state, id, xpFactor(state, id))

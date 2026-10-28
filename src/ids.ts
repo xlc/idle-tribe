@@ -134,6 +134,12 @@ export const JOB_IDS = [
   'potter',
 ] as const
 export const ACTION_IDS = ['gather', 'sticks', 'stone', 'explore'] as const
+export const EXPEDITION_ENCOUNTER_IDS = [
+  'abandoned-cache',
+  'ridge-travelers',
+  'old-waystone',
+  'quiet-grove',
+] as const
 export const ACTION_JOB_IDS = [
   'forager',
   'woodcutter',
@@ -152,6 +158,7 @@ export type BuildingId = (typeof BUILDING_IDS)[number]
 export type ResearchId = (typeof RESEARCH_IDS)[number]
 export type JobId = (typeof JOB_IDS)[number]
 export type ActionId = (typeof ACTION_IDS)[number]
+export type ExpeditionEncounterId = (typeof EXPEDITION_ENCOUNTER_IDS)[number]
 export type ActionJob = (typeof ACTION_JOB_IDS)[number]
 export type ProductionJob = Exclude<JobId, 'idle' | 'builder' | ActionJob>
 export type PerkId = (typeof PERK_IDS)[number]

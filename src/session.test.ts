@@ -208,3 +208,14 @@ test('notifications are dismissible without removing their session history', () 
   session.dismissNotification(away.id)
   expect(session.notification).toBeNull()
 })
+
+test('away reports count automated expedition discoveries', () => {
+  const state = createDefaultState()
+  state.completedEncounters['abandoned-cache'] = true
+  beginAbsence(state, hour)
+  state.completedEncounters['ridge-travelers'] = true
+  const report = settleAbsence(state, hour + 60_000)
+  expect(report?.encounters).toBe(1)
+  if (!report) throw new Error('Missing away report')
+  expect(awaySummary(report)).toContain('1 expedition discovery')
+})

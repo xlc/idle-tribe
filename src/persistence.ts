@@ -3,6 +3,7 @@ import { BUILDINGS, ERAS } from './definitions'
 import {
   ACTION_IDS,
   BUILDING_IDS,
+  EXPEDITION_ENCOUNTER_IDS,
   JOB_IDS,
   PERK_IDS,
   RESEARCH_IDS,
@@ -189,6 +190,16 @@ export function parseSave(serialized: string | null, nameSeed = 0): GameState {
     s.researchUnlocked = bool(p.researchUnlocked)
     s.expeditionUnlocked = bool(p.expeditionUnlocked)
     s.exploreRolls = number(p.exploreRolls, 0, Infinity, true)
+    s.pendingEncounter =
+      p.pendingEncounter === null
+        ? null
+        : member(p.pendingEncounter, EXPEDITION_ENCOUNTER_IDS)
+    const completedEncounters = object(p.completedEncounters)
+    s.completedEncounters = createRecord(EXPEDITION_ENCOUNTER_IDS, (id) =>
+      bool(completedEncounters[id]),
+    )
+    if (s.pendingEncounter && s.completedEncounters[s.pendingEncounter])
+      throw new Error('Invalid pending encounter')
     s.queues = {
       research: queue(queues.research),
       construction: queue(queues.construction),
@@ -250,6 +261,12 @@ export function parseSave(serialized: string | null, nameSeed = 0): GameState {
           )
         }),
         completed: number(a.completed, 0, Infinity, true),
+        encounters: number(
+          a.encounters,
+          0,
+          Object.values(s.completedEncounters).filter(Boolean).length,
+          true,
+        ),
       }
       if (
         s.absence.expertise.length !== s.absence.population ||

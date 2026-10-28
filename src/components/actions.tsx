@@ -103,8 +103,10 @@ function actionStatusLabel(availability: ActionAvailability) {
       return `${availability.reason} · ${missingCostLabel(availability)}`
     return availability.reason
   }
-  if (availability.state === 'paused')
-    return `${availability.reason} · ${missingCostLabel(availability)}`
+  if (availability.state === 'paused') {
+    const missing = missingCostLabel(availability)
+    return missing ? `${availability.reason} · ${missing}` : availability.reason
+  }
   return availability.reason
 }
 

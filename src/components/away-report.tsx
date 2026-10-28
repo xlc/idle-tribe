@@ -179,6 +179,12 @@ export function AwayReport({
               <dd>{report.completed}</dd>
             </div>
           )}
+          {report.encounters > 0 && (
+            <div>
+              <dt>Expedition discoveries</dt>
+              <dd>{report.encounters}</dd>
+            </div>
+          )}
         </dl>
         {report.effectiveSeconds < report.wallSeconds && (
           <p className="away-note">Longer absences progress more slowly.</p>

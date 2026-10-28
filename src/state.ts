@@ -1,6 +1,7 @@
 import {
   ACTION_IDS,
   BUILDING_IDS,
+  EXPEDITION_ENCOUNTER_IDS,
   PERK_IDS,
   RESEARCH_IDS,
   RESOURCES,
@@ -40,6 +41,8 @@ export function createDefaultState(nameSeed = 0): GameState {
     researchUnlocked: false,
     expeditionUnlocked: false,
     exploreRolls: 0,
+    pendingEncounter: null,
+    completedEncounters: createRecord(EXPEDITION_ENCOUNTER_IDS, () => false),
     queues: {
       research: { active: null, waiting: [] },
       construction: { active: null, waiting: [] },
@@ -83,6 +86,8 @@ export function resetState(
   state.researchUnlocked = fresh.researchUnlocked
   state.expeditionUnlocked = fresh.expeditionUnlocked
   state.exploreRolls = fresh.exploreRolls
+  state.pendingEncounter = fresh.pendingEncounter
+  state.completedEncounters = fresh.completedEncounters
   state.queues = fresh.queues
   state.nextSequence = fresh.nextSequence
   state.manual = fresh.manual

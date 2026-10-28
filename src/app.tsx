@@ -4,6 +4,7 @@ import { ActionCards } from './components/actions'
 import { ViewIcon } from './components/art'
 import { SessionNotificationToast } from './components/away-report'
 import { Button, type Confirm } from './components/common'
+import { ExpeditionEncounter } from './components/expedition'
 import { Legacy } from './components/legacy'
 import { OfflineStatus } from './components/offline-status'
 import { People } from './components/people'
@@ -104,6 +105,7 @@ export function App({ session }: { session: GameSession }) {
                   forceMount
                   hidden={view !== 'settlement'}
                 >
+                  <ExpeditionEncounter session={session} />
                   {automated ? (
                     <>
                       <Production {...props} />

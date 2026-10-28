@@ -1,4 +1,9 @@
-import { cancelManual, startAction, syncUnlocks } from './actions'
+import {
+  cancelManual,
+  resolveEncounter,
+  startAction,
+  syncUnlocks,
+} from './actions'
 import { BUILDINGS } from './definitions'
 import { feast } from './food'
 import {
@@ -10,7 +15,14 @@ import {
 } from './research'
 import { adjustWorkers, assignJob, fillWorkers } from './settlement'
 import { advanceTime } from './simulation'
-import type { BuildingId, GameState, JobId, Project, QueueId } from './types'
+import type {
+  BuildingId,
+  EncounterOptionIndex,
+  GameState,
+  JobId,
+  Project,
+  QueueId,
+} from './types'
 export function removeFacility(state: GameState, id: BuildingId) {
   const f = state.facilities[id],
     active = state.queues.construction.active
@@ -46,6 +58,8 @@ export function createGame(state: GameState) {
     fill: (job: JobId) => fillWorkers(state, job),
     startAction: (id: import('./ids').ActionId) => startAction(state, id),
     cancelAction: () => cancelManual(state),
+    resolveEncounter: (option: EncounterOptionIndex) =>
+      resolveEncounter(state, option),
     feast: () => feast(state),
   }
 }

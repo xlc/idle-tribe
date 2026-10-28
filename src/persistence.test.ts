@@ -56,3 +56,18 @@ test('current saves preserve unlimited levels and overstaffing', () => {
   expect(loaded.facilities.lumber.equipment).toBe(20)
   expect(loaded.people.every((p) => p.job === 'woodcutter')).toBe(true)
 })
+
+test('current saves preserve expedition history and pending reports', () => {
+  const s = createDefaultState()
+  s.completedEncounters['abandoned-cache'] = true
+  s.pendingEncounter = 'ridge-travelers'
+  const loaded = parseSave(JSON.stringify(s))
+  expect(loaded.completedEncounters).toEqual(s.completedEncounters)
+  expect(loaded.pendingEncounter).toBe('ridge-travelers')
+})
+
+test('encounter schema changes reset incomplete saves', () => {
+  const s = createDefaultState()
+  const old = { ...s, pendingEncounter: undefined }
+  expect(parseSave(JSON.stringify(old))).toEqual(createDefaultState())
+})
