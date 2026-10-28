@@ -136,6 +136,9 @@ test('automated encounters use their declared default and pause while a report i
   })
 
   state.pendingEncounter = 'abandoned-cache'
+  const rolls = state.exploreRolls
+  applyExploreReward(state, 0.1)
+  expect(state.exploreRolls).toBe(rolls)
   expect(actionAvailability(state, 'explore')).toMatchObject({
     kind: 'automated',
     state: 'paused',

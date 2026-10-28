@@ -9,7 +9,12 @@ import {
 import { type ActionId, RESEARCH_IDS, RESOURCES } from './ids'
 import { canAfford, pay, refund, storageMultiplier } from './resources'
 import { happinessMultiplier, requirementBlocker } from './settlement'
-import type { Cost, EncounterOptionIndex, GameState } from './types'
+import type {
+  Cost,
+  EncounterOptionIndex,
+  ExpeditionEncounterId,
+  GameState,
+} from './types'
 
 // Shared action balance. Keep cadence, displayed output, and simulation on the
 // same curve when tuning progression or equipment.
@@ -334,13 +339,19 @@ function nextEncounter(state: GameState, roll: number) {
   return encounters.at(-1) ?? null
 }
 
+function encounterChance(state: GameState) {
+  return state.actionSkills.explore.level >= 5 &&
+    eligibleEncounters(state).length > 0
+    ? 0.05
+    : 0
+}
+
 function applyEncounterEffect(
   state: GameState,
+  id: ExpeditionEncounterId,
   option: EncounterOptionIndex,
   scale = 1,
 ) {
-  const id = state.pendingEncounter
-  if (!id) return false
   const encounter = EXPEDITION_ENCOUNTERS[id]
   if (!encounter) return false
   const effect = encounter.options[option].effect
@@ -364,7 +375,9 @@ export function resolveEncounter(
   state: GameState,
   option: EncounterOptionIndex,
 ) {
-  const resolved = applyEncounterEffect(state, option)
+  const id = state.pendingEncounter
+  if (!id) return false
+  const resolved = applyEncounterEffect(state, id, option)
   if (resolved) syncUnlocks(state)
   return resolved
 }
@@ -378,11 +391,12 @@ export function applyExploreReward(
   scale: number,
   mode: 'manual' | 'automated' = 'automated',
 ) {
+  if (state.pendingEncounter) return
   const level = state.actionSkills.explore.level
   const roll = exploreRand(state)
   const discover = 0.25,
     rare = level >= 5 ? 0.1 : 0,
-    encounter = eligibleEncounters(state).length > 0 && level >= 5 ? 0.05 : 0,
+    encounter = encounterChance(state),
     resources = 0.5 - rare - encounter,
     mini = level >= 10 ? 0.1 : 0
   const next = nextDiscovery(state)
@@ -416,8 +430,7 @@ export function applyExploreReward(
         state.pendingEncounter = found.id
         state.notice = 'Explorers found something unusual'
       } else {
-        state.pendingEncounter = found.id
-        applyEncounterEffect(state, found.automatedOption, scale)
+        applyEncounterEffect(state, found.id, found.automatedOption, scale)
       }
       state.expeditionUnlocked = true
       return
@@ -440,12 +453,11 @@ export function exploreExpectedRewards(state: GameState): Cost {
   const level = state.actionSkills.explore.level,
     scale = automationFactor(state, 'explore'),
     pool = explorePool(state),
-    encounterChance =
-      eligibleEncounters(state).length > 0 && level >= 5 ? 0.05 : 0,
+    encounter = encounterChance(state),
     chance =
       0.5 -
       (level >= 5 ? 0.1 : 0) -
-      encounterChance +
+      encounter +
       (nextDiscovery(state) ? 0 : 0.25)
   const result: Cost = {}
   for (const find of pool)
