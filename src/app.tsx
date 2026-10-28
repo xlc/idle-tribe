@@ -29,19 +29,41 @@ export function App({ session }: { session: GameSession }) {
   const views: {
     id: View
     label: string
+    mobileLabel: string
     available: boolean
     working?: boolean
   }[] = [
-    { id: 'settlement', label: 'Settlement', available: true },
+    {
+      id: 'settlement',
+      label: 'Settlement',
+      mobileLabel: 'Actions',
+      available: true,
+    },
     {
       id: 'research',
       label: 'Technology',
+      mobileLabel: 'Research',
       available: s.researchUnlocked,
       working: Boolean(s.queues.research.active),
     },
-    { id: 'people', label: 'People', available: automated },
-    { id: 'legacy', label: 'Time box', available: s.legacy.discovered },
-    { id: 'settings', label: 'Settings', available: true },
+    {
+      id: 'people',
+      label: 'People',
+      mobileLabel: 'People',
+      available: automated,
+    },
+    {
+      id: 'legacy',
+      label: 'Time box',
+      mobileLabel: 'Legacy',
+      available: s.legacy.discovered,
+    },
+    {
+      id: 'settings',
+      label: 'Settings',
+      mobileLabel: 'Settings',
+      available: true,
+    },
   ]
   const availableViews = views.filter((entry) => entry.available)
   const content = useRef<HTMLDivElement>(null)
@@ -177,8 +199,18 @@ export function App({ session }: { session: GameSession }) {
                 onClick={() => content.current?.scrollTo({ top: 0 })}
               >
                 <ViewIcon name={entry.id} />
-                <span className="nav-label">
+                <span className="nav-label nav-label-desktop">
                   {entry.label}
+                  {entry.working && (
+                    <span
+                      className="working-dot"
+                      role="img"
+                      aria-label="Working"
+                    />
+                  )}
+                </span>
+                <span className="nav-label nav-label-mobile" aria-hidden="true">
+                  {entry.mobileLabel}
                   {entry.working && (
                     <span
                       className="working-dot"

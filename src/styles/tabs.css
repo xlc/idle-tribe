@@ -19,6 +19,9 @@
   align-items: center;
   gap: 4px;
 }
+.nav-label-mobile {
+  display: none;
+}
 @media (max-width: 719px) {
   .view-tabs {
     --tab-height: 56px;
@@ -35,6 +38,12 @@
     position: absolute;
     top: 6px;
     right: 8px;
+  }
+  .nav-label-desktop {
+    display: none;
+  }
+  .nav-label-mobile {
+    display: inline-flex;
   }
 }
 @media (max-width: 359px) {

@@ -349,8 +349,9 @@
   align-items: center;
 }
 .workforce-compact > div {
-  display: grid;
-  gap: 2px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
 }
 .workforce-compact h2 {
   font: 700 16px var(--default-font-family);

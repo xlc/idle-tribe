@@ -81,6 +81,7 @@
     align-items: start;
   }
   .camp-summary {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     border-radius: 10px;
   }
   .camp-research {
@@ -98,6 +99,20 @@
     min-height: 2.5em;
   }
   .plan-status {
+    font-size: 11px;
+  }
+  .camp-summary .plan-toggle {
+    padding: 12px 10px;
+    gap: 4px;
+  }
+  .camp-summary .plan-category {
+    font-size: 16px;
+  }
+  .camp-summary .plan-status {
+    font-size: 10px;
+  }
+  .camp-summary .plan-toggle strong {
+    min-height: 0;
     font-size: 11px;
   }
   .research-active {
@@ -130,11 +145,25 @@
   }
   .action-automated {
     display: grid;
-    grid-template-columns: 36px minmax(0, 1fr);
+    grid-template-columns: 32px minmax(0, 1fr) auto;
     gap: 8px 10px;
   }
+  .action-automated .action-icon {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .action-automated .action-copy {
+    grid-column: 2;
+    grid-row: 1;
+    overflow: hidden;
+  }
+  .action-automated .action-worker-inline {
+    grid-column: 3;
+    grid-row: 1;
+  }
   .action-automation-controls {
-    grid-column: 1 / -1;
+    grid-column: 2 / -1;
+    grid-row: 2;
     margin-left: 0;
     display: flex;
     align-items: center;
@@ -151,6 +180,19 @@
   }
   .workforce-compact {
     margin-bottom: 0;
+  }
+  .camp-summary .construction-panel + .workforce-bar {
+    border-top: 0;
+    border-left: 1px solid var(--color-base-300);
+  }
+  .camp-summary .workforce-compact {
+    padding: 12px 10px;
+  }
+  .camp-summary .workforce-compact h2 {
+    font-size: 15px;
+  }
+  .camp-summary .workforce-compact p {
+    font-size: 11px;
   }
   .workforce-bar > div {
     gap: 6px 10px;
@@ -218,10 +260,16 @@
   }
   .action-automated .action-name {
     font-size: 15px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .action-automated .action-yield,
   .action-automated .action-skill {
     font-size: 11px;
+  }
+  .action-automated .action-skill {
+    display: none;
   }
   .action-automation-controls {
     flex: 0 1 88px;
