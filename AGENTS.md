@@ -37,9 +37,13 @@ runtime commands. Keep this project a small, playable proof of concept.
 - Preserve the distinction between active elapsed time and hidden-page time.
   Set user-controlled text through DOM text properties, never HTML strings.
 - Keep image assets reasonably sized for their rendered use. Remove unused
-  images, resize raster atlases to the largest needed display scale, preserve
-  transparency and grid alignment, and check tracked image dimensions and
-  file sizes before handoff.
+  images, prefer SVG for simple UI artwork, and use WebP or AVIF for raster
+  artwork with a compatible fallback. Use `srcset`/`sizes` for `<img>` and
+  `image-set()` for CSS backgrounds so the browser can select an appropriate
+  device-pixel-ratio variant. Preserve transparency and sprite-grid alignment,
+  provide intrinsic dimensions or an aspect ratio to prevent layout shifts,
+  lazy-load below-the-fold images, and check tracked image dimensions and file
+  sizes after the production build.
 
 ## Testing and handoff
 

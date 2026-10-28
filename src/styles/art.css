@@ -4,6 +4,11 @@
   height: 60px;
   flex-shrink: 0;
   background-image: url("../assets/settlement-icons.png");
+  /* biome-ignore lint/suspicious/noDuplicateProperties: WebP image-set with a PNG fallback. */
+  background-image: image-set(
+    url("../assets/settlement-icons-1x.webp") 1x,
+    url("../assets/settlement-icons-2x.webp") 2x
+  );
   background-size: 600% 600%;
   background-repeat: no-repeat;
 }
