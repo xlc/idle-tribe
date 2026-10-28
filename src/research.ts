@@ -68,11 +68,10 @@ export function quoteProject(
         ? `Maximum level ${upgrade?.maxLevel ?? 1}`
         : current !== target - 1
           ? `Requires level ${target - 1}`
-          : isUpgrade
-            ? !upgrade
-              ? 'No repeatable upgrade'
-              : requirementBlocker(state, upgrade.requires)
-            : requirementBlocker(state, def.requires)
+          : requirementBlocker(
+              state,
+              isUpgrade ? (upgrade?.requires ?? {}) : def.requires,
+            )
     return {
       cost,
       total: (def.seconds * timeScale) / prestigeMultiplier(state),
