@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 import { FAMILY_NAMES, GIVEN_NAMES } from './definitions/person-names'
-import { generatePersonName } from './names'
+import { generatePersonName, PERSON_NAME_MAX_LENGTH } from './names'
 import { parseSave } from './persistence'
 import { resetRun } from './prestige'
 import { advanceTime } from './simulation'
@@ -11,6 +11,7 @@ test('founders get repeatable names from varied settlement seeds', () => {
   const names = Array.from({ length: 100 }, (_, seed) => {
     const name = required(createDefaultState(seed).people[0]).name
     expect(name).toBe(generatePersonName(seed))
+    expect(name.length).toBeLessThanOrEqual(PERSON_NAME_MAX_LENGTH)
     expect(name).toMatch(/^\S+ \S+$/)
     return name
   })
@@ -22,6 +23,7 @@ test('generation has no population limit at pool exhaustion', () => {
   for (const given of GIVEN_NAMES)
     for (const family of FAMILY_NAMES) names.push(`${given} ${family}`)
   const overflow = generatePersonName(42, names)
+  expect(overflow.length).toBeLessThanOrEqual(PERSON_NAME_MAX_LENGTH)
   expect(overflow).toMatch(/^\S+ \S+( \d+)?$/)
 })
 
