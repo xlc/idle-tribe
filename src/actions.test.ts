@@ -21,20 +21,14 @@ function encounterState() {
   return state
 }
 
-function findEncounter(
+function triggerEncounter(
   state: ReturnType<typeof encounterState>,
   mode: 'manual' | 'automated',
   scale = 1,
 ) {
-  for (let i = 0; i < 1000; i++) {
-    applyExploreReward(state, scale, mode)
-    if (
-      state.pendingEncounter === 'abandoned-cache' ||
-      state.completedEncounters['abandoned-cache']
-    )
-      return
-  }
-  throw new Error('Encounter did not occur')
+  // Roll 17 is the first deterministic draw in the encounter bucket.
+  state.exploreRolls = 17
+  applyExploreReward(state, scale, mode)
 }
 
 test('action availability explains discovery, cost and active-work blockers', () => {
@@ -107,7 +101,7 @@ test('manual exploration pauses for a one-time encounter and resolves one choice
   const state = encounterState()
   for (const id of EXPEDITION_ENCOUNTER_IDS.slice(1))
     state.completedEncounters[id] = true
-  findEncounter(state, 'manual')
+  triggerEncounter(state, 'manual')
   expect(state.pendingEncounter).toBe('abandoned-cache')
   expect(actionAvailability(state, 'explore')).toMatchObject({
     kind: 'manual',
@@ -130,9 +124,8 @@ test('automated encounters use their declared default and pause while a report i
   if (!founder) throw new Error('Default state has no founder')
   state.facilities['expedition-camp'].level = 1
   founder.job = 'explorer'
-  state.exploreRolls = 17
   const beforeWood = state.resources.wood
-  findEncounter(state, 'automated', 0.1)
+  triggerEncounter(state, 'automated', 0.1)
   expect(state.pendingEncounter).toBeNull()
   expect(state.completedEncounters['abandoned-cache']).toBe(true)
   expect(state.resources.wood).toBeCloseTo(beforeWood + 3)

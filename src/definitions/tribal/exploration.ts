@@ -1,5 +1,9 @@
-import type { EXPEDITION_ENCOUNTER_IDS } from '../../ids'
-import type { ExpeditionEncounter, GameState, ResourceId } from '../../types'
+import type {
+  ExpeditionEncounter,
+  ExpeditionEncounterId,
+  GameState,
+  ResourceId,
+} from '../../types'
 
 export type Discovery = keyof GameState['discovered']
 export const EXPLORE_DISCOVERIES: Discovery[] = ['wood', 'stone']
@@ -15,7 +19,7 @@ export const EXPLORE_FINDS: ExploreFind[] = [
 ]
 
 export const EXPEDITION_ENCOUNTERS: Record<
-  (typeof EXPEDITION_ENCOUNTER_IDS)[number],
+  ExpeditionEncounterId,
   ExpeditionEncounter
 > = {
   'abandoned-cache': {

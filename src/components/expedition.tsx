@@ -1,14 +1,9 @@
 import { EXPEDITION_ENCOUNTERS } from '../definitions/tribal/exploration'
 import type { GameSession } from '../session'
-import type { EncounterOptionIndex, GameState } from '../types'
 import { Button } from './common'
 
-function optionIndex(value: number): EncounterOptionIndex {
-  return value === 0 ? 0 : 1
-}
-
 export function ExpeditionEncounter({ session }: { session: GameSession }) {
-  const state: GameState = session.game.state,
+  const state = session.game.state,
     id = state.pendingEncounter
   if (!id) return null
   const encounter = EXPEDITION_ENCOUNTERS[id]
@@ -33,7 +28,7 @@ export function ExpeditionEncounter({ session }: { session: GameSession }) {
             variant={index === 0 ? 'solid' : 'soft'}
             onClick={() =>
               session.change(() =>
-                session.game.resolveEncounter(optionIndex(index)),
+                session.game.resolveEncounter(index === 0 ? 0 : 1),
               )
             }
           >
