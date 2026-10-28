@@ -136,6 +136,11 @@ export function ActionCard({
                   ? `+${formatResource((working ? actionOutputRate(s, id) : 0) * 60)} ${def.resource}/min · automation ${Math.round(automationFactor(s, id) * 100)}%`
                   : `${formatResource(working ? (1 / duration) * 60 : 0)} explores/min`}
               </span>
+              <ActionSkill
+                level={skill.level}
+                xp={skill.xp}
+                requiredXp={actionRequiredXp(s, id)}
+              />
             </span>
             <span className="action-automation-controls">
               {!rateMode && (
@@ -179,6 +184,11 @@ export function ActionCard({
                 {formatResource(duration)}s
                 {slots > 0 ? ` · ${slots} slot${slots === 1 ? '' : 's'}` : ''}
               </span>
+              <ActionSkill
+                level={skill.level}
+                xp={skill.xp}
+                requiredXp={actionRequiredXp(s, id)}
+              />
             </span>
             <span className="project-progress" data-running={running}>
               <ActionProgress
@@ -223,11 +233,6 @@ export function ActionCard({
       {expanded && (
         <div className="action-details" id={`${id}-details`}>
           <p className="action-description">{def.description}</p>
-          <ActionSkill
-            level={skill.level}
-            xp={skill.xp}
-            requiredXp={actionRequiredXp(s, id)}
-          />
           <p className="action-skill-rules">{def.levelEffect}</p>
           {!def.resource && <Costs session={session} cost={def.cost} />}
           {def.kind === 'exploration' && (
