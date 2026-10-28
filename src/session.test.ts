@@ -174,6 +174,18 @@ test('a productive return highlights gains even without arrivals or completed pr
   expect(awayHighlight(report)).toBe(awaySummary(report))
 })
 
+test('a return report highlights the largest resource loss when no milestone landed', () => {
+  const s = settlement()
+  beginAbsence(s, hour)
+  const report = settleAbsence(s, hour + 60000)
+  if (!report) throw new Error('Missing away report')
+  report.expertise = []
+  for (const resource of RESOURCES) report.gains[resource] = 0
+  report.gains.food = -120
+  expect(awayHighlight(report)).toBe('−120 food')
+  expect(awaySummary(report)).toBe('−120 food')
+})
+
 test('session events use the settled timeline for actions and returning from an absence', () => {
   const state = createDefaultState()
   const session = createSession(state, () => {}, hour, true)

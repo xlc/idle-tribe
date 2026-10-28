@@ -106,15 +106,14 @@ export function awayHighlight(report: AwayProgress) {
     0,
   )
   if (levels) return `+${levels} expertise ${levels === 1 ? 'level' : 'levels'}`
-  const best = RESOURCES.reduce<ResourceId | null>(
-    (chosen, r) =>
-      report.gains[r] >
-      Math.max(MIN_VISIBLE_RESOURCE_CHANGE, chosen ? report.gains[chosen] : 0)
-        ? r
-        : chosen,
-    null,
-  )
-  return best
-    ? `+${formatCompactResource(report.gains[best])} ${RESOURCE_INFO[best].name.toLowerCase()}`
-    : 'Settlement saved'
+  const best = RESOURCES.reduce<ResourceId | null>((chosen, r) => {
+    const magnitude = Math.abs(report.gains[r])
+    return magnitude > MIN_VISIBLE_RESOURCE_CHANGE &&
+      (!chosen || magnitude > Math.abs(report.gains[chosen]))
+      ? r
+      : chosen
+  }, null)
+  if (!best) return 'Settlement saved'
+  const gain = report.gains[best]
+  return `${gain >= 0 ? '+' : '−'}${formatCompactResource(Math.abs(gain))} ${RESOURCE_INFO[best].name.toLowerCase()}`
 }

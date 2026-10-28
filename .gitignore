@@ -30,7 +30,6 @@ node_modules/
 coverage/
 .nyc_output/
 test-results/
-playwright-report/
 
 # Logs
 *.log
@@ -42,5 +41,3 @@ playwright-report/
 # Reproducible balance run artifacts
 /balance-results/
 
-# Playwright MCP session artifacts
-.playwright-mcp/
