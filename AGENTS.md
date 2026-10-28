@@ -36,6 +36,10 @@ runtime commands. Keep this project a small, playable proof of concept.
   markers.
 - Preserve the distinction between active elapsed time and hidden-page time.
   Set user-controlled text through DOM text properties, never HTML strings.
+- Keep image assets reasonably sized for their rendered use. Remove unused
+  images, resize raster atlases to the largest needed display scale, preserve
+  transparency and grid alignment, and check tracked image dimensions and
+  file sizes before handoff.
 
 ## Testing and handoff
 
