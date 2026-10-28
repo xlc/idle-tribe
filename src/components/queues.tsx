@@ -91,9 +91,6 @@ export function Queue({ session, confirm, id }: { id: QueueId } & ViewProps) {
           </span>
           <span className="action-copy">
             <strong className="action-name">{researchName}</strong>
-            <span className="action-status action-status-active">
-              Researching
-            </span>
             <span className="action-yield">
               <ActionCountdown
                 session={session}

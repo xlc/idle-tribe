@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-  type ActionAvailability,
   actionAvailability,
   actionCompletionDuration,
   actionJobActive,
@@ -12,9 +11,9 @@ import {
   automationFactor,
   isRateMode,
 } from '../actions'
-import { ACTIONS, RESOURCE_INFO } from '../definitions'
+import { ACTIONS } from '../definitions'
 import { formatCost, formatResource } from '../format'
-import { ACTION_IDS, type ActionId, RESOURCES } from '../ids'
+import { ACTION_IDS, type ActionId } from '../ids'
 import type { GameSession } from '../session'
 import { ResourceArt } from './art'
 import { ActionCountdown, ActionProgress, Costs } from './common'
@@ -86,30 +85,6 @@ function Chevron() {
   )
 }
 
-function missingCostLabel(availability: ActionAvailability) {
-  if (!('missing' in availability)) return ''
-  return RESOURCES.filter((resource) => availability.missing[resource])
-    .map(
-      (resource) =>
-        `${formatResource(availability.missing[resource] ?? 0)} ${RESOURCE_INFO[resource].name.toLowerCase()}`,
-    )
-    .join(', ')
-}
-
-function actionStatusLabel(availability: ActionAvailability) {
-  if (availability.kind === 'locked') return availability.reason
-  if (availability.kind === 'manual') {
-    if (availability.state === 'missing-cost')
-      return `${availability.reason} · ${missingCostLabel(availability)}`
-    return availability.reason
-  }
-  if (availability.state === 'paused') {
-    const missing = missingCostLabel(availability)
-    return missing ? `${availability.reason} · ${missing}` : availability.reason
-  }
-  return availability.reason
-}
-
 export function ActionCard({
   session,
   id,
@@ -134,7 +109,6 @@ export function ActionCard({
     actionJobActive(s, id)
   const statusKind =
     availability.kind === 'locked' ? 'locked' : availability.state
-  const statusId = `${id}-status`
   const icon = (
     <span
       className="action-icon"
@@ -153,20 +127,10 @@ export function ActionCard({
     >
       <div className="action-row">
         {availability.kind === 'automated' ? (
-          <fieldset
-            className="action-automated"
-            aria-label={def.name}
-            aria-describedby={statusId}
-          >
+          <fieldset className="action-automated" aria-label={def.name}>
             {icon}
             <span className="action-copy">
               <strong className="action-name">{def.name}</strong>
-              <span
-                id={statusId}
-                className={`action-status action-status-${statusKind}`}
-              >
-                {actionStatusLabel(availability)}
-              </span>
               <span className="action-yield">
                 {def.resource
                   ? `+${formatResource((working ? actionOutputRate(s, id) : 0) * 60)} ${def.resource}/min · automation ${Math.round(automationFactor(s, id) * 100)}%`
@@ -191,7 +155,6 @@ export function ActionCard({
             type="button"
             className="manual-trigger"
             aria-label={running ? `Stop ${def.name.toLowerCase()}` : def.name}
-            aria-describedby={statusId}
             disabled={
               !running &&
               (availability.kind !== 'manual' || availability.state !== 'ready')
@@ -209,12 +172,6 @@ export function ActionCard({
               <strong className="action-name">
                 {running ? `Stop · ${def.name}` : def.name}
               </strong>
-              <span
-                id={statusId}
-                className={`action-status action-status-${statusKind}`}
-              >
-                {actionStatusLabel(availability)}
-              </span>
               <span className="action-yield">
                 {def.resource
                   ? `+${formatResource(actionYield(s, id))} ${def.resource} · `

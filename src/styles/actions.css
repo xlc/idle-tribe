@@ -134,18 +134,8 @@
   font-size: 11px;
   line-height: 1.25;
 }
-.action-status-ready,
-.action-status-active,
-.action-status-running {
+.action-status-ready {
   color: var(--color-primary);
-}
-.action-status-missing-cost,
-.action-status-blocked,
-.action-status-paused {
-  color: var(--color-warning);
-}
-.action-status-locked {
-  color: var(--color-neutral);
 }
 .manual-action[data-action-state="locked"] {
   opacity: 0.78;
