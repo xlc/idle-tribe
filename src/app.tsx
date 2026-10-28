@@ -1,8 +1,12 @@
 import { Tabs } from '@radix-ui/themes'
 import { useEffect, useRef, useState } from 'react'
+import type { AwayProgress } from './clock'
 import { ActionCards } from './components/actions'
 import { ViewIcon } from './components/art'
-import { SessionNotificationToast } from './components/away-report'
+import {
+  AwayReportDialog,
+  SessionNotificationToast,
+} from './components/away-report'
 import { Button, type Confirm } from './components/common'
 import { ExpeditionEncounter } from './components/expedition'
 import { Legacy } from './components/legacy'
@@ -93,6 +97,7 @@ export function App({ session }: { session: GameSession }) {
     automated = automationUnlocked(s),
     notification = session.notification
   const [view, setView] = useState<View>('settlement')
+  const [awayReport, setAwayReport] = useState<AwayProgress | null>(null)
   const views: {
     id: View
     label: string
@@ -178,9 +183,16 @@ export function App({ session }: { session: GameSession }) {
           {view === 'settlement' && notification && (
             <SessionNotificationToast
               key={notification.id}
-              session={session}
               notification={notification}
               onDismiss={() => session.dismissNotification(notification.id)}
+              onOpenReport={setAwayReport}
+            />
+          )}
+          {awayReport && (
+            <AwayReportDialog
+              session={session}
+              report={awayReport}
+              onClose={() => setAwayReport(null)}
             />
           )}
           <div className="view-scroll" ref={content}>

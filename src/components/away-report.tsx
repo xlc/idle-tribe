@@ -1,5 +1,5 @@
 import * as Toast from '@radix-ui/react-toast'
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { type AwayProgress, awayHighlight } from '../clock'
 import { MIN_VISIBLE_RESOURCE_CHANGE } from '../constants'
 import { OCCUPATIONS, RESOURCE_INFO } from '../definitions'
@@ -31,16 +31,14 @@ function ExpertiseGains({ people }: { people: AwayProgress['expertise'] }) {
 }
 
 export function SessionNotificationToast({
-  session,
   notification,
   onDismiss,
+  onOpenReport,
 }: {
-  session: GameSession
   notification: SessionNotification
   onDismiss: () => void
+  onOpenReport: (report: AwayProgress) => void
 }) {
-  const dialog = useRef<HTMLDialogElement>(null)
-
   const report = notification.report
   const away = notification.kind === 'away' && report
   return (
@@ -59,8 +57,12 @@ export function SessionNotificationToast({
           <button
             type="button"
             className="event-toast-body"
-            onClick={() => dialog.current?.showModal()}
+            onClick={() => {
+              onOpenReport(report)
+              onDismiss()
+            }}
           >
+            <span className="event-toast-kicker">Settlement report</span>
             <strong>Welcome back</strong>
             <span className="event-toast-counts">
               Away for {formatDuration(report.wallSeconds)} ·{' '}
@@ -70,6 +72,7 @@ export function SessionNotificationToast({
         </Toast.Description>
       ) : (
         <Toast.Description className="event-toast-body event-toast-message">
+          <span className="event-toast-kicker">New milestone</span>
           <strong>{notification.text}</strong>
         </Toast.Description>
       )}
@@ -82,17 +85,34 @@ export function SessionNotificationToast({
           ×
         </button>
       </Toast.Close>
-      {away && (
-        <dialog ref={dialog} className="modal away-modal panel">
-          <div className="modal-box">
-            <AwayReport session={session} report={report} />
-            <div className="modal-action">
-              <Button onClick={() => dialog.current?.close()}>Close</Button>
-            </div>
-          </div>
-        </dialog>
-      )}
     </Toast.Root>
+  )
+}
+
+export function AwayReportDialog({
+  session,
+  report,
+  onClose,
+}: {
+  session: GameSession
+  report: AwayProgress
+  onClose: () => void
+}) {
+  const dialog = useRef<HTMLDialogElement>(null)
+  useEffect(() => {
+    const element = dialog.current
+    if (!element) return
+    if (!element.open) element.showModal()
+  }, [])
+  return (
+    <dialog ref={dialog} className="modal away-modal panel" onClose={onClose}>
+      <div className="modal-box">
+        <AwayReport session={session} report={report} />
+        <div className="modal-action">
+          <Button onClick={() => dialog.current?.close()}>Close</Button>
+        </div>
+      </div>
+    </dialog>
   )
 }
 
