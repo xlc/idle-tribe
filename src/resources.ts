@@ -38,9 +38,10 @@ export function addResources(state: GameState, amount: Cost) {
   for (const r of RESOURCES) {
     const delta = amount[r] ?? 0
     if (delta <= 0) continue
-    const before = state.resources[r]
-    if (before >= storageCapacity(state, r) - EPSILON) continue
-    const next = Math.min(storageCapacity(state, r), before + delta)
+    const before = state.resources[r],
+      capacity = storageCapacity(state, r)
+    if (before >= capacity - EPSILON) continue
+    const next = Math.min(capacity, before + delta)
     state.resources[r] = next
     if (next > before) added[r] = next - before
   }
@@ -70,9 +71,6 @@ export function storageCapacity(state: GameState, r: ResourceId) {
     }
   return Math.floor(total * (state.legacy.perks['organized-records'] ? 1.1 : 1))
 }
-export function storageRemaining(state: GameState, r: ResourceId) {
-  return Math.max(0, storageCapacity(state, r) - state.resources[r])
-}
 export function storageFull(state: GameState, r: ResourceId) {
-  return storageRemaining(state, r) <= EPSILON
+  return state.resources[r] + EPSILON >= storageCapacity(state, r)
 }
