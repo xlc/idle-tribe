@@ -16,6 +16,12 @@ runtime commands. Keep this project a small, playable proof of concept.
 ## Implementation
 
 - Inspect the working tree before editing and keep changes focused.
+- Prefer existing, high-quality component primitives from the project’s UI
+  libraries over bespoke controls and custom CSS. Before building a new
+  component or styling pattern, check whether an accessible, composable
+  component already provides the behavior; add custom styling only for
+  game-specific layout or presentation that the existing components cannot
+  express.
 - Treat `biome.json`, `tsconfig.json`, and `.editorconfig` as the sources of
   truth for code style and compiler rules.
 - Keep game rules independent of React, the DOM, browser APIs, and globals.
