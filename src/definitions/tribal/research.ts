@@ -6,7 +6,7 @@ export const research = {
     name: 'Sharpened stick',
     cost: { wood: 6, food: 5 },
     seconds: 8,
-    effect: 'Food gathering output +25%; automation +2 percentage points.',
+    effect: ['+25% food gathering output', '+2% automation'],
     description: 'A stick with a surprisingly convincing point.',
     requires: { research: [], discovery: 'wood' },
     effects: {
@@ -38,7 +38,7 @@ export const research = {
     name: 'Carpentry',
     cost: { wood: 60, stone: 30 },
     seconds: 48,
-    effect: 'Unlock Sawmill and Storehouse.',
+    effect: 'Unlock Sawmill and Warehouse.',
     description: 'Wood behaves better once you explain the corners.',
     requires: { research: ['shelters', 'stone-tools'] },
     effects: {},

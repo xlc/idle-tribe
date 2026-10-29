@@ -4,6 +4,8 @@ import { wipeSave } from '../persistence'
 import { AwayReportDialog } from './away-report'
 import { Button, type ViewProps } from './common'
 
+const CHEAT_RESOURCES = ['food', 'wood', 'stone'] as const
+
 async function refreshApp(session: ViewProps['session']) {
   session.change(() => undefined)
   try {
@@ -51,6 +53,27 @@ export function Settings({ session, confirm }: ViewProps) {
           Wipe local save
         </Button>
       </div>
+      <section className="settings-cheats">
+        <h2>Cheats</h2>
+        <p className="settings-note">
+          Add resources for testing and experimentation.
+        </p>
+        <div className="settings-actions">
+          {CHEAT_RESOURCES.map((resource) => (
+            <Button
+              key={resource}
+              color="amber"
+              onClick={() =>
+                session.change(() =>
+                  session.game.grantResources({ [resource]: 100 }),
+                )
+              }
+            >
+              +100 {resource}
+            </Button>
+          ))}
+        </div>
+      </section>
       <section className="event-log-section">
         <h2>Event log</h2>
         <p className="event-log-note">

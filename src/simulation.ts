@@ -32,7 +32,7 @@ import { isProductionJob } from './jobs'
 import { generatePersonName } from './names'
 import { createRecord } from './records'
 import { completeProject, projectName, QUEUES, startQueues } from './research'
-import { canAfford, pay, storageMultiplier, threshold } from './resources'
+import { addResources, canAfford, pay } from './resources'
 import {
   arrivalAptitude,
   arrivalBlocker,
@@ -54,11 +54,11 @@ function settleEvents(state: GameState, visible: boolean) {
   for (const p of state.people)
     if (isProductionJob(p.job) && p.progress >= 1 - EPSILON) {
       const input = jobInput(state, p.job)
+      const def = JOBS[p.job]
       if (canAfford(state, input)) {
         pay(state, input)
         p.progress = Math.max(0, p.progress - 1)
-        const def = JOBS[p.job]
-        state.resources[def.output]++
+        addResources(state, { [def.output]: 1 })
       } else p.progress = 1
     }
   for (const id of QUEUES) {
@@ -133,8 +133,8 @@ function settleEvents(state: GameState, visible: boolean) {
 // commitment and cycle-progress checks live between those events.
 type ActionRule = {
   id: ActionId
-  // Storage-free completion speed (workers × 1 / base duration); storage
-  // pressure applies live in the loop, exactly like worker rates.
+  // Completion speed is independent of storage. Outputs are capped when they
+  // reach their resource capacity.
   speed: number
   // Fast resource actions accrue output and XP continuously instead of
   // creating one simulation event per completion.
@@ -172,12 +172,11 @@ function actionRules(state: GameState): ActionRule[] {
 }
 function intervalRules(state: GameState) {
   return {
-    rates: workerRates(state, { storage: 1, ignoreInputs: true }),
+    rates: workerRates(state, { ignoreInputs: true }),
     staffing: createRecord(WORKING_JOB_IDS, (job) =>
       staffingMultiplier(state, job),
     ),
     inputs: createRecord(JOB_IDS, (job) => jobInput(state, job)),
-    comfort: createRecord(RESOURCES, (resource) => threshold(state, resource)),
     construction: constructionSpeed(state) / 60,
     arrival: arrivalStatus(state),
     actions: actionRules(state),
@@ -196,27 +195,19 @@ export function advanceTime(
     const available = createRecord(JOB_IDS, (job) =>
       canAfford(state, rules.inputs[job]),
     )
-    const pressure = createRecord(RESOURCES, (resource) =>
-      storageMultiplier(
-        state,
-        resource,
-        state.resources[resource],
-        rules.comfort[resource],
-      ),
-    )
     const rates = state.people.map((person, index) =>
       isProductionJob(person.job) &&
       available[person.job] &&
       person.progress < 1 - EPSILON
-        ? ((rules.rates[index] ?? 0) * pressure[JOBS[person.job].output]) / 60
+        ? (rules.rates[index] ?? 0) / 60
         : 0,
     )
     const practiceRates = state.people.map((person, index) => {
       const job = person.job
       if (!isWorkingJob(job)) return 0
       const definition = OCCUPATIONS[job]
-      // Staffed actions practice like production jobs; storage pressure
-      // only slows their output, not the practice itself.
+      // Staffed actions practice like production jobs while their costs are
+      // available; surplus output is discarded at the storage cap.
       const action = isActionJob(job)
         ? ACTION_IDS.find((id) => ACTIONS[id].job === job)
         : undefined
@@ -227,8 +218,7 @@ export function advanceTime(
             : (rates[index] ?? 0) > 0
           : Boolean(state.queues.construction.active && rules.construction > 0)
       if (!working) return 0
-      const storage = isProductionJob(job) ? pressure[JOBS[job].output] : 1
-      return healthMultiplier(person) * rules.staffing[job] * storage
+      return healthMultiplier(person) * rules.staffing[job]
     })
     // Costs remain live: producers can fund a paused action, and a completed
     // trip can exhaust its inputs, between structural changes.
@@ -262,10 +252,7 @@ export function advanceTime(
     if (manual && state.manual)
       step = Math.min(step, Math.max(0, 1 - state.manual.progress) / manual)
     for (const action of activeActions) {
-      const resource = ACTIONS[action.id].resource,
-        rate = resource
-          ? action.speed * (pressure[resource] ?? 1)
-          : action.speed
+      const rate = action.speed
       if (rate <= 0) continue
       if (action.rateMode) {
         // Keep level-ups as event boundaries so rules refresh with skill.
@@ -307,12 +294,12 @@ export function advanceTime(
     if (state.manual) state.manual.progress += manual * step
     for (const action of activeActions) {
       const resource = ACTIONS[action.id].resource,
-        rate = resource
-          ? action.speed * (pressure[resource] ?? 1)
-          : action.speed
+        rate = action.speed
       if (action.rateMode) {
         if (resource)
-          state.resources[resource] += rate * action.outputPerCompletion * step
+          addResources(state, {
+            [resource]: rate * action.outputPerCompletion * step,
+          })
         const previousLevel = state.actionSkills[action.id].level
         grantActionXp(state, action.id, rate * action.xpPerCompletion * step)
         learned =
@@ -342,8 +329,9 @@ export function resourceFlows(
   const production = workerRates(state, options)
   for (const [index, p] of state.people.entries())
     if (isProductionJob(p.job)) {
+      const output = JOBS[p.job].output
       const rate = production[index] ?? 0
-      flows[JOBS[p.job].output].production += rate
+      flows[output].production += rate
       const input = jobInput(state, p.job)
       for (const r of RESOURCES) flows[r].inputs += rate * (input[r] ?? 0)
     }

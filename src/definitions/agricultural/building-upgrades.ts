@@ -12,16 +12,6 @@ export const buildingUpgrades = {
       housing: 4,
     },
   ],
-  'food-store': [
-    {
-      name: 'Granary',
-      description: 'The harvest has moved in and brought all its friends.',
-      requires: { research: ['agriculture'] },
-      cost: { planks: 15, blocks: 10 },
-      work: 4,
-      storage: { food: 1200 },
-    },
-  ],
   lumber: [
     {
       name: 'Timber yard',

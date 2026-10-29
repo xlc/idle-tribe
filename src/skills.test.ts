@@ -77,7 +77,7 @@ test('contested inputs award actual practice, then resume from the blocked cycle
   expect(s.people.map((p) => p.practice.sawyer)).toEqual([180, 180])
 })
 
-test('crowding and storage pressure slow practice and expansion restores efficiency', () => {
+test('crowding slows practice while storage does not change efficiency', () => {
   const crowded = camp()
   people(crowded, 'farmer', 'farmer', 'farmer', 'farmer')
   const roomy = structuredClone(crowded)
@@ -92,9 +92,9 @@ test('crowding and storage pressure slow practice and expansion restores efficie
   const stock = camp()
   people(stock, 'farmer')
   stock.facilities['food-store'].level = 0
-  stock.resources.food = 10000
+  stock.resources.food = 100
   advanceTime(stock, 30)
-  expect(required(stock.people[0]).practice.farmer).toBeLessThan(30)
+  expect(required(stock.people[0]).practice.farmer).toBeCloseTo(30, 8)
   stock.resources.food = 0
   const before = required(stock.people[0]).practice.farmer
   advanceTime(stock, 30)

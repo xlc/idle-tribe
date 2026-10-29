@@ -9,7 +9,7 @@ import {
 import { formatExploreNotice, formatExploreOutcome } from './format'
 import { type ActionId, RESEARCH_IDS, RESOURCES } from './ids'
 import { hasResearch, researchEffects } from './research-effects'
-import { canAfford, pay, refund, storageMultiplier } from './resources'
+import { addResources, canAfford, pay, refund } from './resources'
 import { happinessMultiplier, requirementBlocker } from './settlement'
 import type {
   Cost,
@@ -144,7 +144,12 @@ export function actionAvailability(
         missing,
         reason: 'Needs more resources',
       }
-    : { kind: 'manual', state: 'ready', missing: {}, reason: 'Ready to start' }
+    : {
+        kind: 'manual',
+        state: 'ready',
+        missing: {},
+        reason: 'Ready to start',
+      }
 }
 
 export function actionWorkersUnlocked(state: GameState, id: ActionId) {
@@ -185,8 +190,7 @@ export function actionYield(state: GameState, id: ActionId) {
         bonus
     : 0
 }
-// Skill-adjusted cadence before live storage pressure. The simulation caches
-// this between discrete events; displays and mode selection use the same rule.
+// Skill-adjusted cadence. Storage caps output; it does not change cadence.
 export function baseActionDuration(state: GameState, id: ActionId) {
   return (
     ACTIONS[id].seconds *
@@ -195,11 +199,7 @@ export function baseActionDuration(state: GameState, id: ActionId) {
 }
 // Duration of one completion by a single worker at the current skill level.
 export function actionDuration(state: GameState, id: ActionId) {
-  const def = ACTIONS[id]
-  return (
-    baseActionDuration(state, id) /
-    (def.resource ? storageMultiplier(state, def.resource) : 1)
-  )
+  return baseActionDuration(state, id)
 }
 // Automated completions run faster with more workers (each adds +100% speed).
 export function actionCompletionDuration(state: GameState, id: ActionId) {
@@ -207,8 +207,7 @@ export function actionCompletionDuration(state: GameState, id: ActionId) {
 }
 export function isRateMode(state: GameState, id: ActionId) {
   // Fast automated actions are integrated continuously to keep offline
-  // settlement bounded; use storage-free cadence so the mode cannot flip while
-  // a stockpile changes during one simulation interval.
+  // settlement bounded.
   const workers = actionWorkers(state, id)
   return (
     Boolean(ACTIONS[id].resource) &&
@@ -256,14 +255,13 @@ export function automatedOutput(state: GameState, id: ActionId) {
 export function actionOutputRate(
   state: GameState,
   id: ActionId,
-  options: { happiness?: number; storage?: number } = {},
+  options: { happiness?: number } = {},
 ) {
   const def = ACTIONS[id],
     n = actionWorkers(state, id)
   if (!def.resource || n < 1 || !def.visible(state)) return 0
-  const storage = options.storage ?? storageMultiplier(state, def.resource)
   return (
-    ((n * storage) / baseActionDuration(state, id)) *
+    (n / baseActionDuration(state, id)) *
     actionYield(state, id) *
     automationFactor(state, id) *
     (options.happiness ?? happinessMultiplier(state))
@@ -329,8 +327,7 @@ function exploreResourceReward(
       ]
   if (!find) return {}
   const amount = find.amount(level) * scale
-  state.resources[find.resource] += amount
-  return { [find.resource]: amount }
+  return addResources(state, { [find.resource]: amount })
 }
 
 function eligibleEncounters(state: GameState) {
@@ -391,9 +388,9 @@ function applyEncounterEffect(
     const amount: Cost = {}
     for (const resource of RESOURCES)
       if (effect.amount[resource]) {
-        const delta = (effect.amount[resource] ?? 0) * scale
-        state.resources[resource] += delta
-        amount[resource] = delta
+        const delta = (effect.amount[resource] ?? 0) * scale,
+          added = addResources(state, { [resource]: delta })
+        if (added[resource]) amount[resource] = added[resource]
       }
     outcome = { kind: 'resources', amount }
   } else if (effect.kind === 'happiness') {
@@ -476,8 +473,11 @@ export function applyExploreReward(
     grantActionXp(state, 'explore', amount)
     if (state.researchUnlocked) {
       const knowledge = 1 * scale
-      state.resources.knowledge += knowledge
-      state.lastExploreOutcome = { kind: 'knowledge', amount: knowledge }
+      const added = addResources(state, { knowledge })
+      state.lastExploreOutcome = {
+        kind: 'knowledge',
+        amount: added.knowledge ?? 0,
+      }
     } else {
       state.lastExploreOutcome = { kind: 'experience', amount }
     }
@@ -519,7 +519,10 @@ export function applyExploreReward(
     }
     state.notice = formatExploreNotice(state.lastExploreOutcome)
     state.expeditionUnlocked = true
+    return
   }
+  state.lastExploreOutcome = { kind: 'nothing' }
+  state.notice = formatExploreNotice(state.lastExploreOutcome)
 }
 
 // Probability-weighted explore rewards per completion, for rate displays.
@@ -563,14 +566,14 @@ export function finishManual(state: GameState) {
   state.manual = null
   grantActionXp(state, active.id, 1)
   if (def.resource) {
-    state.resources[def.resource] += actionYield(state, active.id)
+    addResources(state, { [def.resource]: actionYield(state, active.id) })
   }
   if (def.kind === 'exploration') applyExploreReward(state, 1, 'manual')
   syncUnlocks(state)
 }
 
-// One automated completion. Explore pays its cost here (with pause) instead
-// of upfront, mirroring how workplaces pay recipe inputs.
+// One automated completion. Explore pays its cost here, mirroring how
+// workplaces pay recipe inputs. Resource output is capped by addResources.
 export function completeAction(state: GameState, id: ActionId) {
   const def = ACTIONS[id]
   if (
@@ -583,7 +586,7 @@ export function completeAction(state: GameState, id: ActionId) {
   pay(state, def.cost)
   grantActionXp(state, id, xpFactor(state, id))
   if (def.resource) {
-    state.resources[def.resource] += automatedOutput(state, id)
+    addResources(state, { [def.resource]: automatedOutput(state, id) })
   }
   if (def.kind === 'exploration')
     applyExploreReward(state, automationFactor(state, id))

@@ -97,6 +97,7 @@ function exploreOutcome(v: JsonValue | undefined): ExploreOutcome | null {
   if (v === null) return null
   const o = object(v),
     kind = member(o.kind, [
+      'nothing',
       'resources',
       'discovery',
       'knowledge',
@@ -105,6 +106,7 @@ function exploreOutcome(v: JsonValue | undefined): ExploreOutcome | null {
       'arrival-progress',
       'happiness',
     ] as const)
+  if (kind === 'nothing') return { kind }
   if (kind === 'resources') return { kind, amount: cost(o.amount) }
   if (kind === 'discovery')
     return { kind, discovery: member(o.discovery, ['wood', 'stone'] as const) }

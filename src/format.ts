@@ -45,6 +45,7 @@ export function formatResourceGain(cost: Cost) {
     .join(' · ')
 }
 export function formatExploreOutcome(outcome: ExploreOutcome) {
+  if (outcome.kind === 'nothing') return 'Nothing found this time'
   if (outcome.kind === 'resources')
     return formatResourceGain(outcome.amount) || 'No material find'
   if (outcome.kind === 'discovery') return `Discovered ${outcome.discovery}`
@@ -63,6 +64,7 @@ export function formatExploreOutcome(outcome: ExploreOutcome) {
 }
 export function formatExploreNotice(outcome: ExploreOutcome) {
   const detail = formatExploreOutcome(outcome)
+  if (outcome.kind === 'nothing') return 'Explorers found nothing this time'
   if (outcome.kind === 'resources') return `Explorers returned with ${detail}`
   if (outcome.kind === 'discovery') return `Discovered ${outcome.discovery}`
   if (outcome.kind === 'knowledge') return `Explorers brought back ${detail}`

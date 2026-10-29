@@ -2,6 +2,21 @@ import type { BuildingId } from '../../ids'
 import type { BuildingDefinition } from '../../types'
 
 export const buildings = {
+  storehouse: {
+    forms: [
+      {
+        name: 'Warehouse',
+        description:
+          'Finished goods deserve better than the nearest empty patch.',
+        cost: { wood: 60, stone: 40 },
+        work: 4,
+        requires: { research: ['town-planning'] },
+        storage: { planks: 150, blocks: 150, tools: 60, ceramics: 150 },
+      },
+    ],
+    effect:
+      'Storage for crafted goods; later forms also store industrial goods.',
+  },
   'meeting-place': {
     forms: [
       {

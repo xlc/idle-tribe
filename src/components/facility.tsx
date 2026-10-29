@@ -22,7 +22,7 @@ import {
   previewProject,
   researchPlan,
 } from '../research'
-import { storageMultiplier, threshold } from '../resources'
+import { storageCapacity, storageFull } from '../resources'
 import {
   assigned,
   comfortablePlaces,
@@ -72,6 +72,11 @@ export function Facility({
     job = def.job,
     n = job ? assigned(s, job) : 0
   const actionDefinition = action ? ACTIONS[action] : undefined
+  const outputFull = actionDefinition?.resource
+    ? storageFull(s, actionDefinition.resource)
+    : job && isProductionJob(job)
+      ? storageFull(s, JOBS[job].output)
+      : false
   const production =
     action && actionDefinition
       ? actionDefinition.resource
@@ -94,13 +99,11 @@ export function Facility({
       ? 'Retired'
       : missingInputs.length
         ? `Paused · Missing ${missingInputs.map((r) => RESOURCE_INFO[r].name.toLowerCase()).join(', ')}`
-        : output && storageMultiplier(s, output) < 1
-          ? 'Crowded storage'
-          : !f.level
-            ? ''
-            : job && !n
-              ? 'No workers'
-              : ''
+        : !f.level
+          ? ''
+          : job && !n
+            ? 'No workers'
+            : ''
   const active = s.queues.construction.active?.project.id === id
   const workplaceType = form.housing
     ? 'Housing'
@@ -122,10 +125,10 @@ export function Facility({
     const after = structuredClone(s)
     removeFacility(after, id)
     const losses = RESOURCES.filter(
-      (r) => threshold(s, r) !== threshold(after, r),
+      (r) => storageCapacity(s, r) !== storageCapacity(after, r),
     ).map(
       (r) =>
-        `${RESOURCE_INFO[r].name} comfort ${threshold(s, r)} → ${threshold(after, r)}; production pressure ×${formatResource(storageMultiplier(s, r))} → ×${formatResource(storageMultiplier(after, r))}`,
+        `${RESOURCE_INFO[r].name} storage ${storageCapacity(s, r)} → ${storageCapacity(after, r)}`,
     )
     const beforeRates = resourceRates(s),
       afterRates = resourceRates(after)
@@ -194,6 +197,11 @@ export function Facility({
                   +{formatResource(production)}{' '}
                   {actionDefinition.resource ?? 'explores'}/s
                 </span>
+                {outputFull && (
+                  <span className="recipe-input">
+                    At capacity · surplus discarded
+                  </span>
+                )}
                 <span className="recipe-input">
                   Staff {n}/{actionSlots(s, action)} · automation{' '}
                   {Math.round(automationFactor(s, action) * 100)}%
@@ -206,6 +214,11 @@ export function Facility({
                   {output ? RESOURCE_INFO[output].name.toLowerCase() : 'work'}
                   /s
                 </span>
+                {outputFull && (
+                  <span className="recipe-input">
+                    At capacity · surplus discarded
+                  </span>
+                )}
                 {RESOURCES.filter((r) => input[r]).map((r) => (
                   <span className="recipe-input" key={r}>
                     Uses {formatResource(production * (input[r] ?? 0))}{' '}

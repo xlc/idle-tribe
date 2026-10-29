@@ -1,8 +1,10 @@
 .settlement-brief {
+  margin-bottom: 24px;
+}
+.settlement-brief-content {
   display: grid;
   gap: 14px;
   padding: 16px;
-  margin-bottom: 24px;
 }
 .settlement-brief-heading {
   display: flex;
@@ -118,18 +120,6 @@
   font-size: 12px;
   display: block;
   margin-top: 3px;
-}
-.section-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 8px 12px;
-  margin-bottom: 14px;
-}
-.section-heading span {
-  color: var(--color-neutral);
-  font: 13px var(--default-font-family);
 }
 .flavor {
   font-size: 13px;
@@ -348,6 +338,12 @@
   overflow: hidden;
   min-width: 0;
 }
+.construction-panel.compact {
+  margin-top: 24px;
+}
+.queue-panel-compact {
+  border-top: 1px solid var(--color-base-300);
+}
 .plan-toggle {
   display: grid;
   gap: 9px;
@@ -373,7 +369,10 @@
 }
 .plan-chevron {
   color: var(--color-neutral);
-  font: 16px var(--default-font-family);
+}
+.plan-chevron svg {
+  display: block;
+  transition: transform 0.2s ease-out;
 }
 .plan-toggle strong {
   display: block;
@@ -388,6 +387,48 @@
   font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.queue-panel-compact .plan-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 0;
+}
+.queue-panel-compact .plan-category {
+  display: contents;
+}
+.plan-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.queue-panel-compact .plan-label {
+  flex: 1;
+  min-width: 0;
+  font:
+    700 18px Georgia,
+    serif;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.plan-label > svg {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+}
+.queue-panel-compact .plan-chevron {
+  order: 3;
+  font-size: 14px;
+}
+.queue-panel-compact .plan-primary {
+  display: none;
+}
+.queue-panel-compact .plan-toggle > .rt-ProgressRoot {
+  display: none;
+}
+.queue-panel-compact .plan-status {
+  flex: 0 1 auto;
 }
 .research-active {
   position: relative;
@@ -412,6 +453,9 @@
 .research-icon svg {
   width: 28px;
   height: 28px;
+}
+.plan-toggle[aria-expanded="true"] .plan-chevron svg {
+  transform: rotate(180deg);
 }
 .research-active .action-yield {
   font-variant-numeric: tabular-nums;
@@ -481,26 +525,4 @@
 }
 .facility-detail .rt-SelectTrigger {
   width: 100%;
-}
-.workforce-compact {
-  padding: 12px 14px;
-  align-items: center;
-}
-.workforce-compact > div {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-.workforce-compact h2 {
-  font: 700 16px var(--default-font-family);
-}
-.workforce-compact .happiness-status {
-  display: none;
-}
-.workforce-compact .arrival-details {
-  max-width: none;
-}
-.workforce-compact .arrival-details summary {
-  padding: 8px 0;
-  color: var(--color-primary);
 }

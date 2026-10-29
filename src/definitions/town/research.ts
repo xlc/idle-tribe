@@ -101,7 +101,7 @@ export const research = {
     cost: { knowledge: 600, planks: 200, blocks: 100 },
     seconds: 10800,
     effect:
-      'Knowledge threshold \u00d71.50 in addition to other storage effects; full-speed offline window +4h.',
+      'Knowledge capacity \u00d71.50 in addition to other storage effects; full-speed offline window +4h.',
     description:
       "Tomorrow's workers would appreciate knowing what today's workers were thinking.",
     requires: { research: ['writing'] },
@@ -111,7 +111,7 @@ export const research = {
       requires: { research: ['mechanization'] },
       costMultiplier: 1.75,
       timeMultiplier: 1.2,
-      effect: 'Knowledge storage threshold ×1.08 per additional level.',
+      effect: 'Knowledge storage capacity ×1.08 per additional level.',
       effects: { resourceStorage: { knowledge: 1.08 } },
     },
   },

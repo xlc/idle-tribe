@@ -81,7 +81,7 @@ export const research = {
     cost: { knowledge: 6000, data: 1000, 'quantum-components': 40 },
     seconds: 21600,
     effect:
-      'Housing contribution and all storage thresholds multiply by a further 1.25.',
+      'Housing contribution and all storage capacities multiply by a further 1.25.',
     description:
       'Even the enormous buildings have somewhere sensible to put their feet.',
     effects: { housing: 1.25, storage: 1.25 },

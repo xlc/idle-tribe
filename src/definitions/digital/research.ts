@@ -40,7 +40,7 @@ export const research = {
     cost: { knowledge: 2500, data: 300, circuits: 80 },
     seconds: 16200,
     effect:
-      'Full-speed offline window +4h; knowledge and data thresholds \u00d71.25.',
+      'Full-speed offline window +4h; knowledge and data capacities \u00d71.25.',
     description: 'Several copies of the facts have agreed to keep in touch.',
     effects: {
       offlineHours: 4,
@@ -51,7 +51,7 @@ export const research = {
       requires: { research: ['orbital-flight'] },
       costMultiplier: 1.75,
       timeMultiplier: 1.2,
-      effect: 'Knowledge and data thresholds ×1.08 per additional level.',
+      effect: 'Knowledge and data capacities ×1.08 per additional level.',
       effects: {
         resourceStorage: { knowledge: 1.08, data: 1.08 },
       },

@@ -1,12 +1,17 @@
+import type { ReactNode } from 'react'
 import { ACTIONS, BUILDINGS } from '../definitions'
 import { ACTION_IDS, BUILDING_IDS } from '../ids'
 import { researchPlan } from '../research'
 import { assigned, requirementBlocker } from '../settlement'
 import { ActionCards } from './actions'
-import type { ViewProps } from './common'
+import { ViewIcon } from './art'
+import { SectionDisclosure, type ViewProps } from './common'
 import { Facility } from './facility'
 
-export function Production(props: ViewProps) {
+export function Production({
+  middle,
+  ...props
+}: ViewProps & { middle?: ReactNode }) {
   const s = props.session.game.state
   const planned = researchPlan(s)
   const available = BUILDING_IDS.filter((id) => {
@@ -28,31 +33,38 @@ export function Production(props: ViewProps) {
   return (
     <section className="production-view">
       {actions.length > 0 && (
-        <section className="action-section" aria-label="Actions">
-          <div className="section-heading">
-            <h2>Actions</h2>
-          </div>
-          <ActionCards session={props.session} ids={actions} />
-        </section>
+        <SectionDisclosure
+          title={
+            <>
+              <ViewIcon name="actions" />
+              Actions
+            </>
+          }
+          ariaLabel="Actions"
+        >
+          <ActionCards {...props} ids={actions} />
+        </SectionDisclosure>
       )}
-      <section className="workplace-section" aria-label="Workplaces">
-        <div className="section-heading">
-          <div>
-            <h2>Workplaces</h2>
-            <p className="section-description">
-              Build spaces that turn people, time, and materials into progress.
-            </p>
-          </div>
-          <span className="workplace-count">
-            {built} built · {available.length} available
-          </span>
-        </div>
+      {middle}
+      <SectionDisclosure
+        title={
+          <>
+            <ViewIcon name="workplaces" />
+            Workplaces
+          </>
+        }
+        status={`${built} built · ${available.length} available`}
+        ariaLabel="Workplaces"
+      >
+        <p className="section-description">
+          Build spaces that turn people, time, and materials into progress.
+        </p>
         <div className="building-grid">
           {available.map((id) => (
             <Facility key={id} {...props} id={id} />
           ))}
         </div>
-      </section>
+      </SectionDisclosure>
     </section>
   )
 }

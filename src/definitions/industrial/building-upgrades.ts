@@ -4,19 +4,29 @@ import type { FormDefinition } from '../../types'
 export const buildingUpgrades = {
   stockyard: [
     {
-      name: 'Ore stockyard',
+      name: 'Ore depot',
       description:
         'The rocks now require a slightly more detailed sorting system.',
       requires: { research: ['mechanization'] },
       cost: { planks: 100, blocks: 80, tools: 20 },
       work: 10,
-      storage: { wood: 1000, stone: 1000, ore: 600 },
+      storage: {
+        food: 400,
+        wood: 1000,
+        stone: 1000,
+        planks: 150,
+        blocks: 150,
+        tools: 60,
+        knowledge: 100,
+        ore: 600,
+      },
     },
   ],
   storehouse: [
     {
-      name: 'Warehouse',
-      description: 'The piles have grown large enough to deserve an address.',
+      name: 'Materials depot',
+      description:
+        'The crafted piles have grown large enough to deserve an address.',
       requires: { research: ['mechanization'] },
       cost: { planks: 120, blocks: 100, tools: 30 },
       work: 12,

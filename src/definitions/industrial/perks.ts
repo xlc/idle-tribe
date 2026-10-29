@@ -23,7 +23,7 @@ export const perks = {
   'organized-records': {
     name: 'Organized records',
     cost: 25,
-    effect: 'All storage thresholds ×1.10.',
+    effect: 'All storage capacities ×1.10.',
     description: 'The piles are finally on speaking terms with the paperwork.',
   },
 } satisfies Partial<Record<PerkId, PerkDefinition>>

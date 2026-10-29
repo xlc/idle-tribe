@@ -50,9 +50,6 @@
   border-radius: 50%;
   background: var(--color-primary);
 }
-.working-dot[data-visible="false"] {
-  visibility: hidden;
-}
 .working-status {
   display: inline-flex;
   align-items: center;
@@ -72,48 +69,69 @@
 .view-panel {
   min-width: 0;
 }
-.settlement-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
-  gap: 22px;
-  align-items: start;
-}
-.settlement-layout[data-aside="false"] {
-  grid-template-columns: minmax(0, 1fr);
-}
-.camp-aside {
+.section-disclosure {
   min-width: 0;
-  position: sticky;
-  top: 0;
 }
-.project-plans {
-  display: grid;
+.section-disclosure-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 12px;
+  padding: 12px 0;
+  border-top: 0;
 }
-.camp-summary {
-  display: grid;
-  gap: 0;
+.section-disclosure-summary::-webkit-details-marker {
+  display: none;
+}
+.section-disclosure-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
   overflow: hidden;
+  color: var(--color-base-content);
+  font:
+    700 18px Georgia,
+    serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.camp-summary .construction-panel,
-.camp-summary .workforce-bar {
-  margin: 0;
+.section-disclosure-status {
+  overflow: hidden;
+  color: var(--color-neutral);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.camp-summary .queue-panel {
-  border: 0;
-  border-radius: 0;
-  background: transparent;
+.section-disclosure-end {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
-.camp-summary .construction-panel + .workforce-bar {
-  border-top: 1px solid var(--color-base-300);
+.section-disclosure-chevron {
+  flex: 0 0 auto;
+  color: var(--color-neutral);
+  transition: transform 0.2s ease-out;
+}
+.section-disclosure[open]
+  > .section-disclosure-summary
+  .section-disclosure-chevron {
+  transform: rotate(180deg);
+}
+.section-disclosure-content {
+  min-width: 0;
 }
 .production-view {
   display: grid;
   gap: 24px;
 }
-.action-section,
-.workplace-section {
-  min-width: 0;
+.people-view {
+  display: grid;
+  gap: 24px;
+}
+.people-view .settlement-brief {
+  margin-bottom: 0;
 }
 .building-grid {
   display: grid;
@@ -121,18 +139,10 @@
   gap: 10px;
   align-items: start;
 }
-.section-heading > div {
-  min-width: 0;
-}
 .section-description {
   max-width: 52ch;
   margin-top: 4px;
   color: var(--color-neutral);
   font-size: 12px;
   line-height: 1.4;
-}
-.workplace-count {
-  color: var(--color-neutral);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
 }

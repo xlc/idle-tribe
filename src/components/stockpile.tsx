@@ -4,7 +4,7 @@ import { ACTIONS, BUILDINGS, JOBS, RESOURCE_INFO } from '../definitions'
 import { formatCompactResource, formatResource } from '../format'
 import { ACTION_IDS, BUILDING_IDS, RESOURCES } from '../ids'
 import { isProductionJob } from '../jobs'
-import { storageMultiplier } from '../resources'
+import { storageCapacity, storageFull } from '../resources'
 import type { GameSession } from '../session'
 import { requirementBlocker } from '../settlement'
 import { resourceFlows } from '../simulation'
@@ -34,17 +34,26 @@ export function Stockpile({ session }: { session: GameSession }) {
     foodNet < -EPSILON &&
     s.resources.food + EPSILON < flows.food.meals
   function resource(r: ResourceId) {
-    const pressure = storageMultiplier(s, r),
+    const capacity = storageCapacity(s, r),
+      full = storageFull(s, r),
       flow = flows[r],
       net = flow.production - flow.inputs - flow.meals,
-      rate = Math.abs(net) < MIN_VISIBLE_RESOURCE_CHANGE ? 0 : net / 60,
+      effectiveNet = full && net > 0 ? 0 : net,
+      rate =
+        Math.abs(effectiveNet) < MIN_VISIBLE_RESOURCE_CHANGE
+          ? 0
+          : effectiveNet / 60,
       warning = r === 'food' && foodShortage
     return (
       <section
         className="resource"
         data-warning={warning}
-        aria-label={`${RESOURCE_INFO[r].name} resource${warning ? ', starving, health at risk' : ''}`}
-        title={warning ? 'Starving · health at risk' : undefined}
+        aria-label={`${RESOURCE_INFO[r].name} resource, ${formatResource(s.resources[r])} of ${formatResource(capacity)} storage${full ? ', full' : ''}${warning ? ', starving, health at risk' : ''}`}
+        title={
+          warning
+            ? 'Starving · health at risk'
+            : `Storage ${formatResource(s.resources[r])} of ${formatResource(capacity)}${full ? ' · full' : ''}`
+        }
         key={r}
       >
         <ResourceArt resource={r} />
@@ -66,8 +75,9 @@ export function Stockpile({ session }: { session: GameSession }) {
             {rate > 0 ? '+' : ''}
             {formatCompactResource(rate)}/s
           </span>
-          <small className="storage-effect" data-idle={pressure >= 1}>
-            Storage ×{formatResource(pressure)}
+          <small className="storage-capacity" data-full={full}>
+            Storage {full ? 'full · ' : ''}
+            {formatResource(s.resources[r])}/{formatResource(capacity)}
           </small>
         </div>
       </section>

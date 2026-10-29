@@ -14,7 +14,7 @@ import {
 import { isProductionJob } from './jobs'
 import { createRecord } from './records'
 import { completeProject, quoteProject } from './research'
-import { storageMultiplier, threshold } from './resources'
+import { storageCapacity } from './resources'
 import { jobCapacity, requirementBlocker } from './settlement'
 import { createDefaultState } from './state'
 import { advancedSettlement, required } from './test-helpers'
@@ -121,10 +121,10 @@ test('storage upgrades retain existing resources and every resource has expandab
     facility.level = 2
     for (let form = 1; form < BUILDINGS[id].forms.length; form++) {
       facility.form = form - 1
-      const before = createRecord(RESOURCES, (r) => threshold(state, r))
+      const before = createRecord(RESOURCES, (r) => storageCapacity(state, r))
       completeProject(state, { kind: 'convert', id, form })
       for (const resource of RESOURCES)
-        expect(threshold(state, resource)).toBeGreaterThanOrEqual(
+        expect(storageCapacity(state, resource)).toBeGreaterThanOrEqual(
           before[resource],
         )
     }
@@ -132,28 +132,46 @@ test('storage upgrades retain existing resources and every resource has expandab
   }
 })
 
-test('storing ceramics relieves kiln storage pressure and further warehouse investment remains useful', () => {
+test('the initial era has one general storage building for its early resources', () => {
+  const state = createDefaultState()
+  completeProject(state, { kind: 'research', id: 'shelters' })
+  const available = BUILDING_IDS.filter((id) => {
+    const form = BUILDINGS[id].forms[0]
+    if (!form?.storage) return false
+    return !requirementBlocker(state, form.requires)
+  })
+  expect(available).toEqual(['stockyard'])
+  expect(BUILDINGS.stockyard.forms[0]?.storage).toEqual({
+    food: 400,
+    wood: 300,
+    stone: 300,
+    planks: 150,
+    blocks: 150,
+    tools: 60,
+    knowledge: 100,
+  })
+})
+
+test('storing ceramics raises its storage capacity through warehouse investment', () => {
   const state = createDefaultState()
   state.resources.ceramics = 120
-  const initial = storageMultiplier(state, 'ceramics')
   completeProject(state, {
     kind: 'expand',
     id: 'storehouse',
     target: 1,
     form: 0,
   })
-  expect(storageMultiplier(state, 'ceramics')).toBeGreaterThan(initial)
-  const base = threshold(state, 'ceramics')
+  const base = storageCapacity(state, 'ceramics')
   completeProject(state, { kind: 'convert', id: 'storehouse', form: 1 })
-  expect(threshold(state, 'ceramics')).toBeGreaterThan(base)
-  const upgraded = threshold(state, 'ceramics')
+  expect(storageCapacity(state, 'ceramics')).toBeGreaterThan(base)
+  const upgraded = storageCapacity(state, 'ceramics')
   completeProject(state, {
     kind: 'expand',
     id: 'storehouse',
     target: 2,
     form: 1,
   })
-  expect(threshold(state, 'ceramics')).toBeGreaterThan(upgraded)
+  expect(storageCapacity(state, 'ceramics')).toBeGreaterThan(upgraded)
 })
 
 test('all orbital extractor forms require a launch complex even when rebuilding directly', () => {

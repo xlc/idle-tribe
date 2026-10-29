@@ -108,8 +108,12 @@
 }
 .action-stop {
   flex: 0 0 auto;
-  align-self: center;
-  margin: 0 4px;
+  align-self: stretch;
+  margin: 0;
+  border-radius: 0;
+}
+.action-stop.rt-BaseButton {
+  height: auto;
 }
 .action-icon {
   display: inline-grid;
@@ -186,6 +190,14 @@
   color: var(--color-neutral);
   font-size: 10px;
   line-height: 1.35;
+}
+.exploration-action .action-name,
+.exploration-action .action-description,
+.exploration-action .action-skill-rules,
+.exploration-action .action-hint,
+.exploration-action .action-explore-summary {
+  font-family: inherit;
+  font-style: normal;
 }
 .action-level {
   border-radius: 3px;

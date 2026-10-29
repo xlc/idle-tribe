@@ -12,6 +12,7 @@ import {
   nextEquipment,
   nextExpansion,
 } from './research'
+import { addResources } from './resources'
 import { adjustWorkers, assignJob, fillWorkers } from './settlement'
 import { advanceTime } from './simulation'
 import type {
@@ -57,6 +58,8 @@ export function createGame(state: GameState) {
     fill: (job: JobId) => fillWorkers(state, job),
     startAction: (id: import('./ids').ActionId) => startAction(state, id),
     cancelAction: () => cancelManual(state),
+    grantResources: (amount: import('./types').Cost) =>
+      addResources(state, amount),
     resolveEncounter: (option: EncounterOptionIndex) =>
       resolveEncounter(state, option),
   }

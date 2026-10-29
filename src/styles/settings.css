@@ -1,0 +1,14 @@
+.settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.settings-cheats {
+  margin-top: 28px;
+}
+.settings-note {
+  color: var(--color-neutral);
+  font-size: 12px;
+  margin-top: 6px;
+}

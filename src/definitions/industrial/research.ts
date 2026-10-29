@@ -77,7 +77,7 @@ export const research = {
     requires: { research: ['architecture', 'mechanization'] },
     cost: { knowledge: 1800, metal: 100, machinery: 30 },
     seconds: 16200,
-    effect: 'Housing contribution and all storage thresholds \u00d71.20.',
+    effect: 'Housing contribution and all storage capacities \u00d71.20.',
     description:
       'The foundations are prepared for a rather ambitious conversation.',
     effects: { housing: 1.2, storage: 1.2 },
@@ -86,7 +86,7 @@ export const research = {
       requires: { research: ['electronics'] },
       costMultiplier: 1.75,
       timeMultiplier: 1.2,
-      effect: 'Housing and storage ×1.08 per additional level.',
+      effect: 'Housing and storage capacity ×1.08 per additional level.',
       effects: { housing: 1.08, storage: 1.08 },
     },
   },

@@ -10,7 +10,7 @@ import { ACTIONS, BUILDINGS, JOBS, RESOURCE_INFO } from './definitions'
 import { ACTION_IDS, RESOURCES } from './ids'
 import { isProductionJob } from './jobs'
 import { completeProject, constructionPlan } from './research'
-import { threshold } from './resources'
+import { storageCapacity } from './resources'
 import {
   comfortablePlaces,
   crewSize,
@@ -109,8 +109,8 @@ export function investmentOutcome(
   for (const r of RESOURCES) {
     const storage = compare(
       `${RESOURCE_INFO[r].name} storage`,
-      threshold(state, r),
-      threshold(after, r),
+      storageCapacity(state, r),
+      storageCapacity(after, r),
     )
     if (storage) return storage
   }

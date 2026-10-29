@@ -79,7 +79,7 @@ export function quoteProject(
       cost,
       total: (def.seconds * timeScale) / prestigeMultiplier(state),
       blocker:
-        (otherBranchPlanned ? 'Other path planned' : '') ||
+        (otherBranchPlanned ? 'Other path queued' : '') ||
         blocker ||
         (def.branch &&
         state.specialization &&

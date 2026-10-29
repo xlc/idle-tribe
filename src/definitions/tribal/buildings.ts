@@ -15,46 +15,28 @@ export const buildings = {
     ],
     effect: 'Housing; later forms provide more comfortable places.',
   },
-  'food-store': {
-    forms: [
-      {
-        name: 'Food store',
-        description: "Tomorrow's lunch has somewhere to wait.",
-        cost: { wood: 20, stone: 10 },
-        work: 2,
-        requires: { research: ['shelters'] },
-        storage: { food: 400 },
-      },
-    ],
-    effect: 'Food storage; later forms increase the storage threshold.',
-  },
   stockyard: {
     forms: [
       {
-        name: 'Stockyard',
-        description: 'Wood here, stone there, toes out of the way.',
+        name: 'Barn',
+        description:
+          'One roof for every pile: food, materials, tools, and ideas.',
         cost: { wood: 40, stone: 20 },
         work: 3,
         requires: { research: ['shelters'] },
-        storage: { wood: 300, stone: 300 },
-      },
-    ],
-    effect: 'Raw material storage; later forms also store ore.',
-  },
-  storehouse: {
-    forms: [
-      {
-        name: 'Storehouse',
-        description:
-          'Finished goods deserve better than the nearest empty patch.',
-        cost: { wood: 60, stone: 40 },
-        work: 4,
-        requires: { research: ['carpentry'] },
-        storage: { planks: 150, blocks: 150, tools: 60, ceramics: 150 },
+        storage: {
+          food: 400,
+          wood: 300,
+          stone: 300,
+          planks: 150,
+          blocks: 150,
+          tools: 60,
+          knowledge: 100,
+        },
       },
     ],
     effect:
-      'Storage for crafted goods; later forms also store industrial goods.',
+      'General storage for every early resource; later forms add capacity.',
   },
   library: {
     forms: [
@@ -64,11 +46,10 @@ export const buildings = {
         cost: { planks: 10, blocks: 5 },
         work: 4,
         requires: { research: ['oral-tradition'] },
-        storage: { knowledge: 100 },
       },
     ],
     effect:
-      'Knowledge storage; later archives also store data and causal models. Unlocks the research queue.',
+      'Unlocks the research queue; later archives store knowledge and data.',
   },
   'builders-lodge': {
     forms: [

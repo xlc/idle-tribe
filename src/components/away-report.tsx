@@ -6,7 +6,7 @@ import { OCCUPATIONS, RESOURCE_INFO } from '../definitions'
 import { formatDuration, formatResource } from '../format'
 import { RESOURCES } from '../ids'
 import { QUEUES, queueBlocker } from '../research'
-import { storageMultiplier } from '../resources'
+import { storageFull } from '../resources'
 import type { GameSession, SessionNotification } from '../session'
 import { Button } from './common'
 
@@ -71,20 +71,17 @@ export function SessionNotificationToast({
           </button>
         </Toast.Description>
       ) : (
-        <Toast.Description className="event-toast-body event-toast-message">
-          <span className="event-toast-kicker">New milestone</span>
-          <strong>{notification.text}</strong>
+        <Toast.Description asChild>
+          <button
+            type="button"
+            className="event-toast-body event-toast-message"
+            onClick={onDismiss}
+          >
+            <span className="event-toast-kicker">New milestone</span>
+            <strong>{notification.text}</strong>
+          </button>
         </Toast.Description>
       )}
-      <Toast.Close asChild>
-        <button
-          type="button"
-          className="event-toast-close"
-          aria-label="Dismiss notification"
-        >
-          ×
-        </button>
-      </Toast.Close>
     </Toast.Root>
   )
 }
@@ -128,7 +125,7 @@ export function AwayReport({
         ? [`${id === 'research' ? 'Research' : 'Construction'} · ${blocker}`]
         : []
     }),
-    crowded = RESOURCES.filter((r) => storageMultiplier(s, r) < 1)
+    full = RESOURCES.filter((r) => storageFull(s, r))
   return (
     <section className="away-report" aria-label="Offline progress">
       <div className="away-summary">
@@ -200,7 +197,7 @@ export function AwayReport({
             )}
           </section>
         )}
-        {(blockers.length > 0 || crowded.length > 0) && (
+        {(blockers.length > 0 || full.length > 0) && (
           <section
             className="away-section away-attention"
             aria-label="Needs attention"
@@ -213,11 +210,11 @@ export function AwayReport({
                 ))}
               </ul>
             )}
-            {crowded.length > 0 && (
+            {full.length > 0 && (
               <p className="away-storage">
-                <strong>Crowded storage</strong>
+                <strong>Storage full</strong>
                 <span>
-                  {crowded.map((r) => RESOURCE_INFO[r].name).join(' · ')}
+                  {full.map((r) => RESOURCE_INFO[r].name).join(' · ')}
                 </span>
               </p>
             )}

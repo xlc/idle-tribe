@@ -15,7 +15,7 @@ import {
   quoteProject,
   researchVisible,
 } from './research'
-import { threshold } from './resources'
+import { storageCapacity } from './resources'
 import { jobInput, prestigeMultiplier, requirementBlocker } from './settlement'
 import { advanceTime, resourceFlows, resourceRates } from './simulation'
 import {
@@ -127,8 +127,8 @@ test('late branch investments trade ingredient efficiency for housing and storag
     2 * 0.8 * 0.85,
   )
   expect(jobInput(stonecraft, 'electronics-worker').metal).toBe(2)
-  expect(threshold(stonecraft, 'circuits')).toBeGreaterThan(
-    threshold(forestry, 'circuits'),
+  expect(storageCapacity(stonecraft, 'circuits')).toBeGreaterThan(
+    storageCapacity(forestry, 'circuits'),
   )
   people(forestry, 'electronics-worker')
   forestry.resources.metal = 1.36

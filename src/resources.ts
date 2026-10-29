@@ -33,6 +33,19 @@ export function pay(state: GameState, cost: Cost) {
   for (const r of RESOURCES)
     state.resources[r] = Math.max(0, state.resources[r] - (cost[r] ?? 0))
 }
+export function addResources(state: GameState, amount: Cost) {
+  const added: Cost = {}
+  for (const r of RESOURCES) {
+    const delta = amount[r] ?? 0
+    if (delta <= 0) continue
+    const before = state.resources[r]
+    if (before >= storageCapacity(state, r) - EPSILON) continue
+    const next = Math.min(storageCapacity(state, r), before + delta)
+    state.resources[r] = next
+    if (next > before) added[r] = next - before
+  }
+  return added
+}
 export function refund(state: GameState, cost: Cost) {
   for (const r of RESOURCES) state.resources[r] += cost[r] ?? 0
 }
@@ -43,7 +56,7 @@ export function committed(state: GameState, r: ResourceId) {
     (state.manual?.paid[r] ?? 0)
   )
 }
-export function threshold(state: GameState, r: ResourceId) {
+export function storageCapacity(state: GameState, r: ResourceId) {
   let total = RESOURCE_INFO[r].threshold
   for (const id of BUILDING_IDS) {
     const f = state.facilities[id]
@@ -57,11 +70,9 @@ export function threshold(state: GameState, r: ResourceId) {
     }
   return Math.floor(total * (state.legacy.perks['organized-records'] ? 1.1 : 1))
 }
-export function storageMultiplier(
-  state: GameState,
-  r: ResourceId,
-  stock = state.resources[r],
-  comfort = threshold(state, r),
-) {
-  return 1 / Math.sqrt(Math.max(1, (stock + committed(state, r)) / comfort))
+export function storageRemaining(state: GameState, r: ResourceId) {
+  return Math.max(0, storageCapacity(state, r) - state.resources[r])
+}
+export function storageFull(state: GameState, r: ResourceId) {
+  return storageRemaining(state, r) <= EPSILON
 }

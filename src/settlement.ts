@@ -13,7 +13,7 @@ import {
 } from './ids'
 import { isProductionJob } from './jobs'
 import { hasResearch, researchEffects } from './research-effects'
-import { canAfford, storageMultiplier } from './resources'
+import { canAfford } from './resources'
 import { personalWork, workContribution } from './skills'
 import type {
   Cost,
@@ -177,7 +177,6 @@ export function jobInput(state: GameState, job: JobId): Cost {
 }
 interface RateOptions {
   happiness?: number
-  storage?: number
   ignoreInputs?: boolean
   fullHealthCrew?: boolean
 }
@@ -232,8 +231,7 @@ function workplaceRate(
     technology *
     specialization *
     (options.happiness ?? happinessMultiplier(state)) *
-    prestigeMultiplier(state) *
-    (options.storage ?? storageMultiplier(state, JOBS[job].output))
+    prestigeMultiplier(state)
   )
 }
 export function workerRate(
@@ -312,7 +310,6 @@ export function arrivalStatus(state: GameState) {
   foodOutput +=
     actionOutputRate(state, 'gather', {
       happiness: town ? 0.75 : 1,
-      storage: storageMultiplier(state, 'food', buffer),
     }) * 60
   const checked = new Set<ProductionJob>()
   for (const p of state.people) {
@@ -331,7 +328,6 @@ export function arrivalStatus(state: GameState) {
         ) *
         workplaceRate(state, job, {
           happiness: town ? 0.75 : 1,
-          storage: storageMultiplier(state, 'food', buffer),
           ignoreInputs: true,
         })
     if (input)
@@ -341,7 +337,6 @@ export function arrivalStatus(state: GameState) {
         workplaceRate(state, job, {
           fullHealthCrew: true,
           happiness: town ? 1.25 : 1,
-          storage: 1,
           ignoreInputs: true,
         })
   }

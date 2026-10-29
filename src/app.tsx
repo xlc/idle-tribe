@@ -1,4 +1,4 @@
-import { Card, Dialog, Flex, Tabs } from '@radix-ui/themes'
+import { Dialog, Flex, Tabs } from '@radix-ui/themes'
 import { useRef, useState } from 'react'
 import type { AwayProgress } from './clock'
 import { ActionCards } from './components/actions'
@@ -7,7 +7,7 @@ import {
   AwayReportDialog,
   SessionNotificationToast,
 } from './components/away-report'
-import { Button, type Confirm } from './components/common'
+import { Button, type Confirm, SectionDisclosure } from './components/common'
 import { ExpeditionEncounter } from './components/expedition'
 import { Legacy } from './components/legacy'
 import { OfflineStatus } from './components/offline-status'
@@ -24,44 +24,39 @@ import type { GameSession } from './session'
 import { assigned, automationUnlocked, comfortablePlaces } from './settlement'
 import { useSession } from './use-session'
 
-type View =
-  | 'settlement'
-  | 'research'
-  | 'queue'
-  | 'people'
-  | 'legacy'
-  | 'settings'
+type View = 'settlement' | 'queue' | 'people' | 'legacy' | 'settings'
 
-function SettlementBrief({
-  session,
-  onPeople,
-}: {
-  session: GameSession
-  onPeople: () => void
-}) {
+function SettlementBrief({ session }: { session: GameSession }) {
   const s = session.game.state
   const construction = s.queues.construction.active
     ? projectName(s, s.queues.construction.active.project)
     : s.queues.construction.waiting.length
-      ? `${s.queues.construction.waiting.length} planned`
+      ? `${s.queues.construction.waiting.length} queued`
       : 'No project'
   const research = s.queues.research.active
     ? projectName(s, s.queues.research.active.project)
     : s.queues.research.waiting.length
-      ? `${s.queues.research.waiting.length} planned`
+      ? `${s.queues.research.waiting.length} queued`
       : 'No project'
   const rooms = comfortablePlaces(s)
   return (
-    <Card asChild>
-      <section className="settlement-brief" aria-label="Settlement status">
+    <SectionDisclosure
+      className="settlement-brief"
+      title={
+        <>
+          <ViewIcon name="settlement" />
+          Settlement
+        </>
+      }
+      status={ERAS[s.era]?.name ?? 'Current era'}
+      ariaLabel="Settlement status"
+    >
+      <section className="settlement-brief-content">
         <div className="settlement-brief-heading">
           <div>
             <span className="eyebrow">Current era</span>
             <h1>{ERAS[s.era]?.name ?? 'Settlement'}</h1>
           </div>
-          <Button variant="soft" onClick={onPeople}>
-            Manage people
-          </Button>
         </div>
         <p className="settlement-brief-description">
           {ERAS[s.era]?.description}
@@ -89,7 +84,7 @@ function SettlementBrief({
           </div>
         </dl>
       </section>
-    </Card>
+    </SectionDisclosure>
   )
 }
 
@@ -112,13 +107,6 @@ export function App({ session }: { session: GameSession }) {
       label: 'Settlement',
       mobileLabel: 'Actions',
       available: true,
-    },
-    {
-      id: 'research',
-      label: 'Technology',
-      mobileLabel: 'Research',
-      available: s.researchUnlocked,
-      working: Boolean(s.queues.research.active),
     },
     {
       id: 'queue',
@@ -196,15 +184,20 @@ export function App({ session }: { session: GameSession }) {
           <div className="view-scroll" ref={content}>
             {view === 'settlement' && <ExpeditionEncounter session={session} />}
             {view === 'settlement' && !automated && (
-              <section className="discoveries" aria-label="Actions">
-                <h2>Actions</h2>
-                <ActionCards session={session} />
-              </section>
+              <SectionDisclosure
+                className="discoveries"
+                title={
+                  <>
+                    <ViewIcon name="actions" />
+                    Actions
+                  </>
+                }
+                ariaLabel="Actions"
+              >
+                <ActionCards {...props} />
+              </SectionDisclosure>
             )}
-            <div
-              className={automated ? 'settlement-layout' : 'opening'}
-              data-aside={view !== 'settings' && view !== 'queue'}
-            >
+            <div className={automated ? 'settlement-content' : 'opening'}>
               <div className="view-panel">
                 <Tabs.Content
                   value="settlement"
@@ -213,22 +206,20 @@ export function App({ session }: { session: GameSession }) {
                 >
                   {automated ? (
                     <>
-                      <Production {...props} />
-                      <SettlementBrief
-                        session={session}
-                        onPeople={() => showView('people')}
+                      <Production
+                        {...props}
+                        middle={
+                          s.researchUnlocked ? <Technology {...props} /> : null
+                        }
                       />
+                      <Construction {...props} compact />
                     </>
                   ) : (
                     <p className="opening-flavor">{ERAS[0]?.description}</p>
                   )}
-                </Tabs.Content>
-                <Tabs.Content
-                  value="research"
-                  forceMount
-                  hidden={view !== 'research'}
-                >
-                  <Technology {...props} />
+                  {!automated && s.researchUnlocked && (
+                    <Technology {...props} />
+                  )}
                 </Tabs.Content>
                 <Tabs.Content
                   value="queue"
@@ -243,7 +234,11 @@ export function App({ session }: { session: GameSession }) {
                     forceMount
                     hidden={view !== 'people'}
                   >
-                    <People session={session} />
+                    <div className="people-view">
+                      <SettlementBrief session={session} />
+                      <Workforce session={session} />
+                      <People session={session} />
+                    </div>
                   </Tabs.Content>
                 )}
                 {s.legacy.discovered && (
@@ -264,22 +259,6 @@ export function App({ session }: { session: GameSession }) {
                   <Settings {...props} />
                 </Tabs.Content>
               </div>
-              <aside
-                className="camp-aside"
-                hidden={view === 'settings' || view === 'queue'}
-              >
-                {!automated && <People session={session} />}
-                {automated && (
-                  <div className="project-plans">
-                    <Card asChild>
-                      <section className="camp-summary" aria-label="Camp">
-                        <Construction {...props} compact />
-                        <Workforce {...props} compact />
-                      </section>
-                    </Card>
-                  </div>
-                )}
-              </aside>
             </div>
           </div>
           <Tabs.List className="view-tabs" aria-label="Game views" size="2">
@@ -292,21 +271,25 @@ export function App({ session }: { session: GameSession }) {
                 <ViewIcon name={entry.id} />
                 <span className="nav-label nav-label-desktop">
                   {entry.label}
-                  <span
-                    className="working-dot"
-                    data-visible={entry.working}
-                    role="img"
-                    aria-label="Working"
-                  />
+                  {entry.working && (
+                    <span
+                      className="working-dot"
+                      role="img"
+                      aria-label="Work in progress"
+                      title="Work in progress"
+                    />
+                  )}
                 </span>
                 <span className="nav-label nav-label-mobile" aria-hidden="true">
                   {entry.mobileLabel}
-                  <span
-                    className="working-dot"
-                    data-visible={entry.working}
-                    role="img"
-                    aria-label="Working"
-                  />
+                  {entry.working && (
+                    <span
+                      className="working-dot"
+                      role="img"
+                      aria-label="Work in progress"
+                      title="Work in progress"
+                    />
+                  )}
                 </span>
               </Tabs.Trigger>
             ))}

@@ -9,6 +9,7 @@ import {
   startAction,
 } from './actions'
 import { EXPEDITION_ENCOUNTER_IDS } from './ids'
+import { storageCapacity } from './resources'
 import { advanceTime } from './simulation'
 import { createDefaultState } from './state'
 
@@ -17,6 +18,8 @@ function encounterState() {
   state.discovered = { wood: true, stone: true }
   state.exploreUnlocked = true
   state.actionSkills.explore.level = 5
+  state.facilities.stockyard.level = 10
+  state.facilities['food-store'].level = 10
   for (const resource of Object.keys(state.resources) as Array<
     keyof typeof state.resources
   >)
@@ -85,6 +88,34 @@ test('automated actions report active and paused states from their live inputs',
     state: 'paused',
     missing: { food: 6 },
   })
+})
+
+test('full output storage does not block manual or automated work', () => {
+  const manual = createDefaultState()
+  manual.resources.food = storageCapacity(manual, 'food')
+  expect(actionAvailability(manual, 'gather')).toMatchObject({
+    kind: 'manual',
+    state: 'ready',
+  })
+  expect(startAction(manual, 'gather')).toBe(true)
+  advanceTime(manual, actionDuration(manual, 'gather'), true)
+  expect(manual.resources.food).toBe(storageCapacity(manual, 'food'))
+  expect(manual.manual).toBeNull()
+
+  const automated = createDefaultState()
+  automated.discovered.wood = true
+  automated.facilities.lumber.level = 1
+  automated.resources.wood = storageCapacity(automated, 'wood')
+  const founder = automated.people[0]
+  if (!founder) throw new Error('Default state has no founder')
+  founder.job = 'woodcutter'
+  expect(actionAvailability(automated, 'sticks')).toMatchObject({
+    kind: 'automated',
+    state: 'active',
+  })
+  advanceTime(automated, actionDuration(automated, 'sticks'))
+  expect(automated.resources.wood).toBe(storageCapacity(automated, 'wood'))
+  expect(automated.actionSkills.sticks.xp).toBeGreaterThan(0)
 })
 
 test('retired gathering explains why the action disappeared', () => {
@@ -241,6 +272,21 @@ test('every ordinary exploration returns a concrete resource outcome', () => {
   if (state.lastExploreOutcome?.kind !== 'resources') return
   expect(Object.values(state.lastExploreOutcome.amount)).toHaveLength(1)
   expect(Object.values(state.lastExploreOutcome.amount)[0]).toBeGreaterThan(0)
+})
+
+test('exploration reports a toast-worthy result when nothing is found', () => {
+  const state = createDefaultState()
+  state.discovered = { wood: true, stone: true }
+
+  for (
+    let attempt = 0;
+    attempt < 100 && state.lastExploreOutcome?.kind !== 'nothing';
+    attempt++
+  )
+    applyExploreReward(state, 1, 'manual')
+
+  expect(state.lastExploreOutcome).toEqual({ kind: 'nothing' })
+  expect(state.notice).toBe('Explorers found nothing this time')
 })
 
 test('exploration rates include automated encounter resources', () => {

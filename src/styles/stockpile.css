@@ -78,11 +78,11 @@
   color: var(--color-neutral);
 }
 /* The line reserves space even when idle so appearing never shifts controls. */
-.storage-effect {
+.storage-capacity {
   display: block;
   font-size: 9px;
   color: var(--color-warning);
 }
-.storage-effect[data-idle="true"] {
-  visibility: hidden;
+.storage-capacity[data-full="true"] {
+  font-weight: 700;
 }

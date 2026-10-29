@@ -31,6 +31,7 @@ export type EncounterEffect =
   | { kind: 'happiness'; amount: number }
   | { kind: 'arrival-progress'; amount: number }
 export type ExploreOutcome =
+  | { kind: 'nothing' }
   | { kind: 'resources'; amount: Cost }
   | { kind: 'discovery'; discovery: 'wood' | 'stone' }
   | { kind: 'knowledge'; amount: number }
@@ -121,7 +122,7 @@ export interface ResearchUpgradeDefinition {
   requires: Requirements
   costMultiplier: number
   timeMultiplier: number
-  effect: string
+  effect: string | readonly string[]
   effects: Effects
 }
 export interface ResearchDefinition {
@@ -130,7 +131,7 @@ export interface ResearchDefinition {
   requires: Requirements
   cost: Cost
   seconds: number
-  effect: string
+  effect: string | readonly string[]
   effects: Effects
   upgrade?: ResearchUpgradeDefinition
   branch?: Specialization

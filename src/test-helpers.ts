@@ -34,6 +34,11 @@ export function settlement(branch: Specialization = 'forestry') {
       continue
     state.facilities[id].level = 2
   }
+  // Keep the all-resources fixture supplied for broad integration tests below
+  // each resource's cap; focused storage tests use a fresh default state.
+  for (const id of BUILDING_IDS)
+    if (BUILDINGS[id].forms.some((form) => form.storage))
+      state.facilities[id].level = 100_000
   state.welcome = false
   return state
 }

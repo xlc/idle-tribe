@@ -19,7 +19,8 @@ import {
   workContribution,
 } from '../skills'
 import type { GameState, Person } from '../types'
-import { ProgressBar } from './common'
+import { ViewIcon } from './art'
+import { ProgressBar, SectionDisclosure } from './common'
 
 function output(state: GameState, person: Person) {
   const job = person.job
@@ -32,8 +33,9 @@ function output(state: GameState, person: Person) {
       ? `${formatResource(workers ? actionOutputRate(state, action) / workers : 0)} ${RESOURCE_INFO[def.resource].name.toLowerCase()}/s`
       : `Works ${def.name.toLowerCase()}`
   }
-  if (isProductionJob(job))
+  if (isProductionJob(job)) {
     return `${formatResource(workerRate(state, person) / 60)} ${RESOURCE_INFO[JOBS[job].output].name.toLowerCase()}/s`
+  }
   const rate =
     workContribution(person, job) *
     staffingMultiplier(state, job) *
@@ -46,12 +48,17 @@ export function People({ session }: { session: GameSession }) {
   const s = session.game.state,
     occupations = JOB_IDS.filter((job) => jobUnlocked(s, job))
   return (
-    <section className="people" aria-label="People">
-      <div className="section-heading people-heading">
-        <h2>
-          People <span>· {s.people.length}</span>
-        </h2>
-      </div>
+    <SectionDisclosure
+      className="people"
+      title={
+        <>
+          <ViewIcon name="people" />
+          People
+        </>
+      }
+      status={`· ${s.people.length}`}
+      ariaLabel="People"
+    >
       <Card asChild>
         <div className="people-grid">
           {s.people.map((p, i) => (
@@ -155,6 +162,6 @@ export function People({ session }: { session: GameSession }) {
           ))}
         </div>
       </Card>
-    </section>
+    </SectionDisclosure>
   )
 }

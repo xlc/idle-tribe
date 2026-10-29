@@ -14,10 +14,6 @@
   }
 }
 @media (max-width: 1000px) and (min-width: 720px) {
-  .settlement-layout {
-    grid-template-columns: minmax(0, 1fr) 230px;
-    gap: 16px;
-  }
   .facility-overview {
     grid-template-columns: 48px minmax(0, 1fr);
     gap: 10px;
@@ -70,7 +66,7 @@
     display: block;
     font-size: 10px;
   }
-  .storage-effect {
+  .storage-capacity {
     display: none;
   }
   .resource-value {
@@ -79,38 +75,18 @@
   .resource-meta {
     grid-column: 2;
   }
-  .settlement-layout {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 16px;
-  }
   .settlement-brief {
+    margin-bottom: 18px;
+  }
+  .settlement-brief-content {
     gap: 12px;
     padding: 14px;
-    margin-bottom: 18px;
   }
   .settlement-brief-heading {
     align-items: center;
   }
-  .settlement-brief-heading .rt-Button {
-    min-height: 40px;
-    min-width: auto;
-    padding-inline: 10px;
-  }
   .settlement-status-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .camp-aside {
-    grid-row: 2;
-    order: 2;
-    position: static;
-  }
-  .project-plans {
-    display: block;
-    align-items: start;
-  }
-  .camp-summary {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    border-radius: 10px;
   }
   .plan-toggle {
     padding: 12px;
@@ -124,20 +100,6 @@
     min-height: 2.5em;
   }
   .plan-status {
-    font-size: 11px;
-  }
-  .camp-summary .plan-toggle {
-    padding: 12px 10px;
-    gap: 4px;
-  }
-  .camp-summary .plan-category {
-    font-size: 16px;
-  }
-  .camp-summary .plan-status {
-    font-size: 10px;
-  }
-  .camp-summary .plan-toggle strong {
-    min-height: 0;
     font-size: 11px;
   }
   .research-active {
@@ -203,22 +165,6 @@
   .workforce-bar {
     margin-bottom: 12px;
   }
-  .workforce-compact {
-    margin-bottom: 0;
-  }
-  .camp-summary .construction-panel + .workforce-bar {
-    border-top: 0;
-    border-left: 1px solid var(--color-base-300);
-  }
-  .camp-summary .workforce-compact {
-    padding: 12px 10px;
-  }
-  .camp-summary .workforce-compact h2 {
-    font-size: 15px;
-  }
-  .camp-summary .workforce-compact p {
-    font-size: 11px;
-  }
   .workforce-bar > div {
     gap: 6px 10px;
   }
@@ -245,16 +191,6 @@
   }
   .production-view {
     gap: 18px;
-  }
-  .action-section .section-heading,
-  .workplace-section .section-heading {
-    margin-bottom: 10px;
-  }
-  .action-section .section-heading h2 {
-    font-size: 22px;
-  }
-  .workplace-section {
-    padding-top: 4px;
   }
   .action-automated {
     gap: 8px;
@@ -294,9 +230,6 @@
   .action-worker-inline .worker-count {
     min-width: 22px;
     font-size: 15px;
-  }
-  .action-section .manual-actions {
-    gap: 8px;
   }
 }
 @media (max-width: 440px) {

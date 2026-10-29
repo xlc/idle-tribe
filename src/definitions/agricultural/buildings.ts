@@ -2,6 +2,19 @@ import type { BuildingId } from '../../ids'
 import type { BuildingDefinition } from '../../types'
 
 export const buildings = {
+  'food-store': {
+    forms: [
+      {
+        name: 'Granary',
+        description: 'A dry home for the harvest and the next hungry season.',
+        cost: { wood: 20, stone: 10 },
+        work: 2,
+        requires: { research: ['agriculture'] },
+        storage: { food: 400 },
+      },
+    ],
+    effect: 'Food-only storage; later forms increase its capacity.',
+  },
   irrigation: {
     forms: [
       {

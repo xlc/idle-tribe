@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import {
   actionAvailability,
   actionCompletionDuration,
+  actionDuration,
   actionJobActive,
   actionOutputRate,
   actionRequiredXp,
@@ -14,12 +15,7 @@ import {
   isRateMode,
 } from '../actions'
 import { ACTIONS } from '../definitions'
-import { EXPLORE_DISCOVERIES } from '../definitions/tribal/exploration'
-import {
-  formatExploreOutcome,
-  formatResource,
-  formatResourceGain,
-} from '../format'
+import { formatCost, formatResource, formatResourceGain } from '../format'
 import { ACTION_IDS, type ActionId } from '../ids'
 import type { GameSession } from '../session'
 import type { GameState } from '../types'
@@ -28,6 +24,7 @@ import {
   ActionCountdown,
   ActionProgress,
   Button,
+  type Confirm,
   Costs,
   DisclosureToggle,
 } from './common'
@@ -94,28 +91,24 @@ function ExploreSummary({
   automated: boolean
   working: boolean
 }) {
-  const discovered = Object.values(state.discovered).filter(Boolean).length
   const expected = formatResourceGain(exploreExpectedRate(state))
+  if (!automated || !working || !expected) {
+    return null
+  }
   return (
     <span className="action-explore-summary">
-      <span>
-        {state.lastExploreOutcome
-          ? `Last expedition: ${formatExploreOutcome(state.lastExploreOutcome)}`
-          : 'Finds resources and discoveries'}
-      </span>
-      {automated && working && expected && <span>Expected: {expected}/s</span>}
-      <span>
-        Discoveries: {discovered}/{EXPLORE_DISCOVERIES.length}
-      </span>
+      <span>Expected: {expected}/s</span>
     </span>
   )
 }
 
 export function ActionCard({
   session,
+  confirm,
   id,
 }: {
   session: GameSession
+  confirm: Confirm
   id: ActionId
 }) {
   const [expanded, setExpanded] = useState(false)
@@ -133,6 +126,17 @@ export function ActionCard({
     availability.kind === 'automated' &&
     availability.state === 'active' &&
     actionJobActive(s, id)
+  const stop = () => {
+    if (!active) return
+    const run = () => session.game.cancelAction()
+    if (active.progress * actionDuration(s, id) > 10) {
+      confirm(
+        `Stop ${def.name}?`,
+        `Refund ${formatCost(active.paid)}. Action progress will be lost.`,
+        run,
+      )
+    } else session.change(run)
+  }
   const statusKind =
     availability.kind === 'locked' ? 'locked' : availability.state
   const icon = (
@@ -147,7 +151,7 @@ export function ActionCard({
   return (
     <Card asChild>
       <article
-        className="manual-action"
+        className={`manual-action${def.kind === 'exploration' ? ' exploration-action' : ''}`}
         aria-label={def.name}
         data-running={running}
         data-action-state={statusKind}
@@ -252,10 +256,10 @@ export function ActionCard({
           {running && (
             <Button
               className="action-stop"
-              color="amber"
+              color="red"
               aria-label={`Stop ${def.name}`}
               title={`Stop ${def.name}`}
-              onClick={() => session.change(() => session.game.cancelAction())}
+              onClick={stop}
             >
               Stop
             </Button>
@@ -285,7 +289,6 @@ export function ActionCard({
               )}
             <p className="action-description">{def.description}</p>
             <p className="action-skill-rules">{def.levelEffect}</p>
-            {!def.resource && <Costs session={session} cost={def.cost} />}
             {def.kind === 'exploration' && (
               <p className="action-hint">{exploreHint(skill.level)}</p>
             )}
@@ -298,9 +301,11 @@ export function ActionCard({
 
 export function ActionCards({
   session,
+  confirm,
   ids = ACTION_IDS,
 }: {
   session: GameSession
+  confirm: Confirm
   ids?: readonly ActionId[]
 }) {
   const state = session.game.state
@@ -309,7 +314,7 @@ export function ActionCards({
       {ids
         .filter((id) => actionAvailability(state, id).kind !== 'locked')
         .map((id) => (
-          <ActionCard key={id} session={session} id={id} />
+          <ActionCard key={id} session={session} confirm={confirm} id={id} />
         ))}
     </div>
   )

@@ -4,6 +4,7 @@ import { removeFacility } from './game'
 import { BUILDING_IDS, PERK_IDS, RESOURCES } from './ids'
 import { createRecord } from './records'
 import { enqueue, nextExpansion } from './research'
+import { storageCapacity } from './resources'
 import {
   arrivalStatus,
   comfortablePlaces,
@@ -233,7 +234,7 @@ test('ceramic craft turns town inputs into a happiness investment', () => {
   expect(happinessTarget(s)).toBeGreaterThan(beforeBathhouse)
 })
 
-test('net rates include processor inputs, meals, equipment and storage pressure', () => {
+test('net rates include processor inputs, meals and equipment without storage penalties', () => {
   const s = settlement()
   people(s, 'forager', 'scholar', 'sawyer')
   s.resources.wood = 20
@@ -254,14 +255,27 @@ test('net rates include processor inputs, meals, equipment and storage pressure'
   expect(flows.planks.production).toBeCloseTo(sum('sawyer'))
 })
 
-test('spending from an above-threshold stockpile immediately relieves production pressure', () => {
+test('full outputs are discarded while processor inputs and work continue', () => {
+  const s = settlement()
+  people(s, 'sawyer')
+  s.resources.planks = storageCapacity(s, 'planks')
+  const flows = resourceFlows(s)
+  expect(flows.planks.production).toBeGreaterThan(0)
+  expect(flows.wood.inputs).toBeGreaterThan(0)
+  const before = s.resources.wood
+  advanceTime(s, 200)
+  expect(s.resources.planks).toBe(storageCapacity(s, 'planks'))
+  expect(s.resources.wood).toBeLessThan(before)
+})
+
+test('spending from a full stockpile does not change production efficiency', () => {
   const s = settlement()
   people(s, 'farmer')
   s.resources = createRecord(RESOURCES, () => 0)
   s.resources.food = 100000
-  const slow = workerRate(s, required(s.people[0]))
+  const full = workerRate(s, required(s.people[0]))
   s.resources.food = 1
-  expect(workerRate(s, required(s.people[0]))).toBeGreaterThan(slow)
+  expect(workerRate(s, required(s.people[0]))).toBeCloseTo(full, 8)
 })
 
 test.each(PERK_IDS)('a %s requirement names the actual missing perk', (id) => {

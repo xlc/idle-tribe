@@ -53,7 +53,7 @@ export const research = {
     name: 'Inventory keeping',
     cost: { knowledge: 1200, planks: 480, blocks: 360 },
     seconds: 16200,
-    effect: 'All storage thresholds \u00d71.50; full-speed offline window +4h.',
+    effect: 'All storage capacities \u00d71.50; full-speed offline window +4h.',
     description:
       'We have counted the piles, and some of them were surprisingly large.',
     requires: { research: ['agriculture'] },
@@ -63,7 +63,7 @@ export const research = {
       requires: { research: ['writing'] },
       costMultiplier: 1.75,
       timeMultiplier: 1.2,
-      effect: 'Storage thresholds ×1.08 per additional level.',
+      effect: 'Storage capacity ×1.08 per additional level.',
       effects: { storage: 1.08 },
     },
   },

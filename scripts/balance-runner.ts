@@ -9,8 +9,8 @@ import { queueBlocker } from '../src/research'
 import {
   canAfford,
   committed,
-  storageMultiplier,
-  threshold,
+  storageCapacity,
+  storageFull,
 } from '../src/resources'
 import { arrivalStatus, assigned, jobInput } from '../src/settlement'
 import { resourceRates } from '../src/simulation'
@@ -77,10 +77,12 @@ export function snapshot(state: GameState) {
     resources: { ...state.resources },
     // These are instantaneous estimates, never integrated as realized output.
     netRates: resourceRates(state),
-    pressure: Object.fromEntries(
-      RESOURCES.map((r) => [r, storageMultiplier(state, r)]),
+    storageFull: Object.fromEntries(
+      RESOURCES.map((r) => [r, storageFull(state, r)]),
     ),
-    comfort: Object.fromEntries(RESOURCES.map((r) => [r, threshold(state, r)])),
+    storageCapacity: Object.fromEntries(
+      RESOURCES.map((r) => [r, storageCapacity(state, r)]),
+    ),
     commitments: Object.fromEntries(
       RESOURCES.map((r) => [r, committed(state, r)]),
     ),

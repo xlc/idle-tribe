@@ -17,6 +17,7 @@ import {
   Button,
   Costs,
   DisclosureToggle,
+  SectionDisclosure,
   type ViewProps,
 } from './common'
 
@@ -29,9 +30,15 @@ function queuedResearchTarget(
     (candidate) =>
       candidate.project.kind === 'research' &&
       candidate.project.id === id &&
+      (candidate.project.target ?? 1) > 1 &&
       (candidate.project.target ?? 1) > current,
   )
   return entry?.project.kind === 'research' ? (entry.project.target ?? 1) : null
+}
+
+function effectRows(effect: string | readonly string[] | undefined) {
+  if (!effect) return []
+  return Array.isArray(effect) ? effect : [effect]
 }
 
 function ResearchCard({
@@ -65,15 +72,17 @@ function ResearchCard({
     queueUnlocked = researchQueueUnlocked(s),
     waitingForQueue = q.waiting.length > 0 && !queued,
     canStart = !queued && !queueBusy && !blocked
-  const cancelResearch = () =>
-    confirm(
-      'Cancel research?',
-      `Refund ${formatCost(activeResearch?.paid ?? {})}. Research progress will be lost.`,
-      () => {
-        if (activeResearch)
-          session.game.cancel('research', activeResearch.sequence)
-      },
-    )
+  const cancelResearch = () => {
+    if (!activeResearch) return
+    const run = () => session.game.cancel('research', activeResearch.sequence)
+    if (activeResearch.progress > 10) {
+      confirm(
+        `Stop ${def.name}?`,
+        `Refund ${formatCost(activeResearch.paid)}. Research progress will be lost.`,
+        run,
+      )
+    } else session.change(run)
+  }
   const runResearch = (action: 'start' | 'queue') => {
     if (def.branch) {
       confirm(
@@ -118,6 +127,15 @@ function ResearchCard({
                 {def.name}
                 {target > 1 ? ` · level ${target}` : ''}
               </strong>
+              <span className="action-yield research-effect">
+                {effectRows(target > 1 ? def.upgrade?.effect : def.effect).map(
+                  (effect) => (
+                    <span className="research-effect-row" key={effect}>
+                      {effect}
+                    </span>
+                  ),
+                )}
+              </span>
               <span className="action-yield">
                 <Costs session={session} cost={quote.cost} inline /> ·{' '}
                 {formatDuration(quote.total)}
@@ -152,6 +170,17 @@ function ResearchCard({
               </small>
             </span>
           </button>
+          {activeResearch && (
+            <Button
+              className="action-stop"
+              color="red"
+              aria-label={`Stop ${def.name}`}
+              title={`Stop ${def.name}`}
+              onClick={cancelResearch}
+            >
+              Stop
+            </Button>
+          )}
           {queueUnlocked &&
             queueBusy &&
             !activeResearch &&
@@ -178,27 +207,12 @@ function ResearchCard({
         {expanded && (
           <div className="action-details" id={`${id}-details`}>
             <p className="action-description">{def.description}</p>
-            <p className="research-effect">
-              {target > 1 ? def.upgrade?.effect : def.effect}
-            </p>
             {def.branchIdentity && (
               <p className="branch-identity">{def.branchIdentity}</p>
             )}
-            <Costs session={session} cost={quote.cost} />
             <p className="requirement" data-visible={Boolean(quote.blocker)}>
               {quote.blocker || '\u00a0'}
             </p>
-            {activeResearch && (
-              <Button
-                className="action-stop"
-                color="amber"
-                aria-label="Cancel research"
-                title="Cancel research"
-                onClick={cancelResearch}
-              >
-                Cancel
-              </Button>
-            )}
           </div>
         )}
       </article>
@@ -211,11 +225,32 @@ export function Technology({ session, confirm }: ViewProps) {
   const entries = allEntries(s).filter(
     (entry) => entry.project.kind === 'research',
   )
+  const active = s.queues.research.active
+  const activeName =
+    active?.project.kind === 'research'
+      ? RESEARCH[active.project.id].name
+      : null
   const queuedUpgradeIds = RESEARCH_IDS.filter(
     (id) => queuedResearchTarget(entries, id, s.research[id]) !== null,
   )
   return (
-    <>
+    <SectionDisclosure
+      className="technology-panel"
+      title={
+        <>
+          <ViewIcon name="research" />
+          Technology
+        </>
+      }
+      status={
+        activeName
+          ? `Researching ${activeName}`
+          : s.queues.research.waiting.length
+            ? `${s.queues.research.waiting.length} queued`
+            : 'Choose your next advance'
+      }
+      ariaLabel="Technology"
+    >
       <section className="tech-section">
         <div className="tech-grid research-list">
           {RESEARCH_IDS.filter((id) => researchVisible(s, id)).map((id) => (
@@ -258,21 +293,42 @@ export function Technology({ session, confirm }: ViewProps) {
         </summary>
         <div className="completed-research">
           {RESEARCH_IDS.filter((id) => s.research[id] > 0).map((id) => (
-            <p key={id}>
-              <strong>
-                {RESEARCH[id].name}
-                {RESEARCH[id].upgrade
-                  ? ` · level ${s.research[id]}/${RESEARCH[id].upgrade.maxLevel}`
-                  : ''}
-              </strong>{' '}
-              · {RESEARCH[id].effect}
-              <small className="completed-research-description">
-                {RESEARCH[id].description}
-              </small>
-            </p>
+            <Card asChild key={id}>
+              <article
+                className="tech-card completed-research-card"
+                aria-label={RESEARCH[id].name}
+              >
+                <div className="completed-research-row">
+                  <span
+                    className="action-icon research-icon"
+                    aria-hidden="true"
+                  >
+                    <ViewIcon name="research" />
+                  </span>
+                  <span className="action-copy">
+                    <strong className="action-name">
+                      {RESEARCH[id].name}
+                      {RESEARCH[id].upgrade
+                        ? ` · level ${s.research[id]}/${RESEARCH[id].upgrade.maxLevel}`
+                        : ''}
+                    </strong>
+                    <span className="action-yield research-effect">
+                      {effectRows(RESEARCH[id].effect).map((effect) => (
+                        <span className="research-effect-row" key={effect}>
+                          {effect}
+                        </span>
+                      ))}
+                    </span>
+                    <small className="completed-research-description">
+                      {RESEARCH[id].description}
+                    </small>
+                  </span>
+                </div>
+              </article>
+            </Card>
           ))}
         </div>
       </details>
-    </>
+    </SectionDisclosure>
   )
 }

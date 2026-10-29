@@ -2,6 +2,16 @@ import type { BuildingId } from '../../ids'
 import type { FormDefinition } from '../../types'
 
 export const buildingUpgrades = {
+  'food-store': [
+    {
+      name: 'Granary',
+      description: 'The harvest has moved in and brought all its friends.',
+      requires: { research: ['town-planning'] },
+      cost: { planks: 15, blocks: 10 },
+      work: 4,
+      storage: { food: 1200 },
+    },
+  ],
   housing: [
     {
       name: 'Town houses',

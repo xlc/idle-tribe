@@ -26,8 +26,8 @@ import {
   canAfford,
   capital,
   committed,
-  storageMultiplier,
-  threshold,
+  storageCapacity,
+  storageFull,
 } from './resources'
 import {
   adjustWorkers,
@@ -51,7 +51,7 @@ test('the opening discovers resources and grants a working camp once', () => {
     expect(startAction(s, 'gather')).toBe(true)
     advanceTime(s, 1, true)
   }
-  s.resources.food += 600
+  s.resources.food = 100
   // Explore finds wood through its random reward table eventually.
   for (let i = 0; !s.discovered.wood; i++) {
     expect(i).toBeLessThan(100)
@@ -77,6 +77,17 @@ test('the opening discovers resources and grants a working camp once', () => {
   const before = s.resources.food
   advanceTime(s, 60)
   expect(s.resources.food).toBeGreaterThan(before)
+  expect(s.resources.food).toBeLessThanOrEqual(120)
+})
+
+test('cheat resource grants add only the requested stockpile amounts', () => {
+  const s = createDefaultState(),
+    game = createGame(s)
+  game.grantResources({ food: 100, wood: 100, stone: 100 })
+  expect(s.resources.food).toBe(101)
+  expect(s.resources.wood).toBe(60)
+  expect(s.resources.stone).toBe(60)
+  expect(s.resources.planks).toBe(0)
 })
 
 test('construction keeps old effects until completion, pays once, and can exceed old caps', () => {
@@ -98,21 +109,22 @@ test('construction keeps old effects until completion, pays once, and can exceed
   expect(s.completedProjects).toBe(1)
 })
 
-test('active cancellation restores exact stock and storage pressure once', () => {
+test('active cancellation restores exact stock and storage state once', () => {
   const s = settlement()
+  s.facilities.stockyard.level = 0
   people(s, 'builder')
   const before = s.resources.wood,
-    pressure = storageMultiplier(s, 'wood')
+    full = storageFull(s, 'wood')
   enqueue(s, nextExpansion(s, 'stockyard'))
   advanceTime(s, 0)
   const active = s.queues.construction.active
   expect(active).not.toBeNull()
   if (!active) throw new Error('Missing project')
   expect(committed(s, 'wood')).toBe(active.paid.wood ?? 0)
-  expect(storageMultiplier(s, 'wood')).toBe(pressure)
+  expect(storageFull(s, 'wood')).toBe(full)
   expect(cancelProject(s, 'construction', active.sequence)).toBe(true)
   expect(s.resources.wood).toBe(before)
-  expect(storageMultiplier(s, 'wood')).toBe(pressure)
+  expect(storageFull(s, 'wood')).toBe(full)
   expect(cancelProject(s, 'construction', active.sequence)).toBe(false)
   expect(s.resources.wood).toBe(before)
 })
@@ -246,16 +258,15 @@ test('removal preserves people and stock, releases workers, and rebuilding accep
   expect(s.facilities.lumber).toEqual({ level: 1, form: 1, equipment: 0 })
 })
 
-test('storage thresholds slow throughput while prices remain payable', () => {
+test('storage capacity caps new resource gains while prices remain payable', () => {
   const s = createDefaultState()
   s.facilities.stockyard.level = 2
-  expect(threshold(s, 'wood')).toBe(828)
+  expect(storageCapacity(s, 'wood')).toBe(828)
   s.resources.wood = 4 * 828
-  expect(storageMultiplier(s, 'wood')).toBe(0.5)
   expect(canAfford(s, { wood: 3000 })).toBe(true)
   removeFacility(s, 'stockyard')
   expect(s.resources.wood).toBe(3312)
-  expect(storageMultiplier(s, 'wood')).toBeLessThan(0.5)
+  expect(storageFull(s, 'wood')).toBe(true)
 })
 
 test('health-weighted overstaffing always adds output and Fill only uses available people', () => {
@@ -416,32 +427,32 @@ test.each([
   },
 )
 
-test('the gathering duration preview completes a batch under storage pressure', () => {
+test('the gathering duration stays constant near the storage cap', () => {
   const s = createDefaultState()
   s.discovered.wood = true
-  s.resources.wood = 240
+  s.resources.wood = 59
   const duration = actionDuration(s, 'sticks')
-  expect(duration).toBe(4)
+  expect(duration).toBe(2)
   expect(startAction(s, 'sticks')).toBe(true)
   advanceTime(s, duration / 2, true)
   expect(s.manual?.progress).toBeCloseTo(0.5)
   advanceTime(s, duration / 2, true)
-  expect(s.resources.wood).toBe(241)
+  expect(s.resources.wood).toBe(60)
 })
 
-test('automated gathering follows the same storage pressure timeline across tick sizes', () => {
+test('automated gathering follows the same storage cap timeline across tick sizes', () => {
   const s = createDefaultState()
   s.facilities.foraging.level = 10
-  s.resources.food = 150
+  s.resources.food = 119.1
   people(s, 'forager', 'forager')
   const sliced = structuredClone(s)
   advanceTime(s, 0.5, true)
   for (let i = 0; i < 32; i++) advanceTime(sliced, 0.5 / 32, true)
-  expect(s.actionProgress.gather).toBeGreaterThan(0)
+  expect(s.actionProgress.gather).toBe(0)
   expect(s.actionProgress.gather).toBeCloseTo(sliced.actionProgress.gather, 3)
   advanceTime(s, 4, true)
   advanceTime(sliced, 4, true)
-  expect(s.resources.food).toBeGreaterThan(150)
+  expect(s.resources.food).toBeCloseTo(120, 8)
   expect(s.resources.food).toBeCloseTo(sliced.resources.food, 4)
 })
 
