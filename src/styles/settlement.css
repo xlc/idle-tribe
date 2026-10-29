@@ -73,12 +73,12 @@
   min-width: 0;
 }
 .building-card[data-built="false"] {
-  background: transparent;
+  background: color-mix(in srgb, var(--color-base-100) 70%, transparent);
 }
 .facility-overview {
   display: grid;
   grid-template-columns: 56px minmax(0, 1fr) auto;
-  align-items: center;
+  align-items: start;
   gap: 12px;
 }
 .facility-overview > .painted-art {
@@ -88,10 +88,27 @@
 .facility-worker-slot[data-visible="false"],
 .building-status[data-visible="false"],
 .investment-change[data-visible="false"] {
-  visibility: hidden;
+  display: none;
 }
 .facility-worker-slot {
+  display: grid;
+  justify-items: end;
+  gap: 3px;
   min-width: max-content;
+}
+.facility-worker-label,
+.facility-type {
+  color: var(--color-neutral);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.facility-title-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 5px 8px;
 }
 .facility-info {
   min-width: 0;
@@ -149,16 +166,30 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-top: 10px;
+  margin-top: 8px;
 }
-.facility-investment-placeholder {
-  min-height: 100px;
+.facility-investment {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-base-300);
+}
+.facility-investment-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--color-base-content);
+  font-size: 12px;
+  font-weight: 700;
+}
+.facility-investment .facility-investment-heading > small {
+  font-variant-numeric: tabular-nums;
 }
 .investment-change {
   overflow: hidden;
   color: var(--color-primary);
   font-size: 12px;
-  margin-top: 6px;
+  margin-top: 4px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -429,7 +460,7 @@
   margin-top: 8px;
 }
 .facility-detail {
-  margin-top: 10px;
+  margin-top: 12px;
 }
 .facility-detail summary {
   padding: 10px 0 0;

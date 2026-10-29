@@ -45,11 +45,10 @@ function InvestmentChange({
   project: Project
 }) {
   const outcome = investmentOutcome(state, project)
+  if (!outcome) return null
   return (
-    <p className="investment-change" data-visible={Boolean(outcome)}>
-      {outcome
-        ? `${outcome.label} · ${formatResource(outcome.before)} → ${formatResource(outcome.after)}`
-        : '\u00a0'}
+    <p className="investment-change">
+      {`${outcome.label} · ${formatResource(outcome.before)} → ${formatResource(outcome.after)}`}
     </p>
   )
 }
@@ -103,6 +102,20 @@ export function Facility({
               ? 'No workers'
               : ''
   const active = s.queues.construction.active?.project.id === id
+  const workplaceType = form.housing
+    ? 'Housing'
+    : form.storage
+      ? 'Storage'
+      : actionDefinition
+        ? 'Gathering'
+        : job
+          ? 'Crafting'
+          : 'Support'
+  const buildLabel = f.level
+    ? expansion.kind === 'expand'
+      ? `Expand to level ${expansion.target}`
+      : 'Upgrade workplace'
+    : `Build ${form.name}`
   const equipment = nextEquipment(s, id),
     equipmentQuote = previewProject(s, equipment)
   const remove = () => {
@@ -136,10 +149,12 @@ export function Facility({
     )
   }
   const investment =
-    def.unique && f.level > 0 ? (
-      <div className="facility-investment-placeholder" aria-hidden="true" />
-    ) : (
+    def.unique && f.level > 0 ? null : (
       <div className="facility-investment">
+        <div className="facility-investment-heading">
+          <span>{f.level ? 'Next upgrade' : 'Build this workplace'}</span>
+          <small>{formatResource(quote.total)} work</small>
+        </div>
         <Costs session={session} cost={quote.cost} />
         <InvestmentChange state={s} project={expansion} />
         <div className="building-controls">
@@ -150,10 +165,8 @@ export function Facility({
               session.change(() => session.game.build(id, selectedForm))
             }
           >
-            {f.level ? 'Queue expansion' : 'Queue build'}
-            {expansion.kind === 'expand' ? ` · ${expansion.target}` : ''}
+            {buildLabel}
           </Button>
-          <small>{formatResource(quote.total)} work</small>
         </div>
       </div>
     )
@@ -167,9 +180,12 @@ export function Facility({
         <div className="facility-overview">
           <BuildingArt building={id} />
           <div className="facility-info">
-            <h3>{form.name}</h3>
+            <div className="facility-title-row">
+              <h3>{form.name}</h3>
+              <span className="facility-type">{workplaceType}</span>
+            </div>
             <span className="facility-level">
-              {f.level ? `Level ${f.level}` : 'Not built'}
+              {f.level ? `Level ${f.level}` : 'Ready to build'}
               {f.equipment ? ` · tools ${f.equipment}` : ''}
             </span>
             {action && actionDefinition ? (
@@ -179,7 +195,7 @@ export function Facility({
                   {actionDefinition.resource ?? 'explores'}/s
                 </span>
                 <span className="recipe-input">
-                  {n}/{actionSlots(s, action)} slots · automation{' '}
+                  Staff {n}/{actionSlots(s, action)} · automation{' '}
                   {Math.round(automationFactor(s, action) * 100)}%
                 </span>
               </div>
@@ -192,7 +208,7 @@ export function Facility({
                 </span>
                 {RESOURCES.filter((r) => input[r]).map((r) => (
                   <span className="recipe-input" key={r}>
-                    −{formatResource(production * (input[r] ?? 0))}{' '}
+                    Uses {formatResource(production * (input[r] ?? 0))}{' '}
                     {RESOURCE_INFO[r].name.toLowerCase()}/s
                   </span>
                 ))}
@@ -200,12 +216,12 @@ export function Facility({
             ) : (
               <p className="building-recipe">
                 {form.housing
-                  ? `Base +${form.housing} places/level`
+                  ? `Adds +${form.housing} comfortable places per level`
                   : form.storage
                     ? RESOURCES.filter((r) => form.storage?.[r])
                         .map(
                           (r) =>
-                            `Base +${form.storage?.[r]} ${RESOURCE_INFO[r].name.toLowerCase()} storage`,
+                            `Adds +${form.storage?.[r]} ${RESOURCE_INFO[r].name.toLowerCase()} storage`,
                         )
                         .join(' · ')
                     : def.effect}
@@ -217,6 +233,7 @@ export function Facility({
           </div>
           {job && !action && (
             <div className="facility-worker-slot" data-visible={f.level > 0}>
+              <span className="facility-worker-label">Staff</span>
               <WorkerControls
                 session={session}
                 job={job}
@@ -227,7 +244,7 @@ export function Facility({
         </div>
         {investment}
         <details className="facility-detail">
-          <summary>Details & upgrades</summary>
+          <summary>More details & upgrades</summary>
           <p className="flavor">{form.description}</p>
           {job && output && RESOURCES.some((r) => input[r]) && (
             <p>
