@@ -5,7 +5,9 @@ import {
   completeProject,
   enqueue,
   quoteProject,
+  researchQueueUnlocked,
   researchUpgradeVisible,
+  researchVisible,
 } from './research'
 import { researchEffects } from './research-effects'
 import { createDefaultState } from './state'
@@ -75,6 +77,26 @@ test('repeatable research has gated levels, rising costs, and a hard maximum', (
   })
   expect(maximum.blocker).toBe('Maximum level 3')
   expect(enqueue(state, maximumProject('inventory-keeping', 4))).toBe(false)
+})
+
+test('research prerequisites stay hidden until the prerequisite completes', () => {
+  const state = createDefaultState()
+  state.discovered.wood = true
+  state.researchUnlocked = true
+
+  expect(researchVisible(state, 'sharpened-stick')).toBe(true)
+  expect(enqueue(state, { kind: 'research', id: 'sharpened-stick' })).toBe(true)
+  expect(researchVisible(state, 'shelters')).toBe(false)
+
+  completeProject(state, { kind: 'research', id: 'sharpened-stick' })
+  expect(researchVisible(state, 'shelters')).toBe(true)
+})
+
+test('the research queue unlocks with a library', () => {
+  const state = createDefaultState()
+  expect(researchQueueUnlocked(state)).toBe(false)
+  state.facilities.library.level = 1
+  expect(researchQueueUnlocked(state)).toBe(true)
 })
 
 test('repeatable effects do not repeat one-time offline bonuses', () => {

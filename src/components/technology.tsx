@@ -6,6 +6,7 @@ import { RESEARCH_IDS } from '../ids'
 import {
   allEntries,
   quoteProject,
+  researchQueueUnlocked,
   researchUpgradeVisible,
   researchVisible,
 } from '../research'
@@ -61,6 +62,7 @@ function ResearchCard({
   const blocked = Boolean(quote.blocker),
     anotherResearchActive = Boolean(active && !activeResearch),
     queueBusy = Boolean(active || q.waiting.length),
+    queueUnlocked = researchQueueUnlocked(s),
     waitingForQueue = q.waiting.length > 0 && !queued,
     canStart = !queued && !queueBusy && !blocked
   const cancelResearch = () =>
@@ -150,18 +152,22 @@ function ResearchCard({
               </small>
             </span>
           </button>
-          {!activeResearch && !queued && !quote.blocker && (
-            <Button
-              className="research-inline-control"
-              variant="solid"
-              color="grass"
-              aria-label="Add research to queue"
-              title="Add research to queue"
-              onClick={() => runResearch('queue')}
-            >
-              Queue
-            </Button>
-          )}
+          {queueUnlocked &&
+            queueBusy &&
+            !activeResearch &&
+            !queued &&
+            !quote.blocker && (
+              <Button
+                className="research-inline-control"
+                variant="solid"
+                color="grass"
+                aria-label="Add research to queue"
+                title="Add research to queue"
+                onClick={() => runResearch('queue')}
+              >
+                Queue
+              </Button>
+            )}
           <DisclosureToggle
             expanded={expanded}
             controls={`${id}-details`}

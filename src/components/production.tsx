@@ -1,5 +1,3 @@
-import { SegmentedControl } from '@radix-ui/themes'
-import { useState } from 'react'
 import { ACTIONS, BUILDINGS } from '../definitions'
 import { ACTION_IDS, BUILDING_IDS } from '../ids'
 import { researchPlan } from '../research'
@@ -8,17 +6,8 @@ import { ActionCards } from './actions'
 import type { ViewProps } from './common'
 import { Facility } from './facility'
 
-const facilityFilters = [
-  'All',
-  'Production',
-  'Storage',
-  'Housing & support',
-] as const
-type FacilityFilter = (typeof facilityFilters)[number]
-
 export function Production(props: ViewProps) {
   const s = props.session.game.state
-  const [filter, setFilter] = useState<FacilityFilter>('Production')
   const planned = researchPlan(s)
   const available = BUILDING_IDS.filter((id) => {
     const action = ACTION_IDS.find((a) => ACTIONS[a].building === id)
@@ -35,16 +24,6 @@ export function Production(props: ViewProps) {
   })
   // Keep action placement stable; workplaces only describe the facility.
   const actions = ACTION_IDS.filter((id) => ACTIONS[id].visible(s))
-  const filtered = available.filter(
-    (id) =>
-      filter === 'All' ||
-      (filter === 'Production'
-        ? BUILDINGS[id].job
-        : filter === 'Storage'
-          ? BUILDINGS[id].forms.some((form) => form.storage)
-          : !BUILDINGS[id].job &&
-            !BUILDINGS[id].forms.some((form) => form.storage)),
-  )
   const built = available.filter((id) => s.facilities[id].level > 0).length
   return (
     <section className="production-view">
@@ -68,32 +47,10 @@ export function Production(props: ViewProps) {
             {built} built · {available.length} available
           </span>
         </div>
-        <SegmentedControl.Root
-          className="facility-filters"
-          aria-label="Facility filters"
-          value={filter}
-          onValueChange={(value) => {
-            const next = facilityFilters.find((option) => option === value)
-            if (next) setFilter(next)
-          }}
-          size="2"
-          variant="surface"
-        >
-          {facilityFilters.map((value) => (
-            <SegmentedControl.Item key={value} value={value}>
-              {value}
-            </SegmentedControl.Item>
-          ))}
-        </SegmentedControl.Root>
         <div className="building-grid">
-          {filtered.map((id) => (
+          {available.map((id) => (
             <Facility key={id} {...props} id={id} />
           ))}
-          {filtered.length === 0 && (
-            <p className="workplace-empty">
-              No workplaces in this group are available yet.
-            </p>
-          )}
         </div>
       </section>
     </section>

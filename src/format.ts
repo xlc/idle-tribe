@@ -1,11 +1,22 @@
-import { RESOURCE_DISPLAY_DECIMALS } from './constants'
+import {
+  MIN_VISIBLE_RESOURCE_CHANGE,
+  RESOURCE_DISPLAY_DECIMALS,
+} from './constants'
 import { RESOURCE_INFO } from './definitions'
 import { RESOURCES } from './ids'
 import type { Cost, ExploreOutcome } from './types'
+
+const resourceFormatter = new Intl.NumberFormat('en-US', {
+  maximumFractionDigits: RESOURCE_DISPLAY_DECIMALS,
+})
+const smallResourceFormatter = new Intl.NumberFormat('en-US', {
+  maximumSignificantDigits: 2,
+})
+
 export function formatResource(value: number) {
-  return new Intl.NumberFormat('en-US', {
-    maximumFractionDigits: RESOURCE_DISPLAY_DECIMALS,
-  }).format(value)
+  return Math.abs(value) < MIN_VISIBLE_RESOURCE_CHANGE && value !== 0
+    ? smallResourceFormatter.format(value)
+    : resourceFormatter.format(value)
 }
 export function formatCompactResource(value: number) {
   return Math.abs(value) < 10000

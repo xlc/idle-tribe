@@ -136,10 +136,3 @@
   font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
-.workplace-empty {
-  padding: 18px;
-  border: 1px dashed var(--color-base-300);
-  border-radius: 8px;
-  color: var(--color-neutral);
-  font-size: 13px;
-}

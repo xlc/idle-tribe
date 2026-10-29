@@ -17,6 +17,9 @@ import {
 } from './settlement'
 import type { Cost, GameState, Project, QueueId } from './types'
 export const QUEUES: QueueId[] = ['research', 'construction']
+export function researchQueueUnlocked(state: GameState) {
+  return state.facilities.library.level > 0
+}
 export function projectName(state: GameState, project: Project) {
   if (project.kind === 'research') {
     const level = project.target ?? 1
@@ -393,7 +396,7 @@ export function researchVisible(
     (!def.branch ||
       !state.specialization ||
       def.branch === state.specialization) &&
-    !requirementBlocker(researchPlan(state), def.requires)
+    !requirementBlocker(state, def.requires)
   )
 }
 export function researchUpgradeVisible(
@@ -414,7 +417,7 @@ export function researchUpgradeVisible(
     )
   )
     return false
-  return !requirementBlocker(researchPlan(state), upgrade.requires)
+  return !requirementBlocker(state, upgrade.requires)
 }
 export function completedTechnologies(state: GameState) {
   return RESEARCH_IDS.filter((id) => hasResearch(state, id)).length

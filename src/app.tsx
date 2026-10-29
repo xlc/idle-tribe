@@ -19,7 +19,7 @@ import { Stockpile } from './components/stockpile'
 import { Technology } from './components/technology'
 import { Workforce } from './components/workforce'
 import { ERAS } from './definitions'
-import { projectName } from './research'
+import { projectName, researchQueueUnlocked } from './research'
 import type { GameSession } from './session'
 import { assigned, automationUnlocked, comfortablePlaces } from './settlement'
 import { useSession } from './use-session'
@@ -124,7 +124,7 @@ export function App({ session }: { session: GameSession }) {
       id: 'queue',
       label: 'Queue',
       mobileLabel: 'Queue',
-      available: s.researchUnlocked,
+      available: s.researchUnlocked && researchQueueUnlocked(s),
       working: Boolean(
         s.queues.research.active || s.queues.research.waiting.length,
       ),

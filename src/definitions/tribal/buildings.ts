@@ -68,7 +68,7 @@ export const buildings = {
       },
     ],
     effect:
-      'Knowledge storage; later archives also store data and causal models.',
+      'Knowledge storage; later archives also store data and causal models. Unlocks the research queue.',
   },
   'builders-lodge': {
     forms: [

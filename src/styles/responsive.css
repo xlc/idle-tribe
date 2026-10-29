@@ -232,13 +232,6 @@
   .arrival-details summary {
     white-space: normal;
   }
-  .facility-filters {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    touch-action: pan-x;
-    overscroll-behavior: none;
-    scrollbar-width: thin;
-  }
   .away-summary {
     flex-wrap: wrap;
     gap: 6px 12px;
@@ -304,9 +297,6 @@
   }
   .action-section .manual-actions {
     gap: 8px;
-  }
-  .workplace-section .facility-filters {
-    margin-bottom: 8px;
   }
 }
 @media (max-width: 440px) {
