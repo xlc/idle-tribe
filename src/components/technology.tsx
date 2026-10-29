@@ -117,7 +117,8 @@ function ResearchCard({
                 {target > 1 ? ` · level ${target}` : ''}
               </strong>
               <span className="action-yield">
-                {formatCost(quote.cost)} · {formatDuration(quote.total)}
+                <Costs session={session} cost={quote.cost} inline /> ·{' '}
+                {formatDuration(quote.total)}
               </span>
             </span>
             <span

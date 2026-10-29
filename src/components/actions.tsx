@@ -16,7 +16,6 @@ import {
 import { ACTIONS } from '../definitions'
 import { EXPLORE_DISCOVERIES } from '../definitions/tribal/exploration'
 import {
-  formatCost,
   formatExploreOutcome,
   formatResource,
   formatResourceGain,
@@ -136,16 +135,6 @@ export function ActionCard({
     actionJobActive(s, id)
   const statusKind =
     availability.kind === 'locked' ? 'locked' : availability.state
-  const availabilityNote =
-    availability.kind === 'automated'
-      ? availability.state === 'paused'
-        ? availability.reason
-        : null
-      : availability.kind === 'manual' &&
-          availability.state !== 'ready' &&
-          availability.state !== 'running'
-        ? availability.reason
-        : null
   const icon = (
     <span
       className="action-icon"
@@ -181,11 +170,6 @@ export function ActionCard({
                 />
                 {def.kind === 'exploration' && (
                   <ExploreSummary state={s} automated working={working} />
-                )}
-                {availabilityNote && (
-                  <span className="action-status action-status-paused">
-                    {availabilityNote}
-                  </span>
                 )}
               </span>
               <span className="action-automation-controls">
@@ -227,9 +211,13 @@ export function ActionCard({
               <span className="action-copy">
                 <strong className="action-name">{def.name}</strong>
                 <span className="action-yield">
-                  {def.resource
-                    ? `+${formatResource(actionYield(s, id))} ${def.resource} · `
-                    : `${formatCost(def.cost)} · `}
+                  {def.resource ? (
+                    `+${formatResource(actionYield(s, id))} ${def.resource} · `
+                  ) : (
+                    <>
+                      <Costs session={session} cost={def.cost} inline /> ·{' '}
+                    </>
+                  )}
                   {formatResource(duration)}s
                   {slots > 0 ? ` · ${slots} slot${slots === 1 ? '' : 's'}` : ''}
                 </span>
@@ -240,11 +228,6 @@ export function ActionCard({
                 />
                 {def.kind === 'exploration' && (
                   <ExploreSummary state={s} automated={false} working={false} />
-                )}
-                {availabilityNote && (
-                  <span className="action-status action-status-paused">
-                    {availabilityNote}
-                  </span>
                 )}
               </span>
               <span className="project-progress" data-running={running}>
@@ -265,6 +248,17 @@ export function ActionCard({
                 </small>
               </span>
             </button>
+          )}
+          {running && (
+            <Button
+              className="action-stop"
+              color="amber"
+              aria-label={`Stop ${def.name}`}
+              title={`Stop ${def.name}`}
+              onClick={() => session.change(() => session.game.cancelAction())}
+            >
+              Stop
+            </Button>
           )}
           <DisclosureToggle
             expanded={expanded}
@@ -294,19 +288,6 @@ export function ActionCard({
             {!def.resource && <Costs session={session} cost={def.cost} />}
             {def.kind === 'exploration' && (
               <p className="action-hint">{exploreHint(skill.level)}</p>
-            )}
-            {running && (
-              <Button
-                className="action-stop"
-                color="amber"
-                aria-label={`Stop ${def.name}`}
-                title={`Stop ${def.name}`}
-                onClick={() =>
-                  session.change(() => session.game.cancelAction())
-                }
-              >
-                Stop
-              </Button>
             )}
           </div>
         )}

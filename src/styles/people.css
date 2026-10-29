@@ -47,7 +47,7 @@
 .person-occupation[data-visible="false"],
 .person-output[data-visible="false"],
 .person-expertise[data-visible="false"] {
-  visibility: hidden;
+  display: none;
 }
 .person-occupation .rt-SelectTrigger {
   min-width: 0;

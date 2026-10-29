@@ -10,6 +10,7 @@ import {
 } from 'react'
 import { EPSILON } from '../constants'
 import { RESOURCE_INFO } from '../definitions'
+import { formatResource } from '../format'
 import { RESOURCES } from '../ids'
 import type { GameSession } from '../session'
 import type { Cost } from '../types'
@@ -188,9 +189,18 @@ export function DisclosureToggle({
     </button>
   )
 }
-export function Costs({ session, cost }: { session: GameSession; cost: Cost }) {
+export function Costs({
+  session,
+  cost,
+  inline = false,
+}: {
+  session: GameSession
+  cost: Cost
+  inline?: boolean
+}) {
+  const Tag = inline ? 'span' : 'p'
   return (
-    <p className="costs">
+    <Tag className={`costs${inline ? ' costs-inline' : ''}`}>
       {RESOURCES.filter((r) => cost[r]).map((r) => (
         <span
           key={r}
@@ -200,9 +210,10 @@ export function Costs({ session, cost }: { session: GameSession; cost: Cost }) {
               : 'cost-enough'
           }
         >
-          {cost[r]} {RESOURCE_INFO[r].name.toLowerCase()}
+          {formatResource(session.game.state.resources[r])}/
+          {formatResource(cost[r] ?? 0)} {RESOURCE_INFO[r].name.toLowerCase()}
         </span>
       ))}
-    </p>
+    </Tag>
   )
 }

@@ -21,8 +21,16 @@
   line-height: 1.6;
   margin-top: 10px;
 }
+.costs-inline {
+  display: inline-flex;
+  gap: 4px 8px;
+  margin: 0;
+  font-size: inherit;
+  line-height: inherit;
+  vertical-align: baseline;
+}
 .cost-missing {
-  color: var(--color-warning);
+  color: var(--color-error);
 }
 .cost-enough {
   color: var(--color-neutral);
