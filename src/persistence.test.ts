@@ -70,9 +70,11 @@ test('current saves preserve expedition history and pending reports', () => {
   const s = createDefaultState()
   s.completedEncounters['abandoned-cache'] = true
   s.pendingEncounter = 'ridge-travelers'
+  s.lastExploreOutcome = { kind: 'resources', amount: { food: 7 } }
   const loaded = parseSave(JSON.stringify(s))
   expect(loaded.completedEncounters).toEqual(s.completedEncounters)
   expect(loaded.pendingEncounter).toBe('ridge-travelers')
+  expect(loaded.lastExploreOutcome).toEqual(s.lastExploreOutcome)
 })
 
 test('encounter schema changes reset incomplete saves', () => {

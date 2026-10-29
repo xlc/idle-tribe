@@ -226,6 +226,22 @@ test('notifications are dismissible without removing their session history', () 
   expect(session.notification).toBeNull()
 })
 
+test('repeated expedition outcomes still create distinct session events', () => {
+  const state = createDefaultState()
+  const session = createSession(state, () => {}, hour, true)
+  session.change(() => {
+    state.lastExploreOutcome = { kind: 'resources', amount: { food: 2 } }
+    state.notice = 'Explorers returned with +2 food'
+  }, hour + 1000)
+  session.change(() => {
+    state.lastExploreOutcome = { kind: 'resources', amount: { food: 2 } }
+    state.notice = 'Explorers returned with +2 food'
+  }, hour + 2000)
+  expect(
+    session.events.filter((event) => event.kind === 'notice'),
+  ).toHaveLength(2)
+})
+
 test('away reports count automated expedition discoveries', () => {
   const state = createDefaultState()
   state.completedEncounters['abandoned-cache'] = true

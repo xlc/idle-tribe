@@ -36,6 +36,7 @@ export function createSession(
   const events: SessionEvent[] = []
   let eventId = 0,
     lastNotice = state.notice,
+    lastExploreOutcome = state.lastExploreOutcome,
     lastPeople = state.people.length
   function logEvent(
     kind: SessionEventKind,
@@ -62,11 +63,16 @@ export function createSession(
   // Events that happen while hidden are covered by the away report.
   function syncEventBaselines() {
     lastNotice = state.notice
+    lastExploreOutcome = state.lastExploreOutcome
     lastPeople = state.people.length
   }
   function trackEvents() {
     if (showing) {
-      if (state.notice && state.notice !== lastNotice)
+      if (
+        state.notice &&
+        (state.notice !== lastNotice ||
+          state.lastExploreOutcome !== lastExploreOutcome)
+      )
         logEvent('notice', state.notice)
       if (state.people.length > lastPeople)
         logEvent(

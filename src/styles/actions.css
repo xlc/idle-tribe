@@ -152,6 +152,20 @@
 .action-status-ready {
   color: var(--color-primary);
 }
+.action-status-paused {
+  color: var(--color-warning, var(--color-accent));
+}
+.action-explore-summary {
+  display: grid;
+  gap: 2px;
+  margin-top: 5px;
+  color: var(--color-neutral);
+  font-size: 11px;
+  line-height: 1.25;
+}
+.action-explore-summary span:first-child {
+  color: var(--color-primary);
+}
 .manual-action[data-action-state="locked"] {
   opacity: 0.78;
 }
@@ -257,6 +271,11 @@
   font-size: 13px;
   line-height: 1.4;
 }
+.expedition-encounter-copy .expedition-choice-prompt {
+  margin-top: 10px;
+  color: var(--color-primary);
+  font-weight: 600;
+}
 .expedition-options {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -269,6 +288,14 @@
   gap: 3px;
   min-height: 58px;
   text-align: left;
+  white-space: normal;
+}
+.expedition-options button strong {
+  font-size: 13px;
+}
+.expedition-options .expedition-effect {
+  color: var(--color-primary);
+  font-weight: 600;
 }
 @media (max-width: 440px) {
   .expedition-options {

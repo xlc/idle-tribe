@@ -6,6 +6,7 @@ import {
   EXPLORE_DISCOVERIES,
   EXPLORE_FINDS,
 } from './definitions/tribal/exploration'
+import { formatExploreNotice, formatExploreOutcome } from './format'
 import { type ActionId, RESEARCH_IDS, RESOURCES } from './ids'
 import { hasResearch, researchEffects } from './research-effects'
 import { canAfford, pay, refund, storageMultiplier } from './resources'
@@ -14,6 +15,7 @@ import type {
   Cost,
   EncounterOptionIndex,
   ExpeditionEncounterId,
+  ExploreOutcome,
   GameState,
 } from './types'
 
@@ -313,13 +315,20 @@ function nextDiscovery(state: GameState): Discovery | null {
   return EXPLORE_DISCOVERIES.find((id) => !state.discovered[id]) ?? null
 }
 
-function exploreResourceReward(state: GameState, level: number, scale: number) {
+function exploreResourceReward(
+  state: GameState,
+  level: number,
+  scale: number,
+): Cost {
   const pool = explorePool(state),
     find =
       pool[
         Math.min(pool.length - 1, Math.floor(exploreRand(state) * pool.length))
       ]
-  if (find) state.resources[find.resource] += find.amount(level) * scale
+  if (!find) return {}
+  const amount = find.amount(level) * scale
+  state.resources[find.resource] += amount
+  return { [find.resource]: amount }
 }
 
 function eligibleEncounters(state: GameState) {
@@ -375,19 +384,35 @@ function applyEncounterEffect(
   const encounter = EXPEDITION_ENCOUNTERS[id]
   if (!encounter) return false
   const effect = encounter.options[option].effect
-  if (effect.kind === 'resources')
+  let outcome: ExploreOutcome
+  if (effect.kind === 'resources') {
+    const amount: Cost = {}
     for (const resource of RESOURCES)
-      state.resources[resource] += (effect.amount[resource] ?? 0) * scale
-  if (effect.kind === 'happiness')
+      if (effect.amount[resource]) {
+        const delta = (effect.amount[resource] ?? 0) * scale
+        state.resources[resource] += delta
+        amount[resource] = delta
+      }
+    outcome = { kind: 'resources', amount }
+  } else if (effect.kind === 'happiness') {
+    const before = state.happiness
     state.happiness = Math.min(100, state.happiness + effect.amount * scale)
-  if (effect.kind === 'arrival-progress')
+    outcome = { kind: 'happiness', amount: state.happiness - before }
+  } else {
+    const before = state.arrivalProgress
     state.arrivalProgress = Math.min(
       1,
       state.arrivalProgress + effect.amount * scale,
     )
+    outcome = {
+      kind: 'arrival-progress',
+      amount: state.arrivalProgress - before,
+    }
+  }
   state.completedEncounters[id] = true
   state.pendingEncounter = null
-  state.notice = encounter.options[option].label
+  state.lastExploreOutcome = outcome
+  state.notice = `${encounter.options[option].label} · ${formatExploreOutcome(outcome)}`
   return true
 }
 
@@ -423,23 +448,38 @@ export function applyExploreReward(
   if ((next && scale >= 1) || roll < discover) {
     if (next) {
       state.discovered[next] = true
-      state.notice = `Discovered ${next}`
-    } else exploreResourceReward(state, level, scale)
+      state.lastExploreOutcome = { kind: 'discovery', discovery: next }
+    } else {
+      state.lastExploreOutcome = {
+        kind: 'resources',
+        amount: exploreResourceReward(state, level, scale),
+      }
+    }
+    state.notice = formatExploreNotice(state.lastExploreOutcome)
     state.expeditionUnlocked = true
     syncUnlocks(state)
     return
   }
   if (roll < discover + resources) {
-    exploreResourceReward(state, level, scale)
+    state.lastExploreOutcome = {
+      kind: 'resources',
+      amount: exploreResourceReward(state, level, scale),
+    }
+    state.notice = formatExploreNotice(state.lastExploreOutcome)
     state.expeditionUnlocked = true
     return
   }
   if (roll < discover + resources + rare) {
-    grantActionXp(state, 'explore', 5)
+    const amount = 5
+    grantActionXp(state, 'explore', amount)
     if (state.researchUnlocked) {
-      state.resources.knowledge += 1 * scale
-      state.notice = 'Explorers brought back unusual insight'
-    } else state.notice = 'Explorers found a promising vantage point'
+      const knowledge = 1 * scale
+      state.resources.knowledge += knowledge
+      state.lastExploreOutcome = { kind: 'knowledge', amount: knowledge }
+    } else {
+      state.lastExploreOutcome = { kind: 'experience', amount }
+    }
+    state.notice = formatExploreNotice(state.lastExploreOutcome)
     state.expeditionUnlocked = true
     return
   }
@@ -448,7 +488,8 @@ export function applyExploreReward(
     if (found) {
       if (mode === 'manual') {
         state.pendingEncounter = found.id
-        state.notice = 'Explorers found something unusual'
+        state.lastExploreOutcome = { kind: 'encounter', id: found.id }
+        state.notice = formatExploreNotice(state.lastExploreOutcome)
       } else {
         applyEncounterEffect(state, found.id, found.automatedOption, scale)
       }
@@ -458,12 +499,23 @@ export function applyExploreReward(
   }
   if (roll < discover + resources + rare + encounter + mini) {
     if (exploreRand(state) < 0.5) {
-      state.arrivalProgress = Math.min(1, state.arrivalProgress + 0.25 * scale)
-      state.notice = 'Explorers met travelers heading this way'
+      const amount = 0.25 * scale,
+        before = state.arrivalProgress
+      state.arrivalProgress = Math.min(1, state.arrivalProgress + amount)
+      state.lastExploreOutcome = {
+        kind: 'arrival-progress',
+        amount: state.arrivalProgress - before,
+      }
     } else {
-      state.happiness = Math.min(100, state.happiness + 5 * scale)
-      state.notice = 'Explorers returned with good stories'
+      const amount = 5 * scale,
+        before = state.happiness
+      state.happiness = Math.min(100, state.happiness + amount)
+      state.lastExploreOutcome = {
+        kind: 'happiness',
+        amount: state.happiness - before,
+      }
     }
+    state.notice = formatExploreNotice(state.lastExploreOutcome)
     state.expeditionUnlocked = true
   }
 }
@@ -489,6 +541,17 @@ export function exploreExpectedRewards(state: GameState): Cost {
     result[resource] =
       (result[resource] ?? 0) + (encounterResources[resource] ?? 0)
   return result
+}
+
+export function exploreExpectedRate(state: GameState): Cost {
+  const expected = exploreExpectedRewards(state),
+    rate = actionWorkers(state, 'explore') / actionDuration(state, 'explore')
+  return Object.fromEntries(
+    RESOURCES.flatMap((resource) => {
+      const amount = (expected[resource] ?? 0) * rate
+      return amount ? [[resource, amount]] : []
+    }),
+  )
 }
 
 export function finishManual(state: GameState) {

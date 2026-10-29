@@ -194,6 +194,7 @@ export function App({ session }: { session: GameSession }) {
             />
           )}
           <div className="view-scroll" ref={content}>
+            {view === 'settlement' && <ExpeditionEncounter session={session} />}
             {view === 'settlement' && !automated && (
               <section className="discoveries" aria-label="Actions">
                 <h2>Actions</h2>
@@ -210,7 +211,6 @@ export function App({ session }: { session: GameSession }) {
                   forceMount
                   hidden={view !== 'settlement'}
                 >
-                  <ExpeditionEncounter session={session} />
                   {automated ? (
                     <>
                       <SettlementBrief

@@ -19,6 +19,7 @@ import { createDefaultState } from './state'
 import type {
   ActiveProject,
   Cost,
+  ExploreOutcome,
   GameState,
   Project,
   ProjectQueue,
@@ -91,6 +92,25 @@ function cost(v: JsonValue | undefined): Cost {
     result[r] = number(o[r])
   }
   return result
+}
+function exploreOutcome(v: JsonValue | undefined): ExploreOutcome | null {
+  if (v === null) return null
+  const o = object(v),
+    kind = member(o.kind, [
+      'resources',
+      'discovery',
+      'knowledge',
+      'experience',
+      'encounter',
+      'arrival-progress',
+      'happiness',
+    ] as const)
+  if (kind === 'resources') return { kind, amount: cost(o.amount) }
+  if (kind === 'discovery')
+    return { kind, discovery: member(o.discovery, ['wood', 'stone'] as const) }
+  if (kind === 'encounter')
+    return { kind, id: member(o.id, EXPEDITION_ENCOUNTER_IDS) }
+  return { kind, amount: number(o.amount) }
 }
 function project(v: JsonValue | undefined): Project {
   const p = object(v),
@@ -245,6 +265,7 @@ export function parseSave(serialized: string | null, nameSeed = 0): GameState {
     s.savedAt = number(p.savedAt)
     s.completedProjects = number(p.completedProjects, 0, Infinity, true)
     s.notice = string(p.notice)
+    s.lastExploreOutcome = exploreOutcome(p.lastExploreOutcome)
     s.legacy = {
       discovered: bool(legacy.discovered),
       lifetime: number(legacy.lifetime, 0, Infinity, true),

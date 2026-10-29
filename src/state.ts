@@ -59,6 +59,7 @@ export function createDefaultState(nameSeed = 0): GameState {
     absence: null,
     completedProjects: 0,
     notice: '',
+    lastExploreOutcome: null,
     legacy: {
       discovered: false,
       lifetime: 0,
@@ -101,5 +102,6 @@ export function resetState(
   state.absence = fresh.absence
   state.completedProjects = fresh.completedProjects
   state.notice = fresh.notice
+  state.lastExploreOutcome = fresh.lastExploreOutcome
   state.legacy = preserved.legacy
 }

@@ -30,6 +30,14 @@ export type EncounterEffect =
   | { kind: 'resources'; amount: Cost }
   | { kind: 'happiness'; amount: number }
   | { kind: 'arrival-progress'; amount: number }
+export type ExploreOutcome =
+  | { kind: 'resources'; amount: Cost }
+  | { kind: 'discovery'; discovery: 'wood' | 'stone' }
+  | { kind: 'knowledge'; amount: number }
+  | { kind: 'experience'; amount: number }
+  | { kind: 'encounter'; id: ExpeditionEncounterId }
+  | { kind: 'arrival-progress'; amount: number }
+  | { kind: 'happiness'; amount: number }
 export interface EncounterOption {
   label: string
   description: string
@@ -241,6 +249,7 @@ export interface GameState {
   absence: Absence | null
   completedProjects: number
   notice: string
+  lastExploreOutcome: ExploreOutcome | null
   legacy: {
     discovered: boolean
     lifetime: number

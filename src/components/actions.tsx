@@ -9,12 +9,20 @@ import {
   actionWorkersUnlocked,
   actionYield,
   automationFactor,
+  exploreExpectedRate,
   isRateMode,
 } from '../actions'
 import { ACTIONS } from '../definitions'
-import { formatCost, formatResource } from '../format'
+import { EXPLORE_DISCOVERIES } from '../definitions/tribal/exploration'
+import {
+  formatCost,
+  formatExploreOutcome,
+  formatResource,
+  formatResourceGain,
+} from '../format'
 import { ACTION_IDS, type ActionId } from '../ids'
 import type { GameSession } from '../session'
+import type { GameState } from '../types'
 import { ResourceArt } from './art'
 import {
   ActionCountdown,
@@ -77,6 +85,32 @@ function exploreHint(level: number) {
   return 'Finds: resources · discoveries · sometimes nothing'
 }
 
+function ExploreSummary({
+  state,
+  automated,
+  working,
+}: {
+  state: GameState
+  automated: boolean
+  working: boolean
+}) {
+  const discovered = Object.values(state.discovered).filter(Boolean).length
+  const expected = formatResourceGain(exploreExpectedRate(state))
+  return (
+    <span className="action-explore-summary">
+      <span>
+        {state.lastExploreOutcome
+          ? `Last expedition: ${formatExploreOutcome(state.lastExploreOutcome)}`
+          : 'Finds resources and discoveries'}
+      </span>
+      {automated && working && expected && <span>Expected: {expected}/s</span>}
+      <span>
+        Discoveries: {discovered}/{EXPLORE_DISCOVERIES.length}
+      </span>
+    </span>
+  )
+}
+
 export function ActionCard({
   session,
   id,
@@ -101,6 +135,16 @@ export function ActionCard({
     actionJobActive(s, id)
   const statusKind =
     availability.kind === 'locked' ? 'locked' : availability.state
+  const availabilityNote =
+    availability.kind === 'automated'
+      ? availability.state === 'paused'
+        ? availability.reason
+        : null
+      : availability.kind === 'manual' &&
+          availability.state !== 'ready' &&
+          availability.state !== 'running'
+        ? availability.reason
+        : null
   const icon = (
     <span
       className="action-icon"
@@ -133,6 +177,14 @@ export function ActionCard({
                 xp={skill.xp}
                 requiredXp={actionRequiredXp(s, id)}
               />
+              {def.kind === 'exploration' && (
+                <ExploreSummary state={s} automated working={working} />
+              )}
+              {availabilityNote && (
+                <span className="action-status action-status-paused">
+                  {availabilityNote}
+                </span>
+              )}
             </span>
             <span className="action-automation-controls">
               {!rateMode && (
@@ -186,6 +238,14 @@ export function ActionCard({
                   xp={skill.xp}
                   requiredXp={actionRequiredXp(s, id)}
                 />
+                {def.kind === 'exploration' && (
+                  <ExploreSummary state={s} automated={false} working={false} />
+                )}
+                {availabilityNote && (
+                  <span className="action-status action-status-paused">
+                    {availabilityNote}
+                  </span>
+                )}
               </span>
               <span className="project-progress" data-running={running}>
                 <ActionProgress

@@ -1,7 +1,9 @@
 import { expect, test } from 'bun:test'
 import {
   actionAvailability,
+  actionDuration,
   applyExploreReward,
+  exploreExpectedRate,
   exploreExpectedRewards,
   resolveEncounter,
   startAction,
@@ -111,6 +113,10 @@ test('manual exploration pauses for a one-time encounter and resolves one choice
     state.completedEncounters[id] = true
   triggerEncounter(state, 'manual')
   expect(state.pendingEncounter).toBe('abandoned-cache')
+  expect(state.lastExploreOutcome).toEqual({
+    kind: 'encounter',
+    id: 'abandoned-cache',
+  })
   expect(actionAvailability(state, 'explore')).toMatchObject({
     kind: 'manual',
     state: 'blocked',
@@ -120,6 +126,10 @@ test('manual exploration pauses for a one-time encounter and resolves one choice
   expect(resolveEncounter(state, 0)).toBe(true)
   expect(state.resources.wood).toBe(beforeWood + 30)
   expect(state.pendingEncounter).toBeNull()
+  expect(state.lastExploreOutcome).toEqual({
+    kind: 'resources',
+    amount: { wood: 30, stone: 20 },
+  })
   expect(state.completedEncounters['abandoned-cache']).toBe(true)
   expect(resolveEncounter(state, 1)).toBe(false)
 })
@@ -171,6 +181,18 @@ test('exploration can bring travelers to the next available room', () => {
   expect(state.arrivalProgress).toBe(1)
 })
 
+test('exploration outcomes report the applied amount after caps', () => {
+  const state = encounterState()
+  for (const id of EXPEDITION_ENCOUNTER_IDS)
+    state.completedEncounters[id] = id !== 'ridge-travelers'
+  state.arrivalProgress = 0.9
+  triggerEncounter(state, 'manual')
+  expect(resolveEncounter(state, 0)).toBe(true)
+  expect(state.lastExploreOutcome?.kind).toBe('arrival-progress')
+  if (state.lastExploreOutcome?.kind !== 'arrival-progress') return
+  expect(state.lastExploreOutcome.amount).toBeCloseTo(0.1)
+})
+
 test('a traveler lead becomes an idle settler when food and a room are ready', () => {
   const state = encounterState()
   for (const id of EXPEDITION_ENCOUNTER_IDS)
@@ -198,7 +220,29 @@ test('experienced explorers can find repeatable traveler leads', () => {
     applyExploreReward(state, 1, 'manual')
 
   expect(state.arrivalProgress).toBeGreaterThan(0)
-  expect(state.notice).toBe('Explorers met travelers heading this way')
+  expect(state.notice).toBe('Explorers met travelers · arrival progress +25%')
+  expect(state.lastExploreOutcome).toMatchObject({
+    kind: 'arrival-progress',
+    amount: 0.25,
+  })
+})
+
+test('every ordinary exploration returns a concrete resource outcome', () => {
+  const state = encounterState()
+  for (const id of EXPEDITION_ENCOUNTER_IDS)
+    state.completedEncounters[id] = true
+
+  for (
+    let attempt = 0;
+    attempt < 100 && state.lastExploreOutcome?.kind !== 'resources';
+    attempt++
+  )
+    applyExploreReward(state, 1, 'manual')
+
+  expect(state.lastExploreOutcome?.kind).toBe('resources')
+  if (state.lastExploreOutcome?.kind !== 'resources') return
+  expect(Object.values(state.lastExploreOutcome.amount)).toHaveLength(1)
+  expect(Object.values(state.lastExploreOutcome.amount)[0]).toBeGreaterThan(0)
 })
 
 test('exploration rates include automated encounter resources', () => {
@@ -209,4 +253,20 @@ test('exploration rates include automated encounter resources', () => {
   const expected = exploreExpectedRewards(state)
   expect(expected.wood).toBeCloseTo(0.27)
   expect(expected.stone).toBeCloseTo(0.22)
+})
+
+test('exploration expected rates include worker cadence', () => {
+  const state = encounterState()
+  for (const id of EXPEDITION_ENCOUNTER_IDS)
+    state.completedEncounters[id] = true
+  state.facilities['expedition-camp'].level = 1
+  const founder = state.people[0]
+  if (!founder) throw new Error('Default state has no founder')
+  founder.job = 'explorer'
+
+  const expected = exploreExpectedRewards(state),
+    rate = exploreExpectedRate(state)
+  expect(rate.food).toBeCloseTo(
+    (expected.food ?? 0) / actionDuration(state, 'explore'),
+  )
 })
