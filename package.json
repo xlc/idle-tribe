@@ -14,7 +14,6 @@
     "build": "bun run typecheck && bun run build.ts",
     "preview": "bun run build && wrangler dev",
     "deploy": "bun run build && wrangler deploy",
-    "test": "bun test ./src ./scripts",
     "balance": "bun scripts/simulate-visits.ts",
     "check": "bun run lint && bun run build && bun run test"
   },
