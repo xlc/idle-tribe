@@ -21,7 +21,8 @@
   margin: 0;
   overflow: hidden;
   border-radius: 12px;
-  border-color: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  background: var(--color-base-100);
   box-shadow: var(--shadow-4);
   pointer-events: auto;
   animation: event-toast-enter 220ms cubic-bezier(0.22, 1, 0.36, 1) both;

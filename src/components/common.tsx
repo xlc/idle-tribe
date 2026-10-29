@@ -1,4 +1,7 @@
-import { Button as RadixButton } from '@radix-ui/themes'
+import {
+  Button as RadixButton,
+  Progress as RadixProgress,
+} from '@radix-ui/themes'
 import {
   type ComponentPropsWithoutRef,
   type ReactNode,
@@ -56,20 +59,46 @@ export function ActionProgress({
   value: number
   running: boolean
 }) {
-  const bar = useRef<HTMLProgressElement>(null)
+  const bar = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
-    if (bar.current) bar.current.value = value
+    bar.current?.style.setProperty('--progress-value', `${value * 100}`)
   }, [value])
   useInterpolated(session, running, (elapsed) => {
-    if (bar.current) bar.current.value = Math.min(1, value + elapsed / duration)
+    bar.current?.style.setProperty(
+      '--progress-value',
+      `${Math.min(1, value + elapsed / duration) * 100}`,
+    )
   })
   return (
-    <progress
+    <RadixProgress
       ref={bar}
-      className="progress"
       aria-label={label}
-      value={value}
-      max={1}
+      value={value * 100}
+      max={100}
+      size="1"
+      color="grass"
+    />
+  )
+}
+
+export function ProgressBar({
+  value,
+  max,
+  label,
+  ...rest
+}: {
+  value: number
+  max: number
+  label: string
+} & Omit<ComponentPropsWithoutRef<typeof RadixProgress>, 'value' | 'max'>) {
+  return (
+    <RadixProgress
+      {...rest}
+      aria-label={label}
+      value={max > 0 ? (value / max) * 100 : 0}
+      max={100}
+      size="1"
+      color="grass"
     />
   )
 }

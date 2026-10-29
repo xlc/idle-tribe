@@ -56,7 +56,6 @@ export function WorkerControls({
           </Button>
         )}
       </fieldset>
-      <small className="staffing-target">{cap} efficient</small>
       {n > 0 && isWorkingJob(job) && staffingMultiplier(s, job) < 1 && (
         <small className="staffing-efficiency">
           {formatResource(staffingMultiplier(s, job) * 100)}% efficiency

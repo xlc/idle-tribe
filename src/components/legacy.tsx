@@ -1,3 +1,4 @@
+import { Card } from '@radix-ui/themes'
 import { PERKS } from '../definitions'
 import { formatResource } from '../format'
 import { PERK_IDS } from '../ids'
@@ -43,19 +44,23 @@ export function Legacy({
       </Button>
       <div className="tech-grid">
         {PERK_IDS.map((id) => (
-          <article className="tech-card panel" key={id}>
-            <h3>{PERKS[id].name}</h3>
-            <p className="flavor">{PERKS[id].description}</p>
-            <p>{PERKS[id].effect}</p>
-            <Button
-              variant="solid"
-              color="grass"
-              disabled={s.legacy.perks[id] || s.legacy.points < PERKS[id].cost}
-              onClick={() => session.change(() => buyPerk(s, id))}
-            >
-              {s.legacy.perks[id] ? 'Owned' : `${PERKS[id].cost} points`}
-            </Button>
-          </article>
+          <Card asChild key={id}>
+            <article className="tech-card">
+              <h3>{PERKS[id].name}</h3>
+              <p className="flavor">{PERKS[id].description}</p>
+              <p>{PERKS[id].effect}</p>
+              <Button
+                variant="solid"
+                color="grass"
+                disabled={
+                  s.legacy.perks[id] || s.legacy.points < PERKS[id].cost
+                }
+                onClick={() => session.change(() => buyPerk(s, id))}
+              >
+                {s.legacy.perks[id] ? 'Owned' : `${PERKS[id].cost} points`}
+              </Button>
+            </article>
+          </Card>
         ))}
       </div>
     </>

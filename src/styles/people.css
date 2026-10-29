@@ -49,7 +49,7 @@
 .person-expertise[data-visible="false"] {
   visibility: hidden;
 }
-.person-row select {
+.person-occupation .rt-SelectTrigger {
   min-width: 0;
   grid-column: 1 / -1;
   width: 100%;

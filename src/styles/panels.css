@@ -1,9 +1,0 @@
-.panel {
-  border: 1px solid var(--color-base-300);
-  border-radius: var(--radius-box);
-  background: var(--color-base-100);
-}
-.panel-raised {
-  border-radius: 10px;
-  box-shadow: var(--shadow-3);
-}

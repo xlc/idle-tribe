@@ -1,3 +1,4 @@
+import { Card } from '@radix-ui/themes'
 import { useEffect, useRef, useState } from 'react'
 import {
   actionAvailability,
@@ -155,63 +156,62 @@ export function ActionCard({
     </span>
   )
   return (
-    <article
-      className="manual-action panel"
-      aria-label={def.name}
-      data-running={running}
-      data-action-state={statusKind}
-    >
-      <div className="action-row">
-        {availability.kind === 'automated' ? (
-          <fieldset className="action-automated" aria-label={def.name}>
-            {icon}
-            <span className="action-copy">
-              <strong className="action-name">{def.name}</strong>
-              <span className="action-yield">
-                {def.resource
-                  ? `+${formatResource(working ? actionOutputRate(s, id) : 0)} ${def.resource}/s · automation ${Math.round(automationFactor(s, id) * 100)}%`
-                  : `${formatResource(working ? 1 / duration : 0)} explores/s`}
-              </span>
-              <ActionSkill
-                level={skill.level}
-                xp={skill.xp}
-                requiredXp={actionRequiredXp(s, id)}
-              />
-              {def.kind === 'exploration' && (
-                <ExploreSummary state={s} automated working={working} />
-              )}
-              {availabilityNote && (
-                <span className="action-status action-status-paused">
-                  {availabilityNote}
+    <Card asChild>
+      <article
+        className="manual-action"
+        aria-label={def.name}
+        data-running={running}
+        data-action-state={statusKind}
+      >
+        <div className="action-row">
+          {availability.kind === 'automated' ? (
+            <fieldset className="action-automated" aria-label={def.name}>
+              {icon}
+              <span className="action-copy">
+                <strong className="action-name">{def.name}</strong>
+                <span className="action-yield">
+                  {def.resource
+                    ? `+${formatResource(working ? actionOutputRate(s, id) : 0)} ${def.resource}/s · automation ${Math.round(automationFactor(s, id) * 100)}%`
+                    : `${formatResource(working ? 1 / duration : 0)} explores/s`}
                 </span>
-              )}
-            </span>
-            <span className="action-automation-controls">
-              {!rateMode && (
-                <ActionProgress
-                  session={session}
-                  duration={duration}
-                  label={`${def.name} progress`}
-                  value={s.actionProgress[id] % 1}
-                  running={working}
+                <ActionSkill
+                  level={skill.level}
+                  xp={skill.xp}
+                  requiredXp={actionRequiredXp(s, id)}
                 />
-              )}
-              {rateMode && <span className="action-live-rate">Live rate</span>}
-            </span>
-            <span
-              className="action-worker-inline"
-              data-visible={workersUnlocked}
-            >
-              <WorkerControls
-                session={session}
-                job={def.job}
-                assignable={!active}
-                showFill={false}
-              />
-            </span>
-          </fieldset>
-        ) : (
-          <>
+                {def.kind === 'exploration' && (
+                  <ExploreSummary state={s} automated working={working} />
+                )}
+                {availabilityNote && (
+                  <span className="action-status action-status-paused">
+                    {availabilityNote}
+                  </span>
+                )}
+              </span>
+              <span className="action-automation-controls">
+                {!rateMode && (
+                  <ActionProgress
+                    session={session}
+                    duration={duration}
+                    label={`${def.name} progress`}
+                    value={s.actionProgress[id] % 1}
+                    running={working}
+                  />
+                )}
+              </span>
+              <span
+                className="action-worker-inline"
+                data-visible={workersUnlocked}
+              >
+                <WorkerControls
+                  session={session}
+                  job={def.job}
+                  assignable={!active}
+                  showFill={false}
+                />
+              </span>
+            </fieldset>
+          ) : (
             <button
               type="button"
               className="manual-trigger"
@@ -265,9 +265,39 @@ export function ActionCard({
                 </small>
               </span>
             </button>
+          )}
+          <DisclosureToggle
+            expanded={expanded}
+            controls={`${id}-details`}
+            label={`${def.name} details`}
+            onToggle={() => setExpanded((value) => !value)}
+          />
+        </div>
+        {expanded && (
+          <div className="action-details" id={`${id}-details`}>
+            {availability.kind !== 'locked' &&
+              availability.kind !== 'automated' && (
+                <div
+                  className="action-worker-slot"
+                  data-visible={workersUnlocked}
+                >
+                  <WorkerControls
+                    session={session}
+                    job={def.job}
+                    assignable={!active}
+                    showFill={false}
+                  />
+                </div>
+              )}
+            <p className="action-description">{def.description}</p>
+            <p className="action-skill-rules">{def.levelEffect}</p>
+            {!def.resource && <Costs session={session} cost={def.cost} />}
+            {def.kind === 'exploration' && (
+              <p className="action-hint">{exploreHint(skill.level)}</p>
+            )}
             {running && (
               <Button
-                className="action-stop-inline"
+                className="action-stop"
                 color="amber"
                 aria-label={`Stop ${def.name}`}
                 title={`Stop ${def.name}`}
@@ -278,40 +308,10 @@ export function ActionCard({
                 Stop
               </Button>
             )}
-          </>
+          </div>
         )}
-        <DisclosureToggle
-          expanded={expanded}
-          controls={`${id}-details`}
-          label={`${def.name} details`}
-          onToggle={() => setExpanded((value) => !value)}
-        />
-      </div>
-      {expanded && (
-        <div className="action-details" id={`${id}-details`}>
-          {availability.kind !== 'locked' &&
-            availability.kind !== 'automated' && (
-              <div
-                className="action-worker-slot"
-                data-visible={workersUnlocked}
-              >
-                <WorkerControls
-                  session={session}
-                  job={def.job}
-                  assignable={!active}
-                  showFill={false}
-                />
-              </div>
-            )}
-          <p className="action-description">{def.description}</p>
-          <p className="action-skill-rules">{def.levelEffect}</p>
-          {!def.resource && <Costs session={session} cost={def.cost} />}
-          {def.kind === 'exploration' && (
-            <p className="action-hint">{exploreHint(skill.level)}</p>
-          )}
-        </div>
-      )}
-    </article>
+      </article>
+    </Card>
   )
 }
 

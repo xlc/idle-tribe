@@ -29,7 +29,10 @@
   --color-error: var(--red-11);
   --color-chip: var(--accent-a3);
   --color-hover: var(--accent-a2);
-  --color-track: var(--gray-a3);
   --color-backdrop: var(--gray-a11);
-  --radius-box: 8px;
+}
+
+/* Cards provide the surface; game-specific sections own their spacing. */
+.game-theme .rt-Card {
+  --card-padding: 0px;
 }

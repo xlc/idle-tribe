@@ -1,10 +1,11 @@
+import { SegmentedControl } from '@radix-ui/themes'
 import { useState } from 'react'
 import { ACTIONS, BUILDINGS } from '../definitions'
 import { ACTION_IDS, BUILDING_IDS } from '../ids'
 import { researchPlan } from '../research'
 import { assigned, requirementBlocker } from '../settlement'
 import { ActionCards } from './actions'
-import { Button, type ViewProps } from './common'
+import type { ViewProps } from './common'
 import { Facility } from './facility'
 
 export function Production(props: ViewProps) {
@@ -40,20 +41,22 @@ export function Production(props: ViewProps) {
         <div className="section-heading">
           <h2>Workplaces</h2>
         </div>
-        <fieldset className="facility-filters" aria-label="Facility filters">
+        <SegmentedControl.Root
+          className="facility-filters"
+          aria-label="Facility filters"
+          value={filter}
+          onValueChange={setFilter}
+          size="2"
+          variant="surface"
+        >
           {['All', 'Production', 'Storage', 'Housing & support'].map(
             (value) => (
-              <Button
-                key={value}
-                aria-pressed={filter === value}
-                variant={filter === value ? 'solid' : 'soft'}
-                onClick={() => setFilter(value)}
-              >
+              <SegmentedControl.Item key={value} value={value}>
                 {value}
-              </Button>
+              </SegmentedControl.Item>
             ),
           )}
-        </fieldset>
+        </SegmentedControl.Root>
         <div className="building-grid">
           {available
             .filter(

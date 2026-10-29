@@ -16,13 +16,8 @@
   flex: 0 0 132px;
   min-width: 132px;
 }
-.action-automation-controls > .progress {
+.action-automation-controls > .rt-ProgressRoot {
   width: 132px;
-}
-.action-live-rate {
-  color: var(--color-neutral);
-  font-size: 11px;
-  white-space: nowrap;
 }
 .action-hint {
   color: var(--color-neutral);
@@ -111,19 +106,8 @@
 .manual-trigger:disabled {
   cursor: default;
 }
-.manual-action:not(.research-card) .manual-trigger {
-  padding-right: 56px;
-}
-.action-stop-inline {
-  position: absolute;
-  top: 50%;
-  right: 52px;
-  z-index: 1;
-  min-height: 32px;
-  min-width: 44px;
-  padding: 4px 8px;
-  font-size: 12px;
-  transform: translateY(-50%);
+.action-stop {
+  justify-self: start;
 }
 .action-icon {
   display: inline-grid;
@@ -221,7 +205,7 @@
   height: 4px;
   margin: 0;
 }
-.manual-action .project-progress .progress {
+.manual-action .project-progress .rt-ProgressRoot {
   height: 4px;
 }
 .manual-action .project-progress[data-running="false"] {

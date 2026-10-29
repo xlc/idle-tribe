@@ -1,5 +1,5 @@
-import { Tabs } from '@radix-ui/themes'
-import { useEffect, useRef, useState } from 'react'
+import { Card, Dialog, Flex, Tabs } from '@radix-ui/themes'
+import { useRef, useState } from 'react'
 import type { AwayProgress } from './clock'
 import { ActionCards } from './components/actions'
 import { ViewIcon } from './components/art'
@@ -52,40 +52,44 @@ function SettlementBrief({
       : 'No project'
   const rooms = comfortablePlaces(s)
   return (
-    <section className="settlement-brief panel" aria-label="Settlement status">
-      <div className="settlement-brief-heading">
-        <div>
-          <span className="eyebrow">Current era</span>
-          <h1>{ERAS[s.era]?.name ?? 'Settlement'}</h1>
+    <Card asChild>
+      <section className="settlement-brief" aria-label="Settlement status">
+        <div className="settlement-brief-heading">
+          <div>
+            <span className="eyebrow">Current era</span>
+            <h1>{ERAS[s.era]?.name ?? 'Settlement'}</h1>
+          </div>
+          <Button variant="soft" onClick={onPeople}>
+            Manage people
+          </Button>
         </div>
-        <Button variant="soft" onClick={onPeople}>
-          Manage people
-        </Button>
-      </div>
-      <p className="settlement-brief-description">{ERAS[s.era]?.description}</p>
-      <dl className="settlement-status-grid">
-        <div>
-          <dt>People</dt>
-          <dd>
-            {s.people.length} <small>{assigned(s, 'idle')} unassigned</small>
-          </dd>
-        </div>
-        <div>
-          <dt>Housing</dt>
-          <dd>
-            {s.people.length}/{rooms} <small>capacity</small>
-          </dd>
-        </div>
-        <div>
-          <dt>Construction</dt>
-          <dd>{construction}</dd>
-        </div>
-        <div data-visible={s.researchUnlocked}>
-          <dt>Research</dt>
-          <dd>{research}</dd>
-        </div>
-      </dl>
-    </section>
+        <p className="settlement-brief-description">
+          {ERAS[s.era]?.description}
+        </p>
+        <dl className="settlement-status-grid">
+          <div>
+            <dt>People</dt>
+            <dd>
+              {s.people.length} <small>{assigned(s, 'idle')} unassigned</small>
+            </dd>
+          </div>
+          <div>
+            <dt>Housing</dt>
+            <dd>
+              {s.people.length}/{rooms} <small>capacity</small>
+            </dd>
+          </div>
+          <div>
+            <dt>Construction</dt>
+            <dd>{construction}</dd>
+          </div>
+          <div data-visible={s.researchUnlocked}>
+            <dt>Research</dt>
+            <dd>{research}</dd>
+          </div>
+        </dl>
+      </section>
+    </Card>
   )
 }
 
@@ -157,14 +161,10 @@ export function App({ session }: { session: GameSession }) {
     run: () => void
     direct: boolean
   } | null>(null)
-  const dialog = useRef<HTMLDialogElement>(null)
   const confirm: Confirm = (title, body, run, options) => {
     session.tick(Date.now())
     setChoice({ title, body, run, direct: options?.direct ?? false })
   }
-  useEffect(() => {
-    if (choice) dialog.current?.showModal()
-  }, [choice])
   const props = { session, confirm }
   return (
     <main className={`game-shell${automated ? '' : ' opening-shell'}`}>
@@ -213,11 +213,11 @@ export function App({ session }: { session: GameSession }) {
                 >
                   {automated ? (
                     <>
+                      <Production {...props} />
                       <SettlementBrief
                         session={session}
                         onPeople={() => showView('people')}
                       />
-                      <Production {...props} />
                     </>
                   ) : (
                     <p className="opening-flavor">{ERAS[0]?.description}</p>
@@ -271,10 +271,12 @@ export function App({ session }: { session: GameSession }) {
                 {!automated && <People session={session} />}
                 {automated && (
                   <div className="project-plans">
-                    <section className="camp-summary panel" aria-label="Camp">
-                      <Construction {...props} compact />
-                      <Workforce {...props} compact />
-                    </section>
+                    <Card asChild>
+                      <section className="camp-summary" aria-label="Camp">
+                        <Construction {...props} compact />
+                        <Workforce {...props} compact />
+                      </section>
+                    </Card>
                   </div>
                 )}
               </aside>
@@ -312,42 +314,33 @@ export function App({ session }: { session: GameSession }) {
         </Tabs.Root>
       </div>
       <OfflineStatus />
-      {choice && (
-        <dialog
-          ref={dialog}
-          className="modal panel"
-          onClose={() => setChoice(null)}
-        >
-          <div className="modal-box">
-            <h2>{choice?.title}</h2>
-            <p>{choice?.body}</p>
-            <div className="modal-action">
-              <Button
-                onClick={() => {
-                  dialog.current?.close()
-                  setChoice(null)
-                }}
-              >
-                Keep playing
-              </Button>
-              <Button
-                variant="solid"
-                color="grass"
-                onClick={() => {
-                  if (choice) {
-                    if (choice.direct) choice.run()
-                    else session.change(choice.run)
-                  }
-                  dialog.current?.close()
-                  setChoice(null)
-                }}
-              >
-                Confirm
-              </Button>
-            </div>
-          </div>
-        </dialog>
-      )}
+      <Dialog.Root
+        open={Boolean(choice)}
+        onOpenChange={(open) => {
+          if (!open) setChoice(null)
+        }}
+      >
+        <Dialog.Content size="2">
+          <Dialog.Title>{choice?.title}</Dialog.Title>
+          <Dialog.Description>{choice?.body}</Dialog.Description>
+          <Flex justify="end" gap="3" mt="4">
+            <Button onClick={() => setChoice(null)}>Keep playing</Button>
+            <Button
+              variant="solid"
+              color="grass"
+              onClick={() => {
+                if (choice) {
+                  if (choice.direct) choice.run()
+                  else session.change(choice.run)
+                }
+                setChoice(null)
+              }}
+            >
+              Confirm
+            </Button>
+          </Flex>
+        </Dialog.Content>
+      </Dialog.Root>
     </main>
   )
 }

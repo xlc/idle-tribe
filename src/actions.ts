@@ -23,7 +23,7 @@ import type {
 // same curve when tuning progression or equipment.
 export const ACTION_BALANCE = {
   durationPerLevel: 0.98,
-  yieldPerLevel: 1.02,
+  yieldBonusPerLevel: 0.02,
   xpPerLevel: 1.2,
   baseAutomation: 0.1,
   automationPerEquipment: 0.05,
@@ -179,7 +179,9 @@ export function actionYield(state: GameState, id: ActionId) {
       bonus += researchEffects(state, r).actionYield?.[id] ?? 0
   return def.resource
     ? def.amount *
-        ACTION_BALANCE.yieldPerLevel ** (state.actionSkills[id].level - 1) *
+        (1 +
+          ACTION_BALANCE.yieldBonusPerLevel *
+            (state.actionSkills[id].level - 1)) *
         bonus
     : 0
 }

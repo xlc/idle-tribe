@@ -196,7 +196,7 @@
     width: 100%;
     min-width: 0;
   }
-  .action-automation-controls > .progress {
+  .action-automation-controls > .rt-ProgressRoot {
     flex: 1;
     min-width: 40px;
   }
@@ -238,10 +238,6 @@
     touch-action: pan-x;
     overscroll-behavior: none;
     scrollbar-width: thin;
-  }
-  .facility-filters .rt-Button {
-    flex-shrink: 0;
-    touch-action: pan-x;
   }
   .away-summary {
     flex-wrap: wrap;
@@ -295,7 +291,7 @@
     min-width: 70px;
     gap: 6px;
   }
-  .action-automation-controls > .progress {
+  .action-automation-controls > .rt-ProgressRoot {
     width: auto;
   }
   .action-worker-inline .worker-control .rt-Button {
@@ -353,7 +349,7 @@
   .rt-TabsTrigger {
     min-height: 44px;
   }
-  .select,
+  .rt-SelectTrigger,
   input {
     font-size: 16px;
   }

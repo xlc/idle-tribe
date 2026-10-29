@@ -1,3 +1,4 @@
+// Catalog arrays are stable UI order. Append new entries; do not insert them.
 export const RESOURCES = [
   'food',
   'wood',
@@ -6,7 +7,6 @@ export const RESOURCES = [
   'blocks',
   'tools',
   'knowledge',
-  'ceramics',
   'ore',
   'metal',
   'machinery',
@@ -16,13 +16,13 @@ export const RESOURCES = [
   'exotic-material',
   'quantum-components',
   'causal-models',
+  'ceramics',
 ] as const
 export const BUILDING_IDS = [
   'housing',
   'foraging',
   'lumber',
   'quarry',
-  'expedition-camp',
   'food-store',
   'stockyard',
   'sawmill',
@@ -37,8 +37,6 @@ export const BUILDING_IDS = [
   'irrigation',
   'meeting-place',
   'public-well',
-  'kiln',
-  'bathhouse',
   'great-hall',
   'observatory',
   'ore-mine',
@@ -58,6 +56,9 @@ export const BUILDING_IDS = [
   'quantum-vault',
   'causal-laboratory',
   'stellar-foundry',
+  'expedition-camp',
+  'kiln',
+  'bathhouse',
 ] as const
 export const RESEARCH_IDS = [
   'sharpened-stick',
@@ -83,8 +84,6 @@ export const RESEARCH_IDS = [
   'architecture',
   'civic-engineering',
   'record-keeping',
-  'ceramic-craft',
-  'public-health',
   'mechanization',
   'early-astronomy',
   'powered-workshops',
@@ -108,6 +107,8 @@ export const RESEARCH_IDS = [
   'causal-archives',
   'predictive-fabrication',
   'causal-synthesis',
+  'ceramic-craft',
+  'public-health',
 ] as const
 export const JOB_IDS = [
   'idle',
@@ -116,7 +117,6 @@ export const JOB_IDS = [
   'farmer',
   'woodcutter',
   'stoneworker',
-  'explorer',
   'sawyer',
   'mason',
   'toolmaker',
@@ -131,6 +131,7 @@ export const JOB_IDS = [
   'quantum-engineer',
   'causal-researcher',
   'stellar-worker',
+  'explorer',
   'potter',
 ] as const
 export const ACTION_IDS = ['gather', 'sticks', 'stone', 'explore'] as const

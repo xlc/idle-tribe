@@ -168,7 +168,6 @@
   margin-top: 5px;
   font-weight: 600;
 }
-.staffing-target,
 .staffing-efficiency {
   font-size: 11px;
 }
@@ -342,7 +341,7 @@
   min-width: 0;
 }
 .plan-primary > [data-visible="false"],
-.plan-toggle > .progress[data-visible="false"],
+.plan-toggle > .rt-ProgressRoot[data-visible="false"],
 .plan-status[data-visible="false"] {
   visibility: hidden;
 }
@@ -403,7 +402,7 @@
   height: 4px;
   margin: 0;
 }
-.research-active .research-progress .progress {
+.research-active .research-progress .rt-ProgressRoot {
   height: 4px;
 }
 .plan-details {
@@ -454,7 +453,7 @@
   display: grid;
   gap: 6px;
 }
-.facility-detail .select {
+.facility-detail .rt-SelectTrigger {
   width: 100%;
 }
 .workforce-compact {

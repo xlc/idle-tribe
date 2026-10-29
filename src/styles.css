@@ -4,7 +4,6 @@
 @import "./styles/layout.css";
 @import "./styles/art.css";
 @import "./styles/tabs.css";
-@import "./styles/panels.css";
 @import "./styles/buttons.css";
 @import "./styles/stockpile.css";
 @import "./styles/actions.css";
@@ -12,5 +11,4 @@
 @import "./styles/people.css";
 @import "./styles/technology.css";
 @import "./styles/away.css";
-@import "./styles/modal.css";
 @import "./styles/responsive.css";

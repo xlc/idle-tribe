@@ -466,14 +466,16 @@ test('queued Writing follows a paid farm investment and retains its research cos
   expect(s.research.writing).toBe(1)
 })
 
-test('completed gathering levels up, compounds yield and speed, and persists', () => {
+test('completed gathering levels up, linearly improves yield, and persists', () => {
   const s = createDefaultState()
   while (s.actionSkills.gather.level < 3) {
     expect(startAction(s, 'gather')).toBe(true)
     advanceTime(s, actionDuration(s, 'gather'), true)
   }
   expect(actionDuration(s, 'gather')).toBeCloseTo(0.98 ** 2, 8)
-  expect(actionYield(s, 'gather')).toBeCloseTo(1.02 ** 2, 8)
+  expect(actionYield(s, 'gather')).toBeCloseTo(1.04, 8)
+  s.actionSkills.gather.level = 4
+  expect(actionYield(s, 'gather')).toBeCloseTo(1.06, 8)
   expect(s.actionSkills.sticks).toEqual({ level: 1, xp: 0 })
   expect(s.people[0]?.practice.forager).toBe(0)
   expect(parseSave(JSON.stringify(s)).actionSkills).toEqual(s.actionSkills)

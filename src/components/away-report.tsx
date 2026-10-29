@@ -1,5 +1,5 @@
 import * as Toast from '@radix-ui/react-toast'
-import { useEffect, useRef } from 'react'
+import { Dialog, Flex } from '@radix-ui/themes'
 import { type AwayProgress, awayHighlight } from '../clock'
 import { MIN_VISIBLE_RESOURCE_CHANGE } from '../constants'
 import { OCCUPATIONS, RESOURCE_INFO } from '../definitions'
@@ -43,7 +43,7 @@ export function SessionNotificationToast({
   const away = notification.kind === 'away' && report
   return (
     <Toast.Root
-      className="event-toast panel panel-raised"
+      className="event-toast"
       duration={10_000}
       onOpenChange={(open) => {
         if (!open) onDismiss()
@@ -98,21 +98,16 @@ export function AwayReportDialog({
   report: AwayProgress
   onClose: () => void
 }) {
-  const dialog = useRef<HTMLDialogElement>(null)
-  useEffect(() => {
-    const element = dialog.current
-    if (!element) return
-    if (!element.open) element.showModal()
-  }, [])
   return (
-    <dialog ref={dialog} className="modal away-modal panel" onClose={onClose}>
-      <div className="modal-box">
+    <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
+      <Dialog.Content className="away-modal" size="3">
+        <Dialog.Title>Settlement report</Dialog.Title>
         <AwayReport session={session} report={report} />
-        <div className="modal-action">
-          <Button onClick={() => dialog.current?.close()}>Close</Button>
-        </div>
-      </div>
-    </dialog>
+        <Flex justify="end" gap="3" mt="4">
+          <Button onClick={onClose}>Close</Button>
+        </Flex>
+      </Dialog.Content>
+    </Dialog.Root>
   )
 }
 

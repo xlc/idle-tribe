@@ -1,3 +1,4 @@
+import { Card } from '@radix-ui/themes'
 import { EPSILON, MIN_VISIBLE_RESOURCE_CHANGE } from '../constants'
 import { ACTIONS, BUILDINGS, JOBS, RESOURCE_INFO } from '../definitions'
 import { formatCompactResource, formatResource } from '../format'
@@ -73,10 +74,12 @@ export function Stockpile({ session }: { session: GameSession }) {
     )
   }
   return (
-    <section className="stockpile-panel panel" aria-label="Stockpile">
-      <div className="stockpile" id="stockpile-resources">
-        {visibleResources.map(resource)}
-      </div>
-    </section>
+    <Card asChild>
+      <section className="stockpile-panel" aria-label="Stockpile">
+        <div className="stockpile" id="stockpile-resources">
+          {visibleResources.map(resource)}
+        </div>
+      </section>
+    </Card>
   )
 }

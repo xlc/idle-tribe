@@ -8,6 +8,7 @@ import {
   happinessTarget,
   happinessUnlocked,
 } from '../settlement'
+import { ProgressBar } from './common'
 import { WorkerControls } from './worker-controls'
 
 export function Workforce({
@@ -79,7 +80,11 @@ export function Workforce({
             Food {formatResource(arrival.foodOutput / 60)} /{' '}
             {formatResource(arrival.required / 60)} per second
           </small>
-          <progress className="progress" value={s.arrivalProgress} max={1} />
+          <ProgressBar
+            value={s.arrivalProgress}
+            max={1}
+            label="Arrival progress"
+          />
         </div>
       </details>
     </section>

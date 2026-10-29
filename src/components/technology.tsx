@@ -1,3 +1,4 @@
+import { Card } from '@radix-ui/themes'
 import { useState } from 'react'
 import { RESEARCH } from '../definitions'
 import { formatCost, formatDuration } from '../format'
@@ -84,59 +85,49 @@ function ResearchCard({
   }
 
   return (
-    <article
-      className="manual-action tech-card research-card panel"
-      aria-label={def.name}
-      data-running={Boolean(activeResearch)}
-      data-action-state={
-        activeResearch
-          ? 'running'
-          : queued
-            ? 'planned'
-            : blocked || anotherResearchActive || waitingForQueue
-              ? 'blocked'
-              : 'ready'
-      }
-    >
-      <div className="action-row">
-        <button
-          type="button"
-          className="manual-trigger research-trigger"
-          aria-label={def.name}
-          disabled={!canStart}
-          onClick={() => runResearch('start')}
-        >
-          <span className="action-icon research-icon" aria-hidden="true">
-            <ViewIcon name="research" />
-          </span>
-          <span className="action-copy">
-            <strong className="action-name">
-              {def.name}
-              {target > 1 ? ` · level ${target}` : ''}
-            </strong>
-            <span className="action-yield">
-              {formatCost(quote.cost)} · {formatDuration(quote.total)}
-            </span>
-          </span>
-          <span
-            className="project-progress"
-            data-running={Boolean(activeResearch)}
+    <Card asChild>
+      <article
+        className="manual-action tech-card research-card"
+        aria-label={def.name}
+        data-running={Boolean(activeResearch)}
+        data-action-state={
+          activeResearch
+            ? 'running'
+            : queued
+              ? 'planned'
+              : blocked || anotherResearchActive || waitingForQueue
+                ? 'blocked'
+                : 'ready'
+        }
+      >
+        <div className="action-row">
+          <button
+            type="button"
+            className="manual-trigger research-trigger"
+            aria-label={def.name}
+            disabled={!canStart}
+            onClick={() => runResearch('start')}
           >
-            <ActionProgress
-              session={session}
-              duration={activeResearch?.total ?? quote.total}
-              label={`${def.name} progress`}
-              value={
-                activeResearch
-                  ? activeResearch.progress / activeResearch.total
-                  : 0
-              }
-              running={Boolean(activeResearch)}
-            />
-            <small>
-              <ActionCountdown
+            <span className="action-icon research-icon" aria-hidden="true">
+              <ViewIcon name="research" />
+            </span>
+            <span className="action-copy">
+              <strong className="action-name">
+                {def.name}
+                {target > 1 ? ` · level ${target}` : ''}
+              </strong>
+              <span className="action-yield">
+                {formatCost(quote.cost)} · {formatDuration(quote.total)}
+              </span>
+            </span>
+            <span
+              className="project-progress"
+              data-running={Boolean(activeResearch)}
+            >
+              <ActionProgress
                 session={session}
                 duration={activeResearch?.total ?? quote.total}
+                label={`${def.name} progress`}
                 value={
                   activeResearch
                     ? activeResearch.progress / activeResearch.total
@@ -144,55 +135,67 @@ function ResearchCard({
                 }
                 running={Boolean(activeResearch)}
               />
-            </small>
-          </span>
-        </button>
-        {activeResearch && (
-          <Button
-            className="research-inline-control"
-            color="amber"
-            aria-label="Cancel research"
-            title="Cancel research"
-            onClick={cancelResearch}
-          >
-            Cancel
-          </Button>
-        )}
-        {!activeResearch && !queued && !quote.blocker && (
-          <Button
-            className="research-inline-control"
-            variant="solid"
-            color="grass"
-            aria-label="Add research to queue"
-            title="Add research to queue"
-            onClick={() => runResearch('queue')}
-          >
-            Queue
-          </Button>
-        )}
-        <DisclosureToggle
-          expanded={expanded}
-          controls={`${id}-details`}
-          label={`${def.name} details`}
-          onToggle={() => setExpanded((value) => !value)}
-        />
-      </div>
-      {expanded && (
-        <div className="action-details" id={`${id}-details`}>
-          <p className="action-description">{def.description}</p>
-          <p className="research-effect">
-            {target > 1 ? def.upgrade?.effect : def.effect}
-          </p>
-          {def.branchIdentity && (
-            <p className="branch-identity">{def.branchIdentity}</p>
+              <small>
+                <ActionCountdown
+                  session={session}
+                  duration={activeResearch?.total ?? quote.total}
+                  value={
+                    activeResearch
+                      ? activeResearch.progress / activeResearch.total
+                      : 0
+                  }
+                  running={Boolean(activeResearch)}
+                />
+              </small>
+            </span>
+          </button>
+          {!activeResearch && !queued && !quote.blocker && (
+            <Button
+              className="research-inline-control"
+              variant="solid"
+              color="grass"
+              aria-label="Add research to queue"
+              title="Add research to queue"
+              onClick={() => runResearch('queue')}
+            >
+              Queue
+            </Button>
           )}
-          <Costs session={session} cost={quote.cost} />
-          <p className="requirement" data-visible={Boolean(quote.blocker)}>
-            {quote.blocker || '\u00a0'}
-          </p>
+          <DisclosureToggle
+            expanded={expanded}
+            controls={`${id}-details`}
+            label={`${def.name} details`}
+            onToggle={() => setExpanded((value) => !value)}
+          />
         </div>
-      )}
-    </article>
+        {expanded && (
+          <div className="action-details" id={`${id}-details`}>
+            <p className="action-description">{def.description}</p>
+            <p className="research-effect">
+              {target > 1 ? def.upgrade?.effect : def.effect}
+            </p>
+            {def.branchIdentity && (
+              <p className="branch-identity">{def.branchIdentity}</p>
+            )}
+            <Costs session={session} cost={quote.cost} />
+            <p className="requirement" data-visible={Boolean(quote.blocker)}>
+              {quote.blocker || '\u00a0'}
+            </p>
+            {activeResearch && (
+              <Button
+                className="action-stop"
+                color="amber"
+                aria-label="Cancel research"
+                title="Cancel research"
+                onClick={cancelResearch}
+              >
+                Cancel
+              </Button>
+            )}
+          </div>
+        )}
+      </article>
+    </Card>
   )
 }
 
