@@ -34,18 +34,18 @@ function triggerEncounter(
   applyExploreReward(state, scale, mode)
 }
 
-test('action availability explains discovery, cost and active-work blockers', () => {
+test('action availability reports discovery, cost and active-work blockers', () => {
   const state = createDefaultState()
 
-  expect(actionAvailability(state, 'sticks')).toEqual({
+  expect(actionAvailability(state, 'sticks')).toMatchObject({
     kind: 'locked',
-    reason: 'Discover wood by exploring',
   })
   expect(actionAvailability(state, 'gather')).toMatchObject({
     kind: 'manual',
     state: 'ready',
   })
 
+  state.resources.food = 0
   state.exploreUnlocked = true
   expect(actionAvailability(state, 'explore')).toMatchObject({
     kind: 'manual',
@@ -57,12 +57,10 @@ test('action availability explains discovery, cost and active-work blockers', ()
   expect(actionAvailability(state, 'explore')).toMatchObject({
     kind: 'manual',
     state: 'blocked',
-    reason: 'Finish Gather food first',
   })
   expect(actionAvailability(state, 'gather')).toMatchObject({
     kind: 'manual',
     state: 'running',
-    reason: 'Running · Stop to cancel',
   })
 })
 

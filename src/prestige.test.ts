@@ -15,7 +15,7 @@ test('a supported prestige reset preserves only permanent progress and settings'
   expect(prestigeMultiplier(s)).toBe(speed)
   expect(canReset(s)).toBe(true)
   expect(resetRun(s)).toBe(true)
-  expect(s.resources.food).toBe(0)
+  expect(s.resources.food).toBe(1)
   expect(s.people.length).toBe(1)
   expect(s.people[0]?.job).toBe('idle')
   expect(s.specialization).toBeNull()

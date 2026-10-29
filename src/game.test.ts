@@ -381,6 +381,7 @@ test('a missing lower expansion can be rebuilt while a higher target stays queue
 
 test('food gathering rewards the first second and opens exploration after five clicks', () => {
   const s = createDefaultState()
+  expect(s.resources.food).toBe(1)
   expect(startAction(s, 'gather')).toBe(true)
   advanceTime(s, 0.4, true)
   expect(s.manual?.progress).toBeCloseTo(0.4)
@@ -530,8 +531,9 @@ test('workers unlock when the corresponding workplace is available', () => {
 test('the first researched stick immediately improves manual food gathering', () => {
   const s = createDefaultState()
   const before = actionYield(s, 'gather')
+  const startingFood = s.resources.food
   complete(s, 'sharpened-stick')
   expect(startAction(s, 'gather')).toBe(true)
   advanceTime(s, actionDuration(s, 'gather'), true)
-  expect(s.resources.food).toBeCloseTo(before * 1.25)
+  expect(s.resources.food).toBeCloseTo(startingFood + before * 1.25)
 })
