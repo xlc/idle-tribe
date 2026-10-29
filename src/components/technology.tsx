@@ -61,20 +61,16 @@ function ResearchCard({
     anotherResearchActive = Boolean(active && !activeResearch),
     queueBusy = Boolean(active || q.waiting.length),
     waitingForQueue = q.waiting.length > 0 && !queued,
-    canStart = !queued && !queueBusy && !blocked,
-    queueLabel = activeResearch
-      ? 'Researching'
-      : queued
-        ? 'Planned'
-        : quote.blocker
-          ? quote.blocker
-          : anotherResearchActive
-            ? 'Research in progress'
-            : q.waiting.length
-              ? 'Research queued'
-              : def.branch
-                ? 'Choose path'
-                : 'Start research'
+    canStart = !queued && !queueBusy && !blocked
+  const cancelResearch = () =>
+    confirm(
+      'Cancel research?',
+      `Refund ${formatCost(activeResearch?.paid ?? {})}. Research progress will be lost.`,
+      () => {
+        if (activeResearch)
+          session.game.cancel('research', activeResearch.sequence)
+      },
+    )
   const runResearch = (action: 'start' | 'queue') => {
     if (def.branch) {
       confirm(
@@ -122,7 +118,6 @@ function ResearchCard({
               {formatCost(quote.cost)} · {formatDuration(quote.total)}
             </span>
           </span>
-          <span className="research-plan-status">{queueLabel}</span>
           <span
             className="project-progress"
             data-running={Boolean(activeResearch)}
@@ -152,6 +147,29 @@ function ResearchCard({
             </small>
           </span>
         </button>
+        {activeResearch && (
+          <Button
+            className="research-inline-control"
+            color="amber"
+            aria-label="Cancel research"
+            title="Cancel research"
+            onClick={cancelResearch}
+          >
+            Cancel
+          </Button>
+        )}
+        {!activeResearch && !queued && !quote.blocker && (
+          <Button
+            className="research-inline-control"
+            variant="solid"
+            color="grass"
+            aria-label="Add research to queue"
+            title="Add research to queue"
+            onClick={() => runResearch('queue')}
+          >
+            Queue
+          </Button>
+        )}
         <DisclosureToggle
           expanded={expanded}
           controls={`${id}-details`}
@@ -169,32 +187,9 @@ function ResearchCard({
             <p className="branch-identity">{def.branchIdentity}</p>
           )}
           <Costs session={session} cost={quote.cost} />
-          {quote.blocker && <p className="requirement">{quote.blocker}</p>}
-          {activeResearch && (
-            <Button
-              className="action-stop"
-              color="amber"
-              onClick={() =>
-                confirm(
-                  'Cancel research?',
-                  `Refund ${formatCost(activeResearch.paid)}. Research progress will be lost.`,
-                  () =>
-                    session.game.cancel('research', activeResearch.sequence),
-                )
-              }
-            >
-              Cancel research
-            </Button>
-          )}
-          {!activeResearch && !queued && !quote.blocker && (
-            <Button
-              variant="solid"
-              color="grass"
-              onClick={() => runResearch('queue')}
-            >
-              Add to queue
-            </Button>
-          )}
+          <p className="requirement" data-visible={Boolean(quote.blocker)}>
+            {quote.blocker || '\u00a0'}
+          </p>
         </div>
       )}
     </article>

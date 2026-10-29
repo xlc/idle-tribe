@@ -146,63 +146,79 @@ export function ActionCard({
               )}
               {rateMode && <span className="action-live-rate">Live rate</span>}
             </span>
-            {workersUnlocked && (
-              <span className="action-worker-inline">
-                <WorkerControls
-                  session={session}
-                  job={def.job}
-                  assignable={!active}
-                  showFill={false}
-                />
-              </span>
-            )}
-          </fieldset>
-        ) : (
-          <button
-            type="button"
-            className="manual-trigger"
-            aria-label={def.name}
-            disabled={
-              running ||
-              availability.kind !== 'manual' ||
-              availability.state !== 'ready'
-            }
-            onClick={() => session.change(() => session.game.startAction(id))}
-          >
-            {icon}
-            <span className="action-copy">
-              <strong className="action-name">{def.name}</strong>
-              <span className="action-yield">
-                {def.resource
-                  ? `+${formatResource(actionYield(s, id))} ${def.resource} · `
-                  : `${formatCost(def.cost)} · `}
-                {formatResource(duration)}s
-                {slots > 0 ? ` · ${slots} slot${slots === 1 ? '' : 's'}` : ''}
-              </span>
-              <ActionSkill
-                level={skill.level}
-                xp={skill.xp}
-                requiredXp={actionRequiredXp(s, id)}
+            <span
+              className="action-worker-inline"
+              data-visible={workersUnlocked}
+            >
+              <WorkerControls
+                session={session}
+                job={def.job}
+                assignable={!active}
+                showFill={false}
               />
             </span>
-            <span className="project-progress" data-running={running}>
-              <ActionProgress
-                session={session}
-                duration={duration}
-                label={`${def.name} progress`}
-                value={running && active ? active.progress : 0}
-                running={running}
-              />
-              <small>
-                <ActionCountdown
+          </fieldset>
+        ) : (
+          <>
+            <button
+              type="button"
+              className="manual-trigger"
+              aria-label={def.name}
+              disabled={
+                running ||
+                availability.kind !== 'manual' ||
+                availability.state !== 'ready'
+              }
+              onClick={() => session.change(() => session.game.startAction(id))}
+            >
+              {icon}
+              <span className="action-copy">
+                <strong className="action-name">{def.name}</strong>
+                <span className="action-yield">
+                  {def.resource
+                    ? `+${formatResource(actionYield(s, id))} ${def.resource} · `
+                    : `${formatCost(def.cost)} · `}
+                  {formatResource(duration)}s
+                  {slots > 0 ? ` · ${slots} slot${slots === 1 ? '' : 's'}` : ''}
+                </span>
+                <ActionSkill
+                  level={skill.level}
+                  xp={skill.xp}
+                  requiredXp={actionRequiredXp(s, id)}
+                />
+              </span>
+              <span className="project-progress" data-running={running}>
+                <ActionProgress
                   session={session}
                   duration={duration}
+                  label={`${def.name} progress`}
                   value={running && active ? active.progress : 0}
                   running={running}
                 />
-              </small>
-            </span>
-          </button>
+                <small>
+                  <ActionCountdown
+                    session={session}
+                    duration={duration}
+                    value={running && active ? active.progress : 0}
+                    running={running}
+                  />
+                </small>
+              </span>
+            </button>
+            {running && (
+              <Button
+                className="action-stop-inline"
+                color="amber"
+                aria-label={`Stop ${def.name}`}
+                title={`Stop ${def.name}`}
+                onClick={() =>
+                  session.change(() => session.game.cancelAction())
+                }
+              >
+                Stop
+              </Button>
+            )}
+          </>
         )}
         <DisclosureToggle
           expanded={expanded}
@@ -211,32 +227,25 @@ export function ActionCard({
           onToggle={() => setExpanded((value) => !value)}
         />
       </div>
-      {availability.kind !== 'locked' &&
-        availability.kind !== 'automated' &&
-        workersUnlocked && (
-          <div className="action-workers">
-            <WorkerControls
-              session={session}
-              job={def.job}
-              assignable={!active}
-              showFill={false}
-            />
-          </div>
-        )}
       {expanded && (
         <div className="action-details" id={`${id}-details`}>
+          {availability.kind !== 'locked' &&
+            availability.kind !== 'automated' && (
+              <div
+                className="action-worker-slot"
+                data-visible={workersUnlocked}
+              >
+                <WorkerControls
+                  session={session}
+                  job={def.job}
+                  assignable={!active}
+                  showFill={false}
+                />
+              </div>
+            )}
           <p className="action-description">{def.description}</p>
           <p className="action-skill-rules">{def.levelEffect}</p>
           {!def.resource && <Costs session={session} cost={def.cost} />}
-          {running && (
-            <Button
-              className="action-stop"
-              color="amber"
-              onClick={() => session.change(() => session.game.cancelAction())}
-            >
-              Stop {def.name}
-            </Button>
-          )}
           {def.kind === 'exploration' && (
             <p className="action-hint">{exploreHint(skill.level)}</p>
           )}

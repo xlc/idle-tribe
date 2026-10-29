@@ -22,7 +22,7 @@
     grid-template-columns: 48px minmax(0, 1fr);
     gap: 10px;
   }
-  .facility-overview .worker-allocation {
+  .facility-overview .facility-worker-slot {
     grid-column: 2;
     justify-self: start;
   }
@@ -46,6 +46,15 @@
     touch-action: pan-x;
     overscroll-behavior: none;
     scrollbar-width: thin;
+  }
+  .view-tabs {
+    justify-content: flex-start;
+    overflow-x: auto;
+    touch-action: pan-x;
+    scrollbar-width: thin;
+  }
+  .view-tabs .rt-TabsTrigger {
+    flex: 0 0 72px;
   }
   .resource {
     min-width: 96px;
@@ -313,9 +322,11 @@
     width: 44px;
     height: 44px;
   }
-  .facility-overview .worker-allocation {
+  .facility-overview .facility-worker-slot {
     grid-column: 2;
     justify-self: start;
+  }
+  .facility-overview .facility-worker-slot .worker-allocation {
     display: flex;
     align-items: center;
     flex-wrap: wrap;

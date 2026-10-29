@@ -68,14 +68,17 @@ export function Settings({ session, confirm }: ViewProps) {
                 </time>
                 <span className="event-log-entry">
                   <span>{event.text}</span>
-                  {event.report && (
+                  <span
+                    className="event-log-action"
+                    data-visible={Boolean(event.report)}
+                  >
                     <Button
                       variant="ghost"
                       onClick={() => setSelectedReport(event.report ?? null)}
                     >
                       View report
                     </Button>
-                  )}
+                  </span>
                 </span>
               </li>
             ))}

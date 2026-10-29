@@ -21,32 +21,38 @@
 }
 .research-trigger {
   gap: 12px;
+  padding-right: 56px;
 }
-.research-plan-status {
-  flex: 0 0 auto;
-  margin-left: auto;
-  color: var(--color-neutral);
+.research-inline-control {
+  position: absolute;
+  top: 50%;
+  right: 52px;
+  z-index: 1;
+  min-height: 32px;
+  min-width: 44px;
+  padding: 4px 8px;
   font-size: 12px;
-  white-space: nowrap;
-}
-.research-card[data-action-state="ready"] .research-plan-status {
-  color: var(--color-primary);
-}
-.research-card[data-action-state="blocked"] .research-plan-status {
-  color: var(--color-warning);
+  transform: translateY(-50%);
 }
 .research-card[data-action-state="running"] {
   border-color: var(--color-accent);
   box-shadow: 0 0 0 1px var(--color-accent);
 }
-.research-card[data-action-state="running"] .research-plan-status {
-  color: var(--color-primary);
-}
 .research-card .project-progress small {
   color: var(--color-neutral);
 }
-.research-card .action-details .rt-Button {
-  justify-self: start;
+.requirement {
+  color: var(--color-warning);
+  font-size: 12px;
+  margin-top: 8px;
+}
+.research-card .requirement[data-visible="false"] {
+  visibility: hidden;
+}
+.research-card .requirement {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .queue-view {
   display: grid;
@@ -72,11 +78,6 @@
   line-height: 1.6;
   margin-top: 8px;
 }
-.requirement {
-  color: var(--color-warning);
-  font-size: 12px;
-  margin-top: 8px;
-}
 .completed-research {
   font-size: 13px;
   line-height: 1.7;
@@ -91,6 +92,9 @@
 }
 .legacy-note {
   color: var(--color-neutral);
+}
+.legacy-reset-note[data-visible="false"] {
+  visibility: hidden;
 }
 .legacy h2 {
   margin-bottom: 12px;

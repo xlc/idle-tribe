@@ -80,12 +80,10 @@ function SettlementBrief({
           <dt>Construction</dt>
           <dd>{construction}</dd>
         </div>
-        {s.researchUnlocked && (
-          <div>
-            <dt>Research</dt>
-            <dd>{research}</dd>
-          </div>
-        )}
+        <div data-visible={s.researchUnlocked}>
+          <dt>Research</dt>
+          <dd>{research}</dd>
+        </div>
       </dl>
     </section>
   )
@@ -292,23 +290,21 @@ export function App({ session }: { session: GameSession }) {
                 <ViewIcon name={entry.id} />
                 <span className="nav-label nav-label-desktop">
                   {entry.label}
-                  {entry.working && (
-                    <span
-                      className="working-dot"
-                      role="img"
-                      aria-label="Working"
-                    />
-                  )}
+                  <span
+                    className="working-dot"
+                    data-visible={entry.working}
+                    role="img"
+                    aria-label="Working"
+                  />
                 </span>
                 <span className="nav-label nav-label-mobile" aria-hidden="true">
                   {entry.mobileLabel}
-                  {entry.working && (
-                    <span
-                      className="working-dot"
-                      role="img"
-                      aria-label="Working"
-                    />
-                  )}
+                  <span
+                    className="working-dot"
+                    data-visible={entry.working}
+                    role="img"
+                    aria-label="Working"
+                  />
                 </span>
               </Tabs.Trigger>
             ))}

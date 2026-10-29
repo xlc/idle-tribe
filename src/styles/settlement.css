@@ -44,6 +44,9 @@
   padding: 10px;
   background: var(--color-base-100);
 }
+.settlement-status-grid > div[data-visible="false"] {
+  visibility: hidden;
+}
 .settlement-status-grid dt {
   margin-bottom: 5px;
   color: var(--color-neutral);
@@ -81,6 +84,14 @@
 .facility-overview > .painted-art {
   width: 56px;
   height: 56px;
+}
+.facility-worker-slot[data-visible="false"],
+.building-status[data-visible="false"],
+.investment-change[data-visible="false"] {
+  visibility: hidden;
+}
+.facility-worker-slot {
+  min-width: max-content;
 }
 .facility-info {
   min-width: 0;
@@ -125,9 +136,12 @@
   color: var(--color-warning);
 }
 .building-status {
+  overflow: hidden;
   font-size: 12px;
   color: var(--color-warning);
   margin-top: 4px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .building-controls {
   display: flex;
@@ -137,10 +151,16 @@
   gap: 8px;
   margin-top: 10px;
 }
+.facility-investment-placeholder {
+  min-height: 100px;
+}
 .investment-change {
+  overflow: hidden;
   color: var(--color-primary);
   font-size: 12px;
   margin-top: 6px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .branch-identity {
   color: var(--color-primary);
@@ -206,6 +226,9 @@
   gap: 8px;
   color: var(--color-neutral);
   font-size: 13px;
+}
+.happiness-status[data-visible="false"] {
+  visibility: hidden;
 }
 .arrival-supply {
   font-variant-numeric: tabular-nums;
@@ -315,17 +338,31 @@
   font-size: 21px;
   letter-spacing: -0.025em;
 }
+.plan-primary {
+  min-width: 0;
+}
+.plan-primary > [data-visible="false"],
+.plan-toggle > .progress[data-visible="false"],
+.plan-status[data-visible="false"] {
+  visibility: hidden;
+}
 .plan-chevron {
   color: var(--color-neutral);
   font: 16px var(--default-font-family);
 }
 .plan-toggle strong {
+  display: block;
+  overflow: hidden;
   font-size: 13px;
-  overflow-wrap: anywhere;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .plan-status {
+  overflow: hidden;
   color: var(--color-neutral);
   font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .research-active {
   position: relative;
@@ -337,6 +374,9 @@
   overflow: hidden;
   padding: 10px 12px 16px;
   border-top: 1px solid var(--color-base-300);
+}
+.research-active[data-visible="false"] {
+  visibility: hidden;
 }
 .research-active[data-running="true"] {
   border-top-color: var(--color-accent);
@@ -370,6 +410,12 @@
   padding: 14px;
   border-top: 1px solid var(--color-base-300);
 }
+.active-project[data-visible="false"] {
+  visibility: hidden;
+}
+.active-project {
+  min-height: 40px;
+}
 .waiting-list ol {
   padding-left: 20px;
 }
@@ -398,6 +444,10 @@
 }
 .facility-detail > div {
   margin: 12px 0;
+}
+.facility-equipment-slot[data-visible="false"],
+.facility-remove-slot[data-visible="false"] {
+  visibility: hidden;
 }
 .facility-detail label {
   font-size: 13px;

@@ -211,6 +211,9 @@
 .event-log-entry .rt-Button {
   flex-shrink: 0;
 }
+.event-log-action[data-visible="false"] {
+  visibility: hidden;
+}
 .event-log time {
   flex-shrink: 0;
   color: var(--color-neutral);

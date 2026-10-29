@@ -18,7 +18,9 @@ export function Legacy({
       <p>
         {s.legacy.lifetime} lifetime points · efficiency ×
         {formatResource(prestigeMultiplier(s))}
-        {!canReset(s) && ' · Reset requires Writing'}
+        <span className="legacy-reset-note" data-visible={!canReset(s)}>
+          {' · Reset requires Writing'}
+        </span>
       </p>
       <p className="legacy-note">
         Lifetime points improve worker, construction, and research speed for

@@ -82,91 +82,103 @@ export function Queue({
             {open ? '⌃' : '⌄'}
           </span>
         </span>
-        {id === 'research' && active ? (
-          <span className="plan-status">
-            Researching
-            {q.waiting.length > 0 && ` · ${q.waiting.length} waiting`}
-          </span>
-        ) : (
-          current && <strong>{projectName(s, current)}</strong>
-        )}
-        {id !== 'research' && current && (
+        <span className="plan-primary">
+          {id === 'research' && active ? (
+            <span className="plan-status">
+              Researching
+              {q.waiting.length > 0 && ` · ${q.waiting.length} waiting`}
+            </span>
+          ) : (
+            <strong data-visible={Boolean(current)}>
+              {current ? projectName(s, current) : '\u00a0'}
+            </strong>
+          )}
+        </span>
+        {id !== 'research' && (
           <progress
             className="progress"
+            data-visible={Boolean(current)}
             value={active?.progress ?? 0}
             max={active?.total || 1}
             aria-label={`${id} progress`}
           />
         )}
-        {!(id === 'research' && active) && (
-          <span className="plan-status">
-            {status}
-            {q.waiting.length > 0 && <span> · {q.waiting.length} waiting</span>}
-          </span>
-        )}
+        <span
+          className="plan-status"
+          data-visible={!(id === 'research' && active)}
+        >
+          {status}
+          {q.waiting.length > 0 && <span> · {q.waiting.length} waiting</span>}
+        </span>
       </button>
-      {id === 'research' && active && researchName && (
+      {id === 'research' && (
         <article
           className="research-active"
-          data-running="true"
-          aria-label={`Researching ${researchName}`}
+          data-visible={Boolean(active && researchName)}
+          aria-label={researchName ? `Researching ${researchName}` : undefined}
         >
-          <span className="action-icon research-icon">
-            <ViewIcon name="research" />
-          </span>
-          <span className="action-copy">
-            <strong className="action-name">{researchName}</strong>
-            <span className="action-yield">
-              <ActionCountdown
-                session={session}
-                duration={active.total}
-                value={active.progress / active.total}
-                running
-              />{' '}
-              remaining
-            </span>
-          </span>
-          <Button
-            className="research-active-cancel"
-            onClick={() =>
-              confirm(
-                'Cancel research?',
-                `Refund ${formatCost(active.paid)}. Research progress will be lost.`,
-                () => game.cancel(id, active.sequence),
-              )
-            }
-          >
-            Cancel
-          </Button>
-          <span
-            className="project-progress research-progress"
-            data-running="true"
-          >
-            <ActionProgress
-              session={session}
-              duration={active.total}
-              label="Research progress"
-              value={active.progress / active.total}
-              running
-            />
-          </span>
+          {active && researchName && (
+            <>
+              <span className="action-icon research-icon">
+                <ViewIcon name="research" />
+              </span>
+              <span className="action-copy">
+                <strong className="action-name">{researchName}</strong>
+                <span className="action-yield">
+                  <ActionCountdown
+                    session={session}
+                    duration={active.total}
+                    value={active.progress / active.total}
+                    running
+                  />{' '}
+                  remaining
+                </span>
+              </span>
+              <Button
+                className="research-active-cancel"
+                onClick={() =>
+                  confirm(
+                    'Cancel research?',
+                    `Refund ${formatCost(active.paid)}. Research progress will be lost.`,
+                    () => game.cancel(id, active.sequence),
+                  )
+                }
+              >
+                Cancel
+              </Button>
+              <span
+                className="project-progress research-progress"
+                data-running="true"
+              >
+                <ActionProgress
+                  session={session}
+                  duration={active.total}
+                  label="Research progress"
+                  value={active.progress / active.total}
+                  running
+                />
+              </span>
+            </>
+          )}
         </article>
       )}
       <div className="plan-details" hidden={!open}>
         {id === 'construction' && <Builders session={session} />}
-        {active && id === 'construction' && (
-          <div className="active-project">
-            <Button
-              onClick={() =>
-                confirm(
-                  'Cancel project?',
-                  `Refund ${formatCost(active.paid)}. Work progress will be lost.`,
-                  () => game.cancel(id, active.sequence),
-                )
-              }
-            >
-              Cancel
-            </Button>
+        {id === 'construction' && (
+          <div className="active-project" data-visible={Boolean(active)}>
+            {active && (
+              <Button
+                onClick={() =>
+                  confirm(
+                    'Cancel project?',
+                    `Refund ${formatCost(active.paid)}. Work progress will be lost.`,
+                    () => game.cancel(id, active.sequence),
+                  )
+                }
+              >
+                Cancel
+              </Button>
+            )}
           </div>
         )}
         {q.waiting.length > 0 && (

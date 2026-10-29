@@ -45,12 +45,11 @@ function InvestmentChange({
 }) {
   const outcome = investmentOutcome(state, project)
   return (
-    outcome && (
-      <p className="investment-change">
-        {outcome.label} · {formatResource(outcome.before)} →{' '}
-        {formatResource(outcome.after)}
-      </p>
-    )
+    <p className="investment-change" data-visible={Boolean(outcome)}>
+      {outcome
+        ? `${outcome.label} · ${formatResource(outcome.before)} → ${formatResource(outcome.after)}`
+        : '\u00a0'}
+    </p>
   )
 }
 
@@ -135,25 +134,28 @@ export function Facility({
       () => session.game.remove(id),
     )
   }
-  const investment = !(def.unique && f.level > 0) && (
-    <div className="facility-investment">
-      <Costs session={session} cost={quote.cost} />
-      <InvestmentChange state={s} project={expansion} />
-      <div className="building-controls">
-        <Button
-          variant="solid"
-          color="grass"
-          onClick={() =>
-            session.change(() => session.game.build(id, selectedForm))
-          }
-        >
-          {f.level ? 'Queue expansion' : 'Queue build'}
-          {expansion.kind === 'expand' ? ` · ${expansion.target}` : ''}
-        </Button>
-        <small>{formatResource(quote.total)} work</small>
+  const investment =
+    def.unique && f.level > 0 ? (
+      <div className="facility-investment-placeholder" aria-hidden="true" />
+    ) : (
+      <div className="facility-investment">
+        <Costs session={session} cost={quote.cost} />
+        <InvestmentChange state={s} project={expansion} />
+        <div className="building-controls">
+          <Button
+            variant="solid"
+            color="grass"
+            onClick={() =>
+              session.change(() => session.game.build(id, selectedForm))
+            }
+          >
+            {f.level ? 'Queue expansion' : 'Queue build'}
+            {expansion.kind === 'expand' ? ` · ${expansion.target}` : ''}
+          </Button>
+          <small>{formatResource(quote.total)} work</small>
+        </div>
       </div>
-    </div>
-  )
+    )
   return (
     <article
       className="building-card panel"
@@ -207,20 +209,23 @@ export function Facility({
                   : def.effect}
             </p>
           )}
-          {blocked && <p className="building-status">{blocked}</p>}
+          <p className="building-status" data-visible={Boolean(blocked)}>
+            {blocked || '\u00a0'}
+          </p>
         </div>
-        {job && f.level > 0 && !action && (
-          <WorkerControls
-            session={session}
-            job={job}
-            assignable={!actionDefinition || actionDefinition.visible(s)}
-          />
+        {job && !action && (
+          <div className="facility-worker-slot" data-visible={f.level > 0}>
+            <WorkerControls
+              session={session}
+              job={job}
+              assignable={!actionDefinition || actionDefinition.visible(s)}
+            />
+          </div>
         )}
       </div>
-      {!f.level && investment}
+      {investment}
       <details className="facility-detail">
         <summary>Details & upgrades</summary>
-        {f.level > 0 && investment}
         <p className="flavor">{form.description}</p>
         {job && output && RESOURCES.some((r) => input[r]) && (
           <p>
@@ -309,8 +314,11 @@ export function Facility({
                 </div>
               ),
           )}
-        {job && f.level > 0 && s.research.toolmaking > 0 && (
-          <div>
+        {job && f.level > 0 && (
+          <div
+            className="facility-equipment-slot"
+            data-visible={s.research.toolmaking > 0}
+          >
             <Costs session={session} cost={equipmentQuote.cost} />
             <InvestmentChange state={s} project={equipment} />
             <small>
@@ -324,11 +332,11 @@ export function Facility({
             </Button>
           </div>
         )}
-        {f.level > 0 && (
-          <Button disabled={active} onClick={remove}>
+        <div className="facility-remove-slot" data-visible={f.level > 0}>
+          <Button disabled={!f.level || active} onClick={remove}>
             Remove facility
           </Button>
-        )}
+        </div>
       </details>
     </article>
   )

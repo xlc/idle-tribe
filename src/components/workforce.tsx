@@ -35,24 +35,22 @@ export function Workforce({
       <div>
         <h2>{s.people.length} people</h2>
         <p>{assigned(s, 'idle')} unassigned</p>
-        {happinessUnlocked(s) && (
-          <div className="happiness-status">
-            <span>
-              Happiness {formatResource(s.happiness)} · target{' '}
-              {formatResource(target)}
-            </span>
-            <span className="status-meter happiness-meter">
-              <meter
-                min={0}
-                max={100}
-                value={s.happiness}
-                aria-label="Happiness"
-                aria-valuetext={`${formatResource(s.happiness)}, target ${formatResource(target)}`}
-              />
-              <span className="meter-marker" style={{ left: `${target}%` }} />
-            </span>
-          </div>
-        )}
+        <div className="happiness-status" data-visible={happinessUnlocked(s)}>
+          <span>
+            Happiness {formatResource(s.happiness)} · target{' '}
+            {formatResource(target)}
+          </span>
+          <span className="status-meter happiness-meter">
+            <meter
+              min={0}
+              max={100}
+              value={s.happiness}
+              aria-label="Happiness"
+              aria-valuetext={`${formatResource(s.happiness)}, target ${formatResource(target)}`}
+            />
+            <span className="meter-marker" style={{ left: `${target}%` }} />
+          </span>
+        </div>
       </div>
       <details className="arrival-details">
         <summary>Arrivals & housing</summary>
