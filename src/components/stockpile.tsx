@@ -27,19 +27,32 @@ export function Stockpile({ session }: { session: GameSession }) {
           !requirementBlocker(s, BUILDINGS[id].forms[0]?.requires ?? {}),
       ),
   )
+  const foodNet = flows.food.production - flows.food.inputs - flows.food.meals
+  const foodShortage =
+    flows.food.meals > 0 &&
+    foodNet < -EPSILON &&
+    s.resources.food + EPSILON < flows.food.meals
   function resource(r: ResourceId) {
     const pressure = storageMultiplier(s, r),
       flow = flows[r],
       net = flow.production - flow.inputs - flow.meals,
-      rate = Math.abs(net) < MIN_VISIBLE_RESOURCE_CHANGE ? 0 : net / 60
+      rate = Math.abs(net) < MIN_VISIBLE_RESOURCE_CHANGE ? 0 : net / 60,
+      warning = r === 'food' && foodShortage
     return (
       <section
         className="resource"
-        aria-label={`${RESOURCE_INFO[r].name} resource`}
+        data-warning={warning}
+        aria-label={`${RESOURCE_INFO[r].name} resource${warning ? ', starving, health at risk' : ''}`}
+        title={warning ? 'Starving · health at risk' : undefined}
         key={r}
       >
         <ResourceArt resource={r} />
         <span className="resource-name">{RESOURCE_INFO[r].name}</span>
+        {warning && (
+          <span className="resource-warning-marker" aria-hidden="true">
+            !
+          </span>
+        )}
         <strong className="resource-value">
           {formatCompactResource(s.resources[r])}
         </strong>
@@ -59,19 +72,11 @@ export function Stockpile({ session }: { session: GameSession }) {
       </section>
     )
   }
-  const foodNet = flows.food.production - flows.food.inputs - flows.food.meals
-  const foodShortage =
-    flows.food.meals > 0 &&
-    foodNet < -EPSILON &&
-    s.resources.food + EPSILON < flows.food.meals
   return (
     <section className="stockpile-panel panel" aria-label="Stockpile">
       <div className="stockpile" id="stockpile-resources">
         {visibleResources.map(resource)}
       </div>
-      {foodShortage && (
-        <p className="stockpile-warning">Starving · health at risk</p>
-      )}
     </section>
   )
 }
