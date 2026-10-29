@@ -1,5 +1,5 @@
 import * as Toast from '@radix-ui/react-toast'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { type AwayProgress, awayHighlight } from '../clock'
 import { MIN_VISIBLE_RESOURCE_CHANGE } from '../constants'
 import { OCCUPATIONS, RESOURCE_INFO } from '../definitions'
@@ -39,16 +39,12 @@ export function SessionNotificationToast({
   onDismiss: () => void
   onOpenReport: (report: AwayProgress) => void
 }) {
-  const [paused, setPaused] = useState(false)
   const report = notification.report
   const away = notification.kind === 'away' && report
   return (
     <Toast.Root
       className="event-toast panel panel-raised"
-      duration={20_000}
-      data-paused={paused}
-      onPause={() => setPaused(true)}
-      onResume={() => setPaused(false)}
+      duration={10_000}
       onOpenChange={(open) => {
         if (!open) onDismiss()
       }}
