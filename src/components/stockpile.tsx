@@ -76,8 +76,7 @@ export function Stockpile({ session }: { session: GameSession }) {
             {formatCompactResource(rate)}/s
           </span>
           <small className="storage-capacity" data-full={full}>
-            Storage {full ? 'full · ' : ''}
-            {formatResource(s.resources[r])}/{formatResource(capacity)}
+            Cap {formatResource(capacity)}
           </small>
         </div>
       </section>
