@@ -77,7 +77,15 @@ export function formatExploreNotice(outcome: ExploreOutcome) {
 }
 export function formatDuration(seconds: number) {
   if (!Number.isFinite(seconds)) return 'Paused'
-  if (seconds < 60) return `${Math.ceil(seconds)}s`
-  if (seconds < 3600) return `${Math.ceil(seconds / 60)}m`
-  return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`
+  const rounded = Math.max(0, Math.round(seconds * 10) / 10)
+  const hours = Math.floor(rounded / 3600)
+  const minutes = Math.floor((rounded % 3600) / 60)
+  const remainingSeconds = Math.round((rounded % 60) * 10) / 10
+  const secondsText = Number.isInteger(remainingSeconds)
+    ? `${remainingSeconds}s`
+    : `${remainingSeconds.toFixed(1)}s`
+
+  if (hours > 0) return `${hours}h ${minutes}m ${secondsText}`
+  if (minutes > 0) return `${minutes}m ${secondsText}`
+  return secondsText
 }

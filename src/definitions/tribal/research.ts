@@ -17,7 +17,7 @@ export const research = {
   shelters: {
     name: 'Shelters',
     cost: { wood: 15, food: 10 },
-    seconds: 16,
+    seconds: 15,
     effect:
       'Unlock housing, camps, basic storage, immigration; grant first Foraging camp.',
     description: 'The weather can conduct its business outside.',
@@ -28,7 +28,7 @@ export const research = {
   'stone-tools': {
     name: 'Stone tools',
     cost: { wood: 20, stone: 15, food: 10 },
-    seconds: 36,
+    seconds: 20,
     effect: 'Unlock Quarry.',
     description: 'Some rocks are better at convincing other rocks.',
     requires: { research: ['sharpened-stick'], discovery: 'stone' },

@@ -10,6 +10,8 @@ import {
   researchUpgradeVisible,
   researchVisible,
 } from '../research'
+import { canAfford } from '../resources'
+import type { Project } from '../types'
 import { ViewIcon } from './art'
 import {
   ActionCountdown,
@@ -36,9 +38,48 @@ function queuedResearchTarget(
   return entry?.project.kind === 'research' ? (entry.project.target ?? 1) : null
 }
 
+function isResearchProject(
+  project: Project,
+  id: (typeof RESEARCH_IDS)[number],
+  target: number,
+): project is Extract<Project, { kind: 'research' }> {
+  return (
+    project.kind === 'research' &&
+    project.id === id &&
+    (project.target ?? 1) === target
+  )
+}
+
 function effectRows(effect: string | readonly string[] | undefined) {
   if (!effect) return []
   return Array.isArray(effect) ? effect : [effect]
+}
+
+type ResearchCardState =
+  | 'running'
+  | 'planned'
+  | 'blocked'
+  | 'missing-cost'
+  | 'ready'
+
+function researchCardState({
+  active,
+  queued,
+  queueBusy,
+  blocked,
+  affordable,
+}: {
+  active: boolean
+  queued: boolean
+  queueBusy: boolean
+  blocked: boolean
+  affordable: boolean
+}): ResearchCardState {
+  if (active) return 'running'
+  if (queued) return 'planned'
+  if (queueBusy || blocked) return 'blocked'
+  if (!affordable) return 'missing-cost'
+  return 'ready'
 }
 
 function ResearchCard({
@@ -55,23 +96,25 @@ function ResearchCard({
     q = s.queues.research,
     active = q.active,
     activeResearch =
-      active?.project.kind === 'research' &&
-      active.project.id === id &&
-      (active.project.target ?? 1) === target
-        ? active
-        : null
-  const queued = allEntries(s).some(
-    (entry) =>
-      entry.project.kind === 'research' &&
-      entry.project.id === id &&
-      (entry.project.target ?? 1) === target,
+      active && isResearchProject(active.project, id, target) ? active : null
+  const queued = allEntries(s).some((entry) =>
+    isResearchProject(entry.project, id, target),
   )
   const blocked = Boolean(quote.blocker),
-    anotherResearchActive = Boolean(active && !activeResearch),
+    affordable = canAfford(s, quote.cost),
     queueBusy = Boolean(active || q.waiting.length),
     queueUnlocked = researchQueueUnlocked(s),
-    waitingForQueue = q.waiting.length > 0 && !queued,
-    canStart = !queued && !queueBusy && !blocked
+    needsQueue = queueBusy || !affordable,
+    status = researchCardState({
+      active: Boolean(activeResearch),
+      queued,
+      queueBusy,
+      blocked,
+      affordable,
+    }),
+    canStart = status === 'ready',
+    canQueue =
+      queueUnlocked && !activeResearch && !queued && !blocked && needsQueue
   const cancelResearch = () => {
     if (!activeResearch) return
     const run = () => session.game.cancel('research', activeResearch.sequence)
@@ -101,15 +144,7 @@ function ResearchCard({
         className="manual-action tech-card research-card"
         aria-label={def.name}
         data-running={Boolean(activeResearch)}
-        data-action-state={
-          activeResearch
-            ? 'running'
-            : queued
-              ? 'planned'
-              : blocked || anotherResearchActive || waitingForQueue
-                ? 'blocked'
-                : 'ready'
-        }
+        data-action-state={status}
       >
         <div className="action-row">
           <button
@@ -181,22 +216,18 @@ function ResearchCard({
               Stop
             </Button>
           )}
-          {queueUnlocked &&
-            queueBusy &&
-            !activeResearch &&
-            !queued &&
-            !quote.blocker && (
-              <Button
-                className="research-inline-control"
-                variant="solid"
-                color="grass"
-                aria-label="Add research to queue"
-                title="Add research to queue"
-                onClick={() => runResearch('queue')}
-              >
-                Queue
-              </Button>
-            )}
+          {canQueue && (
+            <Button
+              className="research-inline-control"
+              variant="solid"
+              color="grass"
+              aria-label="Add research to queue"
+              title="Add research to queue"
+              onClick={() => runResearch('queue')}
+            >
+              Queue
+            </Button>
+          )}
           <DisclosureToggle
             expanded={expanded}
             controls={`${id}-details`}
@@ -225,8 +256,13 @@ export function Technology({ session, confirm }: ViewProps) {
   const entries = allEntries(s).filter(
     (entry) => entry.project.kind === 'research',
   )
-  const queuedUpgradeIds = RESEARCH_IDS.filter(
-    (id) => queuedResearchTarget(entries, id, s.research[id]) !== null,
+  const queuedUpgradeIds = new Set(
+    RESEARCH_IDS.filter(
+      (id) => queuedResearchTarget(entries, id, s.research[id]) !== null,
+    ),
+  )
+  const upgradeIds = RESEARCH_IDS.filter(
+    (id) => researchUpgradeVisible(s, id) || queuedUpgradeIds.has(id),
   )
   return (
     <SectionDisclosure
@@ -251,15 +287,11 @@ export function Technology({ session, confirm }: ViewProps) {
           ))}
         </div>
       </section>
-      {(RESEARCH_IDS.some((id) => researchUpgradeVisible(s, id)) ||
-        queuedUpgradeIds.length > 0) && (
+      {upgradeIds.length > 0 && (
         <section className="tech-section">
           <h2>Research upgrades</h2>
           <div className="tech-grid research-list">
-            {RESEARCH_IDS.filter(
-              (id) =>
-                researchUpgradeVisible(s, id) || queuedUpgradeIds.includes(id),
-            ).map((id) => (
+            {upgradeIds.map((id) => (
               <ResearchCard
                 key={`${id}-upgrade`}
                 session={session}

@@ -195,7 +195,7 @@ test('session events use the settled timeline for actions and returning from an 
   expect(session.events.at(-1)?.at).toBe(hour + 2000)
   session.setVisible(false, hour + 3000)
   session.setVisible(true, hour + 3000 + (MIN_AWAY_REPORT_SECONDS + 1) * 1000)
-  expect(session.events.at(-1)?.text).toMatch(/^Away 6m/)
+  expect(session.events.at(-1)?.text).toMatch(/^Away 5m 1s/)
   expect(session.events.at(-1)?.at).toBe(
     hour + 3000 + (MIN_AWAY_REPORT_SECONDS + 1) * 1000,
   )
