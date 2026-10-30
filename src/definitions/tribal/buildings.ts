@@ -13,7 +13,7 @@ export const buildings = {
         housing: 2,
       },
     ],
-    effect: 'Housing; later forms provide more comfortable places.',
+    effect: 'Housing; later forms increase capacity.',
   },
   stockyard: {
     forms: [

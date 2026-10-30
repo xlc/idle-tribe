@@ -21,7 +21,7 @@ import { Workforce } from './components/workforce'
 import { ERAS } from './definitions'
 import { projectName, researchQueueUnlocked } from './research'
 import type { GameSession } from './session'
-import { assigned, automationUnlocked, comfortablePlaces } from './settlement'
+import { assigned, automationUnlocked, housingCapacity } from './settlement'
 import { useSession } from './use-session'
 
 type View = 'settlement' | 'queue' | 'people' | 'legacy' | 'settings'
@@ -38,7 +38,7 @@ function SettlementBrief({ session }: { session: GameSession }) {
     : s.queues.research.waiting.length
       ? `${s.queues.research.waiting.length} queued`
       : 'No project'
-  const rooms = comfortablePlaces(s)
+  const capacity = housingCapacity(s)
   return (
     <SectionDisclosure
       className="settlement-brief"
@@ -69,9 +69,9 @@ function SettlementBrief({ session }: { session: GameSession }) {
             </dd>
           </div>
           <div>
-            <dt>Housing</dt>
+            <dt>Housing capacity</dt>
             <dd>
-              {s.people.length}/{rooms} <small>capacity</small>
+              {s.people.length}/{capacity}
             </dd>
           </div>
           <div>
@@ -307,7 +307,7 @@ export function App({ session }: { session: GameSession }) {
           <Dialog.Title>{choice?.title}</Dialog.Title>
           <Dialog.Description>{choice?.body}</Dialog.Description>
           <Flex justify="end" gap="3" mt="4">
-            <Button onClick={() => setChoice(null)}>Keep playing</Button>
+            <Button onClick={() => setChoice(null)}>Dismiss</Button>
             <Button
               variant="solid"
               color="grass"

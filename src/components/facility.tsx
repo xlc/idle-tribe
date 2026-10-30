@@ -25,8 +25,8 @@ import {
 import { storageCapacity } from '../resources'
 import {
   assigned,
-  comfortablePlaces,
   equipmentMultiplier,
+  housingCapacity,
   jobInput,
   requirementBlocker,
   workerRate,
@@ -137,8 +137,8 @@ export function Facility({
       )
       .join('; ')
     const housing =
-      comfortablePlaces(s) !== comfortablePlaces(after)
-        ? `Housing comfort ${comfortablePlaces(s)} → ${comfortablePlaces(after)}. `
+      housingCapacity(s) !== housingCapacity(after)
+        ? `Housing capacity ${housingCapacity(s)} → ${housingCapacity(after)}. `
         : ''
     confirm(
       `Remove ${form.name}?`,
@@ -214,7 +214,7 @@ export function Facility({
             ) : (
               <p className="building-recipe">
                 {form.housing
-                  ? `Adds +${form.housing} comfortable places per level`
+                  ? `Adds +${form.housing} housing capacity per level`
                   : form.storage
                     ? RESOURCES.filter((r) => form.storage?.[r])
                         .map(
@@ -300,7 +300,9 @@ export function Facility({
                       {v.rate
                         ? `${formatResource(v.rate / 60)}/s per worker before bonuses. `
                         : ''}
-                      {v.housing ? `${v.housing} base places per level. ` : ''}
+                      {v.housing
+                        ? `${v.housing} housing capacity per level. `
+                        : ''}
                       {v.storage
                         ? `Base storage: ${formatCost(v.storage)}. `
                         : ''}

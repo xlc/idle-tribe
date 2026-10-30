@@ -23,7 +23,7 @@ export const research = {
     description: 'The weather can conduct its business outside.',
     requires: { research: ['sharpened-stick'] },
     effects: {},
-    grant: { building: 'foraging', job: 'forager' },
+    grant: { building: 'foraging' },
   },
   'stone-tools': {
     name: 'Stone tools',

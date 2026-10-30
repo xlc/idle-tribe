@@ -271,7 +271,7 @@ export function constructionSpeed(state: GameState, extra = 0) {
     prestigeMultiplier(state)
   )
 }
-export function comfortablePlaces(state: GameState) {
+export function housingCapacity(state: GameState) {
   let housing = 0,
     multiplier = 1
   for (const id of BUILDING_IDS) {
@@ -295,7 +295,7 @@ export function happinessTarget(state: GameState) {
   return (
     100 *
     (0.4 * clamp(state.resources.food / (30 * n)) +
-      0.2 * clamp((comfortablePlaces(state) - n) / Math.max(1, 0.2 * n)) +
+      0.2 * clamp((housingCapacity(state) - n) / Math.max(1, 0.2 * n)) +
       0.2 * clamp(amenities / n) +
       0.2 * clamp(leisure / n))
   )
@@ -342,7 +342,7 @@ export function arrivalStatus(state: GameState) {
   }
   const required = 1.1 * (next + recipeDemand)
   const interval =
-    (5 * Math.max(1, next / comfortablePlaces(state)) ** 2) /
+    (5 * Math.max(1, next / housingCapacity(state)) ** 2) /
     (town ? 0.5 + state.happiness / 100 : 1)
   return {
     blocker: arrivalBlocker(state, { buffer, foodOutput, required }),
@@ -365,8 +365,8 @@ export function arrivalBlocker(
     ? 'Requires Shelters'
     : !state.welcome
       ? 'Arrivals paused'
-      : comfortablePlaces(state) <= state.people.length
-        ? 'Population full · build more housing'
+      : housingCapacity(state) <= state.people.length
+        ? 'Housing full · build housing'
         : state.resources.food < buffer
           ? `Needs ${buffer} food buffer`
           : foodOutput < required

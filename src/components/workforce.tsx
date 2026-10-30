@@ -3,10 +3,10 @@ import type { GameSession } from '../session'
 import {
   arrivalStatus,
   assigned,
-  comfortablePlaces,
   constructionSpeed,
   happinessTarget,
   happinessUnlocked,
+  housingCapacity,
 } from '../settlement'
 import { ViewIcon } from './art'
 import { ProgressBar, SectionDisclosure } from './common'
@@ -16,13 +16,13 @@ export function Workforce({ session }: { session: GameSession }) {
   const s = session.game.state,
     arrival = arrivalStatus(s),
     target = happinessTarget(s),
-    rooms = comfortablePlaces(s),
-    roomMessage =
-      rooms > s.people.length
-        ? `${rooms - s.people.length} free room${rooms - s.people.length === 1 ? '' : 's'}`
-        : rooms === s.people.length
-          ? 'No free rooms'
-          : `${s.people.length - rooms} over room capacity`
+    capacity = housingCapacity(s),
+    spaceMessage =
+      capacity > s.people.length
+        ? `${capacity - s.people.length} available space${capacity - s.people.length === 1 ? '' : 's'}`
+        : capacity === s.people.length
+          ? 'Housing full'
+          : `${s.people.length - capacity} over housing capacity`
   return (
     <SectionDisclosure
       className="workforce-section"
@@ -57,7 +57,7 @@ export function Workforce({ session }: { session: GameSession }) {
         <details className="arrival-details">
           <summary>Arrivals & housing</summary>
           <p>
-            {s.people.length}/{rooms} people · {roomMessage}
+            {s.people.length}/{capacity} people · {spaceMessage}
           </p>
           <div className="arrival-control">
             <label>

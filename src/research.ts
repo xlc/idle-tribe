@@ -301,11 +301,6 @@ export function completeProject(state: GameState, project: Project) {
     if (firstCompletion && def.grant) {
       const f = state.facilities[def.grant.building]
       f.level = Math.max(1, f.level)
-      const player = state.people[0]
-      if (player?.job === 'idle') {
-        player.job = def.grant.job
-        player.progress = 0
-      }
     }
   } else {
     const f = state.facilities[project.id]

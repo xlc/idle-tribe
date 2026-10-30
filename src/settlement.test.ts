@@ -7,8 +7,8 @@ import { enqueue, nextExpansion } from './research'
 import { storageCapacity } from './resources'
 import {
   arrivalStatus,
-  comfortablePlaces,
   happinessTarget,
+  housingCapacity,
   requirementBlocker,
   workerRate,
 } from './settlement'
@@ -128,15 +128,15 @@ test('immigration pauses on inadequate sustainable supply, resumes, and arrivals
   expect(arrivalStatus(s).foodOutput).toBeGreaterThan(arrivalStatus(s).required)
 })
 
-test('immigration stops at room capacity and resumes after housing expands', () => {
+test('immigration stops at housing capacity and resumes after housing expands', () => {
   const s = createDefaultState()
   complete(s, 'sharpened-stick', 'shelters')
   s.facilities.housing.level = 1
   s.resources.food = 200
   people(s, 'forager', 'idle', 'idle')
 
-  expect(comfortablePlaces(s)).toBe(s.people.length)
-  expect(arrivalStatus(s).blocker).toBe('Population full · build more housing')
+  expect(housingCapacity(s)).toBe(s.people.length)
+  expect(arrivalStatus(s).blocker).toBe('Housing full · build housing')
   advanceTime(s, 600)
   expect(s.people).toHaveLength(3)
 
@@ -155,10 +155,10 @@ test('overpopulation pauses new arrivals without removing existing people', () =
   people(s, 'forager', 'idle', 'idle')
 
   expect(removeFacility(s, 'housing')).toBe(true)
-  expect(comfortablePlaces(s)).toBe(1)
+  expect(housingCapacity(s)).toBe(1)
   advanceTime(s, 600)
   expect(s.people).toHaveLength(3)
-  expect(arrivalStatus(s).blocker).toBe('Population full · build more housing')
+  expect(arrivalStatus(s).blocker).toBe('Housing full · build housing')
 })
 
 test('food security guard accounts for scholarship at maximum happiness and ignores temporary hoards', () => {

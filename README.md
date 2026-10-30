@@ -19,7 +19,7 @@ Open the printed local URL. No environment variables or external services are re
 
 ## Gameplay
 
-The playable catalog covers **all eight eras**, through Causal synthesis. Start by gathering food, wood, and stone by hand; research **Shelters** to unlock builders, workplaces, and arriving settlers. Population grows only into available comfortable places, and new settlers remain unassigned until you choose their work. Staff workplaces, keep people fed and housed, and queue construction and research toward towns and beyond. After **Writing**, choose a permanent specialization — **Forestry** or **Stonecraft** — that shapes every later era. Later, the mysterious time box offers an optional reset for permanent legacy points and perks.
+The playable catalog covers **all eight eras**, through Causal synthesis. Start by gathering food, wood, and stone by hand; research **Shelters** to unlock builders, workplaces, and arriving settlers. Population grows only into available housing capacity, and new settlers remain unassigned until you choose their work. Staff workplaces, keep people fed and housed, and queue construction and research toward towns and beyond. After **Writing**, choose a permanent specialization — **Forestry** or **Stonecraft** — that shapes every later era. Later, the mysterious time box offers an optional reset for permanent legacy points and perks.
 
 Build the corresponding workplace to assign workers to gathering and exploration; assigned workers continue while the game is closed.
 

@@ -31,10 +31,10 @@ test('unstaffed workplaces, housing and storage show a useful investment consequ
   const s = createDefaultState()
   expect(
     investmentOutcome(s, { kind: 'expand', id: 'farm', target: 1, form: 0 }),
-  ).toEqual({ label: 'Efficient places', before: 0, after: 2 })
+  ).toEqual({ label: 'Work slots', before: 0, after: 2 })
   expect(
     investmentOutcome(s, { kind: 'expand', id: 'housing', target: 1, form: 0 }),
-  ).toEqual({ label: 'Comfortable places', before: 1, after: 3 })
+  ).toEqual({ label: 'Housing capacity', before: 1, after: 3 })
   expect(
     investmentOutcome(s, {
       kind: 'expand',

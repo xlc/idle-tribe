@@ -32,11 +32,11 @@ import {
 import {
   adjustWorkers,
   assignJob,
-  comfortablePlaces,
   constructionSpeed,
   effectiveStaff,
   equipmentMultiplier,
   fillWorkers,
+  housingCapacity,
   jobInput,
   requirementBlocker,
   workerRate,
@@ -45,7 +45,7 @@ import { advanceTime } from './simulation'
 import { createDefaultState } from './state'
 import { complete, people, required, settlement } from './test-helpers'
 
-test('the opening discovers resources and grants a working camp once', () => {
+test('the opening discovers resources and grants a camp without assigning workers', () => {
   const s = createDefaultState()
   for (let i = 0; i < 15; i++) {
     expect(startAction(s, 'gather')).toBe(true)
@@ -72,12 +72,8 @@ test('the opening discovers resources and grants a working camp once', () => {
   advanceTime(s, 180)
   expect(s.research.shelters).toBe(1)
   expect(s.facilities.foraging.level).toBe(1)
-  expect(s.people[0]?.job).toBe('forager')
+  expect(s.people[0]?.job).toBe('idle')
   expect(s.facilities.housing.level).toBe(0)
-  const before = s.resources.food
-  advanceTime(s, 60)
-  expect(s.resources.food).toBeGreaterThan(before)
-  expect(s.resources.food).toBeLessThanOrEqual(120)
 })
 
 test('cheat resource grants add only the requested stockpile amounts', () => {
@@ -97,14 +93,14 @@ test('construction keeps old effects until completion, pays once, and can exceed
   const project = nextExpansion(s, 'housing'),
     quote = quoteProject(s, project),
     before = s.resources.wood,
-    places = comfortablePlaces(s)
+    places = housingCapacity(s)
   enqueue(s, project)
   advanceTime(s, 0)
   expect(s.resources.wood).toBe(before - (quote.cost.wood ?? 0))
-  expect(comfortablePlaces(s)).toBe(places)
+  expect(housingCapacity(s)).toBe(places)
   advanceTime(s, quote.total * 60 + 600)
   expect(s.facilities.housing.level).toBe(11)
-  expect(comfortablePlaces(s)).toBeGreaterThan(places)
+  expect(housingCapacity(s)).toBeGreaterThan(places)
   expect(s.resources.wood).toBe(before - (quote.cost.wood ?? 0))
   expect(s.completedProjects).toBe(1)
 })

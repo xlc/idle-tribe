@@ -12,9 +12,9 @@ import { isProductionJob } from './jobs'
 import { completeProject, constructionPlan } from './research'
 import { storageCapacity } from './resources'
 import {
-  comfortablePlaces,
   crewSize,
   equipmentMultiplier,
+  housingCapacity,
   jobCapacity,
   workerRate,
 } from './settlement'
@@ -94,16 +94,16 @@ export function investmentOutcome(
       if (tools) return tools
     }
     const capacity = compare(
-      'Efficient places',
+      'Work slots',
       jobCapacity(state, job),
       jobCapacity(after, job),
     )
     if (capacity) return capacity
   }
   const housing = compare(
-    'Comfortable places',
-    comfortablePlaces(state),
-    comfortablePlaces(after),
+    'Housing capacity',
+    housingCapacity(state),
+    housingCapacity(after),
   )
   if (housing) return housing
   for (const r of RESOURCES) {
