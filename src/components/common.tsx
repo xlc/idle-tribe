@@ -253,19 +253,17 @@ export function Costs({
   const Tag = inline ? 'span' : 'p'
   return (
     <Tag className={`costs${inline ? ' costs-inline' : ''}`}>
-      {RESOURCES.filter((r) => cost[r]).map((r) => (
-        <span
-          key={r}
-          className={
-            session.game.state.resources[r] + EPSILON < (cost[r] ?? 0)
-              ? 'cost-missing'
-              : 'cost-enough'
-          }
-        >
-          {formatResource(session.game.state.resources[r])}/
-          {formatResource(cost[r] ?? 0)} {RESOURCE_INFO[r].name.toLowerCase()}
-        </span>
-      ))}
+      {RESOURCES.filter((r) => cost[r]).map((r) => {
+        const available = session.game.state.resources[r]
+        const required = cost[r] ?? 0
+        const enough = available + EPSILON >= required
+        return (
+          <span key={r} className={enough ? 'cost-enough' : 'cost-missing'}>
+            {enough ? '' : `${formatResource(available)}/`}
+            {formatResource(required)} {RESOURCE_INFO[r].name.toLowerCase()}
+          </span>
+        )
+      })}
     </Tag>
   )
 }
