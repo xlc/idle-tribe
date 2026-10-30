@@ -63,8 +63,9 @@ export function Stockpile({ session }: { session: GameSession }) {
             !
           </span>
         )}
-        <strong className="resource-value">
-          {formatCompactResource(s.resources[r])}
+        <strong className="resource-value" data-full={full}>
+          {formatCompactResource(s.resources[r])} /{' '}
+          {formatCompactResource(capacity)}
         </strong>
         <div className="resource-meta">
           <span
@@ -75,9 +76,6 @@ export function Stockpile({ session }: { session: GameSession }) {
             {rate > 0 ? '+' : ''}
             {formatCompactResource(rate)}/s
           </span>
-          <small className="storage-capacity" data-full={full}>
-            Cap {formatResource(capacity)}
-          </small>
         </div>
       </section>
     )

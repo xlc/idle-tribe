@@ -73,16 +73,10 @@
 .resource-rate[data-negative="true"] {
   color: var(--color-warning);
 }
+.resource-value[data-full="true"] {
+  color: var(--color-warning);
+}
 .resource-rate[data-zero="true"],
 .recipe-output[data-zero="true"] {
   color: var(--color-neutral);
-}
-/* The line reserves space even when idle so appearing never shifts controls. */
-.storage-capacity {
-  display: block;
-  font-size: 9px;
-  color: var(--color-warning);
-}
-.storage-capacity[data-full="true"] {
-  font-weight: 700;
 }
