@@ -22,6 +22,16 @@ import type { GameState, Person } from '../types'
 import { ViewIcon } from './art'
 import { ProgressBar, SectionDisclosure } from './common'
 
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .map((part) => part[0])
+    .filter((letter): letter is string => Boolean(letter))
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+}
+
 function output(state: GameState, person: Person) {
   const job = person.job
   if (!isWorkingJob(job)) return 'Unassigned'
@@ -63,9 +73,21 @@ export function People({ session }: { session: GameSession }) {
         <div className="people-grid">
           {s.people.map((p, i) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: People are append-only during a run; roster positions are their stable identity.
-            <article className="person-row" key={i} aria-label={p.name}>
+            <article className="person-card" key={i} aria-label={p.name}>
               <div className="person-heading">
-                <strong>{p.name}</strong>
+                <div className="person-identity">
+                  <span className="person-avatar" aria-hidden="true">
+                    {initials(p.name)}
+                  </span>
+                  <div className="person-name-block">
+                    <strong>{p.name}</strong>
+                    <span className="person-role">
+                      {isWorkingJob(p.job)
+                        ? OCCUPATIONS[p.job].name
+                        : 'Available for assignment'}
+                    </span>
+                  </div>
+                </div>
                 <span
                   className="person-health"
                   role="img"
@@ -88,7 +110,7 @@ export function People({ session }: { session: GameSession }) {
                 htmlFor={`occupation-${i}`}
                 data-visible={occupations.length > 1}
               >
-                <span>Occupation</span>
+                <span className="person-field-label">Assign occupation</span>
                 <Select.Root
                   value={p.job}
                   size="2"
@@ -112,12 +134,14 @@ export function People({ session }: { session: GameSession }) {
                   </Select.Content>
                 </Select.Root>
               </label>
-              <p className="person-output" data-visible={isWorkingJob(p.job)}>
-                {isWorkingJob(p.job) ? output(s, p) : '\u00a0'}
-              </p>
-              <p className="person-aptitude">
-                {OCCUPATIONS[p.aptitude].aptitude} aptitude · +5%
-              </p>
+              <div className="person-meta">
+                <p className="person-output">
+                  {isWorkingJob(p.job) ? output(s, p) : 'Ready for assignment'}
+                </p>
+                <p className="person-aptitude">
+                  {OCCUPATIONS[p.aptitude].aptitude} aptitude · +5%
+                </p>
+              </div>
               <details
                 className="person-expertise"
                 data-visible={WORKING_JOB_IDS.some(

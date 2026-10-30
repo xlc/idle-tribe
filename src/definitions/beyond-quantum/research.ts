@@ -45,6 +45,14 @@ export const research = {
     description:
       'The records now include a carefully labeled shelf for what happens next.',
     effects: { offlineHours: 4 },
+    upgrade: {
+      maxLevel: 3,
+      requires: { research: ['causal-synthesis'] },
+      costMultiplier: 1.75,
+      timeMultiplier: 1.2,
+      effect: 'Full-speed offline window +2h per additional level.',
+      effects: { offlineHours: 2 },
+    },
   },
   'predictive-fabrication': {
     name: 'Predictive fabrication',

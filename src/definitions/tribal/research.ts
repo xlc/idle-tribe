@@ -13,6 +13,20 @@ export const research = {
       actionYield: { gather: 0.25 },
       actionAutomation: { gather: 0.02 },
     },
+    upgrade: {
+      maxLevel: 3,
+      requires: { research: ['shelters'] },
+      costMultiplier: 1.75,
+      timeMultiplier: 1.2,
+      effect: [
+        '+5% food gathering output per additional level',
+        '+1% automation per additional level',
+      ],
+      effects: {
+        actionYield: { gather: 0.05 },
+        actionAutomation: { gather: 0.01 },
+      },
+    },
   },
   shelters: {
     name: 'Shelters',
@@ -51,6 +65,14 @@ export const research = {
     description: 'The trick is putting the heavy bit on another heavy bit.',
     requires: { research: ['stone-tools'] },
     effects: { crew: 1 },
+    upgrade: {
+      maxLevel: 3,
+      requires: { research: ['carpentry'] },
+      costMultiplier: 1.75,
+      timeMultiplier: 1.2,
+      effect: 'Organized crew size +1 per additional level.',
+      effects: { crew: 1 },
+    },
   },
   'oral-tradition': {
     name: 'Oral tradition',
@@ -62,6 +84,15 @@ export const research = {
       'Good advice travels farther when someone remembers the middle.',
     requires: { research: ['shelters', 'carpentry'] },
     effects: { actionXp: { gather: 0.02, sticks: 0.02, stone: 0.02 } },
+    upgrade: {
+      maxLevel: 3,
+      requires: { research: ['toolmaking'] },
+      costMultiplier: 1.75,
+      timeMultiplier: 1.2,
+      effect:
+        'Automated gathering XP +1 percentage point per additional level.',
+      effects: { actionXp: { gather: 0.01, sticks: 0.01, stone: 0.01 } },
+    },
   },
   toolmaking: {
     name: 'Toolmaking',
@@ -90,5 +121,71 @@ export const research = {
     description: 'The bushes have a schedule, and we are finally catching on.',
     requires: { research: ['oral-tradition', 'toolmaking'] },
     effects: { actionAutomation: { gather: 0.03 } },
+    upgrade: {
+      maxLevel: 3,
+      requires: { research: ['agriculture'] },
+      costMultiplier: 1.75,
+      timeMultiplier: 1.2,
+      effect:
+        'Food gathering automation +1 percentage point per additional level.',
+      effects: { actionAutomation: { gather: 0.01 } },
+    },
+  },
+  woodcutting: {
+    name: 'Woodcutting',
+    cost: { wood: 12, food: 8 },
+    seconds: 12,
+    effect: '+15% wood gathering output.',
+    description:
+      'A branch is easier to find when everyone agrees what counts as useful.',
+    requires: { research: ['sharpened-stick'], discovery: 'wood' },
+    effects: { actionYield: { sticks: 0.15 } },
+    upgrade: {
+      maxLevel: 3,
+      requires: { research: ['sharpened-stick'] },
+      costMultiplier: 1.75,
+      timeMultiplier: 1.2,
+      effect: '+5% wood gathering output per additional level.',
+      effects: { actionYield: { sticks: 0.05 } },
+    },
+  },
+  stonecutting: {
+    name: 'Stonecutting',
+    cost: { wood: 18, stone: 24, food: 10 },
+    seconds: 20,
+    effect: '+15% stone gathering output.',
+    description:
+      'The first lesson is that not every rock is worth carrying home.',
+    requires: { research: ['stone-tools'], discovery: 'stone' },
+    effects: { actionYield: { stone: 0.15 } },
+    upgrade: {
+      maxLevel: 3,
+      requires: { research: ['stone-tools'] },
+      costMultiplier: 1.75,
+      timeMultiplier: 1.2,
+      effect: '+5% stone gathering output per additional level.',
+      effects: { actionYield: { stone: 0.05 } },
+    },
+  },
+  'field-practice': {
+    name: 'Field practice',
+    cost: { wood: 10, food: 20 },
+    seconds: 16,
+    effect: 'Automated action XP +3 percentage points.',
+    description: 'Repeated work turns sore hands into useful habits.',
+    requires: { research: ['sharpened-stick'] },
+    effects: {
+      actionXp: { gather: 0.03, sticks: 0.03, stone: 0.03, explore: 0.03 },
+    },
+    upgrade: {
+      maxLevel: 3,
+      requires: { research: ['sharpened-stick'] },
+      costMultiplier: 1.75,
+      timeMultiplier: 1.2,
+      effect: 'Automated action XP +1 percentage point per additional level.',
+      effects: {
+        actionXp: { gather: 0.01, sticks: 0.01, stone: 0.01, explore: 0.01 },
+      },
+    },
   },
 } satisfies Partial<Record<ResearchId, ResearchDefinition>>

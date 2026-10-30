@@ -45,6 +45,20 @@ export const research = {
       specialization: { sawyer: 1.4 },
       actionAutomation: { sticks: 0.05 },
     },
+    upgrade: {
+      maxLevel: 3,
+      requires: { research: ['mechanization'] },
+      costMultiplier: 1.75,
+      timeMultiplier: 1.2,
+      effect: [
+        'Plank workplace rates ×1.08 per additional level.',
+        'Wood gathering automation +1 percentage point per additional level.',
+      ],
+      effects: {
+        specialization: { sawyer: 1.08 },
+        actionAutomation: { sticks: 0.01 },
+      },
+    },
     branch: 'forestry',
     branchIdentity: 'Efficient crafting',
   },
@@ -60,6 +74,20 @@ export const research = {
       specialization: { mason: 1.4 },
       actionAutomation: { stone: 0.05 },
     },
+    upgrade: {
+      maxLevel: 3,
+      requires: { research: ['mechanization'] },
+      costMultiplier: 1.75,
+      timeMultiplier: 1.2,
+      effect: [
+        'Block workplace rates ×1.08 per additional level.',
+        'Stone gathering automation +1 percentage point per additional level.',
+      ],
+      effects: {
+        specialization: { mason: 1.08 },
+        actionAutomation: { stone: 0.01 },
+      },
+    },
     branch: 'stonecraft',
     branchIdentity: 'Room to grow',
   },
@@ -72,6 +100,17 @@ export const research = {
       'Measure carefully enough and even the offcuts start pulling their weight.',
     requires: { research: ['forestry'] },
     effects: { recipeReduction: { sawyer: { wood: 1 }, mason: { stone: 1 } } },
+    upgrade: {
+      maxLevel: 3,
+      requires: { research: ['mechanization'] },
+      costMultiplier: 1.75,
+      timeMultiplier: 1.2,
+      effect:
+        'Plank and block recipes use 0.5 fewer raw materials per additional level.',
+      effects: {
+        recipeReduction: { sawyer: { wood: 0.5 }, mason: { stone: 0.5 } },
+      },
+    },
   },
   architecture: {
     name: 'Architecture',
@@ -83,6 +122,17 @@ export const research = {
       'Put the walls in smarter places and invite a few more neighbors.',
     requires: { research: ['stonecraft'] },
     effects: { housing: 1.25, jobBonus: { mason: 0.5 } },
+    upgrade: {
+      maxLevel: 3,
+      requires: { research: ['mechanization'] },
+      costMultiplier: 1.75,
+      timeMultiplier: 1.2,
+      effect: [
+        'Housing contribution ×1.08 per additional level.',
+        'Block production technology bonus +0.10 per additional level.',
+      ],
+      effects: { housing: 1.08, jobBonus: { mason: 0.1 } },
+    },
   },
   'civic-engineering': {
     name: 'Civic engineering',

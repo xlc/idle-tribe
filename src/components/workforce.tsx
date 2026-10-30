@@ -17,12 +17,14 @@ export function Workforce({ session }: { session: GameSession }) {
     arrival = arrivalStatus(s),
     target = happinessTarget(s),
     capacity = housingCapacity(s),
+    unassigned = assigned(s, 'idle'),
     spaceMessage =
       capacity > s.people.length
         ? `${capacity - s.people.length} available space${capacity - s.people.length === 1 ? '' : 's'}`
         : capacity === s.people.length
           ? 'Housing full'
           : `${s.people.length - capacity} over housing capacity`
+  const populationLabel = `${s.people.length} ${s.people.length === 1 ? 'person' : 'people'} · ${unassigned} unassigned`
   return (
     <SectionDisclosure
       className="workforce-section"
@@ -32,15 +34,36 @@ export function Workforce({ session }: { session: GameSession }) {
           Population
         </>
       }
-      status={`${s.people.length} people · ${assigned(s, 'idle')} unassigned`}
+      status={populationLabel}
       ariaLabel="Population"
     >
-      <section className="workforce-bar" aria-label="Population">
-        <div>
-          <div className="happiness-status" data-visible={happinessUnlocked(s)}>
-            <span>
-              Happiness {formatResource(s.happiness)} · target{' '}
-              {formatResource(target)}
+      <section className="workforce-panel" aria-label="Population overview">
+        <div className="workforce-stat workforce-stat-primary">
+          <span className="workforce-stat-label">Population</span>
+          <strong className="workforce-stat-value">{s.people.length}</strong>
+          <span className="workforce-stat-caption">settlers in the roster</span>
+        </div>
+        <div className="workforce-stat">
+          <span className="workforce-stat-label">Housing</span>
+          <strong className="workforce-stat-value">
+            {s.people.length}
+            <span>/{capacity}</span>
+          </strong>
+          <span className="workforce-stat-caption">{spaceMessage}</span>
+        </div>
+        <div className="workforce-stat">
+          <span className="workforce-stat-label">Ready for work</span>
+          <strong className="workforce-stat-value">{unassigned}</strong>
+          <span className="workforce-stat-caption">unassigned</span>
+        </div>
+        {happinessUnlocked(s) && (
+          <div className="workforce-stat workforce-stat-happiness">
+            <span className="workforce-stat-label">Happiness</span>
+            <strong className="workforce-stat-value">
+              {formatResource(s.happiness)}
+            </strong>
+            <span className="workforce-stat-caption">
+              target {formatResource(target)}
             </span>
             <span className="status-meter happiness-meter">
               <meter
@@ -53,9 +76,14 @@ export function Workforce({ session }: { session: GameSession }) {
               <span className="meter-marker" style={{ left: `${target}%` }} />
             </span>
           </div>
-        </div>
+        )}
         <details className="arrival-details">
-          <summary>Arrivals & housing</summary>
+          <summary>
+            <span>Arrivals</span>
+            <span className="arrival-summary-status">
+              {s.welcome ? 'Welcome arrivals' : 'Paused'}
+            </span>
+          </summary>
           <p>
             {s.people.length}/{capacity} people · {spaceMessage}
           </p>

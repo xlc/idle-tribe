@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { BUILDINGS, EQUIPMENT, ERA_DEFINITIONS } from './definitions'
+import { BUILDINGS, EQUIPMENT, ERA_DEFINITIONS, RESEARCH } from './definitions'
 import type { EraDefinition } from './definitions/types'
 import {
   ACTION_IDS,
@@ -133,4 +133,15 @@ test('equipment tiers follow era order and their unlocking research', () => {
       expect(research.has(equipment.research)).toBe(false)
       research.add(equipment.research)
     }
+})
+
+test('repeatable research uses the standard rising-cost progression', () => {
+  for (const definition of Object.values(RESEARCH)) {
+    const upgrade = definition.upgrade
+    if (!upgrade) continue
+    expect(upgrade.maxLevel).toBeGreaterThan(1)
+    expect(upgrade.costMultiplier).toBe(1.75)
+    expect(upgrade.timeMultiplier).toBe(1.2)
+    expect(Object.keys(upgrade.effects)).not.toHaveLength(0)
+  }
 })

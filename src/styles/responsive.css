@@ -169,12 +169,6 @@
     flex-basis: 100%;
     font-size: 12px;
   }
-  .arrival-details {
-    max-width: 138px;
-  }
-  .arrival-details summary {
-    white-space: normal;
-  }
   .away-summary {
     flex-wrap: wrap;
     gap: 6px 12px;

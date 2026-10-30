@@ -109,6 +109,9 @@ export const RESEARCH_IDS = [
   'causal-synthesis',
   'ceramic-craft',
   'public-health',
+  'woodcutting',
+  'stonecutting',
+  'field-practice',
 ] as const
 export const JOB_IDS = [
   'idle',

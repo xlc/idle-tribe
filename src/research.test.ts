@@ -1,4 +1,5 @@
 import { expect, test } from 'bun:test'
+import { actionYield, xpFactor } from './actions'
 import { RESEARCH } from './definitions'
 import { parseSave } from './persistence'
 import {
@@ -90,6 +91,91 @@ test('research prerequisites stay hidden until the prerequisite completes', () =
 
   completeProject(state, { kind: 'research', id: 'sharpened-stick' })
   expect(researchVisible(state, 'shelters')).toBe(true)
+})
+
+test('early gathering research improves the matching output and action XP', () => {
+  const state = createDefaultState()
+  state.discovered = { wood: true, stone: true }
+  state.researchUnlocked = true
+
+  expect(researchVisible(state, 'woodcutting')).toBe(false)
+  expect(researchVisible(state, 'field-practice')).toBe(false)
+  completeProject(state, { kind: 'research', id: 'sharpened-stick' })
+  expect(researchVisible(state, 'woodcutting')).toBe(true)
+  expect(researchVisible(state, 'field-practice')).toBe(true)
+  expect(researchVisible(state, 'stonecutting')).toBe(false)
+
+  const woodBefore = actionYield(state, 'sticks')
+  const xpBefore = xpFactor(state, 'sticks')
+  completeProject(state, { kind: 'research', id: 'woodcutting' })
+  completeProject(state, { kind: 'research', id: 'field-practice' })
+  expect(actionYield(state, 'sticks')).toBeCloseTo(woodBefore * 1.15)
+  expect(xpFactor(state, 'sticks')).toBeCloseTo(xpBefore + 0.03)
+
+  expect(researchUpgradeVisible(state, 'woodcutting')).toBe(true)
+  expect(researchUpgradeVisible(state, 'field-practice')).toBe(true)
+  completeProject(state, {
+    kind: 'research',
+    id: 'woodcutting',
+    target: 2,
+  })
+  completeProject(state, {
+    kind: 'research',
+    id: 'field-practice',
+    target: 2,
+  })
+  expect(actionYield(state, 'sticks')).toBeCloseTo(woodBefore * 1.2)
+  expect(xpFactor(state, 'sticks')).toBeCloseTo(xpBefore + 0.04)
+
+  completeProject(state, { kind: 'research', id: 'stone-tools' })
+  expect(researchVisible(state, 'stonecutting')).toBe(true)
+  const stoneBefore = actionYield(state, 'stone')
+  completeProject(state, { kind: 'research', id: 'stonecutting' })
+  expect(actionYield(state, 'stone')).toBeCloseTo(stoneBefore * 1.15)
+  expect(researchUpgradeVisible(state, 'stonecutting')).toBe(true)
+  completeProject(state, {
+    kind: 'research',
+    id: 'stonecutting',
+    target: 2,
+  })
+  expect(actionYield(state, 'stone')).toBeCloseTo(stoneBefore * 1.2)
+})
+
+test('reusable research effects follow the same gated level progression', () => {
+  const state = createDefaultState()
+
+  state.research['sharpened-stick'] = 1
+  expect(researchUpgradeVisible(state, 'sharpened-stick')).toBe(false)
+  state.research.shelters = 1
+  expect(researchUpgradeVisible(state, 'sharpened-stick')).toBe(true)
+  completeProject(state, {
+    kind: 'research',
+    id: 'sharpened-stick',
+    target: 3,
+  })
+  expect(researchEffects(state, 'sharpened-stick')).toMatchObject({
+    actionYield: { gather: 0.35 },
+    actionAutomation: { gather: 0.04 },
+  })
+
+  state.research.masonry = 1
+  state.research.carpentry = 1
+  completeProject(state, { kind: 'research', id: 'masonry', target: 3 })
+  expect(researchEffects(state, 'masonry').crew).toBe(3)
+
+  state.research.forestry = 1
+  state.research.mechanization = 1
+  completeProject(state, { kind: 'research', id: 'forestry', target: 2 })
+  const forestryEffects = researchEffects(state, 'forestry')
+  expect(forestryEffects.specialization?.sawyer).toBeCloseTo(1.512)
+  expect(forestryEffects.actionAutomation?.sticks).toBeCloseTo(0.06)
+
+  state.research.joinery = 1
+  completeProject(state, { kind: 'research', id: 'joinery', target: 3 })
+  expect(researchEffects(state, 'joinery').recipeReduction).toEqual({
+    sawyer: { wood: 2 },
+    mason: { stone: 2 },
+  })
 })
 
 test('the research queue unlocks with a library', () => {
