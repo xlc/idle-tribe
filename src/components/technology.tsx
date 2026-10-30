@@ -225,11 +225,6 @@ export function Technology({ session, confirm }: ViewProps) {
   const entries = allEntries(s).filter(
     (entry) => entry.project.kind === 'research',
   )
-  const active = s.queues.research.active
-  const activeName =
-    active?.project.kind === 'research'
-      ? RESEARCH[active.project.id].name
-      : null
   const queuedUpgradeIds = RESEARCH_IDS.filter(
     (id) => queuedResearchTarget(entries, id, s.research[id]) !== null,
   )
@@ -241,13 +236,6 @@ export function Technology({ session, confirm }: ViewProps) {
           <ViewIcon name="research" />
           Technology
         </>
-      }
-      status={
-        activeName
-          ? `Researching ${activeName}`
-          : s.queues.research.waiting.length
-            ? `${s.queues.research.waiting.length} queued`
-            : 'Choose your next advance'
       }
       ariaLabel="Technology"
     >
