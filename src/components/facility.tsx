@@ -22,7 +22,7 @@ import {
   previewProject,
   researchPlan,
 } from '../research'
-import { storageCapacity } from '../resources'
+import { canAfford, storageCapacity } from '../resources'
 import {
   assigned,
   equipmentMultiplier,
@@ -34,7 +34,7 @@ import {
 import { resourceRates } from '../simulation'
 import type { BuildingId, GameState, Project } from '../types'
 import { BuildingArt } from './art'
-import { Button, Costs, type ViewProps } from './common'
+import { Button, CostProgress, Costs, type ViewProps } from './common'
 import { WorkerControls } from './worker-controls'
 
 function InvestmentChange({
@@ -114,6 +114,7 @@ export function Facility({
       ? `Expand to level ${expansion.target}`
       : 'Upgrade workplace'
     : `Build ${form.name}`
+  const missingBuildCost = !canAfford(s, quote.cost)
   const equipment = nextEquipment(s, id),
     equipmentQuote = previewProject(s, equipment)
   const remove = () => {
@@ -173,6 +174,9 @@ export function Facility({
       <article
         className="building-card"
         data-built={f.level > 0}
+        data-action-state={
+          missingBuildCost ? 'missing-cost' : blocked ? 'blocked' : undefined
+        }
         aria-label={form.name}
       >
         <div className="facility-overview">
@@ -363,6 +367,9 @@ export function Facility({
             </Button>
           </div>
         </details>
+        {missingBuildCost && (
+          <CostProgress session={session} cost={quote.cost} compact />
+        )}
       </article>
     </Card>
   )

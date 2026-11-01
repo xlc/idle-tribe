@@ -71,8 +71,17 @@
 }
 .building-card,
 .tech-card {
+  position: relative;
   padding: 14px;
   min-width: 0;
+}
+.building-card[data-action-state="blocked"] {
+  border-color: var(--color-warning);
+  box-shadow: 0 0 0 1px var(--color-warning);
+}
+.building-card[data-action-state="missing-cost"] {
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 1px var(--color-error);
 }
 .building-card[data-built="false"] {
   background: color-mix(in srgb, var(--color-base-100) 70%, transparent);
@@ -329,6 +338,9 @@
 }
 .builders h3 {
   font-size: 18px;
+}
+.building-card[data-action-state="missing-cost"] h3 {
+  color: var(--color-error);
 }
 .builders p {
   font-size: 12px;
