@@ -104,6 +104,42 @@ export function ProgressBar({
     />
   )
 }
+export function CostProgress({
+  session,
+  cost,
+  compact = false,
+}: {
+  session: GameSession
+  cost: Cost
+  compact?: boolean
+}) {
+  const requiredResources = RESOURCES.filter((r) => (cost[r] ?? 0) > 0)
+  if (!requiredResources.length) return null
+  const progress = Math.min(
+    ...requiredResources.map((resource) =>
+      Math.min(
+        1,
+        Math.max(0, session.game.state.resources[resource]) /
+          (cost[resource] ?? 1),
+      ),
+    ),
+  )
+  return (
+    <span className={`cost-progress${compact ? ' cost-progress-compact' : ''}`}>
+      <ProgressBar
+        value={progress}
+        max={1}
+        label="Resources available"
+        color={progress < 1 ? 'red' : 'grass'}
+      />
+      <small>
+        {compact
+          ? `${Math.round(progress * 100)}%`
+          : `${Math.round(progress * 100)}% materials ready`}
+      </small>
+    </span>
+  )
+}
 export function ActionCountdown({
   session,
   duration,
@@ -256,17 +292,6 @@ export function Costs({
 }) {
   const Tag = inline ? 'span' : 'p'
   const requiredResources = RESOURCES.filter((r) => (cost[r] ?? 0) > 0)
-  const progress = requiredResources.length
-    ? Math.min(
-        ...requiredResources.map((resource) =>
-          Math.min(
-            1,
-            Math.max(0, session.game.state.resources[resource]) /
-              (cost[resource] ?? 1),
-          ),
-        ),
-      )
-    : 1
   return (
     <>
       <Tag
@@ -285,10 +310,7 @@ export function Costs({
         })}
       </Tag>
       {showProgress && requiredResources.length > 0 && (
-        <span className="cost-progress">
-          <ProgressBar value={progress} max={1} label="Resources available" />
-          <small>{Math.round(progress * 100)}% materials ready</small>
-        </span>
+        <CostProgress session={session} cost={cost} />
       )}
     </>
   )

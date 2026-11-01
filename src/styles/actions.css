@@ -142,6 +142,10 @@
 .action-status-ready {
   color: var(--color-primary);
 }
+.action-status-unavailable {
+  color: var(--color-error);
+  font-weight: 600;
+}
 .action-explore-summary {
   display: grid;
   gap: 2px;
@@ -157,10 +161,17 @@
   opacity: 0.78;
 }
 .manual-action[data-action-state="blocked"],
-.manual-action[data-action-state="missing-cost"],
 .manual-action[data-action-state="paused"] {
   border-color: var(--color-warning);
   box-shadow: 0 0 0 1px var(--color-warning);
+}
+.manual-action[data-action-state="missing-cost"] {
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 1px var(--color-error);
+}
+.manual-action[data-action-state="blocked"] .action-status-unavailable,
+.manual-action[data-action-state="paused"] .action-status-unavailable {
+  color: var(--color-warning);
 }
 .action-worker-slot[data-visible="false"] {
   display: none;
@@ -204,6 +215,9 @@
 .exploration-action .action-explore-summary {
   font-family: inherit;
   font-style: normal;
+}
+.manual-action[data-action-state="missing-cost"] .action-name {
+  color: var(--color-error);
 }
 .action-level {
   border-radius: 3px;
@@ -261,6 +275,24 @@
 }
 .cost-progress :where(.rt-ProgressRoot) {
   min-width: 100px;
+}
+.cost-progress-compact {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  display: block;
+  max-width: none;
+  height: 4px;
+  pointer-events: none;
+}
+.cost-progress-compact :where(.rt-ProgressRoot) {
+  width: 100%;
+  height: 4px;
+}
+.cost-progress-compact :where(small) {
+  display: none;
 }
 .discoveries {
   margin: 16px 0;

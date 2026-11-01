@@ -17,6 +17,7 @@ import {
   ActionCountdown,
   ActionProgress,
   Button,
+  CostProgress,
   Costs,
   DisclosureToggle,
   SectionDisclosure,
@@ -115,6 +116,19 @@ function ResearchCard({
     canStart = status === 'ready',
     canQueue =
       queueUnlocked && !activeResearch && !queued && !blocked && needsQueue
+  const missingCost = status === 'missing-cost'
+  const statusNote =
+    status === 'blocked' || missingCost ? (
+      <span className="action-status action-status-unavailable">
+        {missingCost ? (
+          <>
+            Needs <Costs session={session} cost={quote.cost} inline />
+          </>
+        ) : (
+          quote.blocker || 'Waiting for the research queue'
+        )}
+      </span>
+    ) : null
   const cancelResearch = () => {
     if (!activeResearch) return
     const run = () => session.game.cancel('research', activeResearch.sequence)
@@ -173,6 +187,7 @@ function ResearchCard({
                   <span className="action-level">Level {target}</span>
                 </span>
               )}
+              {statusNote}
               <span className="action-yield">
                 {formatDuration(quote.total)}
               </span>
@@ -235,6 +250,9 @@ function ResearchCard({
             label={`${def.name} details`}
             onToggle={() => setExpanded((value) => !value)}
           />
+          {missingCost && (
+            <CostProgress session={session} cost={quote.cost} compact />
+          )}
         </div>
         {expanded && (
           <div className="action-details" id={`${id}-details`}>

@@ -25,6 +25,7 @@ import {
   ActionProgress,
   Button,
   type Confirm,
+  CostProgress,
   Costs,
   DisclosureToggle,
 } from './common'
@@ -128,6 +129,24 @@ export function ActionCard({
     availability.kind === 'automated' &&
     availability.state === 'active' &&
     actionJobActive(s, id)
+  const costBlocked =
+    availability.kind !== 'locked' &&
+    Object.keys(availability.missing).length > 0
+  const availabilityNote =
+    availability.kind !== 'locked' &&
+    availability.state !== 'active' &&
+    availability.state !== 'ready' &&
+    availability.state !== 'running' ? (
+      <span className="action-status action-status-unavailable">
+        {costBlocked ? (
+          <>
+            Needs <Costs session={session} cost={def.cost} inline />
+          </>
+        ) : (
+          availability.reason
+        )}
+      </span>
+    ) : null
   const stop = () => {
     if (!active) return
     const run = () => session.game.cancelAction()
@@ -174,6 +193,7 @@ export function ActionCard({
                   xp={skill.xp}
                   requiredXp={actionRequiredXp(s, id)}
                 />
+                {availabilityNote}
                 {def.kind === 'exploration' && (
                   <ExploreSummary state={s} automated working={working} />
                 )}
@@ -228,6 +248,7 @@ export function ActionCard({
                   xp={skill.xp}
                   requiredXp={actionRequiredXp(s, id)}
                 />
+                {availabilityNote}
                 {def.kind === 'exploration' && (
                   <ExploreSummary state={s} automated={false} working={false} />
                 )}
@@ -268,6 +289,9 @@ export function ActionCard({
             label={`${def.name} details`}
             onToggle={() => setExpanded((value) => !value)}
           />
+          {costBlocked && (
+            <CostProgress session={session} cost={def.cost} compact />
+          )}
         </div>
         {expanded && (
           <div className="action-details" id={`${id}-details`}>
