@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { actionYield, xpFactor } from './actions'
+import { actionDuration, actionYield, xpFactor } from './actions'
 import { RESEARCH } from './definitions'
 import { parseSave } from './persistence'
 import {
@@ -102,6 +102,8 @@ test('early gathering research improves the matching output and action XP', () =
   expect(researchVisible(state, 'field-practice')).toBe(false)
   completeProject(state, { kind: 'research', id: 'sharpened-stick' })
   expect(researchVisible(state, 'woodcutting')).toBe(true)
+  expect(researchVisible(state, 'field-practice')).toBe(false)
+  completeProject(state, { kind: 'research', id: 'shelters' })
   expect(researchVisible(state, 'field-practice')).toBe(true)
   expect(researchVisible(state, 'stonecutting')).toBe(false)
 
@@ -126,6 +128,7 @@ test('early gathering research improves the matching output and action XP', () =
   })
   expect(actionYield(state, 'sticks')).toBeCloseTo(woodBefore * 1.2)
   expect(xpFactor(state, 'sticks')).toBeCloseTo(xpBefore + 0.04)
+  expect(actionDuration(state, 'sticks')).toBeCloseTo(2 * 0.95)
 
   completeProject(state, { kind: 'research', id: 'stone-tools' })
   expect(researchVisible(state, 'stonecutting')).toBe(true)

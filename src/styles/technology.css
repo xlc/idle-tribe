@@ -45,6 +45,11 @@
   border-color: var(--color-accent);
   box-shadow: 0 0 0 1px var(--color-accent);
 }
+.research-card[data-action-state="blocked"],
+.research-card[data-action-state="missing-cost"] {
+  border-color: var(--color-warning);
+  box-shadow: 0 0 0 1px var(--color-warning);
+}
 .research-card .project-progress small {
   color: var(--color-neutral);
 }

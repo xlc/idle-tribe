@@ -190,11 +190,16 @@ export function actionYield(state: GameState, id: ActionId) {
         bonus
     : 0
 }
-// Skill-adjusted cadence. Storage caps output; it does not change cadence.
+// Skill- and research-adjusted cadence. Storage caps output; it does not change cadence.
 export function baseActionDuration(state: GameState, id: ActionId) {
+  let researchMultiplier = 1
+  for (const r of RESEARCH_IDS)
+    if (hasResearch(state, r))
+      researchMultiplier += researchEffects(state, r).actionDuration?.[id] ?? 0
   return (
     ACTIONS[id].seconds *
-    ACTION_BALANCE.durationPerLevel ** (state.actionSkills[id].level - 1)
+    ACTION_BALANCE.durationPerLevel ** (state.actionSkills[id].level - 1) *
+    Math.max(0.25, researchMultiplier)
   )
 }
 // Duration of one completion by a single worker at the current skill level.

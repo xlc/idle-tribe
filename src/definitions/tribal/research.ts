@@ -30,7 +30,7 @@ export const research = {
   },
   shelters: {
     name: 'Shelters',
-    cost: { wood: 15, food: 10 },
+    cost: { wood: 15, stone: 5, food: 10 },
     seconds: 15,
     effect:
       'Unlock housing, camps, basic storage, immigration; grant first Foraging camp.',
@@ -173,18 +173,25 @@ export const research = {
     seconds: 16,
     effect: 'Automated action XP +3 percentage points.',
     description: 'Repeated work turns sore hands into useful habits.',
-    requires: { research: ['sharpened-stick'] },
+    requires: { research: ['shelters'] },
     effects: {
       actionXp: { gather: 0.03, sticks: 0.03, stone: 0.03, explore: 0.03 },
     },
     upgrade: {
       maxLevel: 3,
-      requires: { research: ['sharpened-stick'] },
+      requires: { research: ['shelters'] },
       costMultiplier: 1.75,
       timeMultiplier: 1.2,
-      effect: 'Automated action XP +1 percentage point per additional level.',
+      effect:
+        'Automated action XP +1 percentage point and action time -5% per additional level.',
       effects: {
         actionXp: { gather: 0.01, sticks: 0.01, stone: 0.01, explore: 0.01 },
+        actionDuration: {
+          gather: -0.05,
+          sticks: -0.05,
+          stone: -0.05,
+          explore: -0.05,
+        },
       },
     },
   },

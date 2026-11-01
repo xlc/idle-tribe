@@ -158,10 +158,7 @@ function ResearchCard({
               <ViewIcon name="research" />
             </span>
             <span className="action-copy">
-              <strong className="action-name">
-                {def.name}
-                {target > 1 ? ` · level ${target}` : ''}
-              </strong>
+              <strong className="action-name">{def.name}</strong>
               <span className="action-yield research-effect">
                 {effectRows(target > 1 ? def.upgrade?.effect : def.effect).map(
                   (effect) => (
@@ -171,8 +168,12 @@ function ResearchCard({
                   ),
                 )}
               </span>
+              {target > 1 && (
+                <span className="action-skill research-level">
+                  <span className="action-level">Level {target}</span>
+                </span>
+              )}
               <span className="action-yield">
-                <Costs session={session} cost={quote.cost} inline /> ·{' '}
                 {formatDuration(quote.total)}
               </span>
             </span>
@@ -241,6 +242,7 @@ function ResearchCard({
             {def.branchIdentity && (
               <p className="branch-identity">{def.branchIdentity}</p>
             )}
+            <Costs session={session} cost={quote.cost} vertical showProgress />
             <p className="requirement" data-visible={Boolean(quote.blocker)}>
               {quote.blocker || '\u00a0'}
             </p>
@@ -256,14 +258,13 @@ export function Technology({ session, confirm }: ViewProps) {
   const entries = allEntries(s).filter(
     (entry) => entry.project.kind === 'research',
   )
-  const queuedUpgradeIds = new Set(
-    RESEARCH_IDS.filter(
-      (id) => queuedResearchTarget(entries, id, s.research[id]) !== null,
-    ),
-  )
-  const upgradeIds = RESEARCH_IDS.filter(
-    (id) => researchUpgradeVisible(s, id) || queuedUpgradeIds.has(id),
-  )
+  const researchEntries = RESEARCH_IDS.flatMap((id) => {
+    if (researchVisible(s, id)) return [{ id, target: 1 }]
+    const target =
+      queuedResearchTarget(entries, id, s.research[id]) ??
+      (researchUpgradeVisible(s, id) ? s.research[id] + 1 : null)
+    return target ? [{ id, target }] : []
+  })
   return (
     <SectionDisclosure
       className="technology-panel"
@@ -277,35 +278,17 @@ export function Technology({ session, confirm }: ViewProps) {
     >
       <section className="tech-section">
         <div className="tech-grid research-list">
-          {RESEARCH_IDS.filter((id) => researchVisible(s, id)).map((id) => (
+          {researchEntries.map(({ id, target }) => (
             <ResearchCard
-              key={id}
+              key={`${id}-${target}`}
               session={session}
               confirm={confirm}
               id={id}
+              target={target}
             />
           ))}
         </div>
       </section>
-      {upgradeIds.length > 0 && (
-        <section className="tech-section">
-          <h2>Research upgrades</h2>
-          <div className="tech-grid research-list">
-            {upgradeIds.map((id) => (
-              <ResearchCard
-                key={`${id}-upgrade`}
-                session={session}
-                confirm={confirm}
-                id={id}
-                target={
-                  queuedResearchTarget(entries, id, s.research[id]) ??
-                  s.research[id] + 1
-                }
-              />
-            ))}
-          </div>
-        </section>
-      )}
       <details>
         <summary>
           Completed research ·{' '}

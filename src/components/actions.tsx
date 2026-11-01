@@ -217,13 +217,9 @@ export function ActionCard({
               <span className="action-copy">
                 <strong className="action-name">{def.name}</strong>
                 <span className="action-yield">
-                  {def.resource ? (
-                    `+${formatResource(actionYield(s, id))} ${def.resource} · `
-                  ) : (
-                    <>
-                      <Costs session={session} cost={def.cost} inline /> ·{' '}
-                    </>
-                  )}
+                  {def.resource
+                    ? `+${formatResource(actionYield(s, id))} ${def.resource} · `
+                    : null}
                   {formatResource(duration)}s
                   {slots > 0 ? ` · ${slots} slot${slots === 1 ? '' : 's'}` : ''}
                 </span>
@@ -290,6 +286,9 @@ export function ActionCard({
                 </div>
               )}
             <p className="action-description">{def.description}</p>
+            {Object.keys(def.cost).length > 0 && (
+              <Costs session={session} cost={def.cost} vertical showProgress />
+            )}
             <p className="action-skill-rules">
               {LEVEL_EFFECT_LABEL} {def.levelEffect}
             </p>

@@ -67,6 +67,14 @@ test('the opening discovers resources and grants a camp without assigning worker
     startAction(s, 'gather')
     advanceTime(s, 1, true)
   }
+  while (!s.discovered.stone) {
+    expect(startAction(s, 'explore')).toBe(true)
+    advanceTime(s, 4, true)
+  }
+  while (s.resources.stone < 5) {
+    expect(startAction(s, 'stone')).toBe(true)
+    advanceTime(s, 3, true)
+  }
   enqueue(s, { kind: 'research', id: 'sharpened-stick' })
   enqueue(s, { kind: 'research', id: 'shelters' })
   advanceTime(s, 180)

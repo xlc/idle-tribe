@@ -156,6 +156,12 @@
 .manual-action[data-action-state="locked"] {
   opacity: 0.78;
 }
+.manual-action[data-action-state="blocked"],
+.manual-action[data-action-state="missing-cost"],
+.manual-action[data-action-state="paused"] {
+  border-color: var(--color-warning);
+  box-shadow: 0 0 0 1px var(--color-warning);
+}
 .action-worker-slot[data-visible="false"] {
   display: none;
 }
@@ -237,6 +243,24 @@
 }
 .manual-action .costs {
   min-height: 0;
+}
+.costs-vertical {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  margin: 0;
+}
+.cost-progress {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  max-width: 240px;
+  color: var(--color-neutral);
+  font-size: 11px;
+}
+.cost-progress :where(.rt-ProgressRoot) {
+  min-width: 100px;
 }
 .discoveries {
   margin: 16px 0;

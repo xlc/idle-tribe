@@ -245,25 +245,51 @@ export function Costs({
   session,
   cost,
   inline = false,
+  vertical = false,
+  showProgress = false,
 }: {
   session: GameSession
   cost: Cost
   inline?: boolean
+  vertical?: boolean
+  showProgress?: boolean
 }) {
   const Tag = inline ? 'span' : 'p'
+  const requiredResources = RESOURCES.filter((r) => (cost[r] ?? 0) > 0)
+  const progress = requiredResources.length
+    ? Math.min(
+        ...requiredResources.map((resource) =>
+          Math.min(
+            1,
+            Math.max(0, session.game.state.resources[resource]) /
+              (cost[resource] ?? 1),
+          ),
+        ),
+      )
+    : 1
   return (
-    <Tag className={`costs${inline ? ' costs-inline' : ''}`}>
-      {RESOURCES.filter((r) => cost[r]).map((r) => {
-        const available = session.game.state.resources[r]
-        const required = cost[r] ?? 0
-        const enough = available + EPSILON >= required
-        return (
-          <span key={r} className={enough ? 'cost-enough' : 'cost-missing'}>
-            {enough ? '' : `${formatResource(available)}/`}
-            {formatResource(required)} {RESOURCE_INFO[r].name.toLowerCase()}
-          </span>
-        )
-      })}
-    </Tag>
+    <>
+      <Tag
+        className={`costs${inline ? ' costs-inline' : ''}${vertical ? ' costs-vertical' : ''}`}
+      >
+        {requiredResources.map((r) => {
+          const available = session.game.state.resources[r]
+          const required = cost[r] ?? 0
+          const enough = available + EPSILON >= required
+          return (
+            <span key={r} className={enough ? 'cost-enough' : 'cost-missing'}>
+              {enough ? '' : `${formatResource(available)}/`}
+              {formatResource(required)} {RESOURCE_INFO[r].name.toLowerCase()}
+            </span>
+          )
+        })}
+      </Tag>
+      {showProgress && requiredResources.length > 0 && (
+        <span className="cost-progress">
+          <ProgressBar value={progress} max={1} label="Resources available" />
+          <small>{Math.round(progress * 100)}% materials ready</small>
+        </span>
+      )}
+    </>
   )
 }

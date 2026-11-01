@@ -109,6 +109,7 @@ export interface Effects {
   recipeMultiplier?: Partial<Record<JobId, number>>
   recipeReduction?: Partial<Record<JobId, Cost>>
   actionAutomation?: ActionBonus
+  actionDuration?: ActionBonus
   actionXp?: ActionBonus
   actionYield?: ActionBonus
   storage?: number

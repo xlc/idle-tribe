@@ -95,6 +95,12 @@ export function researchEffects(
       extra.actionAutomation,
       extraLevels,
     )
+  if (base.actionDuration || extra.actionDuration)
+    result.actionDuration = addMap<ActionId>(
+      base.actionDuration,
+      extra.actionDuration,
+      extraLevels,
+    )
   if (base.actionXp || extra.actionXp)
     result.actionXp = addMap<ActionId>(
       base.actionXp,
