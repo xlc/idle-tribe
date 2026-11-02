@@ -2,7 +2,6 @@
   .view-tabs {
     order: -1;
     border-top: 0;
-    margin-bottom: 16px;
   }
   .view-tabs .rt-TabsTrigger {
     flex: 0 0 auto;
@@ -33,11 +32,11 @@
     padding-bottom: 12px;
   }
   .game-layout {
-    gap: 10px;
+    gap: 4px;
   }
   .stockpile {
     flex-wrap: nowrap;
-    padding: 7px 0;
+    padding: 4px 0;
     overflow-x: auto;
     touch-action: pan-x;
     overscroll-behavior: none;

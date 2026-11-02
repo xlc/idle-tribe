@@ -124,7 +124,7 @@ export function actionAvailability(
       kind: 'manual',
       state: 'blocked',
       missing: {},
-      reason: `Finish ${ACTIONS[state.manual.id].name} first`,
+      reason: '',
     }
   }
 
@@ -142,7 +142,7 @@ export function actionAvailability(
         kind: 'manual',
         state: 'missing-cost',
         missing,
-        reason: 'Needs more resources',
+        reason: '',
       }
     : {
         kind: 'manual',

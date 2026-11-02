@@ -8,6 +8,9 @@ runtime commands. Keep this project a small, playable proof of concept.
 - Make each feature improve choice, feedback, discovery, pacing, or atmosphere.
 - Prefer concise, discoverable game feedback over tutorials, walkthroughs, or
   repeated instructions. Do not babysit the player.
+- Render each UI element and status message once. Avoid duplicate controls,
+  labels, badges, or feedback for the same state; consolidate shared content
+  instead of mirroring it across components.
 - Keep resources, costs, upkeep, bottlenecks, and irreversible choices legible.
 - Balance active and idle play. Avoid dominant strategies, arbitrary hard caps,
   and empty waits; use rising costs, diminishing returns, and meaningful sinks.
@@ -15,15 +18,13 @@ runtime commands. Keep this project a small, playable proof of concept.
 
 ## Implementation
 
-- Inspect the working tree before editing and keep changes focused.
 - Prefer existing, high-quality component primitives from the project’s UI
   libraries over bespoke controls and custom CSS. Before building a new
   component or styling pattern, check whether an accessible, composable
   component already provides the behavior; add custom styling only for
   game-specific layout or presentation that the existing components cannot
   express.
-- Treat `biome.json`, `tsconfig.json`, and `.editorconfig` as the sources of
-  truth for code style and compiler rules.
+- biome is used as linter & formatter. use `bun lint:fix` to fix format instead of manual fix.
 - Keep game rules independent of React, the DOM, browser APIs, and globals.
   Pass time, randomness, and other dependencies explicitly so rules stay easy
   to test.
@@ -62,8 +63,5 @@ runtime commands. Keep this project a small, playable proof of concept.
   ```sh
   bun run lint
   bun run typecheck
-  bun test ./src ./scripts
-  bun run build
+  bun test
   ```
-
-- Report what changed, what passed, and any checks that could not run.

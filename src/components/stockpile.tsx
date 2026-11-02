@@ -58,11 +58,6 @@ export function Stockpile({ session }: { session: GameSession }) {
       >
         <ResourceArt resource={r} />
         <span className="resource-name">{RESOURCE_INFO[r].name}</span>
-        {warning && (
-          <span className="resource-warning-marker" aria-hidden="true">
-            !
-          </span>
-        )}
         <strong className="resource-value" data-full={full}>
           {formatCompactResource(s.resources[r])} /{' '}
           {formatCompactResource(capacity)}

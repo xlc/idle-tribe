@@ -35,6 +35,3 @@
 .cost-enough {
   color: var(--color-neutral);
 }
-.cost-progress small {
-  white-space: nowrap;
-}

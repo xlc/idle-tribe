@@ -23,7 +23,7 @@
   grid-template-rows: auto minmax(0, 1fr);
   flex: 1;
   min-height: 0;
-  gap: 12px;
+  gap: 4px;
 }
 .game-content {
   position: relative;

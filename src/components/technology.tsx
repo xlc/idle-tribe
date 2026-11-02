@@ -17,7 +17,6 @@ import {
   ActionCountdown,
   ActionProgress,
   Button,
-  CostProgress,
   Costs,
   DisclosureToggle,
   SectionDisclosure,
@@ -116,17 +115,10 @@ function ResearchCard({
     canStart = status === 'ready',
     canQueue =
       queueUnlocked && !activeResearch && !queued && !blocked && needsQueue
-  const missingCost = status === 'missing-cost'
   const statusNote =
-    status === 'blocked' || missingCost ? (
+    status === 'blocked' ? (
       <span className="action-status action-status-unavailable">
-        {missingCost ? (
-          <>
-            Needs <Costs session={session} cost={quote.cost} inline />
-          </>
-        ) : (
-          quote.blocker || 'Waiting for the research queue'
-        )}
+        {quote.blocker || 'Waiting for the research queue'}
       </span>
     ) : null
   const cancelResearch = () => {
@@ -250,9 +242,6 @@ function ResearchCard({
             label={`${def.name} details`}
             onToggle={() => setExpanded((value) => !value)}
           />
-          {missingCost && (
-            <CostProgress session={session} cost={quote.cost} compact />
-          )}
         </div>
         {expanded && (
           <div className="action-details" id={`${id}-details`}>
@@ -260,7 +249,7 @@ function ResearchCard({
             {def.branchIdentity && (
               <p className="branch-identity">{def.branchIdentity}</p>
             )}
-            <Costs session={session} cost={quote.cost} vertical showProgress />
+            <Costs session={session} cost={quote.cost} vertical />
             <p className="requirement" data-visible={Boolean(quote.blocker)}>
               {quote.blocker || '\u00a0'}
             </p>

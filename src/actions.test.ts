@@ -54,12 +54,14 @@ test('action availability reports discovery, cost and active-work blockers', () 
     kind: 'manual',
     state: 'missing-cost',
     missing: { food: 6 },
+    reason: '',
   })
   state.resources.food = 6
   expect(startAction(state, 'gather')).toBe(true)
   expect(actionAvailability(state, 'explore')).toMatchObject({
     kind: 'manual',
     state: 'blocked',
+    reason: '',
   })
   expect(actionAvailability(state, 'gather')).toMatchObject({
     kind: 'manual',

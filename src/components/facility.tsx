@@ -34,7 +34,7 @@ import {
 import { resourceRates } from '../simulation'
 import type { BuildingId, GameState, Project } from '../types'
 import { BuildingArt } from './art'
-import { Button, CostProgress, Costs, type ViewProps } from './common'
+import { Button, Costs, type ViewProps } from './common'
 import { WorkerControls } from './worker-controls'
 
 function InvestmentChange({
@@ -367,9 +367,6 @@ export function Facility({
             </Button>
           </div>
         </details>
-        {missingBuildCost && (
-          <CostProgress session={session} cost={quote.cost} compact />
-        )}
       </article>
     </Card>
   )

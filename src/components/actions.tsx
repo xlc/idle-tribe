@@ -25,7 +25,6 @@ import {
   ActionProgress,
   Button,
   type Confirm,
-  CostProgress,
   Costs,
   DisclosureToggle,
 } from './common'
@@ -129,22 +128,15 @@ export function ActionCard({
     availability.kind === 'automated' &&
     availability.state === 'active' &&
     actionJobActive(s, id)
-  const costBlocked =
-    availability.kind !== 'locked' &&
-    Object.keys(availability.missing).length > 0
   const availabilityNote =
     availability.kind !== 'locked' &&
     availability.state !== 'active' &&
     availability.state !== 'ready' &&
-    availability.state !== 'running' ? (
+    availability.state !== 'running' &&
+    availability.state !== 'missing-cost' &&
+    availability.reason ? (
       <span className="action-status action-status-unavailable">
-        {costBlocked ? (
-          <>
-            Needs <Costs session={session} cost={def.cost} inline />
-          </>
-        ) : (
-          availability.reason
-        )}
+        {availability.reason}
       </span>
     ) : null
   const stop = () => {
@@ -289,9 +281,6 @@ export function ActionCard({
             label={`${def.name} details`}
             onToggle={() => setExpanded((value) => !value)}
           />
-          {costBlocked && (
-            <CostProgress session={session} cost={def.cost} compact />
-          )}
         </div>
         {expanded && (
           <div className="action-details" id={`${id}-details`}>
@@ -311,7 +300,7 @@ export function ActionCard({
               )}
             <p className="action-description">{def.description}</p>
             {Object.keys(def.cost).length > 0 && (
-              <Costs session={session} cost={def.cost} vertical showProgress />
+              <Costs session={session} cost={def.cost} vertical />
             )}
             <p className="action-skill-rules">
               {LEVEL_EFFECT_LABEL} {def.levelEffect}

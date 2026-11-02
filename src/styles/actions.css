@@ -264,36 +264,6 @@
   gap: 2px;
   margin: 0;
 }
-.cost-progress {
-  display: grid;
-  grid-template-columns: minmax(100px, 1fr) auto;
-  align-items: center;
-  gap: 8px;
-  max-width: 240px;
-  color: var(--color-neutral);
-  font-size: 11px;
-}
-.cost-progress :where(.rt-ProgressRoot) {
-  min-width: 100px;
-}
-.cost-progress-compact {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 1;
-  display: block;
-  max-width: none;
-  height: 4px;
-  pointer-events: none;
-}
-.cost-progress-compact :where(.rt-ProgressRoot) {
-  width: 100%;
-  height: 4px;
-}
-.cost-progress-compact :where(small) {
-  display: none;
-}
 .discoveries {
   margin: 16px 0;
 }
