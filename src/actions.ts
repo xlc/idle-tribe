@@ -47,29 +47,15 @@ export function actionWorkers(state: GameState, id: ActionId) {
 }
 
 export type ActionAvailability =
-  | { kind: 'locked'; reason: string }
+  | { kind: 'locked' }
   | {
       kind: 'manual'
       state: 'ready' | 'running' | 'blocked' | 'missing-cost'
-      missing: Cost
-      reason: string
     }
   | {
       kind: 'automated'
       state: 'active' | 'paused'
-      missing: Cost
-      reason: string
-      workers: number
     }
-
-function missingCost(state: GameState, cost: Cost): Cost {
-  const missing: Cost = {}
-  for (const resource of RESOURCES) {
-    const amount = (cost[resource] ?? 0) - state.resources[resource]
-    if (amount > EPSILON) missing[resource] = amount
-  }
-  return missing
-}
 
 export function actionAvailability(
   state: GameState,
@@ -80,42 +66,26 @@ export function actionAvailability(
     return {
       kind: 'manual',
       state: 'running',
-      missing: {},
-      reason: 'Running · Stop to cancel',
     }
   }
 
-  if (!def.visible(state))
-    return {
-      kind: 'locked',
-      reason: def.hiddenReason?.(state) ?? 'Not available yet',
-    }
+  if (!def.visible(state)) return { kind: 'locked' }
 
   const workers = actionWorkers(state, id)
   if (workers > 0) {
-    const missing = missingCost(state, def.cost)
     if (id === 'explore' && state.pendingEncounter)
       return {
         kind: 'automated',
         state: 'paused',
-        missing: {},
-        reason: 'Paused until the expedition report is resolved',
-        workers,
       }
-    if (Object.keys(missing).length > 0)
+    if (!canAfford(state, def.cost))
       return {
         kind: 'automated',
         state: 'paused',
-        missing,
-        reason: 'Paused until its costs are available',
-        workers,
       }
     return {
       kind: 'automated',
       state: 'active',
-      missing: {},
-      reason: `Automated by ${workers} worker${workers === 1 ? '' : 's'}`,
-      workers,
     }
   }
 
@@ -123,8 +93,6 @@ export function actionAvailability(
     return {
       kind: 'manual',
       state: 'blocked',
-      missing: {},
-      reason: '',
     }
   }
 
@@ -132,23 +100,16 @@ export function actionAvailability(
     return {
       kind: 'manual',
       state: 'blocked',
-      missing: {},
-      reason: 'Resolve the pending expedition report first',
     }
 
-  const missing = missingCost(state, def.cost)
-  return Object.keys(missing).length
+  return !canAfford(state, def.cost)
     ? {
         kind: 'manual',
         state: 'missing-cost',
-        missing,
-        reason: '',
       }
     : {
         kind: 'manual',
         state: 'ready',
-        missing: {},
-        reason: 'Ready to start',
       }
 }
 

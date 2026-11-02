@@ -81,7 +81,6 @@ interface ActionDefinitionBase {
   building: BuildingId
   job: ActionJob
   visible: (state: GameState) => boolean
-  hiddenReason?: (state: GameState) => string
 }
 export type ActionDefinition =
   | (ActionDefinitionBase & {

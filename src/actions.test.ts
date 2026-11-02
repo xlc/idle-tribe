@@ -53,15 +53,12 @@ test('action availability reports discovery, cost and active-work blockers', () 
   expect(actionAvailability(state, 'explore')).toMatchObject({
     kind: 'manual',
     state: 'missing-cost',
-    missing: { food: 6 },
-    reason: '',
   })
   state.resources.food = 6
   expect(startAction(state, 'gather')).toBe(true)
   expect(actionAvailability(state, 'explore')).toMatchObject({
     kind: 'manual',
     state: 'blocked',
-    reason: '',
   })
   expect(actionAvailability(state, 'gather')).toMatchObject({
     kind: 'manual',
@@ -81,14 +78,12 @@ test('automated actions report active and paused states from their live inputs',
   expect(actionAvailability(state, 'explore')).toMatchObject({
     kind: 'automated',
     state: 'active',
-    workers: 1,
   })
 
   state.resources.food = 0
   expect(actionAvailability(state, 'explore')).toMatchObject({
     kind: 'automated',
     state: 'paused',
-    missing: { food: 6 },
   })
 })
 
@@ -120,7 +115,7 @@ test('full output storage does not block manual or automated work', () => {
   expect(automated.actionSkills.sticks.xp).toBeGreaterThan(0)
 })
 
-test('retired gathering explains why the action disappeared', () => {
+test('retired gathering becomes unavailable', () => {
   const state = createDefaultState()
   state.research.agriculture = 1
   state.facilities.farm.level = 1
@@ -134,7 +129,6 @@ test('retired gathering explains why the action disappeared', () => {
 
   expect(actionAvailability(state, 'gather')).toEqual({
     kind: 'locked',
-    reason: 'Retired after the second farm is built',
   })
 })
 

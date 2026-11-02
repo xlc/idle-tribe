@@ -128,17 +128,6 @@ export function ActionCard({
     availability.kind === 'automated' &&
     availability.state === 'active' &&
     actionJobActive(s, id)
-  const availabilityNote =
-    availability.kind !== 'locked' &&
-    availability.state !== 'active' &&
-    availability.state !== 'ready' &&
-    availability.state !== 'running' &&
-    availability.state !== 'missing-cost' &&
-    availability.reason ? (
-      <span className="action-status action-status-unavailable">
-        {availability.reason}
-      </span>
-    ) : null
   const stop = () => {
     if (!active) return
     const run = () => session.game.cancelAction()
@@ -185,7 +174,6 @@ export function ActionCard({
                   xp={skill.xp}
                   requiredXp={actionRequiredXp(s, id)}
                 />
-                {availabilityNote}
                 {def.kind === 'exploration' && (
                   <ExploreSummary state={s} automated working={working} />
                 )}
@@ -240,7 +228,6 @@ export function ActionCard({
                   xp={skill.xp}
                   requiredXp={actionRequiredXp(s, id)}
                 />
-                {availabilityNote}
                 {def.kind === 'exploration' && (
                   <ExploreSummary state={s} automated={false} working={false} />
                 )}
