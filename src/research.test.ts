@@ -104,7 +104,7 @@ test('early gathering research upgrades actions into better tiers', () => {
   completeProject(state, { kind: 'research', id: 'sharpened-stick' })
   expect(researchVisible(state, 'woodcutting')).toBe(false)
   // The sharpened stick itself upgrades food gathering to Dig roots.
-  expect(actionYield(state, 'gather')).toBeCloseTo(4 * 1.25)
+  expect(actionYield(state, 'gather')).toBeCloseTo(4)
   expect(actionDuration(state, 'gather')).toBeCloseTo(4)
   expect(researchVisible(state, 'field-practice')).toBe(false)
   completeProject(state, { kind: 'research', id: 'shelters' })
@@ -136,18 +136,17 @@ test('early gathering research upgrades actions into better tiers', () => {
 test('reusable research effects follow the same gated level progression', () => {
   const state = createDefaultState()
 
-  state.research['sharpened-stick'] = 1
-  expect(researchUpgradeVisible(state, 'sharpened-stick')).toBe(false)
-  state.research.shelters = 1
-  expect(researchUpgradeVisible(state, 'sharpened-stick')).toBe(true)
+  state.research['seasonal-knowledge'] = 1
+  expect(researchUpgradeVisible(state, 'seasonal-knowledge')).toBe(false)
+  state.research.agriculture = 1
+  expect(researchUpgradeVisible(state, 'seasonal-knowledge')).toBe(true)
   completeProject(state, {
     kind: 'research',
-    id: 'sharpened-stick',
+    id: 'seasonal-knowledge',
     target: 3,
   })
-  expect(researchEffects(state, 'sharpened-stick')).toMatchObject({
-    actionYield: { gather: 0.35 },
-    actionAutomation: { gather: 0.04 },
+  expect(researchEffects(state, 'seasonal-knowledge')).toMatchObject({
+    actionAutomation: { gather: 0.05 },
   })
 
   state.research.masonry = 1

@@ -19,7 +19,7 @@ export const research = {
     cost: { knowledge: 1200, metal: 100, machinery: 30 },
     seconds: 16200,
     effect:
-      'Unlock mechanical extraction, processing, and tool workshop forms; upgrade wood and stone gathering to mechanized tiers.',
+      'Unlock mechanical extraction, processing, and tool workshop forms; learn Mechanized logging and Mechanized quarrying.',
     description: 'The river has agreed to take the heavier shifts.',
     effects: {},
   },

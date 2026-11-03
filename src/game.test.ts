@@ -548,9 +548,8 @@ test('the first researched stick immediately improves manual food gathering', ()
   const s = createDefaultState()
   const startingFood = s.resources.food
   complete(s, 'sharpened-stick')
-  // The sharpened stick upgrades gathering to Dig roots: 4 food per 4s trip,
-  // still paying the research's +25% output bonus on top.
+  // The sharpened stick upgrades gathering to Dig roots: 4 food per 4s trip.
   expect(startAction(s, 'gather')).toBe(true)
   advanceTime(s, actionDuration(s, 'gather'), true)
-  expect(s.resources.food).toBeCloseTo(startingFood + 4 * 1.25)
+  expect(s.resources.food).toBeCloseTo(startingFood + 4)
 })

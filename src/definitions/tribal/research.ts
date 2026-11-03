@@ -6,31 +6,10 @@ export const research = {
     name: 'Sharpened stick',
     cost: { wood: 6, food: 5 },
     seconds: 8,
-    effect: [
-      'Upgrade food gathering to Dig roots (+4 food per 4s trip)',
-      '+25% food gathering output',
-      '+2% automation',
-    ],
+    effect: 'Learn Dig roots: +4 food per 4s trip',
     description: 'A stick with a surprisingly convincing point.',
     requires: { research: [], discovery: 'wood' },
-    effects: {
-      actionYield: { gather: 0.25 },
-      actionAutomation: { gather: 0.02 },
-    },
-    upgrade: {
-      maxLevel: 3,
-      requires: { research: ['shelters'] },
-      costMultiplier: 1.75,
-      timeMultiplier: 1.2,
-      effect: [
-        '+5% food gathering output per additional level',
-        '+1% automation per additional level',
-      ],
-      effects: {
-        actionYield: { gather: 0.05 },
-        actionAutomation: { gather: 0.01 },
-      },
-    },
+    effects: {},
   },
   shelters: {
     name: 'Shelters',
@@ -111,8 +90,7 @@ export const research = {
     name: 'Preparedness',
     cost: { knowledge: 40, tools: 20, food: 150 },
     seconds: 240,
-    effect:
-      'Upgrade food gathering to Hunt game (+14 food per 12s trip); unlock Supply post.',
+    effect: 'Learn Hunt game (+14 food per 12s trip); unlock Supply post.',
     description:
       "Tomorrow's problems have been asked to arrive by appointment.",
     requires: { research: ['oral-tradition', 'toolmaking'] },
@@ -140,7 +118,7 @@ export const research = {
     name: 'Stone axes',
     cost: { wood: 6, stone: 10, food: 6 },
     seconds: 12,
-    effect: 'Upgrade wood gathering to Chop wood (+5 wood per 6s trip).',
+    effect: 'Learn Chop wood: +5 wood per 6s trip',
     description: 'Shaped rock plus a handle: the tree is now out of excuses.',
     requires: { research: ['stone-tools'], discovery: 'wood' },
     effects: {},
@@ -149,7 +127,7 @@ export const research = {
     name: 'Stone splitting',
     cost: { wood: 16, stone: 4, food: 8 },
     seconds: 20,
-    effect: 'Upgrade stone gathering to Quarry stone (+6 stone per 8s trip).',
+    effect: 'Learn Quarry stone: +6 stone per 8s trip',
     description: 'Wooden wedges convince even stubborn rocks to come apart.',
     requires: { research: ['stone-tools'], discovery: 'stone' },
     effects: {},

@@ -27,7 +27,7 @@ export const research = {
     cost: { knowledge: 900, wood: 600, planks: 360, tools: 120 },
     seconds: 10800,
     effect:
-      'Upgrade wood gathering to Fell timber (+16 wood per 15s trip); unlock Timber yard conversion.',
+      'Learn Fell timber (+16 wood per 15s trip); unlock Timber yard conversion.',
     description: 'A little planning saves a lot of arguing with trees.',
     requires: { research: ['agriculture'] },
     effects: {},
@@ -37,7 +37,7 @@ export const research = {
     cost: { knowledge: 900, stone: 600, blocks: 360, tools: 120 },
     seconds: 10800,
     effect:
-      'Upgrade stone gathering to Mine stone (+20 stone per 20s trip); unlock Stone pit conversion.',
+      'Learn Mine stone (+20 stone per 20s trip); unlock Stone pit conversion.',
     description: 'The rock remains heavy, but fewer people have to mention it.',
     requires: { research: ['agriculture'] },
     effects: {},
