@@ -10,7 +10,6 @@ import {
   actionSlots,
   actionWorkersUnlocked,
   actionYield,
-  automationFactor,
   exploreExpectedRate,
   isRateMode,
 } from '../actions'
@@ -169,8 +168,9 @@ export function ActionCard({
                 <strong className="action-name">{def.name}</strong>
                 <span className="action-yield">
                   {def.resource
-                    ? `+${formatResource(working ? actionOutputRate(s, id) : 0)} ${def.resource}/s · automation ${Math.round(automationFactor(s, id) * 100)}%`
-                    : `${formatResource(working ? 1 / duration : 0)} explores/s`}
+                    ? `+${formatResource(actionYield(s, id))} ${def.resource} · `
+                    : null}
+                  {formatResource(duration)}s
                 </span>
                 <ActionSkill
                   level={skill.level}
@@ -254,6 +254,19 @@ export function ActionCard({
               </span>
             </button>
           )}
+          {availability.kind === 'manual' && (
+            <span
+              className="action-worker-inline"
+              data-visible={workersUnlocked}
+            >
+              <WorkerControls
+                session={session}
+                job={def.job}
+                assignable={!active}
+                showFill={false}
+              />
+            </span>
+          )}
           {running && (
             <Button
               className="action-stop"
@@ -274,21 +287,14 @@ export function ActionCard({
         </div>
         {expanded && (
           <div className="action-details" id={`${id}-details`}>
-            {availability.kind !== 'locked' &&
-              availability.kind !== 'automated' && (
-                <div
-                  className="action-worker-slot"
-                  data-visible={workersUnlocked}
-                >
-                  <WorkerControls
-                    session={session}
-                    job={def.job}
-                    assignable={!active}
-                    showFill={false}
-                  />
-                </div>
-              )}
             <p className="action-description">{def.description}</p>
+            {availability.kind === 'automated' && working && (
+              <p className="action-hint">
+                {def.resource
+                  ? `+${formatResource(actionOutputRate(s, id))} ${def.resource}/s`
+                  : `${formatResource(1 / duration)} explores/s`}
+              </p>
+            )}
             {Object.keys(def.cost).length > 0 && (
               <Costs session={session} cost={def.cost} vertical />
             )}

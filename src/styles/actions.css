@@ -186,9 +186,6 @@
 .manual-action[data-action-state="paused"] .action-status-unavailable {
   color: var(--color-warning);
 }
-.action-worker-slot[data-visible="false"] {
-  display: none;
-}
 .action-name {
   display: block;
   font-size: 16px;
@@ -324,22 +321,31 @@
 }
 .action-worker-inline {
   flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
 }
 .action-worker-inline[data-visible="false"] {
-  visibility: hidden;
+  display: none;
 }
 .action-worker-inline .worker-allocation {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
 }
 .action-worker-inline .worker-allocation > small {
   display: none;
 }
 .action-worker-inline .worker-control {
-  min-height: 36px;
+  min-height: 32px;
+  gap: 3px;
 }
 .action-worker-inline .worker-control .rt-Button {
-  min-width: 34px;
-  min-height: 36px;
+  min-width: 30px;
+  min-height: 32px;
+  font-size: 15px;
+}
+.action-worker-inline .worker-count {
+  min-width: 20px;
+  font-size: 14px;
 }

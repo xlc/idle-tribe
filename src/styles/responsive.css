@@ -173,13 +173,6 @@
   .action-automated .action-skill {
     display: none;
   }
-  .action-worker-inline .worker-control .rt-Button {
-    min-width: 32px;
-  }
-  .action-worker-inline .worker-count {
-    min-width: 22px;
-    font-size: 15px;
-  }
 }
 @media (max-width: 440px) {
   .facility-overview {

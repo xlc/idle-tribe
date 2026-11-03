@@ -3,7 +3,6 @@ import { useState } from 'react'
 import {
   ACTION_BALANCE,
   actionRate,
-  automationFactor,
   buildingActions,
   buildingResource,
 } from '../actions'
@@ -207,12 +206,7 @@ export function Facility({
                   {buildingResource(id) ?? 'explores'}
                   /s
                 </span>
-                <span className="recipe-input">
-                  Staff {n}/{slots}
-                  {singleAction
-                    ? ` · automation ${Math.round(automationFactor(s, singleAction) * 100)}%`
-                    : ''}
-                </span>
+                <span className="recipe-input">Staff {n}/{slots}</span>
               </div>
             ) : craftingJob ? (
               <div className="building-recipe">
