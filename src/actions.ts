@@ -31,6 +31,22 @@ export const ACTION_BALANCE = {
   rateModeSeconds: 2,
 }
 
+// Highest research-upgraded tier whose requirements pass. 0 is the base
+// action; tiers apply automatically and never revert.
+export function actionTierIndex(state: GameState, id: ActionId) {
+  const tiers = ACTIONS[id].tiers
+  if (!tiers) return 0
+  let best = 0
+  for (const [index, tier] of tiers.entries())
+    if (!requirementBlocker(state, tier.requires)) best = index + 1
+  return best
+}
+export function currentAction(state: GameState, id: ActionId) {
+  const def = ACTIONS[id],
+    tier = def.tiers?.[actionTierIndex(state, id) - 1]
+  return tier ? { ...def, ...tier } : def
+}
+
 export function syncUnlocks(state: GameState) {
   if (state.resources.food >= 5) state.exploreUnlocked = true
   if (state.resources.wood >= 2) state.researchUnlocked = true
@@ -133,12 +149,12 @@ export function startAction(state: GameState, id: ActionId) {
 }
 export function actionRequiredXp(state: GameState, id: ActionId) {
   return Math.ceil(
-    ACTIONS[id].baseXp *
+    currentAction(state, id).baseXp *
       ACTION_BALANCE.xpPerLevel ** (state.actionSkills[id].level - 1),
   )
 }
 export function actionYield(state: GameState, id: ActionId) {
-  const def = ACTIONS[id]
+  const def = currentAction(state, id)
   let bonus = 1
   for (const r of RESEARCH_IDS)
     if (hasResearch(state, r))
@@ -158,7 +174,7 @@ export function baseActionDuration(state: GameState, id: ActionId) {
     if (hasResearch(state, r))
       researchMultiplier += researchEffects(state, r).actionDuration?.[id] ?? 0
   return (
-    ACTIONS[id].seconds *
+    currentAction(state, id).seconds *
     ACTION_BALANCE.durationPerLevel ** (state.actionSkills[id].level - 1) *
     Math.max(0.25, researchMultiplier)
   )
@@ -535,7 +551,7 @@ export function finishManual(state: GameState) {
     addResources(state, { [def.resource]: actionYield(state, active.id) })
   }
   if (def.kind === 'exploration') applyExploreReward(state, 1, 'manual')
-  grantActionXp(state, active.id, 1)
+  grantActionXp(state, active.id, currentAction(state, active.id).xp ?? 1)
   syncUnlocks(state)
 }
 
@@ -557,7 +573,11 @@ export function completeAction(state: GameState, id: ActionId) {
   }
   if (def.kind === 'exploration')
     applyExploreReward(state, automationFactor(state, id))
-  grantActionXp(state, id, xpFactor(state, id))
+  grantActionXp(
+    state,
+    id,
+    xpFactor(state, id) * (currentAction(state, id).xp ?? 1),
+  )
   syncUnlocks(state)
   return true
 }

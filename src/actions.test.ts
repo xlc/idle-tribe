@@ -2,13 +2,18 @@ import { expect, test } from 'bun:test'
 import {
   actionAvailability,
   actionDuration,
+  actionRequiredXp,
+  actionTierIndex,
+  actionYield,
   applyExploreReward,
+  currentAction,
   exploreExpectedRate,
   exploreExpectedRewards,
   resolveEncounter,
   startAction,
 } from './actions'
 import { EXPEDITION_ENCOUNTER_IDS } from './ids'
+import { completeProject } from './research'
 import { storageCapacity } from './resources'
 import { advanceTime } from './simulation'
 import { createDefaultState } from './state'
@@ -300,4 +305,57 @@ test('exploration expected rates include worker cadence', () => {
   expect(rate.food).toBeCloseTo(
     (expected.food ?? 0) / actionDuration(state, 'explore'),
   )
+})
+
+test('research upgrades a gathering action to a better tier and keeps skill progress', () => {
+  const state = createDefaultState()
+  state.discovered.wood = true
+  state.actionSkills.sticks = { level: 3, xp: 2 }
+
+  expect(actionTierIndex(state, 'sticks')).toBe(0)
+  completeProject(state, { kind: 'research', id: 'stone-tools' })
+  expect(actionTierIndex(state, 'sticks')).toBe(0)
+  completeProject(state, { kind: 'research', id: 'woodcutting' })
+  expect(actionTierIndex(state, 'sticks')).toBe(1)
+
+  const tier = currentAction(state, 'sticks')
+  expect(tier.name).toBe('Chop wood')
+  // Level-3 skill keeps its +4% output on top of the tier's base yield.
+  expect(actionYield(state, 'sticks')).toBeCloseTo(5 * 1.04)
+  expect(actionDuration(state, 'sticks')).toBeCloseTo(6 * 0.98 ** 2)
+  // The skill track carries over; only the per-level cost follows the tier.
+  expect(state.actionSkills.sticks).toEqual({ level: 3, xp: 2 })
+  expect(actionRequiredXp(state, 'sticks')).toBe(Math.ceil(5 * 1.2 ** (3 - 1)))
+
+  completeProject(state, { kind: 'research', id: 'forestry-methods' })
+  expect(actionTierIndex(state, 'sticks')).toBe(2)
+  expect(currentAction(state, 'sticks').name).toBe('Fell timber')
+})
+
+test('upgraded tiers award more XP per manual completion', () => {
+  const state = createDefaultState()
+  state.discovered.wood = true
+  completeProject(state, { kind: 'research', id: 'woodcutting' })
+
+  expect(startAction(state, 'sticks')).toBe(true)
+  advanceTime(state, actionDuration(state, 'sticks'), true)
+  expect(state.actionSkills.sticks.xp).toBeCloseTo(2)
+})
+
+test('completing tier-upgrading research keeps the plain completion notice', () => {
+  const state = createDefaultState()
+  state.discovered.wood = true
+  state.queues.research.active = {
+    sequence: 1,
+    project: { kind: 'research', id: 'woodcutting' },
+    paid: {},
+    progress: 12,
+    total: 12,
+  }
+
+  advanceTime(state, 1)
+  expect(state.queues.research.active).toBeNull()
+  // The upgraded card is its own announcement; the notice stays minimal.
+  expect(state.notice).toBe('Completed Stone axes')
+  expect(currentAction(state, 'sticks').name).toBe('Chop wood')
 })

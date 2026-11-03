@@ -20,6 +20,28 @@ export const actions = {
     // turning off the only active food source before a farmer is assigned.
     visible: (s) =>
       !(s.research.agriculture > 0 && s.facilities.farm.level >= 2),
+    tiers: [
+      {
+        name: 'Dig roots',
+        description:
+          'A sharpened stick persuades the ground to give up its reserves.',
+        requires: { research: ['sharpened-stick'] },
+        seconds: 4,
+        amount: 4,
+        baseXp: 5,
+        xp: 2,
+      },
+      {
+        name: 'Hunt game',
+        description:
+          'Prepared hunters return with more than anyone could forage.',
+        requires: { research: ['preparedness'] },
+        seconds: 12,
+        amount: 14,
+        baseXp: 7,
+        xp: 6,
+      },
+    ],
   },
   sticks: {
     kind: 'resource',
@@ -34,6 +56,35 @@ export const actions = {
     resource: 'wood',
     amount: 1,
     visible: (s) => s.discovered.wood,
+    tiers: [
+      {
+        name: 'Chop wood',
+        description: 'A stone axe settles which parts of the tree come home.',
+        requires: { research: ['woodcutting'] },
+        seconds: 6,
+        amount: 5,
+        baseXp: 5,
+        xp: 2,
+      },
+      {
+        name: 'Fell timber',
+        description: 'Whole trunks, brought down with something like a plan.',
+        requires: { research: ['forestry-methods'] },
+        seconds: 15,
+        amount: 16,
+        baseXp: 8,
+        xp: 5,
+      },
+      {
+        name: 'Mechanized logging',
+        description: 'The forest is now processed at a professional pace.',
+        requires: { research: ['powered-workshops'] },
+        seconds: 40,
+        amount: 50,
+        baseXp: 12,
+        xp: 16,
+      },
+    ],
   },
   stone: {
     kind: 'resource',
@@ -48,6 +99,35 @@ export const actions = {
     resource: 'stone',
     amount: 1,
     visible: (s) => s.discovered.stone,
+    tiers: [
+      {
+        name: 'Quarry stone',
+        description: 'Wooden wedges and mallets talk rocks into splitting.',
+        requires: { research: ['stonecutting'] },
+        seconds: 8,
+        amount: 6,
+        baseXp: 6,
+        xp: 2,
+      },
+      {
+        name: 'Mine stone',
+        description: 'The best rock was underneath; now there is a way down.',
+        requires: { research: ['stone-lifting'] },
+        seconds: 20,
+        amount: 20,
+        baseXp: 8,
+        xp: 6,
+      },
+      {
+        name: 'Mechanized quarrying',
+        description: 'Machines chew through bedrock with admirable patience.',
+        requires: { research: ['powered-workshops'] },
+        seconds: 45,
+        amount: 55,
+        baseXp: 12,
+        xp: 18,
+      },
+    ],
   },
   explore: {
     kind: 'exploration',

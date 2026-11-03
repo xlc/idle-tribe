@@ -396,14 +396,14 @@ test('a missing lower expansion can be rebuilt while a higher target stays queue
 
 test('food gathering rewards the first second and opens exploration after five clicks', () => {
   const s = createDefaultState()
-  expect(s.resources.food).toBe(1)
+  expect(s.resources.food).toBe(0)
   expect(startAction(s, 'gather')).toBe(true)
   advanceTime(s, 0.4, true)
   expect(s.manual?.progress).toBeCloseTo(0.4)
   advanceTime(s, 3600, false)
   expect(s.manual?.progress).toBeCloseTo(0.4)
   advanceTime(s, 0.6, true)
-  expect(s.resources.food).toBe(2)
+  expect(s.resources.food).toBe(1)
   expect(s.manual).toBeNull()
   for (let i = 0; i < 4; i++) {
     expect(startAction(s, 'gather')).toBe(true)
@@ -411,7 +411,7 @@ test('food gathering rewards the first second and opens exploration after five c
   }
   // The fourth completion reaches level 2 but still pays level-1 yield; only
   // the fifth collects the +2%.
-  expect(s.resources.food).toBeCloseTo(6.02, 6)
+  expect(s.resources.food).toBeCloseTo(5.02, 6)
   expect(s.exploreUnlocked).toBe(true)
 })
 
@@ -546,10 +546,11 @@ test('workers unlock when the corresponding workplace is available', () => {
 
 test('the first researched stick immediately improves manual food gathering', () => {
   const s = createDefaultState()
-  const before = actionYield(s, 'gather')
   const startingFood = s.resources.food
   complete(s, 'sharpened-stick')
+  // The sharpened stick upgrades gathering to Dig roots: 4 food per 4s trip,
+  // still paying the research's +25% output bonus on top.
   expect(startAction(s, 'gather')).toBe(true)
   advanceTime(s, actionDuration(s, 'gather'), true)
-  expect(s.resources.food).toBeCloseTo(startingFood + before * 1.25)
+  expect(s.resources.food).toBeCloseTo(startingFood + 4 * 1.25)
 })

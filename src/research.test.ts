@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { actionDuration, actionYield, xpFactor } from './actions'
+import { actionDuration, actionYield, currentAction, xpFactor } from './actions'
 import { RESEARCH } from './definitions'
 import { parseSave } from './persistence'
 import {
@@ -93,55 +93,44 @@ test('research prerequisites stay hidden until the prerequisite completes', () =
   expect(researchVisible(state, 'shelters')).toBe(true)
 })
 
-test('early gathering research improves the matching output and action XP', () => {
+test('early gathering research upgrades actions into better tiers', () => {
   const state = createDefaultState()
   state.discovered = { wood: true, stone: true }
   state.researchUnlocked = true
 
+  // Stone axes need shaped rock first, so woodcutting stays hidden.
   expect(researchVisible(state, 'woodcutting')).toBe(false)
   expect(researchVisible(state, 'field-practice')).toBe(false)
   completeProject(state, { kind: 'research', id: 'sharpened-stick' })
-  expect(researchVisible(state, 'woodcutting')).toBe(true)
+  expect(researchVisible(state, 'woodcutting')).toBe(false)
+  // The sharpened stick itself upgrades food gathering to Dig roots.
+  expect(actionYield(state, 'gather')).toBeCloseTo(4 * 1.25)
+  expect(actionDuration(state, 'gather')).toBeCloseTo(4)
   expect(researchVisible(state, 'field-practice')).toBe(false)
   completeProject(state, { kind: 'research', id: 'shelters' })
   expect(researchVisible(state, 'field-practice')).toBe(true)
   expect(researchVisible(state, 'stonecutting')).toBe(false)
 
-  const woodBefore = actionYield(state, 'sticks')
   const xpBefore = xpFactor(state, 'sticks')
+  completeProject(state, { kind: 'research', id: 'stone-tools' })
+  expect(researchVisible(state, 'woodcutting')).toBe(true)
+  expect(researchVisible(state, 'stonecutting')).toBe(true)
   completeProject(state, { kind: 'research', id: 'woodcutting' })
   completeProject(state, { kind: 'research', id: 'field-practice' })
-  expect(actionYield(state, 'sticks')).toBeCloseTo(woodBefore * 1.15)
+  // Chop wood: 5 wood per 6s trip instead of 1 per 2s.
+  expect(actionYield(state, 'sticks')).toBeCloseTo(5)
+  expect(actionDuration(state, 'sticks')).toBeCloseTo(6)
+  expect(currentAction(state, 'sticks').name).toBe('Chop wood')
   expect(xpFactor(state, 'sticks')).toBeCloseTo(xpBefore + 0.03)
-
-  expect(researchUpgradeVisible(state, 'woodcutting')).toBe(true)
+  // The tier is the whole payoff; no extra research levels.
+  expect(researchUpgradeVisible(state, 'woodcutting')).toBe(false)
   expect(researchUpgradeVisible(state, 'field-practice')).toBe(true)
-  completeProject(state, {
-    kind: 'research',
-    id: 'woodcutting',
-    target: 2,
-  })
-  completeProject(state, {
-    kind: 'research',
-    id: 'field-practice',
-    target: 2,
-  })
-  expect(actionYield(state, 'sticks')).toBeCloseTo(woodBefore * 1.2)
-  expect(xpFactor(state, 'sticks')).toBeCloseTo(xpBefore + 0.04)
-  expect(actionDuration(state, 'sticks')).toBeCloseTo(2 * 0.95)
 
-  completeProject(state, { kind: 'research', id: 'stone-tools' })
-  expect(researchVisible(state, 'stonecutting')).toBe(true)
-  const stoneBefore = actionYield(state, 'stone')
   completeProject(state, { kind: 'research', id: 'stonecutting' })
-  expect(actionYield(state, 'stone')).toBeCloseTo(stoneBefore * 1.15)
-  expect(researchUpgradeVisible(state, 'stonecutting')).toBe(true)
-  completeProject(state, {
-    kind: 'research',
-    id: 'stonecutting',
-    target: 2,
-  })
-  expect(actionYield(state, 'stone')).toBeCloseTo(stoneBefore * 1.2)
+  expect(actionYield(state, 'stone')).toBeCloseTo(6)
+  expect(actionDuration(state, 'stone')).toBeCloseTo(8)
+  expect(currentAction(state, 'stone').name).toBe('Quarry stone')
+  expect(researchUpgradeVisible(state, 'stonecutting')).toBe(false)
 })
 
 test('reusable research effects follow the same gated level progression', () => {

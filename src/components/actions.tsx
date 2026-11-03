@@ -11,10 +11,10 @@ import {
   actionWorkersUnlocked,
   actionYield,
   automationFactor,
+  currentAction,
   exploreExpectedRate,
   isRateMode,
 } from '../actions'
-import { ACTIONS } from '../definitions'
 import { formatCost, formatResource, formatResourceGain } from '../format'
 import { ACTION_IDS, type ActionId } from '../ids'
 import { affordability } from '../resources'
@@ -118,7 +118,7 @@ export function ActionCard({
   const [expanded, setExpanded] = useState(false)
   const s = session.game.state,
     active = s.manual
-  const def = ACTIONS[id],
+  const def = currentAction(s, id),
     availability = actionAvailability(s, id),
     slots = actionSlots(s, id),
     running = active?.id === id,

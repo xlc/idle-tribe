@@ -8,6 +8,7 @@ import {
   automationFactor,
   baseActionDuration,
   completeAction,
+  currentAction,
   exploreExpectedRewards,
   finishManual,
   grantActionXp,
@@ -165,7 +166,8 @@ function actionRules(state: GameState): ActionRule[] {
             automationFactor(state, id) *
             happinessMultiplier(state)
           : 0,
-        xpPerCompletion: xpFactor(state, id),
+        xpPerCompletion:
+          xpFactor(state, id) * (currentAction(state, id).xp ?? 1),
       },
     ]
   })
