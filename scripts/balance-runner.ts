@@ -224,7 +224,8 @@ export function runBalance(
     const deadline = Math.min(horizon, wall + 3600)
     // Exploration can take several attempts before the first discovery; keep
     // enough provisions on hand so a dry streak cannot deadlock the opening.
-    gather('food', 60, deadline)
+    // Base food storage caps at 50; stay below it so the loop can terminate.
+    gather('food', 48, deadline)
     while (!state.discovered.wood && wall < deadline)
       if (!manual('explore', deadline)) break
     gather('wood', 10, deadline)
@@ -237,8 +238,13 @@ export function runBalance(
     controls.plan({ kind: 'research', id: 'shelters' })
     advance(0)
     gather('wood', 35, deadline)
+    // Shelters research needs stone, and a full-scale manual explore always
+    // makes the next discovery, so one trip finds it.
+    while (!state.discovered.stone && wall < deadline)
+      if (!manual('explore', deadline)) break
+    gather('stone', 6, deadline)
     waitForResearch(deadline, 'shelters')
-    gather('food', 60, deadline)
+    gather('food', 48, deadline)
     // The camp researches gate the workplace expansions and the forager job.
     controls.plan({ kind: 'research', id: 'foraging-rounds' })
     controls.plan({ kind: 'research', id: 'timber-camps' })
@@ -246,6 +252,9 @@ export function runBalance(
     waitForResearch(deadline, 'foraging-rounds', 'timber-camps')
     controls.plan({ kind: 'expand', id: 'housing', target: 1, form: 0 })
     controls.plan({ kind: 'expand', id: 'lumber', target: 1, form: 0 })
+    // Pay for both buildings: 35 wood and 10 food beyond the research spend.
+    gather('wood', 36, deadline)
+    gather('food', 11, deadline)
     controls.assign(0, 'builder')
     while (
       (state.queues.construction.waiting.length ||

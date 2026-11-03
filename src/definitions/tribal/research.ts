@@ -5,7 +5,7 @@ export const research = {
   'sharpened-stick': {
     name: 'Sharpened stick',
     cost: { wood: 6, food: 5 },
-    seconds: 8,
+    seconds: 6,
     effect: 'Learn Dig roots: +6 food per 4s trip',
     description: 'A stick with a surprisingly convincing point.',
     requires: { research: [], discovery: 'wood' },
@@ -13,8 +13,8 @@ export const research = {
   },
   shelters: {
     name: 'Shelters',
-    cost: { wood: 15, stone: 5, food: 10 },
-    seconds: 15,
+    cost: { wood: 12, stone: 5, food: 8 },
+    seconds: 10,
     effect: 'Unlock Shelters housing.',
     description: 'The weather can conduct its business outside.',
     requires: { research: ['sharpened-stick'] },
@@ -22,8 +22,8 @@ export const research = {
   },
   'foraging-rounds': {
     name: 'Foraging rounds',
-    cost: { wood: 10, food: 10 },
-    seconds: 12,
+    cost: { wood: 8, food: 10 },
+    seconds: 8,
     effect:
       'Unlock Foraging camp; the first follower arrives and the first camp is free.',
     description: 'The good bushes finally get a schedule.',
@@ -33,8 +33,8 @@ export const research = {
   },
   'timber-camps': {
     name: 'Timber camps',
-    cost: { wood: 8, food: 10 },
-    seconds: 14,
+    cost: { wood: 6, food: 10 },
+    seconds: 10,
     effect: 'Unlock Lumber camp.',
     description: 'A camp by the treeline beats carrying every log home.',
     requires: { research: ['shelters'], discovery: 'wood' },
@@ -43,7 +43,7 @@ export const research = {
   'expedition-planning': {
     name: 'Expedition planning',
     cost: { wood: 12, food: 10 },
-    seconds: 16,
+    seconds: 12,
     effect: 'Unlock Expedition camp.',
     description: 'Going far on purpose, with provisions.',
     requires: { research: ['shelters'], expedition: true },
@@ -51,8 +51,8 @@ export const research = {
   },
   stockpiling: {
     name: 'Stockpiling',
-    cost: { wood: 14, stone: 8 },
-    seconds: 18,
+    cost: { wood: 12, stone: 8 },
+    seconds: 14,
     effect: 'Unlock Barn.',
     description: 'A pile under a roof is a plan for winter.',
     requires: { research: ['shelters'] },
@@ -60,8 +60,8 @@ export const research = {
   },
   'stone-tools': {
     name: 'Stone tools',
-    cost: { wood: 20, stone: 15, food: 10 },
-    seconds: 20,
+    cost: { wood: 16, stone: 12, food: 8 },
+    seconds: 16,
     effect: 'Unlock Quarry.',
     description: 'Some rocks are better at convincing other rocks.',
     requires: { research: ['sharpened-stick'], discovery: 'stone' },
@@ -69,8 +69,8 @@ export const research = {
   },
   carpentry: {
     name: 'Carpentry',
-    cost: { wood: 60, stone: 30 },
-    seconds: 48,
+    cost: { wood: 50, stone: 24 },
+    seconds: 40,
     effect: 'Unlock Sawmill and Warehouse.',
     description: 'Wood behaves better once you explain the corners.',
     requires: { research: ['shelters', 'stone-tools'] },
@@ -78,8 +78,8 @@ export const research = {
   },
   masonry: {
     name: 'Masonry',
-    cost: { wood: 40, stone: 80 },
-    seconds: 72,
+    cost: { wood: 32, stone: 64 },
+    seconds: 56,
     effect: "Unlock Stoneworks and Builders' lodge; organized crew size +1.",
     description: 'The trick is putting the heavy bit on another heavy bit.',
     requires: { research: ['stone-tools'] },
@@ -189,7 +189,7 @@ export const research = {
   woodcutting: {
     name: 'Stone axes',
     cost: { wood: 6, stone: 10, food: 6 },
-    seconds: 12,
+    seconds: 10,
     effect: 'Learn Chop wood: +5 wood per 6s trip',
     description: 'Shaped rock plus a handle: the tree is now out of excuses.',
     requires: { research: ['stone-tools'], discovery: 'wood' },
@@ -198,7 +198,7 @@ export const research = {
   stonecutting: {
     name: 'Stone splitting',
     cost: { wood: 16, stone: 4, food: 8 },
-    seconds: 20,
+    seconds: 16,
     effect: 'Learn Quarry stone: +6 stone per 8s trip',
     description: 'Wooden wedges convince even stubborn rocks to come apart.',
     requires: { research: ['stone-tools'], discovery: 'stone' },

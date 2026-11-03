@@ -141,7 +141,7 @@ test('an older ready queue pays first, but a blocked queue does not reserve stoc
   s.discovered.wood = true
   people(s, 'builder')
   s.resources.food = 10
-  s.resources.wood = 20
+  s.resources.wood = 15
   enqueue(s, { kind: 'expand', id: 'housing', target: 1, form: 0 })
   enqueue(s, { kind: 'research', id: 'stone-tools' })
   startQueues(s)
@@ -419,8 +419,8 @@ test('food gathering rewards the first second and opens exploration after five c
 })
 
 test.each([
-  { action: 'sticks', resource: 'wood', seconds: 2 },
-  { action: 'stone', resource: 'stone', seconds: 3 },
+  { action: 'sticks', resource: 'wood', seconds: 1.5 },
+  { action: 'stone', resource: 'stone', seconds: 2.5 },
 ] as const)(
   '$resource gathering awards one unit after $seconds seconds',
   ({ action, resource, seconds }) => {
@@ -440,7 +440,7 @@ test('the gathering duration stays constant near the storage cap', () => {
   s.discovered.wood = true
   s.resources.wood = 49
   const duration = actionDuration(s, 'sticks')
-  expect(duration).toBe(2)
+  expect(duration).toBe(1.5)
   expect(startAction(s, 'sticks')).toBe(true)
   advanceTime(s, duration / 2, true)
   expect(s.manual?.progress).toBeCloseTo(0.5)

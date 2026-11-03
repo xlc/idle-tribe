@@ -1,8 +1,8 @@
 import { FAMILY_NAMES, GIVEN_NAMES } from './definitions/person-names'
 
-// The longest unsuffixed pool name is 17 characters. This leaves room for a
+// The longest unsuffixed pool name is 15 characters. This leaves room for a
 // short collision suffix without letting names push the roster layout wider.
-export const PERSON_NAME_MAX_LENGTH = 20
+export const PERSON_NAME_MAX_LENGTH = 15
 
 // The saved settlement seed and roster position make each draw reproducible
 // across live ticks, offline progress, and reloads, without consuming game RNG.

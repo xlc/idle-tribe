@@ -166,7 +166,7 @@ test('multi-level quality-of-life research stacks per level', () => {
     wood: 1.2,
     stone: 1.2,
   })
-  expect(actionDuration(state, 'explore')).toBeCloseTo(4 * 0.92)
+  expect(actionDuration(state, 'explore')).toBeCloseTo(3 * 0.92)
 
   completeProject(state, { kind: 'research', id: 'carpentry' })
   expect(researchUpgradeVisible(state, 'basket-weaving')).toBe(true)

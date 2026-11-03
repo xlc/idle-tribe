@@ -7,7 +7,7 @@ export const buildings = {
       {
         name: 'Shelters',
         description: 'A roof over your head beats a leaf on your head.',
-        cost: { wood: 20, food: 10 },
+        cost: { wood: 15, food: 8 },
         work: 2,
         requires: { research: ['shelters'] },
         housing: 2,
@@ -21,7 +21,7 @@ export const buildings = {
         name: 'Barn',
         description:
           'One roof for every pile: food, materials, tools, and ideas.',
-        cost: { wood: 40, stone: 20 },
+        cost: { wood: 32, stone: 16 },
         work: 3,
         requires: { research: ['stockpiling'] },
         storage: {
@@ -85,7 +85,7 @@ export const buildings = {
         name: 'Foraging camp',
         description:
           'A meeting point for people who know which bushes are lunch.',
-        cost: { wood: 10 },
+        cost: { wood: 8 },
         work: 1,
         requires: { research: ['foraging-rounds'] },
       },
@@ -99,7 +99,7 @@ export const buildings = {
       {
         name: 'Lumber camp',
         description: 'Where standing timber begins a career in construction.',
-        cost: { wood: 15 },
+        cost: { wood: 12 },
         work: 2,
         requires: { research: ['timber-camps'], discovery: 'wood' },
       },
@@ -113,7 +113,7 @@ export const buildings = {
       {
         name: 'Quarry',
         description: 'A reliable source of rocks and opinions about rocks.',
-        cost: { wood: 20, stone: 10 },
+        cost: { wood: 16, stone: 8 },
         work: 3,
         requires: { research: ['stone-tools'] },
       },
@@ -128,7 +128,7 @@ export const buildings = {
         name: 'Expedition camp',
         description:
           'Base camp for people who keep coming back with interesting stories.',
-        cost: { wood: 15, food: 10 },
+        cost: { wood: 12, food: 8 },
         work: 3,
         requires: { research: ['expedition-planning'], expedition: true },
       },
