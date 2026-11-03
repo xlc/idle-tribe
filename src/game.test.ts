@@ -409,8 +409,9 @@ test('food gathering rewards the first second and opens exploration after five c
     expect(startAction(s, 'gather')).toBe(true)
     advanceTime(s, 1, true)
   }
-  // The fourth completion reaches level 2 (+2% yield), the fifth collects it.
-  expect(s.resources.food).toBeCloseTo(5.04, 6)
+  // The fourth completion reaches level 2 but still pays level-1 yield; only
+  // the fifth collects the +2%.
+  expect(s.resources.food).toBeCloseTo(5.02, 6)
   expect(s.exploreUnlocked).toBe(true)
 })
 

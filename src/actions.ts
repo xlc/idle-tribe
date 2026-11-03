@@ -530,11 +530,12 @@ export function finishManual(state: GameState) {
   if (!active) return
   const def = ACTIONS[active.id]
   state.manual = null
-  grantActionXp(state, active.id, 1)
+  // Rewards reflect the skill level the action ran at; level up afterwards.
   if (def.resource) {
     addResources(state, { [def.resource]: actionYield(state, active.id) })
   }
   if (def.kind === 'exploration') applyExploreReward(state, 1, 'manual')
+  grantActionXp(state, active.id, 1)
   syncUnlocks(state)
 }
 
@@ -550,12 +551,13 @@ export function completeAction(state: GameState, id: ActionId) {
     return false
   if (!canAfford(state, def.cost)) return false
   pay(state, def.cost)
-  grantActionXp(state, id, xpFactor(state, id))
+  // Rewards reflect the skill level the action ran at; level up afterwards.
   if (def.resource) {
     addResources(state, { [def.resource]: automatedOutput(state, id) })
   }
   if (def.kind === 'exploration')
     applyExploreReward(state, automationFactor(state, id))
+  grantActionXp(state, id, xpFactor(state, id))
   syncUnlocks(state)
   return true
 }
