@@ -1,6 +1,6 @@
 import { BUILDINGS, JOBS, RESEARCH } from '../src/definitions'
 import { BUILDING_IDS, JOB_IDS, RESEARCH_IDS, RESOURCES } from '../src/ids'
-import { isProductionJob } from '../src/jobs'
+import { isProductionJob, jobRecipe } from '../src/jobs'
 import {
   allEntries,
   nextExpansion,
@@ -256,7 +256,7 @@ export function makeDecisions(
     const rates = resourceRates(s, { ignoreInputs: true })
     const choices = roles.filter((job) => jobUnlocked(s, job))
     const score = (job: (typeof roles)[number]) => {
-      const output = JOBS[job].output,
+      const output = jobRecipe(job).output,
         building = Object.values(BUILDINGS).find((d) => d.job === job)
       return (
         (((policy === 'bottleneck'

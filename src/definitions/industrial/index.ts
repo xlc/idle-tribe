@@ -15,7 +15,6 @@ export const INDUSTRIAL = {
   buildingUpgrades,
   research,
   jobs,
-  occupations: {},
   actions: {},
   equipment: [],
   perks,

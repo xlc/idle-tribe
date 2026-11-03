@@ -14,7 +14,6 @@ export const BEYOND_QUANTUM = {
   buildingUpgrades,
   research,
   jobs,
-  occupations: {},
   actions: {},
   equipment: [],
   perks: {},

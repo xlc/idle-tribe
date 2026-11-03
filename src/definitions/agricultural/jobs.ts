@@ -6,7 +6,6 @@ export const jobs = {
     name: 'Farmer',
     aptitude: 'Farming',
     learning: 'production',
-    description: 'Persuades plants to keep regular working hours.',
     output: 'food',
     input: {},
   },

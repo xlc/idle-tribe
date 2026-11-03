@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 import { actionSlots } from './actions'
-import { ACTIONS, BUILDINGS, JOBS, RESEARCH } from './definitions'
+import { ACTIONS, BUILDINGS, RESEARCH } from './definitions'
 import {
   ACTION_IDS,
   BUILDING_IDS,
@@ -11,7 +11,7 @@ import {
   type ResourceId,
   SPECIALIZATION_IDS,
 } from './ids'
-import { isProductionJob } from './jobs'
+import { isProductionJob, jobRecipe } from './jobs'
 import { createRecord } from './records'
 import { completeProject, quoteProject } from './research'
 import { storageCapacity } from './resources'
@@ -71,7 +71,7 @@ test.each(SPECIALIZATION_IDS)(
             !payable(def.cost) ||
             (crafting &&
               isProductionJob(crafting) &&
-              !payable(def.input ?? JOBS[crafting].input))
+              !payable(def.input ?? jobRecipe(crafting).input))
           )
             continue
           forms.add(key)
@@ -79,7 +79,7 @@ test.each(SPECIALIZATION_IDS)(
           // Switching forms does not remove sources already established.
           state.facilities[id].form = form
           if (crafting && isProductionJob(crafting))
-            supply.add(JOBS[crafting].output)
+            supply.add(jobRecipe(crafting).output)
           changed = true
         }
       }

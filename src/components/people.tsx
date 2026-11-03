@@ -1,9 +1,9 @@
 import { Card, Select } from '@radix-ui/themes'
 import { actionForJob, actionOutputRate, actionWorkers } from '../actions'
-import { ACTIONS, JOBS, OCCUPATIONS, RESOURCE_INFO } from '../definitions'
+import { ACTIONS, JOBS, RESOURCE_INFO } from '../definitions'
 import { formatDuration, formatResource } from '../format'
 import { isWorkingJob, JOB_IDS, WORKING_JOB_IDS } from '../ids'
-import { isProductionJob } from '../jobs'
+import { isProductionJob, jobRecipe } from '../jobs'
 import type { GameSession } from '../session'
 import {
   happinessMultiplier,
@@ -44,7 +44,7 @@ function output(state: GameState, person: Person) {
       : `Works ${def.name.toLowerCase()}`
   }
   if (isProductionJob(job)) {
-    return `${formatResource(workerRate(state, person) / 60)} ${RESOURCE_INFO[JOBS[job].output].name.toLowerCase()}/s`
+    return `${formatResource(workerRate(state, person) / 60)} ${RESOURCE_INFO[jobRecipe(job).output].name.toLowerCase()}/s`
   }
   const rate =
     workContribution(person, job) *
@@ -56,7 +56,7 @@ function output(state: GameState, person: Person) {
 
 export function People({ session }: { session: GameSession }) {
   const s = session.game.state,
-    occupations = JOB_IDS.filter((job) => jobUnlocked(s, job))
+    unlocked = JOB_IDS.filter((job) => jobUnlocked(s, job))
   return (
     <SectionDisclosure
       className="people"
@@ -83,7 +83,7 @@ export function People({ session }: { session: GameSession }) {
                     <strong>{p.name}</strong>
                     <span className="person-role">
                       {isWorkingJob(p.job)
-                        ? OCCUPATIONS[p.job].name
+                        ? JOBS[p.job].name
                         : 'Available for assignment'}
                     </span>
                   </div>
@@ -106,11 +106,10 @@ export function People({ session }: { session: GameSession }) {
                 </span>
               </div>
               <label
-                className="person-occupation"
-                htmlFor={`occupation-${i}`}
-                data-visible={occupations.length > 1}
+                className="person-job"
+                data-visible={unlocked.length > 1}
               >
-                <span className="person-field-label">Assign occupation</span>
+                <span className="person-field-label">Assign job</span>
                 <Select.Root
                   value={p.job}
                   size="2"
@@ -119,16 +118,13 @@ export function People({ session }: { session: GameSession }) {
                     if (job) session.change(() => session.game.assign(i, job))
                   }}
                 >
-                  <Select.Trigger
-                    id={`occupation-${i}`}
-                    aria-label={`${p.name} occupation`}
-                  />
+                  <Select.Trigger aria-label={`${p.name} job`} />
                   <Select.Content>
-                    {occupations.map((job) => (
+                    {unlocked.map((job) => (
                       <Select.Item key={job} value={job}>
                         {!isWorkingJob(job)
                           ? 'Unassigned'
-                          : `${OCCUPATIONS[job].name} · level ${expertiseLevel(p.practice[job])}`}
+                          : `${JOBS[job].name} · level ${expertiseLevel(p.practice[job])}`}
                       </Select.Item>
                     ))}
                   </Select.Content>
@@ -139,7 +135,7 @@ export function People({ session }: { session: GameSession }) {
                   {isWorkingJob(p.job) ? output(s, p) : 'Ready for assignment'}
                 </p>
                 <p className="person-aptitude">
-                  {OCCUPATIONS[p.aptitude].aptitude} aptitude · +5%
+                  {JOBS[p.aptitude].aptitude} aptitude · +5%
                 </p>
               </div>
               <details
@@ -162,9 +158,9 @@ export function People({ session }: { session: GameSession }) {
                     start = practiceThreshold(level),
                     next = practiceThreshold(level + 1)
                   return (
-                    <div className="occupation-practice" key={job}>
+                    <div className="job-practice" key={job}>
                       <span>
-                        {OCCUPATIONS[job].aptitude} · level {level}
+                        {JOBS[job].aptitude} · level {level}
                       </span>
                       <small>
                         +{formatResource(expertiseBonus(seconds) * 100)}%
@@ -173,7 +169,7 @@ export function People({ session }: { session: GameSession }) {
                       <ProgressBar
                         value={Math.max(0, seconds - start)}
                         max={next - start}
-                        label={`${OCCUPATIONS[job].aptitude} practice`}
+                        label={`${JOBS[job].aptitude} practice`}
                       />
                       <small>
                         {formatDuration(seconds)} / {formatDuration(next)}

@@ -135,7 +135,7 @@ test('builders learn through active work, preserve practice on cancellation, and
   expect(constructionSpeed(s)).toBe(1)
 })
 
-test('expertise survives conversion and reassignment while a new occupation starts fresh', () => {
+test('expertise survives conversion and reassignment while a new job starts fresh', () => {
   const s = settlement()
   people(s, 'sawyer')
   const p = required(s.people[0])
@@ -227,7 +227,7 @@ test('food security uses every food producer and each scholar under conservative
   expect(arrivalStatus(s).required).toBeGreaterThan(trainedFood.required)
 })
 
-test('arrival aptitudes are available occupations and persist across a reload', () => {
+test('arrival aptitudes are available jobs and persist across a reload', () => {
   const s = camp()
   s.welcome = true
   s.resources.food = 100

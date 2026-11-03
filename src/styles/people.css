@@ -310,17 +310,17 @@
   opacity: 0.5;
 }
 
-.person-occupation {
+.person-job {
   display: grid;
   gap: 6px;
   margin-top: 14px;
 }
 
-.person-occupation[data-visible="false"] {
+.person-job[data-visible="false"] {
   display: none;
 }
 
-.person-occupation .rt-SelectTrigger {
+.person-job .rt-SelectTrigger {
   width: 100%;
   min-width: 0;
 }
@@ -362,7 +362,7 @@
   border-top: 1px solid var(--color-base-300);
 }
 
-.occupation-practice {
+.job-practice {
   display: grid;
   gap: 5px;
   margin: 12px 0;

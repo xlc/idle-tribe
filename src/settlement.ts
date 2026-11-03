@@ -1,18 +1,11 @@
 import { actionOutputRate } from './actions'
 import { WORKERS_PER_BUILDING_LEVEL } from './constants'
-import {
-  ACTIONS,
-  BUILDINGS,
-  JOBS,
-  OCCUPATIONS,
-  PERKS,
-  RESEARCH,
-} from './definitions'
+import { ACTIONS, BUILDINGS, JOBS, PERKS, RESEARCH } from './definitions'
 import { healthMultiplier } from './food'
 import {
   ACTION_IDS,
-  type BuildingId,
   BUILDING_IDS,
+  type BuildingId,
   isActionJob,
   isWorkingJob,
   type ProductionJob,
@@ -121,7 +114,7 @@ export function crewSize(state: GameState) {
 }
 export function jobCapacity(state: GameState, job: JobId) {
   const id = workplace(job)
-  return isWorkingJob(job) && OCCUPATIONS[job].learning === 'construction'
+  return isWorkingJob(job) && JOBS[job].learning === 'construction'
     ? crewSize(state)
     : id
       ? WORKERS_PER_BUILDING_LEVEL * state.facilities[id].level
@@ -130,7 +123,7 @@ export function jobCapacity(state: GameState, job: JobId) {
 export function jobUnlocked(state: GameState, job: JobId) {
   return (
     job === 'idle' ||
-    (OCCUPATIONS[job].learning === 'construction'
+    (JOBS[job].learning === 'construction'
       ? automationUnlocked(state)
       : jobCapacity(state, job) > 0)
   )
@@ -172,12 +165,12 @@ export function arrivalAptitude(state: GameState, draw?: number): WorkingJob {
   seed = Math.imul(seed ^ (seed >>> 16), 0x735a2d97)
   const roll = draw ?? ((seed ^ (seed >>> 15)) >>> 0) / 4294967296
   // Aptitudes do nothing on action assignments, so arrivals draw from real
-  // occupations only.
+  // jobs only.
   const eligible = WORKING_JOB_IDS.filter(
     (job) => !isActionJob(job) && jobUnlocked(state, job),
   )
   const aptitude = eligible[Math.floor(roll * eligible.length)]
-  if (!aptitude) throw new Error('Arrival requires an available occupation')
+  if (!aptitude) throw new Error('Arrival requires an available job')
   return aptitude
 }
 export function fillWorkers(state: GameState, job: JobId) {

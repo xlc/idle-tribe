@@ -2,7 +2,6 @@ import type {
   ActionId,
   BuildingId,
   PerkId,
-  ProductionJob,
   ResearchId,
   ResourceId,
   WorkingJob,
@@ -13,7 +12,6 @@ import type {
   EquipmentDefinition,
   FormDefinition,
   JobDefinition,
-  OccupationDefinition,
   PerkDefinition,
   ResearchDefinition,
   ResourceDefinition,
@@ -27,8 +25,7 @@ export interface EraDefinition {
   buildings: Partial<Record<BuildingId, BuildingDefinition>>
   buildingUpgrades: Partial<Record<BuildingId, FormDefinition[]>>
   research: Partial<Record<ResearchId, ResearchDefinition>>
-  jobs: Partial<Record<ProductionJob, JobDefinition>>
-  occupations: Partial<Record<WorkingJob, OccupationDefinition>>
+  jobs: Partial<Record<WorkingJob, JobDefinition>>
   actions: Partial<Record<ActionId, ActionDefinition>>
   equipment: EquipmentDefinition[]
   perks: Partial<Record<PerkId, PerkDefinition>>

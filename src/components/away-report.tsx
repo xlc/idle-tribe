@@ -2,7 +2,7 @@ import * as Toast from '@radix-ui/react-toast'
 import { Dialog, Flex } from '@radix-ui/themes'
 import { type AwayProgress, awayHighlight } from '../clock'
 import { MIN_VISIBLE_RESOURCE_CHANGE } from '../constants'
-import { OCCUPATIONS, RESOURCE_INFO } from '../definitions'
+import { JOBS, RESOURCE_INFO } from '../definitions'
 import { formatDuration, formatResource } from '../format'
 import { RESOURCES } from '../ids'
 import { QUEUES, queueBlocker } from '../research'
@@ -20,7 +20,7 @@ function ExpertiseGains({ people }: { people: AwayProgress['expertise'] }) {
             {person.gains
               .map(
                 (gain) =>
-                  `${OCCUPATIONS[gain.job].aptitude} ${gain.before} → ${gain.after}`,
+                  `${JOBS[gain.job].aptitude} ${gain.before} → ${gain.after}`,
               )
               .join(' · ')}
           </span>

@@ -16,7 +16,6 @@ export const TOWN = {
   buildingUpgrades,
   research,
   jobs,
-  occupations: {},
   actions: {},
   equipment,
   perks: {},

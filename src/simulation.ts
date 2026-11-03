@@ -18,7 +18,7 @@ import {
   xpFactor,
 } from './actions'
 import { EPSILON } from './constants'
-import { ACTIONS, JOBS, OCCUPATIONS, RESEARCH } from './definitions'
+import { ACTIONS, JOBS, RESEARCH } from './definitions'
 import { consumeMeal, healthMultiplier, mealCost } from './food'
 import {
   ACTION_IDS,
@@ -29,7 +29,7 @@ import {
   RESOURCES,
   WORKING_JOB_IDS,
 } from './ids'
-import { isProductionJob } from './jobs'
+import { isProductionJob, jobRecipe } from './jobs'
 import { generatePersonName } from './names'
 import { createRecord } from './records'
 import { completeProject, projectName, QUEUES, startQueues } from './research'
@@ -55,11 +55,10 @@ function settleEvents(state: GameState, visible: boolean) {
   for (const p of state.people)
     if (isProductionJob(p.job) && p.progress >= 1 - EPSILON) {
       const input = jobInput(state, p.job)
-      const def = JOBS[p.job]
       if (canAfford(state, input)) {
         pay(state, input)
         p.progress = Math.max(0, p.progress - 1)
-        addResources(state, { [def.output]: 1 })
+        addResources(state, { [jobRecipe(p.job).output]: 1 })
       } else p.progress = 1
     }
   for (const id of QUEUES) {
@@ -206,7 +205,7 @@ export function advanceTime(
     const practiceRates = state.people.map((person, index) => {
       const job = person.job
       if (!isWorkingJob(job)) return 0
-      const definition = OCCUPATIONS[job]
+      const definition = JOBS[job]
       // Staffed actions practice like production jobs while their costs are
       // available; surplus output is discarded at the storage cap.
       const action = isActionJob(job) ? actionForJob(job) : undefined
@@ -328,7 +327,7 @@ export function resourceFlows(
   const production = workerRates(state, options)
   for (const [index, p] of state.people.entries())
     if (isProductionJob(p.job)) {
-      const output = JOBS[p.job].output
+      const output = jobRecipe(p.job).output
       const rate = production[index] ?? 0
       flows[output].production += rate
       const input = jobInput(state, p.job)

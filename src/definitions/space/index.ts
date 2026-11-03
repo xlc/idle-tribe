@@ -14,7 +14,6 @@ export const SPACE = {
   buildingUpgrades,
   research,
   jobs,
-  occupations: {},
   actions: {},
   equipment: [],
   perks: {},

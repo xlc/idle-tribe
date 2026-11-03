@@ -6,7 +6,6 @@ export const jobs = {
     name: 'Potter',
     aptitude: 'Pottery',
     learning: 'production',
-    description: 'Turns clay, heat, and a little patience into useful vessels.',
     output: 'ceramics',
     input: { blocks: 2, wood: 1 },
   },

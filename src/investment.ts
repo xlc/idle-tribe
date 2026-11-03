@@ -6,9 +6,9 @@ import {
 } from './actions'
 import { offlineWindow } from './clock'
 import { MIN_VISIBLE_RESOURCE_CHANGE } from './constants'
-import { BUILDINGS, JOBS, RESOURCE_INFO } from './definitions'
+import { BUILDINGS, RESOURCE_INFO } from './definitions'
 import { RESOURCES } from './ids'
-import { isProductionJob } from './jobs'
+import { isProductionJob, jobRecipe } from './jobs'
 import { completeProject, constructionPlan } from './research'
 import { storageCapacity } from './resources'
 import {
@@ -75,13 +75,13 @@ export function investmentOutcome(
               0,
             )
         const outcome = compare(
-          `${RESOURCE_INFO[JOBS[craft].output].name}/s`,
+          `${RESOURCE_INFO[jobRecipe(craft).output].name}/s`,
           rate(state),
           rate(after),
         )
         if (outcome) return outcome
         const base = compare(
-          `${RESOURCE_INFO[JOBS[craft].output].name}/s base`,
+          `${RESOURCE_INFO[jobRecipe(craft).output].name}/s base`,
           (BUILDINGS[project.id].forms[state.facilities[project.id].form]
             ?.rate ?? 0) / 60,
           (BUILDINGS[project.id].forms[after.facilities[project.id].form]

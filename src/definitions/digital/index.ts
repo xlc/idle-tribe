@@ -14,7 +14,6 @@ export const DIGITAL = {
   buildingUpgrades,
   research,
   jobs,
-  occupations: {},
   actions: {},
   equipment: [],
   perks: {},

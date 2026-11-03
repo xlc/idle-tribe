@@ -3,7 +3,6 @@ import { actions } from './actions'
 import { buildings } from './buildings'
 import { equipment } from './equipment'
 import { jobs } from './jobs'
-import { occupations } from './occupations'
 import { research } from './research'
 import { resources } from './resources'
 
@@ -16,7 +15,6 @@ export const TRIBAL = {
   buildingUpgrades: {},
   research,
   jobs,
-  occupations,
   actions,
   equipment,
   perks: {},

@@ -14,7 +14,6 @@ export const QUANTUM = {
   buildingUpgrades,
   research,
   jobs,
-  occupations: {},
   actions: {},
   equipment: [],
   perks: {},

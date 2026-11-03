@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test'
 import { BUILDINGS, EQUIPMENT, ERA_DEFINITIONS, RESEARCH } from './definitions'
 import type { EraDefinition } from './definitions/types'
+import type { JobId } from './ids'
 import {
   ACTION_IDS,
   BUILDING_IDS,
@@ -9,6 +10,7 @@ import {
   RESOURCES,
   WORKING_JOB_IDS,
 } from './ids'
+import { isProductionJob } from './jobs'
 import type { Requirements } from './types'
 
 const catalogs: {
@@ -32,12 +34,9 @@ const catalogs: {
     entries: (era) => Object.keys(era.research),
   },
   {
-    name: 'occupations',
+    name: 'jobs',
     ids: WORKING_JOB_IDS,
-    entries: (era) => [
-      ...Object.keys(era.jobs),
-      ...Object.keys(era.occupations),
-    ],
+    entries: (era) => Object.keys(era.jobs),
   },
   {
     name: 'actions',
@@ -106,7 +105,9 @@ test('research and building forms are owned by the era that unlocks them', () =>
 
 test('jobs and resources are owned by their first production era', () => {
   for (const [index, era] of ERA_DEFINITIONS.entries()) {
-    for (const job of Object.keys(era.jobs)) {
+    for (const job of (Object.keys(era.jobs) as JobId[]).filter(
+      isProductionJob,
+    )) {
       const workplace = BUILDING_IDS.find((id) => BUILDINGS[id].job === job)
       expect(workplace && buildingEras.get(workplace)).toBe(index)
     }

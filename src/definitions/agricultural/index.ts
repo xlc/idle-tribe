@@ -14,7 +14,6 @@ export const AGRICULTURAL = {
   buildingUpgrades,
   research,
   jobs,
-  occupations: {},
   actions: {},
   equipment,
   perks: {},

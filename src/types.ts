@@ -168,15 +168,12 @@ export interface BuildingDefinition {
   offlineHours?: number
   jobBonus?: Partial<Record<JobId, number>>
 }
-export interface OccupationDefinition {
+export interface JobDefinition {
   name: string
   aptitude: string
   learning: 'production' | 'construction'
-}
-export interface JobDefinition extends OccupationDefinition {
-  description: string
-  output: ResourceId
-  input: Cost
+  output?: ResourceId
+  input?: Cost
 }
 export interface Person {
   name: string

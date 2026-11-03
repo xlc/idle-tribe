@@ -2,7 +2,6 @@ import type {
   ActionId,
   BuildingId,
   PerkId,
-  ProductionJob,
   ResearchId,
   ResourceId,
   WorkingJob,
@@ -13,7 +12,6 @@ import type {
   ActionDefinition,
   BuildingDefinition,
   JobDefinition,
-  OccupationDefinition,
   PerkDefinition,
   ResearchDefinition,
   ResourceDefinition,
@@ -69,7 +67,7 @@ export const RESEARCH: Record<ResearchId, ResearchDefinition> = {
   ...BEYOND_QUANTUM.research,
 }
 
-export const JOBS: Record<ProductionJob, JobDefinition> = {
+export const JOBS: Record<WorkingJob, JobDefinition> = {
   ...TRIBAL.jobs,
   ...AGRICULTURAL.jobs,
   ...TOWN.jobs,
@@ -78,18 +76,6 @@ export const JOBS: Record<ProductionJob, JobDefinition> = {
   ...SPACE.jobs,
   ...QUANTUM.jobs,
   ...BEYOND_QUANTUM.jobs,
-}
-
-export const OCCUPATIONS: Record<WorkingJob, OccupationDefinition> = {
-  ...JOBS,
-  ...TRIBAL.occupations,
-  ...AGRICULTURAL.occupations,
-  ...TOWN.occupations,
-  ...INDUSTRIAL.occupations,
-  ...DIGITAL.occupations,
-  ...SPACE.occupations,
-  ...QUANTUM.occupations,
-  ...BEYOND_QUANTUM.occupations,
 }
 
 export const ACTIONS: Record<ActionId, ActionDefinition> = {
