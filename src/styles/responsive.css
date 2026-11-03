@@ -28,15 +28,8 @@
       calc(12px + env(safe-area-inset-right)) env(safe-area-inset-bottom)
       calc(12px + env(safe-area-inset-left));
   }
-  .game-header {
-    padding-bottom: 12px;
-  }
-  .game-layout {
-    gap: 4px;
-  }
   .stockpile {
     flex-wrap: nowrap;
-    padding: 4px 0;
     overflow-x: auto;
     touch-action: pan-x;
     overscroll-behavior: none;
@@ -67,9 +60,6 @@
   }
   .resource-value {
     font-size: 16px;
-  }
-  .resource-meta {
-    grid-column: 2;
   }
   .settlement-brief {
     margin-bottom: 18px;
@@ -119,17 +109,11 @@
   .plan-details .worker-control {
     flex-wrap: wrap;
   }
-  .manual-work {
-    margin-top: 8px;
-  }
-  .manual-work summary {
-    padding: 8px 0;
-    min-height: 36px;
-  }
   .action-automated {
     display: grid;
     grid-template-columns: 32px minmax(0, 1fr) auto;
-    gap: 8px 10px;
+    gap: 8px;
+    padding: 8px 10px;
   }
   .action-automated .action-icon {
     grid-column: 1;
@@ -151,22 +135,13 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    width: 100%;
-    min-width: 0;
+    flex: 0 1 88px;
+    min-width: 70px;
+    gap: 6px;
   }
   .action-automation-controls > .rt-ProgressRoot {
     flex: 1;
     min-width: 40px;
-  }
-  .workforce-bar {
-    margin-bottom: 12px;
-  }
-  .workforce-bar > div {
-    gap: 6px 10px;
-  }
-  .happiness-status {
-    flex-basis: 100%;
-    font-size: 12px;
   }
   .away-summary {
     flex-wrap: wrap;
@@ -176,15 +151,8 @@
     order: 2;
     flex-basis: 100%;
   }
-  .away-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
   .production-view {
     gap: 18px;
-  }
-  .action-automated {
-    gap: 8px;
-    padding: 8px 10px;
   }
   .action-automated .action-icon,
   .action-automated .action-icon .painted-art {
@@ -205,17 +173,8 @@
   .action-automated .action-skill {
     display: none;
   }
-  .action-automation-controls {
-    flex: 0 1 88px;
-    min-width: 70px;
-    gap: 6px;
-  }
-  .action-automation-controls > .rt-ProgressRoot {
-    width: auto;
-  }
   .action-worker-inline .worker-control .rt-Button {
     min-width: 32px;
-    min-height: 36px;
   }
   .action-worker-inline .worker-count {
     min-width: 22px;

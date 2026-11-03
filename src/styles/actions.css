@@ -237,12 +237,6 @@
   padding: 2px;
   margin: -2px;
 }
-.manual-work {
-  margin-top: 14px;
-}
-.manual-work summary {
-  color: var(--color-neutral);
-}
 .manual-action .project-progress {
   position: absolute;
   inset: auto 0 0;

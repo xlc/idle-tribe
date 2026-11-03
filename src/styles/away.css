@@ -262,10 +262,6 @@
 .away-milestones span {
   color: var(--color-neutral);
 }
-.away-note {
-  color: var(--color-neutral);
-  margin-top: 8px;
-}
 .away-attention {
   color: var(--color-warning);
 }

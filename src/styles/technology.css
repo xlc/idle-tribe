@@ -60,13 +60,13 @@
   font-size: 12px;
   margin-top: 8px;
 }
-.research-card .requirement[data-visible="false"] {
-  visibility: hidden;
-}
 .research-card .requirement {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.research-card .requirement[data-visible="false"] {
+  visibility: hidden;
 }
 .queue-view {
   display: grid;
@@ -89,11 +89,6 @@
 }
 .research-card .branch-identity {
   margin-top: 0;
-}
-.tech-effect {
-  font-size: 13px;
-  line-height: 1.6;
-  margin-top: 8px;
 }
 .completed-research {
   display: flex;

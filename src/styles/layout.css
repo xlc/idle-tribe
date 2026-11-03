@@ -50,14 +50,6 @@
   border-radius: 50%;
   background: var(--color-primary);
 }
-.working-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--color-primary);
-  font-size: 11px;
-  font-weight: 600;
-}
 .opening-shell {
   max-width: 760px;
 }

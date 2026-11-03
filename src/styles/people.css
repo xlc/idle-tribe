@@ -152,6 +152,7 @@
   color: var(--color-base-content);
   font-size: 13px;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .arrival-details[open] summary {
