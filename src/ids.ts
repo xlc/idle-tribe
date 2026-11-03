@@ -115,6 +115,10 @@ export const RESEARCH_IDS = [
   'basket-weaving',
   'trail-marking',
   'crop-rotation',
+  'foraging-rounds',
+  'timber-camps',
+  'expedition-planning',
+  'stockpiling',
 ] as const
 export const JOB_IDS = [
   'idle',
@@ -139,8 +143,29 @@ export const JOB_IDS = [
   'stellar-worker',
   'explorer',
   'potter',
+  'digger',
+  'hunter',
+  'chopper',
+  'feller',
+  'logging-operator',
+  'stone-splitter',
+  'stone-miner',
+  'quarry-operator',
 ] as const
-export const ACTION_IDS = ['gather', 'sticks', 'stone', 'explore'] as const
+export const ACTION_IDS = [
+  'gather',
+  'sticks',
+  'stone',
+  'explore',
+  'dig-roots',
+  'hunt-game',
+  'chop-wood',
+  'fell-timber',
+  'mechanized-logging',
+  'quarry-stone',
+  'mine-stone',
+  'mechanized-quarrying',
+] as const
 export const EXPEDITION_ENCOUNTER_IDS = [
   'abandoned-cache',
   'ridge-travelers',
@@ -152,6 +177,14 @@ export const ACTION_JOB_IDS = [
   'woodcutter',
   'stoneworker',
   'explorer',
+  'digger',
+  'hunter',
+  'chopper',
+  'feller',
+  'logging-operator',
+  'stone-splitter',
+  'stone-miner',
+  'quarry-operator',
 ] as const
 export const PERK_IDS = [
   'longer-preparations',

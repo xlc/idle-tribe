@@ -1,5 +1,10 @@
 import { expect, test } from 'bun:test'
-import { actionDuration, actionYield, currentAction, xpFactor } from './actions'
+import {
+  actionAvailability,
+  actionDuration,
+  actionYield,
+  xpFactor,
+} from './actions'
 import { RESEARCH } from './definitions'
 import { parseSave } from './persistence'
 import {
@@ -93,7 +98,7 @@ test('research prerequisites stay hidden until the prerequisite completes', () =
   expect(researchVisible(state, 'shelters')).toBe(true)
 })
 
-test('early gathering research upgrades actions into better tiers', () => {
+test('early gathering research unlocks better actions beside the base ones', () => {
   const state = createDefaultState()
   state.discovered = { wood: true, stone: true }
   state.researchUnlocked = true
@@ -103,11 +108,15 @@ test('early gathering research upgrades actions into better tiers', () => {
   expect(researchVisible(state, 'field-practice')).toBe(false)
   completeProject(state, { kind: 'research', id: 'sharpened-stick' })
   expect(researchVisible(state, 'woodcutting')).toBe(false)
-  // The sharpened stick itself upgrades food gathering to Dig roots.
-  expect(actionYield(state, 'gather')).toBeCloseTo(4)
-  expect(actionDuration(state, 'gather')).toBeCloseTo(4)
+  // The sharpened stick unlocks Dig roots next to plain gathering.
+  expect(actionAvailability(state, 'dig-roots').kind).not.toBe('locked')
+  expect(actionYield(state, 'dig-roots')).toBeCloseTo(6)
+  expect(actionDuration(state, 'dig-roots')).toBeCloseTo(4)
+  expect(actionYield(state, 'gather')).toBeCloseTo(1)
   expect(researchVisible(state, 'field-practice')).toBe(false)
   completeProject(state, { kind: 'research', id: 'shelters' })
+  expect(researchVisible(state, 'field-practice')).toBe(false)
+  completeProject(state, { kind: 'research', id: 'foraging-rounds' })
   expect(researchVisible(state, 'field-practice')).toBe(true)
   expect(researchVisible(state, 'stonecutting')).toBe(false)
 
@@ -117,31 +126,36 @@ test('early gathering research upgrades actions into better tiers', () => {
   expect(researchVisible(state, 'stonecutting')).toBe(true)
   completeProject(state, { kind: 'research', id: 'woodcutting' })
   completeProject(state, { kind: 'research', id: 'field-practice' })
-  // Chop wood: 5 wood per 6s trip instead of 1 per 2s.
-  expect(actionYield(state, 'sticks')).toBeCloseTo(5)
-  expect(actionDuration(state, 'sticks')).toBeCloseTo(6)
-  expect(currentAction(state, 'sticks').name).toBe('Chop wood')
+  // Chop wood runs beside Collect sticks: 5 wood per 6s trip.
+  expect(actionYield(state, 'chop-wood')).toBeCloseTo(5)
+  expect(actionDuration(state, 'chop-wood')).toBeCloseTo(6)
+  expect(actionYield(state, 'sticks')).toBeCloseTo(1)
   expect(xpFactor(state, 'sticks')).toBeCloseTo(xpBefore + 0.03)
-  // The tier is the whole payoff; no extra research levels.
+  // The new action is the whole payoff; no extra research levels.
   expect(researchUpgradeVisible(state, 'woodcutting')).toBe(false)
   expect(researchUpgradeVisible(state, 'field-practice')).toBe(true)
 
   completeProject(state, { kind: 'research', id: 'stonecutting' })
-  expect(actionYield(state, 'stone')).toBeCloseTo(6)
-  expect(actionDuration(state, 'stone')).toBeCloseTo(8)
-  expect(currentAction(state, 'stone').name).toBe('Quarry stone')
+  expect(actionYield(state, 'quarry-stone')).toBeCloseTo(6)
+  expect(actionDuration(state, 'quarry-stone')).toBeCloseTo(8)
+  expect(actionYield(state, 'stone')).toBeCloseTo(1)
   expect(researchUpgradeVisible(state, 'stonecutting')).toBe(false)
 })
 
 test('multi-level quality-of-life research stacks per level', () => {
   const state = createDefaultState()
   state.discovered = { wood: true, stone: true }
+  state.expeditionUnlocked = true
   state.researchUnlocked = true
 
   expect(researchVisible(state, 'basket-weaving')).toBe(false)
   expect(researchVisible(state, 'trail-marking')).toBe(false)
   completeProject(state, { kind: 'research', id: 'shelters' })
+  expect(researchVisible(state, 'basket-weaving')).toBe(false)
+  expect(researchVisible(state, 'trail-marking')).toBe(false)
+  completeProject(state, { kind: 'research', id: 'stockpiling' })
   expect(researchVisible(state, 'basket-weaving')).toBe(true)
+  completeProject(state, { kind: 'research', id: 'expedition-planning' })
   expect(researchVisible(state, 'trail-marking')).toBe(true)
   expect(researchUpgradeVisible(state, 'basket-weaving')).toBe(false)
 

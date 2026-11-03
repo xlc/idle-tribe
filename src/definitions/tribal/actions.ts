@@ -1,5 +1,15 @@
-import type { ActionId } from '../../ids'
-import type { ActionDefinition } from '../../types'
+import type { ActionId, ResearchId } from '../../ids'
+import type { ActionDefinition, GameState } from '../../types'
+
+// Keep wild gathering as a fallback until the settlement has expanded beyond
+// its first farm. This prevents a hidden farm completion from turning off the
+// only active food source before a farmer is assigned.
+const wildGathering = (s: GameState) =>
+  !(s.research.agriculture > 0 && s.facilities.farm.level >= 2)
+const unlocked =
+  (id: ResearchId) =>
+  (s: GameState): boolean =>
+    s.research[id] > 0
 
 export const actions = {
   gather: {
@@ -15,33 +25,7 @@ export const actions = {
     job: 'forager',
     resource: 'food',
     amount: 1,
-    // Keep wild gathering as a fallback until the settlement has expanded
-    // beyond its first farm. This prevents a hidden farm completion from
-    // turning off the only active food source before a farmer is assigned.
-    visible: (s) =>
-      !(s.research.agriculture > 0 && s.facilities.farm.level >= 2),
-    tiers: [
-      {
-        name: 'Dig roots',
-        description:
-          'A sharpened stick persuades the ground to give up its reserves.',
-        requires: { research: ['sharpened-stick'] },
-        seconds: 4,
-        amount: 4,
-        baseXp: 5,
-        xp: 2,
-      },
-      {
-        name: 'Hunt game',
-        description:
-          'Prepared hunters return with more than anyone could forage.',
-        requires: { research: ['preparedness'] },
-        seconds: 12,
-        amount: 14,
-        baseXp: 7,
-        xp: 6,
-      },
-    ],
+    visible: wildGathering,
   },
   sticks: {
     kind: 'resource',
@@ -56,35 +40,6 @@ export const actions = {
     resource: 'wood',
     amount: 1,
     visible: (s) => s.discovered.wood,
-    tiers: [
-      {
-        name: 'Chop wood',
-        description: 'A stone axe settles which parts of the tree come home.',
-        requires: { research: ['woodcutting'] },
-        seconds: 6,
-        amount: 5,
-        baseXp: 5,
-        xp: 2,
-      },
-      {
-        name: 'Fell timber',
-        description: 'Whole trunks, brought down with something like a plan.',
-        requires: { research: ['forestry-methods'] },
-        seconds: 15,
-        amount: 16,
-        baseXp: 8,
-        xp: 5,
-      },
-      {
-        name: 'Mechanized logging',
-        description: 'The forest is now processed at a professional pace.',
-        requires: { research: ['powered-workshops'] },
-        seconds: 40,
-        amount: 50,
-        baseXp: 12,
-        xp: 16,
-      },
-    ],
   },
   stone: {
     kind: 'resource',
@@ -99,35 +54,6 @@ export const actions = {
     resource: 'stone',
     amount: 1,
     visible: (s) => s.discovered.stone,
-    tiers: [
-      {
-        name: 'Quarry stone',
-        description: 'Wooden wedges and mallets talk rocks into splitting.',
-        requires: { research: ['stonecutting'] },
-        seconds: 8,
-        amount: 6,
-        baseXp: 6,
-        xp: 2,
-      },
-      {
-        name: 'Mine stone',
-        description: 'The best rock was underneath; now there is a way down.',
-        requires: { research: ['stone-lifting'] },
-        seconds: 20,
-        amount: 20,
-        baseXp: 8,
-        xp: 6,
-      },
-      {
-        name: 'Mechanized quarrying',
-        description: 'Machines chew through bedrock with admirable patience.',
-        requires: { research: ['powered-workshops'] },
-        seconds: 45,
-        amount: 55,
-        baseXp: 12,
-        xp: 18,
-      },
-    ],
   },
   explore: {
     kind: 'exploration',
@@ -141,5 +67,126 @@ export const actions = {
     building: 'expedition-camp',
     job: 'explorer',
     visible: (s) => s.exploreUnlocked,
+  },
+  'dig-roots': {
+    kind: 'resource',
+    name: 'Dig roots',
+    description:
+      'A sharpened stick persuades the ground to give up its reserves.',
+    levelEffect: '+2% output · +2% speed',
+    seconds: 4,
+    baseXp: 5,
+    xp: 2,
+    cost: {},
+    building: 'foraging',
+    job: 'digger',
+    resource: 'food',
+    amount: 6,
+    visible: (s) => unlocked('sharpened-stick')(s) && wildGathering(s),
+  },
+  'hunt-game': {
+    kind: 'resource',
+    name: 'Hunt game',
+    description: 'Prepared hunters return with more than anyone could forage.',
+    levelEffect: '+2% output · +2% speed',
+    seconds: 12,
+    baseXp: 7,
+    xp: 6,
+    cost: {},
+    building: 'foraging',
+    job: 'hunter',
+    resource: 'food',
+    amount: 14,
+    visible: (s) => unlocked('preparedness')(s) && wildGathering(s),
+  },
+  'chop-wood': {
+    kind: 'resource',
+    name: 'Chop wood',
+    description: 'A stone axe settles which parts of the tree come home.',
+    levelEffect: '+2% output · +2% speed',
+    seconds: 6,
+    baseXp: 5,
+    xp: 2,
+    cost: {},
+    building: 'lumber',
+    job: 'chopper',
+    resource: 'wood',
+    amount: 5,
+    visible: unlocked('woodcutting'),
+  },
+  'fell-timber': {
+    kind: 'resource',
+    name: 'Fell timber',
+    description: 'Whole trunks, brought down with something like a plan.',
+    levelEffect: '+2% output · +2% speed',
+    seconds: 15,
+    baseXp: 8,
+    xp: 5,
+    cost: {},
+    building: 'lumber',
+    job: 'feller',
+    resource: 'wood',
+    amount: 16,
+    visible: unlocked('forestry-methods'),
+  },
+  'mechanized-logging': {
+    kind: 'resource',
+    name: 'Mechanized logging',
+    description: 'The forest is now processed at a professional pace.',
+    levelEffect: '+2% output · +2% speed',
+    seconds: 40,
+    baseXp: 12,
+    xp: 16,
+    cost: {},
+    building: 'lumber',
+    job: 'logging-operator',
+    resource: 'wood',
+    amount: 50,
+    visible: unlocked('powered-workshops'),
+  },
+  'quarry-stone': {
+    kind: 'resource',
+    name: 'Quarry stone',
+    description: 'Wooden wedges and mallets talk rocks into splitting.',
+    levelEffect: '+2% output · +2% speed',
+    seconds: 8,
+    baseXp: 6,
+    xp: 2,
+    cost: {},
+    building: 'quarry',
+    job: 'stone-splitter',
+    resource: 'stone',
+    amount: 6,
+    visible: unlocked('stonecutting'),
+  },
+  'mine-stone': {
+    kind: 'resource',
+    name: 'Mine stone',
+    description: 'The best rock was underneath; now there is a way down.',
+    levelEffect: '+2% output · +2% speed',
+    seconds: 20,
+    baseXp: 8,
+    xp: 6,
+    cost: {},
+    building: 'quarry',
+    job: 'stone-miner',
+    resource: 'stone',
+    amount: 20,
+    visible: unlocked('stone-lifting'),
+  },
+  'mechanized-quarrying': {
+    kind: 'resource',
+    name: 'Mechanized quarrying',
+    description: 'Machines chew through bedrock with admirable patience.',
+    levelEffect: '+2% output · +2% speed',
+    seconds: 45,
+    baseXp: 12,
+    xp: 18,
+    cost: {},
+    building: 'quarry',
+    job: 'quarry-operator',
+    resource: 'stone',
+    amount: 55,
+    visible: unlocked('powered-workshops'),
   },
 } satisfies Partial<Record<ActionId, ActionDefinition>>

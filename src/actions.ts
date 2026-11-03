@@ -7,7 +7,16 @@ import {
   EXPLORE_FINDS,
 } from './definitions/tribal/exploration'
 import { formatExploreNotice, formatExploreOutcome } from './format'
-import { type ActionId, RESEARCH_IDS, RESOURCES } from './ids'
+import {
+  ACTION_IDS,
+  type ActionId,
+  type BuildingId,
+  BUILDING_IDS,
+  type JobId,
+  type ResourceId,
+  RESEARCH_IDS,
+  RESOURCES,
+} from './ids'
 import { hasResearch, researchEffects } from './research-effects'
 import { addResources, canAfford, pay, refund } from './resources'
 import { happinessMultiplier, requirementBlocker } from './settlement'
@@ -31,22 +40,6 @@ export const ACTION_BALANCE = {
   rateModeSeconds: 2,
 }
 
-// Highest research-upgraded tier whose requirements pass. 0 is the base
-// action; tiers apply automatically and never revert.
-export function actionTierIndex(state: GameState, id: ActionId) {
-  const tiers = ACTIONS[id].tiers
-  if (!tiers) return 0
-  let best = 0
-  for (const [index, tier] of tiers.entries())
-    if (!requirementBlocker(state, tier.requires)) best = index + 1
-  return best
-}
-export function currentAction(state: GameState, id: ActionId) {
-  const def = ACTIONS[id],
-    tier = def.tiers?.[actionTierIndex(state, id) - 1]
-  return tier ? { ...def, ...tier } : def
-}
-
 export function syncUnlocks(state: GameState) {
   if (state.resources.food >= 5) state.exploreUnlocked = true
   if (state.resources.wood >= 2) state.researchUnlocked = true
@@ -56,6 +49,31 @@ export function actionSlots(state: GameState, id: ActionId) {
   return (
     WORKERS_PER_BUILDING_LEVEL * state.facilities[ACTIONS[id].building].level
   )
+}
+// Static inversions of the action catalog; definitions never change at runtime.
+const ACTIONS_BY_BUILDING = new Map<BuildingId, readonly ActionId[]>(
+  BUILDING_IDS.map((id) => [
+    id,
+    ACTION_IDS.filter((a) => ACTIONS[a].building === id),
+  ]),
+)
+export function buildingActions(id: BuildingId): readonly ActionId[] {
+  return ACTIONS_BY_BUILDING.get(id) ?? []
+}
+export function buildingResource(id: BuildingId): ResourceId | undefined {
+  for (const a of buildingActions(id)) {
+    const resource = ACTIONS[a].resource
+    if (resource) return resource
+  }
+  return undefined
+}
+const ACTION_FOR_JOB = new Map<JobId, ActionId>()
+for (const id of ACTION_IDS) {
+  const job = ACTIONS[id].job
+  if (!ACTION_FOR_JOB.has(job)) ACTION_FOR_JOB.set(job, id)
+}
+export function actionForJob(job: JobId): ActionId | undefined {
+  return ACTION_FOR_JOB.get(job)
 }
 export function actionWorkers(state: GameState, id: ActionId) {
   const job = ACTIONS[id].job
@@ -149,12 +167,12 @@ export function startAction(state: GameState, id: ActionId) {
 }
 export function actionRequiredXp(state: GameState, id: ActionId) {
   return Math.ceil(
-    currentAction(state, id).baseXp *
+    ACTIONS[id].baseXp *
       ACTION_BALANCE.xpPerLevel ** (state.actionSkills[id].level - 1),
   )
 }
 export function actionYield(state: GameState, id: ActionId) {
-  const def = currentAction(state, id)
+  const def = ACTIONS[id]
   let bonus = 1
   for (const r of RESEARCH_IDS)
     if (hasResearch(state, r))
@@ -174,7 +192,7 @@ export function baseActionDuration(state: GameState, id: ActionId) {
     if (hasResearch(state, r))
       researchMultiplier += researchEffects(state, r).actionDuration?.[id] ?? 0
   return (
-    currentAction(state, id).seconds *
+    ACTIONS[id].seconds *
     ACTION_BALANCE.durationPerLevel ** (state.actionSkills[id].level - 1) *
     Math.max(0.25, researchMultiplier)
   )
@@ -252,6 +270,16 @@ export function actionOutputRate(
 
 export function manualRate(state: GameState) {
   return state.manual ? 1 / actionDuration(state, state.manual.id) : 0
+}
+
+// Per-second output of one staffed action, whatever mode it runs in: resource
+// actions produce continuously, job actions complete at their work cadence.
+export function actionRate(state: GameState, id: ActionId) {
+  return ACTIONS[id].resource
+    ? actionOutputRate(state, id)
+    : actionJobActive(state, id)
+      ? 1 / actionCompletionDuration(state, id)
+      : 0
 }
 
 // Whether an action's staff are actively working (visible, staffed, and
@@ -551,7 +579,7 @@ export function finishManual(state: GameState) {
     addResources(state, { [def.resource]: actionYield(state, active.id) })
   }
   if (def.kind === 'exploration') applyExploreReward(state, 1, 'manual')
-  grantActionXp(state, active.id, currentAction(state, active.id).xp ?? 1)
+  grantActionXp(state, active.id, def.xp ?? 1)
   syncUnlocks(state)
 }
 
@@ -573,11 +601,7 @@ export function completeAction(state: GameState, id: ActionId) {
   }
   if (def.kind === 'exploration')
     applyExploreReward(state, automationFactor(state, id))
-  grantActionXp(
-    state,
-    id,
-    xpFactor(state, id) * (currentAction(state, id).xp ?? 1),
-  )
+  grantActionXp(state, id, xpFactor(state, id) * (def.xp ?? 1))
   syncUnlocks(state)
   return true
 }

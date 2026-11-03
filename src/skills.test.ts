@@ -22,7 +22,7 @@ import { complete, people, required, settlement } from './test-helpers'
 
 function camp() {
   const s = createDefaultState()
-  complete(s, 'shelters')
+  complete(s, 'shelters', 'foraging-rounds')
   s.welcome = false
   s.resources.food = 100000
   s.resources.wood = 100000

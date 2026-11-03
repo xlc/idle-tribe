@@ -47,7 +47,12 @@ export const buildingUpgrades = {
       requires: { research: ['powered-workshops'] },
       cost: { planks: 40, blocks: 30, metal: 20, machinery: 5 },
       work: 12,
-      actionAutomation: { sticks: 0.1 },
+      actionAutomation: {
+        sticks: 0.1,
+        'chop-wood': 0.1,
+        'fell-timber': 0.1,
+        'mechanized-logging': 0.1,
+      },
     },
   ],
   quarry: [
@@ -58,7 +63,12 @@ export const buildingUpgrades = {
       requires: { research: ['powered-workshops'] },
       cost: { planks: 30, blocks: 40, metal: 20, machinery: 5 },
       work: 12,
-      actionAutomation: { stone: 0.1 },
+      actionAutomation: {
+        stone: 0.1,
+        'quarry-stone': 0.1,
+        'mine-stone': 0.1,
+        'mechanized-quarrying': 0.1,
+      },
     },
   ],
   sawmill: [

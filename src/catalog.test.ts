@@ -15,9 +15,18 @@ import { isProductionJob } from './jobs'
 import { createRecord } from './records'
 import { completeProject, quoteProject } from './research'
 import { storageCapacity } from './resources'
-import { jobCapacity, requirementBlocker } from './settlement'
+import {
+  adjustWorkers,
+  assigned,
+  buildingJobs,
+  craftingJob,
+  fillWorkers,
+  jobCapacity,
+  requirementBlocker,
+  staffingMultiplier,
+} from './settlement'
 import { createDefaultState } from './state'
-import { advancedSettlement, required } from './test-helpers'
+import { advancedSettlement, people } from './test-helpers'
 import type { Cost } from './types'
 
 test.each(SPECIALIZATION_IDS)(
@@ -53,23 +62,24 @@ test.each(SPECIALIZATION_IDS)(
         changed = true
       }
       for (const id of BUILDING_IDS) {
-        const job = BUILDINGS[id].job
+        const crafting = craftingJob(id)
         for (const [form, def] of BUILDINGS[id].forms.entries()) {
           const key = `${id}:${form}`
           if (
             forms.has(key) ||
             requirementBlocker(state, def.requires) ||
             !payable(def.cost) ||
-            (job &&
-              isProductionJob(job) &&
-              !payable(def.input ?? JOBS[job].input))
+            (crafting &&
+              isProductionJob(crafting) &&
+              !payable(def.input ?? JOBS[crafting].input))
           )
             continue
           forms.add(key)
           completeProject(state, { kind: 'expand', id, form, target: 1 })
           // Switching forms does not remove sources already established.
           state.facilities[id].form = form
-          if (job && isProductionJob(job)) supply.add(JOBS[job].output)
+          if (crafting && isProductionJob(crafting))
+            supply.add(JOBS[crafting].output)
           changed = true
         }
       }
@@ -135,6 +145,7 @@ test('storage upgrades retain existing resources and every resource has expandab
 test('the initial era has one general storage building for its early resources', () => {
   const state = createDefaultState()
   completeProject(state, { kind: 'research', id: 'shelters' })
+  completeProject(state, { kind: 'research', id: 'stockpiling' })
   const available = BUILDING_IDS.filter((id) => {
     const form = BUILDINGS[id].forms[0]
     if (!form?.storage) return false
@@ -197,6 +208,22 @@ test('action slots and workplace capacity agree for every action', () => {
       state.facilities[def.building].level = level
       expect(actionSlots(state, id)).toBe(jobCapacity(state, def.job))
     }
-    expect(required(BUILDINGS[def.building].job)).toBe(def.job)
+    expect(buildingJobs(def.building)).toContain(def.job)
   }
+})
+
+test('gathering camp slots are shared across its actions', () => {
+  const state = createDefaultState()
+  state.facilities.foraging.level = 1
+  people(state, 'idle', 'idle', 'idle')
+
+  // Filling one food job consumes the camp's whole shared capacity.
+  expect(fillWorkers(state, 'forager')).toBe(true)
+  expect(assigned(state, 'forager')).toBe(2)
+  expect(fillWorkers(state, 'digger')).toBe(false)
+
+  // Overstaffing any job at the camp slows everyone working there.
+  expect(adjustWorkers(state, 'digger', 1)).toBe(true)
+  expect(staffingMultiplier(state, 'forager')).toBeLessThan(1)
+  expect(staffingMultiplier(state, 'digger')).toBeLessThan(1)
 })

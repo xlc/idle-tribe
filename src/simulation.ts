@@ -1,5 +1,6 @@
 import {
   actionDuration,
+  actionForJob,
   actionJobActive,
   actionOutputRate,
   actionRequiredXp,
@@ -8,7 +9,6 @@ import {
   automationFactor,
   baseActionDuration,
   completeAction,
-  currentAction,
   exploreExpectedRewards,
   finishManual,
   grantActionXp,
@@ -166,8 +166,7 @@ function actionRules(state: GameState): ActionRule[] {
             automationFactor(state, id) *
             happinessMultiplier(state)
           : 0,
-        xpPerCompletion:
-          xpFactor(state, id) * (currentAction(state, id).xp ?? 1),
+        xpPerCompletion: xpFactor(state, id) * (ACTIONS[id].xp ?? 1),
       },
     ]
   })
@@ -210,9 +209,7 @@ export function advanceTime(
       const definition = OCCUPATIONS[job]
       // Staffed actions practice like production jobs while their costs are
       // available; surplus output is discarded at the storage cap.
-      const action = isActionJob(job)
-        ? ACTION_IDS.find((id) => ACTIONS[id].job === job)
-        : undefined
+      const action = isActionJob(job) ? actionForJob(job) : undefined
       const working =
         definition.learning === 'production'
           ? action

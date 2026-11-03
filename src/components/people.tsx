@@ -1,8 +1,8 @@
 import { Card, Select } from '@radix-ui/themes'
-import { actionOutputRate, actionWorkers, currentAction } from '../actions'
+import { actionForJob, actionOutputRate, actionWorkers } from '../actions'
 import { ACTIONS, JOBS, OCCUPATIONS, RESOURCE_INFO } from '../definitions'
 import { formatDuration, formatResource } from '../format'
-import { ACTION_IDS, isWorkingJob, JOB_IDS, WORKING_JOB_IDS } from '../ids'
+import { isWorkingJob, JOB_IDS, WORKING_JOB_IDS } from '../ids'
 import { isProductionJob } from '../jobs'
 import type { GameSession } from '../session'
 import {
@@ -35,9 +35,9 @@ function initials(name: string) {
 function output(state: GameState, person: Person) {
   const job = person.job
   if (!isWorkingJob(job)) return 'Unassigned'
-  const action = ACTION_IDS.find((id) => ACTIONS[id].job === job)
+  const action = actionForJob(job)
   if (action) {
-    const def = currentAction(state, action),
+    const def = ACTIONS[action],
       workers = actionWorkers(state, action)
     return def.resource
       ? `${formatResource(workers ? actionOutputRate(state, action) / workers : 0)} ${RESOURCE_INFO[def.resource].name.toLowerCase()}/s`

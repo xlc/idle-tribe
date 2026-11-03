@@ -6,6 +6,7 @@ import {
   jobCapacity,
   jobUnlocked,
   staffingMultiplier,
+  workplaceStaff,
 } from '../settlement'
 import type { JobId } from '../types'
 import { Button } from './common'
@@ -48,7 +49,10 @@ export function WorkerControls({
             className="worker-fill"
             aria-label={`Fill ${job} workers`}
             disabled={
-              !assignable || !available || n >= cap || !jobUnlocked(s, job)
+              !assignable ||
+              !available ||
+              workplaceStaff(s, job) >= cap ||
+              !jobUnlocked(s, job)
             }
             onClick={() => session.change(() => session.game.fill(job))}
           >

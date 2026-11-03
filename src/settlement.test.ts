@@ -90,7 +90,7 @@ test('live and sliced simulations have the same resources, projects, meals and a
 
 test('simultaneous project completion changes housing before immigration checks', () => {
   const s = createDefaultState()
-  complete(s, 'sharpened-stick', 'shelters')
+  complete(s, 'sharpened-stick', 'shelters', 'foraging-rounds')
   people(s, 'forager', 'builder')
   s.facilities.housing.level = 1
   s.resources.food = 80
@@ -109,7 +109,7 @@ test('simultaneous project completion changes housing before immigration checks'
 
 test('immigration pauses on inadequate sustainable supply, resumes, and arrivals stay unassigned', () => {
   const s = createDefaultState()
-  complete(s, 'sharpened-stick', 'shelters')
+  complete(s, 'sharpened-stick', 'shelters', 'foraging-rounds')
   s.facilities.housing.level = 1
   s.resources.food = 100
   people(s, 'forager')
@@ -130,7 +130,7 @@ test('immigration pauses on inadequate sustainable supply, resumes, and arrivals
 
 test('immigration stops at housing capacity and resumes after housing expands', () => {
   const s = createDefaultState()
-  complete(s, 'sharpened-stick', 'shelters')
+  complete(s, 'sharpened-stick', 'shelters', 'foraging-rounds')
   s.facilities.housing.level = 1
   s.resources.food = 200
   people(s, 'forager', 'idle', 'idle')
@@ -149,7 +149,7 @@ test('immigration stops at housing capacity and resumes after housing expands', 
 
 test('overpopulation pauses new arrivals without removing existing people', () => {
   const s = createDefaultState()
-  complete(s, 'sharpened-stick', 'shelters')
+  complete(s, 'sharpened-stick', 'shelters', 'foraging-rounds')
   s.facilities.housing.level = 1
   s.resources.food = 200
   people(s, 'forager', 'idle', 'idle')
@@ -182,7 +182,7 @@ test('food security guard accounts for scholarship at maximum happiness and igno
 
 test('injured villagers recover one heart for two food when affordable', () => {
   const s = createDefaultState()
-  complete(s, 'sharpened-stick', 'shelters')
+  complete(s, 'sharpened-stick', 'shelters', 'foraging-rounds')
   people(s, 'idle', 'idle')
   s.welcome = false
   required(s.people[0]).health = 2
@@ -195,7 +195,7 @@ test('injured villagers recover one heart for two food when affordable', () => {
 
 test('happiness begins at Writing and moves gradually after the shared meal', () => {
   const s = createDefaultState()
-  complete(s, 'sharpened-stick', 'shelters')
+  complete(s, 'sharpened-stick', 'shelters', 'foraging-rounds')
   s.facilities.housing.level = 12
   s.resources.food = 1000
   s.welcome = false

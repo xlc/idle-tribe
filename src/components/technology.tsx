@@ -116,12 +116,11 @@ function ResearchCard({
     canStart = status === 'ready',
     canQueue =
       queueUnlocked && !activeResearch && !queued && !blocked && needsQueue
-  const statusNote =
-    status === 'blocked' ? (
-      <span className="action-status action-status-unavailable">
-        {quote.blocker || 'Waiting for the research queue'}
-      </span>
-    ) : null
+  const statusNote = blocked ? (
+    <span className="action-status action-status-unavailable">
+      {quote.blocker}
+    </span>
+  ) : null
   const cancelResearch = () => {
     if (!activeResearch) return
     const run = () => session.game.cancel('research', activeResearch.sequence)

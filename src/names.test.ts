@@ -10,7 +10,7 @@ import { complete, required } from './test-helpers'
 test('founders get repeatable names from varied settlement seeds', () => {
   const names = Array.from({ length: 100 }, (_, seed) => {
     const state = createDefaultState(seed)
-    complete(state, 'shelters')
+    complete(state, 'shelters', 'foraging-rounds')
     const name = required(state.people[0]).name
     expect(name).toBe(generatePersonName(seed))
     expect(name.length).toBeLessThanOrEqual(PERSON_NAME_MAX_LENGTH)
@@ -31,7 +31,7 @@ test('generation has no population limit at pool exhaustion', () => {
 
 test('arrivals keep the same names across tick sizes and reloads', () => {
   const state = createDefaultState(1942)
-  complete(state, 'sharpened-stick', 'shelters')
+  complete(state, 'sharpened-stick', 'shelters', 'foraging-rounds')
   state.resources.food = 10000
   state.facilities.farm.level = 1
   state.facilities['food-store'].level = 10000
@@ -58,7 +58,7 @@ test('a time-box reset starts a new name sequence', () => {
   state.research.writing = 1
   expect(resetRun(state)).toBe(true)
   expect(state.nameSeed).toBe(43)
-  complete(state, 'shelters')
+  complete(state, 'shelters', 'foraging-rounds')
   expect(required(state.people[0]).name).toBe(
     generatePersonName(state.nameSeed),
   )

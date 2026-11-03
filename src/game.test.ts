@@ -77,8 +77,10 @@ test('the opening discovers resources and grants a camp without assigning worker
   }
   enqueue(s, { kind: 'research', id: 'sharpened-stick' })
   enqueue(s, { kind: 'research', id: 'shelters' })
+  enqueue(s, { kind: 'research', id: 'foraging-rounds' })
   advanceTime(s, 180)
   expect(s.research.shelters).toBe(1)
+  expect(s.research['foraging-rounds']).toBe(1)
   expect(s.facilities.foraging.level).toBe(1)
   expect(s.people[0]?.job).toBe('idle')
   expect(s.facilities.housing.level).toBe(0)
@@ -337,6 +339,7 @@ test('the common research graph is reachable independently of either branch', ()
   for (const branch of ['forestry', 'stonecraft'] as const) {
     const s = createDefaultState()
     s.discovered = { wood: true, stone: true }
+    s.expeditionUnlocked = true
     const pending = RESEARCH_IDS.filter(
       (id) =>
         id !== 'early-astronomy' &&
@@ -534,7 +537,7 @@ test('workers unlock when the corresponding workplace is available', () => {
   expect(actionWorkersUnlocked(s, 'gather')).toBe(false)
   s.facilities.foraging.level = 1
   expect(actionWorkersUnlocked(s, 'gather')).toBe(false)
-  s.research.shelters = 1
+  s.research['foraging-rounds'] = 1
   people(s, 'idle', 'idle')
   expect(actionWorkersUnlocked(s, 'gather')).toBe(true)
   expect(actionWorkers(s, 'gather')).toBe(0)
@@ -544,12 +547,12 @@ test('workers unlock when the corresponding workplace is available', () => {
   expect(actionWorkers(s, 'gather')).toBe(0)
 })
 
-test('the first researched stick immediately improves manual food gathering', () => {
+test('the first researched stick immediately unlocks manual root digging', () => {
   const s = createDefaultState()
   const startingFood = s.resources.food
   complete(s, 'sharpened-stick')
-  // The sharpened stick upgrades gathering to Dig roots: 4 food per 4s trip.
-  expect(startAction(s, 'gather')).toBe(true)
-  advanceTime(s, actionDuration(s, 'gather'), true)
-  expect(s.resources.food).toBeCloseTo(startingFood + 4)
+  // The sharpened stick unlocks Dig roots: 6 food per 4s trip.
+  expect(startAction(s, 'dig-roots')).toBe(true)
+  advanceTime(s, actionDuration(s, 'dig-roots'), true)
+  expect(s.resources.food).toBeCloseTo(startingFood + 6)
 })

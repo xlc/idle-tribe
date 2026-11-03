@@ -6,7 +6,7 @@ import { ACTION_IDS, BUILDING_IDS, RESOURCES } from '../ids'
 import { isProductionJob } from '../jobs'
 import { storageCapacity, storageFull } from '../resources'
 import type { GameSession } from '../session'
-import { requirementBlocker } from '../settlement'
+import { craftingJob, requirementBlocker } from '../settlement'
 import { resourceFlows } from '../simulation'
 import type { ResourceId } from '../types'
 import { ResourceArt } from './art'
@@ -20,13 +20,15 @@ export function Stockpile({ session }: { session: GameSession }) {
         (id) => ACTIONS[id].resource === r && ACTIONS[id].visible(s),
       ) ||
       s.resources[r] > 0 ||
-      BUILDING_IDS.some(
-        (id) =>
-          BUILDINGS[id].job &&
-          isProductionJob(BUILDINGS[id].job) &&
-          JOBS[BUILDINGS[id].job].output === r &&
-          !requirementBlocker(s, BUILDINGS[id].forms[0]?.requires ?? {}),
-      ),
+      BUILDING_IDS.some((id) => {
+        const crafting = craftingJob(id)
+        return (
+          crafting &&
+          isProductionJob(crafting) &&
+          JOBS[crafting].output === r &&
+          !requirementBlocker(s, BUILDINGS[id].forms[0]?.requires ?? {})
+        )
+      }),
   )
   const foodNet = flows.food.production - flows.food.inputs - flows.food.meals
   const foodShortage =

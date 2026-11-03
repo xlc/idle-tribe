@@ -94,6 +94,9 @@ for (const branch of branches)
               .filter((m) =>
                 [
                   'shelters',
+                  'foraging-rounds',
+                  'timber-camps',
+                  'stockpiling',
                   'agriculture',
                   'writing',
                   'mechanization',

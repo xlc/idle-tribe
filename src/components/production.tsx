@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { buildingActions } from '../actions'
 import { ACTIONS, BUILDINGS } from '../definitions'
 import { ACTION_IDS, BUILDING_IDS } from '../ids'
 import { researchPlan } from '../research'
@@ -15,11 +16,11 @@ export function Production({
   const s = props.session.game.state
   const planned = researchPlan(s)
   const available = BUILDING_IDS.filter((id) => {
-    const action = ACTION_IDS.find((a) => ACTIONS[a].building === id)
+    // Hide a camp whose every action is still locked and unstaffed.
+    const actions = buildingActions(id)
     if (
-      action &&
-      !ACTIONS[action].visible(s) &&
-      !assigned(s, ACTIONS[action].job)
+      actions.length &&
+      !actions.some((a) => ACTIONS[a].visible(s) || assigned(s, ACTIONS[a].job))
     )
       return false
     return (

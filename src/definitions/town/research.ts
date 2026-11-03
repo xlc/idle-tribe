@@ -43,7 +43,12 @@ export const research = {
     requires: { research: ['writing'] },
     effects: {
       specialization: { sawyer: 1.4 },
-      actionAutomation: { sticks: 0.05 },
+      actionAutomation: {
+        sticks: 0.05,
+        'chop-wood': 0.05,
+        'fell-timber': 0.05,
+        'mechanized-logging': 0.05,
+      },
     },
     upgrade: {
       maxLevel: 3,
@@ -56,7 +61,12 @@ export const research = {
       ],
       effects: {
         specialization: { sawyer: 1.08 },
-        actionAutomation: { sticks: 0.01 },
+        actionAutomation: {
+          sticks: 0.01,
+          'chop-wood': 0.01,
+          'fell-timber': 0.01,
+          'mechanized-logging': 0.01,
+        },
       },
     },
     branch: 'forestry',
@@ -72,7 +82,12 @@ export const research = {
     requires: { research: ['writing'] },
     effects: {
       specialization: { mason: 1.4 },
-      actionAutomation: { stone: 0.05 },
+      actionAutomation: {
+        stone: 0.05,
+        'quarry-stone': 0.05,
+        'mine-stone': 0.05,
+        'mechanized-quarrying': 0.05,
+      },
     },
     upgrade: {
       maxLevel: 3,
@@ -85,7 +100,12 @@ export const research = {
       ],
       effects: {
         specialization: { mason: 1.08 },
-        actionAutomation: { stone: 0.01 },
+        actionAutomation: {
+          stone: 0.01,
+          'quarry-stone': 0.01,
+          'mine-stone': 0.01,
+          'mechanized-quarrying': 0.01,
+        },
       },
     },
     branch: 'stonecraft',

@@ -12,6 +12,7 @@ import {
   arrivalStatus,
   assigned,
   assignJob,
+  craftingJob,
   jobCapacity,
   jobUnlocked,
   requirementBlocker,
@@ -122,14 +123,15 @@ export function makeDecisions(
     if (researchVisible(s, id)) controls.plan({ kind: 'research', id })
   }
   function priority(id: BuildingId) {
-    const job = BUILDINGS[id].job
-    if (!job) return 0
+    const crafting = craftingJob(id)
+    if (!BUILDINGS[id].job) return 0
     // A crew spending most of its people on food should invest in food capacity
     // before more downstream factories. This is a player heuristic, not a cap.
     if (
-      isProductionJob(job) &&
-      JOBS[job].output === 'food' &&
-      assigned(s, job) > s.people.length / 2
+      crafting &&
+      isProductionJob(crafting) &&
+      JOBS[crafting].output === 'food' &&
+      assigned(s, crafting) > s.people.length / 2
     )
       return 2
     return Number(!s.facilities[id].level)
@@ -159,11 +161,11 @@ export function makeDecisions(
       (resource) =>
         s.resources[resource] >= (cost[resource] ?? 0) ||
         BUILDING_IDS.some((source) => {
-          const job = BUILDINGS[source].job
+          const crafting = craftingJob(source)
           return (
-            job &&
-            isProductionJob(job) &&
-            JOBS[job].output === resource &&
+            crafting &&
+            isProductionJob(crafting) &&
+            JOBS[crafting].output === resource &&
             (s.facilities[source].level > 0 ||
               allEntries(s).some(
                 (entry) =>

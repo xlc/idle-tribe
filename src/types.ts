@@ -77,37 +77,23 @@ interface ActionDefinitionBase {
   levelEffect: string
   seconds: number
   baseXp: number
-  // XP granted per completion; upgrades may override this per tier.
+  // XP granted per completion; defaults to 1 when unset.
   xp?: number
   cost: Cost
   building: BuildingId
   job: ActionJob
   visible: (state: GameState) => boolean
 }
-// Research-upgraded variant of a resource action: slower trips that carry
-// much more. The active tier is derived from state, never stored.
-export interface ActionTier {
-  name: string
-  description: string
-  requires: Requirements
-  seconds: number
-  amount: number
-  baseXp: number
-  // XP granted per completion, so slower tiers keep leveling with effort.
-  xp?: number
-}
 export type ActionDefinition =
   | (ActionDefinitionBase & {
       kind: 'resource'
       resource: ResourceId
       amount: number
-      tiers?: readonly ActionTier[]
     })
   | (ActionDefinitionBase & {
       kind: 'exploration'
       resource?: never
       amount?: never
-      tiers?: never
     })
 
 export interface Requirements {
@@ -173,7 +159,9 @@ export interface FormDefinition {
 export interface BuildingDefinition {
   forms: FormDefinition[]
   effect: string
-  job?: JobId
+  // One job for crafting workplaces; several for gathering camps that host
+  // multiple actions.
+  job?: JobId | readonly JobId[]
   unique?: boolean
   crew?: number
   leisure?: number

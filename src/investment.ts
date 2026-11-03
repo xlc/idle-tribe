@@ -1,17 +1,19 @@
 import {
-  actionCompletionDuration,
-  actionJobActive,
-  actionOutputRate,
+  actionRate,
   automationFactor,
+  buildingActions,
+  buildingResource,
 } from './actions'
 import { offlineWindow } from './clock'
 import { MIN_VISIBLE_RESOURCE_CHANGE } from './constants'
-import { ACTIONS, BUILDINGS, JOBS, RESOURCE_INFO } from './definitions'
-import { ACTION_IDS, RESOURCES } from './ids'
+import { BUILDINGS, JOBS, RESOURCE_INFO } from './definitions'
+import { RESOURCES } from './ids'
 import { isProductionJob } from './jobs'
 import { completeProject, constructionPlan } from './research'
 import { storageCapacity } from './resources'
 import {
+  buildingJobs,
+  craftingJob,
   crewSize,
   equipmentMultiplier,
   housingCapacity,
@@ -41,62 +43,64 @@ export function investmentOutcome(
     Math.abs(afterValue - beforeValue) > MIN_VISIBLE_RESOURCE_CHANGE
       ? { label, before: beforeValue, after: afterValue }
       : null
-  const job = BUILDINGS[project.id].job
+  const job = BUILDINGS[project.id].job,
+    actions = buildingActions(project.id)
   if (job) {
-    const action = ACTION_IDS.find((id) => ACTIONS[id].job === job)
-    if (action) {
-      const def = ACTIONS[action]
+    if (actions.length) {
       const rate = (s: GameState) =>
-        def.resource
-          ? actionOutputRate(s, action)
-          : actionJobActive(s, action)
-            ? 1 / actionCompletionDuration(s, action)
-            : 0
+        actions.reduce((sum, id) => sum + actionRate(s, id), 0)
+      const resource = buildingResource(project.id)
       const outcome = compare(
-        `${def.resource ? RESOURCE_INFO[def.resource].name : 'Explores'}/s`,
+        `${resource ? RESOURCE_INFO[resource].name : 'Explores'}/s`,
         rate(state),
         rate(after),
       )
       if (outcome) return outcome
-      const automation = compare(
-        'Automation %',
-        automationFactor(state, action) * 100,
-        automationFactor(after, action) * 100,
-      )
-      if (automation) return automation
-    } else if (isProductionJob(job)) {
-      const rate = (s: GameState) =>
-        s.people
-          .filter((p) => p.job === job)
-          .reduce(
-            (sum, p) => sum + workerRate(s, p, { ignoreInputs: true }) / 60,
-            0,
-          )
-      const outcome = compare(
-        `${RESOURCE_INFO[JOBS[job].output].name}/s`,
-        rate(state),
-        rate(after),
-      )
-      if (outcome) return outcome
-      const base = compare(
-        `${RESOURCE_INFO[JOBS[job].output].name}/s base`,
-        (BUILDINGS[project.id].forms[state.facilities[project.id].form]?.rate ??
-          0) / 60,
-        (BUILDINGS[project.id].forms[after.facilities[project.id].form]?.rate ??
-          0) / 60,
-      )
-      if (base) return base
-      const tools = compare(
-        'Worker output ×',
-        equipmentMultiplier(state.facilities[project.id].equipment),
-        equipmentMultiplier(after.facilities[project.id].equipment),
-      )
-      if (tools) return tools
+      for (const id of actions) {
+        const automation = compare(
+          'Automation %',
+          automationFactor(state, id) * 100,
+          automationFactor(after, id) * 100,
+        )
+        if (automation) return automation
+      }
+    } else {
+      const craft = craftingJob(project.id)
+      if (craft && isProductionJob(craft)) {
+        const rate = (s: GameState) =>
+          s.people
+            .filter((p) => p.job === craft)
+            .reduce(
+              (sum, p) => sum + workerRate(s, p, { ignoreInputs: true }) / 60,
+              0,
+            )
+        const outcome = compare(
+          `${RESOURCE_INFO[JOBS[craft].output].name}/s`,
+          rate(state),
+          rate(after),
+        )
+        if (outcome) return outcome
+        const base = compare(
+          `${RESOURCE_INFO[JOBS[craft].output].name}/s base`,
+          (BUILDINGS[project.id].forms[state.facilities[project.id].form]
+            ?.rate ?? 0) / 60,
+          (BUILDINGS[project.id].forms[after.facilities[project.id].form]
+            ?.rate ?? 0) / 60,
+        )
+        if (base) return base
+        const tools = compare(
+          'Worker output ×',
+          equipmentMultiplier(state.facilities[project.id].equipment),
+          equipmentMultiplier(after.facilities[project.id].equipment),
+        )
+        if (tools) return tools
+      }
     }
+    const jobs = buildingJobs(project.id)
     const capacity = compare(
       'Work slots',
-      jobCapacity(state, job),
-      jobCapacity(after, job),
+      jobs.reduce((sum, j) => sum + jobCapacity(state, j), 0),
+      jobs.reduce((sum, j) => sum + jobCapacity(after, j), 0),
     )
     if (capacity) return capacity
   }

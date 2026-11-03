@@ -20,7 +20,12 @@ export const buildingUpgrades = {
       requires: { research: ['forestry-methods'] },
       cost: { planks: 20, blocks: 10, tools: 3 },
       work: 6,
-      actionAutomation: { sticks: 0.05 },
+      actionAutomation: {
+        sticks: 0.05,
+        'chop-wood': 0.05,
+        'fell-timber': 0.05,
+        'mechanized-logging': 0.05,
+      },
     },
   ],
   quarry: [
@@ -30,7 +35,12 @@ export const buildingUpgrades = {
       requires: { research: ['stone-lifting'] },
       cost: { planks: 15, blocks: 20, tools: 3 },
       work: 6,
-      actionAutomation: { stone: 0.05 },
+      actionAutomation: {
+        stone: 0.05,
+        'quarry-stone': 0.05,
+        'mine-stone': 0.05,
+        'mechanized-quarrying': 0.05,
+      },
     },
   ],
 } satisfies Partial<Record<BuildingId, FormDefinition[]>>

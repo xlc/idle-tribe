@@ -23,7 +23,7 @@ export const buildings = {
           'One roof for every pile: food, materials, tools, and ideas.',
         cost: { wood: 40, stone: 20 },
         work: 3,
-        requires: { research: ['shelters'] },
+        requires: { research: ['stockpiling'] },
         storage: {
           food: 400,
           wood: 300,
@@ -87,11 +87,12 @@ export const buildings = {
           'A meeting point for people who know which bushes are lunch.',
         cost: { wood: 10 },
         work: 1,
-        requires: { research: ['shelters'] },
+        requires: { research: ['foraging-rounds'] },
       },
     ],
-    effect: '2 food gathering slots per level; equipment improves automation.',
-    job: 'forager',
+    effect:
+      '2 shared worker slots per level for its food actions; equipment improves automation.',
+    job: ['forager', 'digger', 'hunter'],
   },
   lumber: {
     forms: [
@@ -100,12 +101,12 @@ export const buildings = {
         description: 'Where standing timber begins a career in construction.',
         cost: { wood: 15 },
         work: 2,
-        requires: { research: ['shelters'], discovery: 'wood' },
+        requires: { research: ['timber-camps'], discovery: 'wood' },
       },
     ],
     effect:
-      '2 wood gathering slots per level; forms and equipment improve automation.',
-    job: 'woodcutter',
+      '2 shared worker slots per level for its wood actions; forms and equipment improve automation.',
+    job: ['woodcutter', 'chopper', 'feller', 'logging-operator'],
   },
   quarry: {
     forms: [
@@ -118,8 +119,8 @@ export const buildings = {
       },
     ],
     effect:
-      '2 stone gathering slots per level; forms and equipment improve automation.',
-    job: 'stoneworker',
+      '2 shared worker slots per level for its stone actions; forms and equipment improve automation.',
+    job: ['stoneworker', 'stone-splitter', 'stone-miner', 'quarry-operator'],
   },
   'expedition-camp': {
     forms: [
@@ -129,7 +130,7 @@ export const buildings = {
           'Base camp for people who keep coming back with interesting stories.',
         cost: { wood: 15, food: 10 },
         work: 3,
-        requires: { research: ['shelters'], expedition: true },
+        requires: { research: ['expedition-planning'], expedition: true },
       },
     ],
     effect: 'Explorer workplace; 2 explore slots per level',

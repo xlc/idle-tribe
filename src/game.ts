@@ -4,7 +4,6 @@ import {
   startAction,
   syncUnlocks,
 } from './actions'
-import { BUILDINGS } from './definitions'
 import {
   cancelProject,
   enqueue,
@@ -13,7 +12,12 @@ import {
   nextExpansion,
 } from './research'
 import { addResources } from './resources'
-import { adjustWorkers, assignJob, fillWorkers } from './settlement'
+import {
+  adjustWorkers,
+  assignJob,
+  buildingJobs,
+  fillWorkers,
+} from './settlement'
 import { advanceTime } from './simulation'
 import type {
   BuildingId,
@@ -27,10 +31,10 @@ export function removeFacility(state: GameState, id: BuildingId) {
   const f = state.facilities[id],
     active = state.queues.construction.active
   if (!f.level || active?.project.id === id) return false
-  const job = BUILDINGS[id].job
-  if (job)
+  const jobs = buildingJobs(id)
+  if (jobs.length)
     for (const p of state.people)
-      if (p.job === job) {
+      if (jobs.includes(p.job)) {
         p.job = 'idle'
         p.progress = 0
       }

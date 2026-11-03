@@ -2,17 +2,19 @@ import { Card, Select } from '@radix-ui/themes'
 import { useState } from 'react'
 import {
   ACTION_BALANCE,
-  actionCompletionDuration,
-  actionJobActive,
-  actionOutputRate,
-  actionSlots,
+  actionRate,
   automationFactor,
+  buildingActions,
+  buildingResource,
 } from '../actions'
-import { MIN_VISIBLE_RESOURCE_CHANGE } from '../constants'
+import {
+  MIN_VISIBLE_RESOURCE_CHANGE,
+  WORKERS_PER_BUILDING_LEVEL,
+} from '../constants'
 import { ACTIONS, BUILDINGS, JOBS, RESOURCE_INFO } from '../definitions'
 import { formatCost, formatResource } from '../format'
 import { removeFacility } from '../game'
-import { ACTION_IDS, RESOURCES } from '../ids'
+import { RESOURCES } from '../ids'
 import { investmentOutcome } from '../investment'
 import { isProductionJob } from '../jobs'
 import {
@@ -25,6 +27,7 @@ import {
 import { affordability, canAfford, storageCapacity } from '../resources'
 import {
   assigned,
+  buildingJobs,
   equipmentMultiplier,
   housingCapacity,
   jobInput,
@@ -63,40 +66,44 @@ export function Facility({
     f = s.facilities[id],
     [selectedForm, setSelectedForm] = useState(f.form)
   const form = def.forms[f.level ? f.form : selectedForm],
-    action = def.job
-      ? ACTION_IDS.find((id) => ACTIONS[id].job === def.job)
-      : undefined
+    jobs = buildingJobs(id),
+    actions = buildingActions(id),
+    visibleActions = actions.filter((a) => ACTIONS[a].visible(s))
   if (!form) return null
   const expansion = nextExpansion(s, id, selectedForm),
     quote = previewProject(s, expansion),
-    job = def.job,
-    n = job ? assigned(s, job) : 0
-  const actionDefinition = action ? ACTIONS[action] : undefined
+    n = jobs.reduce((sum, job) => sum + assigned(s, job), 0)
+  const singleAction = actions.length === 1 ? actions[0] : undefined,
+    craftingJob = jobs.length && actions.length === 0 ? jobs[0] : undefined
   const production =
-    action && actionDefinition
-      ? actionDefinition.resource
-        ? actionOutputRate(s, action)
-        : actionJobActive(s, action)
-          ? 1 / actionCompletionDuration(s, action)
-          : 0
-      : job
+    actions.length > 0
+      ? visibleActions.reduce((sum, a) => sum + actionRate(s, a), 0)
+      : craftingJob
         ? s.people
-            .filter((p) => p.job === job)
+            .filter((p) => p.job === craftingJob)
             .reduce((sum, p) => sum + workerRate(s, p) / 60, 0)
         : 0
-  const input = actionDefinition?.cost ?? (job ? jobInput(s, job) : {}),
-    output = job && isProductionJob(job) ? JOBS[job].output : null
+  const output =
+      craftingJob && isProductionJob(craftingJob)
+        ? JOBS[craftingJob].output
+        : null,
+    input = singleAction
+      ? ACTIONS[singleAction].cost
+      : craftingJob
+        ? jobInput(s, craftingJob)
+        : {}
+  const slots = WORKERS_PER_BUILDING_LEVEL * f.level
   const missingInputs = RESOURCES.filter(
     (r) => n > 0 && (input[r] ?? 0) > s.resources[r],
   )
   const blocked =
-    actionDefinition && !actionDefinition.visible(s)
+    actions.length > 0 && visibleActions.length === 0
       ? 'Retired'
       : missingInputs.length
         ? `Paused · Missing ${missingInputs.map((r) => RESOURCE_INFO[r].name.toLowerCase()).join(', ')}`
         : !f.level
           ? ''
-          : job && !n
+          : jobs.length && !n
             ? 'No workers'
             : ''
   const active = s.queues.construction.active?.project.id === id
@@ -104,9 +111,9 @@ export function Facility({
     ? 'Housing'
     : form.storage
       ? 'Storage'
-      : actionDefinition
+      : actions.length
         ? 'Gathering'
-        : job
+        : craftingJob
           ? 'Crafting'
           : 'Support'
   const buildLabel = f.level
@@ -143,7 +150,7 @@ export function Facility({
         : ''
     confirm(
       `Remove ${form.name}?`,
-      `${housing}${losses.join('; ')}${losses.length ? '. ' : ''}${job ? `${n} workers become unassigned;${output ? ` ${formatResource(production)} ${RESOURCE_INFO[output].name.toLowerCase()}/s production removed. ` : ' '}` : ''}${rateChanges ? `${rateChanges}. ` : ''}Levels and equipment are lost with no refund. People and stockpiles remain.`,
+      `${housing}${losses.join('; ')}${losses.length ? '. ' : ''}${jobs.length ? `${n} workers become unassigned;${output ? ` ${formatResource(production)} ${RESOURCE_INFO[output].name.toLowerCase()}/s production removed. ` : ' '}` : ''}${rateChanges ? `${rateChanges}. ` : ''}Levels and equipment are lost with no refund. People and stockpiles remain.`,
       () => session.game.remove(id),
     )
   }
@@ -193,18 +200,21 @@ export function Facility({
               {f.level ? `Level ${f.level}` : 'Ready to build'}
               {f.equipment ? ` · tools ${f.equipment}` : ''}
             </span>
-            {action && actionDefinition ? (
+            {actions.length > 0 ? (
               <div className="building-recipe">
                 <span className="recipe-output" data-zero={production === 0}>
                   +{formatResource(production)}{' '}
-                  {actionDefinition.resource ?? 'explores'}/s
+                  {buildingResource(id) ?? 'explores'}
+                  /s
                 </span>
                 <span className="recipe-input">
-                  Staff {n}/{actionSlots(s, action)} · automation{' '}
-                  {Math.round(automationFactor(s, action) * 100)}%
+                  Staff {n}/{slots}
+                  {singleAction
+                    ? ` · automation ${Math.round(automationFactor(s, singleAction) * 100)}%`
+                    : ''}
                 </span>
               </div>
-            ) : job ? (
+            ) : craftingJob ? (
               <div className="building-recipe">
                 <span className="recipe-output" data-zero={production === 0}>
                   +{formatResource(production)}{' '}
@@ -236,13 +246,13 @@ export function Facility({
               {blocked || '\u00a0'}
             </p>
           </div>
-          {job && !action && (
+          {craftingJob && (
             <div className="facility-worker-slot" data-visible={f.level > 0}>
               <span className="facility-worker-label">Staff</span>
               <WorkerControls
                 session={session}
-                job={job}
-                assignable={!actionDefinition || actionDefinition.visible(s)}
+                job={craftingJob}
+                assignable={!singleAction || ACTIONS[singleAction].visible(s)}
               />
             </div>
           )}
@@ -251,18 +261,18 @@ export function Facility({
         <details className="facility-detail">
           <summary>More details & upgrades</summary>
           <p className="flavor">{form.description}</p>
-          {job && output && RESOURCES.some((r) => input[r]) && (
+          {craftingJob && output && RESOURCES.some((r) => input[r]) && (
             <p>
               {formatCost(input)} → 1 {RESOURCE_INFO[output].name.toLowerCase()}
             </p>
           )}
-          {(form.rate || (job && f.equipment) || quote.blocker) && (
+          {(form.rate || (jobs && f.equipment) || quote.blocker) && (
             <p>
               {form.rate
                 ? `Base ${formatResource(form.rate / 60)}/s per worker. `
                 : ''}
-              {job && f.equipment
-                ? action
+              {jobs && f.equipment
+                ? actions.length
                   ? `Tools +${formatResource(ACTION_BALANCE.automationPerEquipment * f.equipment * 100)}pp automation. `
                   : `Tools ×${formatResource(equipmentMultiplier(f.equipment))}. `
                 : ''}
@@ -316,8 +326,8 @@ export function Facility({
                       {v.offlineHours
                         ? `Offline window +${v.offlineHours} × √level hours. `
                         : ''}
-                      {job && output
-                        ? `Recipe: ${formatCost(jobInput({ ...s, facilities: { ...s.facilities, [id]: { ...f, form: i } } }, job))} → 1 ${RESOURCE_INFO[output].name.toLowerCase()}.`
+                      {craftingJob && output
+                        ? `Recipe: ${formatCost(jobInput({ ...s, facilities: { ...s.facilities, [id]: { ...f, form: i } } }, craftingJob))} → 1 ${RESOURCE_INFO[output].name.toLowerCase()}.`
                         : ''}
                     </p>
                     <Costs
@@ -346,7 +356,7 @@ export function Facility({
                   </div>
                 ),
             )}
-          {job && f.level > 0 && (
+          {jobs && f.level > 0 && (
             <div
               className="facility-equipment-slot"
               data-visible={s.research.toolmaking > 0}

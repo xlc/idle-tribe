@@ -25,6 +25,14 @@ export function settlement(branch: Specialization = 'forestry') {
       continue
     complete(state, id)
   }
+  // Early unlock research sits at the end of the id order for catalog stability.
+  complete(
+    state,
+    'foraging-rounds',
+    'timber-camps',
+    'expedition-planning',
+    'stockpiling',
+  )
   for (const r of RESOURCES) state.resources[r] = 5000
   for (const id of BUILDING_IDS) {
     if (

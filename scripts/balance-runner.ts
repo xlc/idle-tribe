@@ -213,6 +213,13 @@ export function runBalance(
     while (state.resources[resource] < amount && wall < deadline)
       if (!manual(action[resource], deadline)) break
   }
+  function waitForResearch(deadline: number, ...ids: ResearchId[]) {
+    while (
+      ids.some((id) => state.research[id] <= 0) &&
+      wall < Math.min(deadline, horizon)
+    )
+      advance(1)
+  }
   function opening() {
     const deadline = Math.min(horizon, wall + 3600)
     // Exploration can take several attempts before the first discovery; keep
@@ -226,12 +233,17 @@ export function runBalance(
     advance(0)
     gather('wood', 20, deadline)
     gather('food', 25, deadline)
-    while (state.research['sharpened-stick'] <= 0 && wall < deadline) advance(1)
+    waitForResearch(deadline, 'sharpened-stick')
     controls.plan({ kind: 'research', id: 'shelters' })
     advance(0)
     gather('wood', 35, deadline)
-    while (state.research.shelters <= 0 && wall < deadline) advance(1)
+    waitForResearch(deadline, 'shelters')
     gather('food', 60, deadline)
+    // The camp researches gate the workplace expansions and the forager job.
+    controls.plan({ kind: 'research', id: 'foraging-rounds' })
+    controls.plan({ kind: 'research', id: 'timber-camps' })
+    advance(0)
+    waitForResearch(deadline, 'foraging-rounds', 'timber-camps')
     controls.plan({ kind: 'expand', id: 'housing', target: 1, form: 0 })
     controls.plan({ kind: 'expand', id: 'lumber', target: 1, form: 0 })
     controls.assign(0, 'builder')

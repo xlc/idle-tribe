@@ -18,7 +18,11 @@ import {
   QUEUES,
   quoteProject,
 } from '../src/research'
-import { effectiveStaff, equipmentMultiplier } from '../src/settlement'
+import {
+  buildingJobs,
+  effectiveStaff,
+  equipmentMultiplier,
+} from '../src/settlement'
 import { advanceTime } from '../src/simulation'
 import type {
   BuildingId,
@@ -134,7 +138,8 @@ for (const scenario of cases) {
     if (candidate.project) game.enqueue(candidate.project)
     if (candidate.staff) {
       const i = state.people.findIndex((p) => p.job === 'idle')
-      if (!def.job || i < 0 || !game.assign(i, def.job)) {
+      const staffing = buildingJobs(scenario.workplace)[0]
+      if (!staffing || i < 0 || !game.assign(i, staffing)) {
         pairs.push({
           scenario,
           candidate: candidate.name,

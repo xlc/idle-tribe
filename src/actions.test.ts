@@ -3,10 +3,8 @@ import {
   actionAvailability,
   actionDuration,
   actionRequiredXp,
-  actionTierIndex,
   actionYield,
   applyExploreReward,
-  currentAction,
   exploreExpectedRate,
   exploreExpectedRewards,
   resolveEncounter,
@@ -223,6 +221,7 @@ test('a traveler lead becomes an idle settler when food and a room are ready', (
   for (const id of EXPEDITION_ENCOUNTER_IDS)
     state.completedEncounters[id] = id !== 'ridge-travelers'
   state.research.shelters = 1
+  state.research['foraging-rounds'] = 1
   state.facilities.housing.level = 1
   state.facilities.foraging.level = 1
   people(state, 'forager')
@@ -307,42 +306,39 @@ test('exploration expected rates include worker cadence', () => {
   )
 })
 
-test('research upgrades a gathering action to a better tier and keeps skill progress', () => {
+test('research unlocks a better gathering action beside the base action', () => {
   const state = createDefaultState()
   state.discovered.wood = true
   state.actionSkills.sticks = { level: 3, xp: 2 }
 
-  expect(actionTierIndex(state, 'sticks')).toBe(0)
-  completeProject(state, { kind: 'research', id: 'stone-tools' })
-  expect(actionTierIndex(state, 'sticks')).toBe(0)
+  expect(actionAvailability(state, 'chop-wood').kind).toBe('locked')
   completeProject(state, { kind: 'research', id: 'woodcutting' })
-  expect(actionTierIndex(state, 'sticks')).toBe(1)
+  expect(actionAvailability(state, 'chop-wood').kind).not.toBe('locked')
 
-  const tier = currentAction(state, 'sticks')
-  expect(tier.name).toBe('Chop wood')
-  // Level-3 skill keeps its +4% output on top of the tier's base yield.
-  expect(actionYield(state, 'sticks')).toBeCloseTo(5 * 1.04)
-  expect(actionDuration(state, 'sticks')).toBeCloseTo(6 * 0.98 ** 2)
-  // The skill track carries over; only the per-level cost follows the tier.
+  // Chop wood carries its own cadence and skill track.
+  expect(actionYield(state, 'chop-wood')).toBeCloseTo(5)
+  expect(actionDuration(state, 'chop-wood')).toBeCloseTo(6)
+  expect(actionRequiredXp(state, 'chop-wood')).toBe(5)
+  // The base action keeps its own skill-adjusted progress untouched.
+  expect(actionYield(state, 'sticks')).toBeCloseTo(1.04)
   expect(state.actionSkills.sticks).toEqual({ level: 3, xp: 2 })
-  expect(actionRequiredXp(state, 'sticks')).toBe(Math.ceil(5 * 1.2 ** (3 - 1)))
+  expect(actionRequiredXp(state, 'sticks')).toBe(Math.ceil(3 * 1.2 ** (3 - 1)))
 
   completeProject(state, { kind: 'research', id: 'forestry-methods' })
-  expect(actionTierIndex(state, 'sticks')).toBe(2)
-  expect(currentAction(state, 'sticks').name).toBe('Fell timber')
+  expect(actionAvailability(state, 'fell-timber').kind).not.toBe('locked')
 })
 
-test('upgraded tiers award more XP per manual completion', () => {
+test('better gathering actions award more XP per manual completion', () => {
   const state = createDefaultState()
   state.discovered.wood = true
   completeProject(state, { kind: 'research', id: 'woodcutting' })
 
-  expect(startAction(state, 'sticks')).toBe(true)
-  advanceTime(state, actionDuration(state, 'sticks'), true)
-  expect(state.actionSkills.sticks.xp).toBeCloseTo(2)
+  expect(startAction(state, 'chop-wood')).toBe(true)
+  advanceTime(state, actionDuration(state, 'chop-wood'), true)
+  expect(state.actionSkills['chop-wood'].xp).toBeCloseTo(2)
 })
 
-test('completing tier-upgrading research keeps the plain completion notice', () => {
+test('completing action-unlocking research keeps the plain completion notice', () => {
   const state = createDefaultState()
   state.discovered.wood = true
   state.queues.research.active = {
@@ -355,7 +351,7 @@ test('completing tier-upgrading research keeps the plain completion notice', () 
 
   advanceTime(state, 1)
   expect(state.queues.research.active).toBeNull()
-  // The upgraded card is its own announcement; the notice stays minimal.
+  // The new card is its own announcement; the notice stays minimal.
   expect(state.notice).toBe('Completed Stone axes')
-  expect(currentAction(state, 'sticks').name).toBe('Chop wood')
+  expect(actionAvailability(state, 'chop-wood').kind).not.toBe('locked')
 })

@@ -1,8 +1,17 @@
 import { actionOutputRate } from './actions'
 import { WORKERS_PER_BUILDING_LEVEL } from './constants'
-import { BUILDINGS, JOBS, OCCUPATIONS, PERKS, RESEARCH } from './definitions'
+import {
+  ACTIONS,
+  BUILDINGS,
+  JOBS,
+  OCCUPATIONS,
+  PERKS,
+  RESEARCH,
+} from './definitions'
 import { healthMultiplier } from './food'
 import {
+  ACTION_IDS,
+  type BuildingId,
   BUILDING_IDS,
   isActionJob,
   isWorkingJob,
@@ -63,8 +72,34 @@ export function effectiveStaff(x: number, capacity: number) {
 export function equipmentMultiplier(tier: number) {
   return [1, 1.2, 1.45, 1.75][tier] ?? 1.75 + 0.5 * (Math.sqrt(tier - 2) - 1)
 }
+// Gathering camps host several jobs; every other workplace names one.
+export function buildingJobs(id: BuildingId): readonly JobId[] {
+  const def = BUILDINGS[id].job
+  return typeof def === 'string' ? [def] : (def ?? [])
+}
+// A single named job is a production recipe; arrays are gathering camps.
+export function craftingJob(id: BuildingId): JobId | undefined {
+  const def = BUILDINGS[id].job
+  return typeof def === 'string' ? def : undefined
+}
+const WORKPLACE_BY_JOB = new Map<JobId, BuildingId>()
+for (const id of BUILDING_IDS)
+  for (const job of buildingJobs(id))
+    if (!WORKPLACE_BY_JOB.has(job)) WORKPLACE_BY_JOB.set(job, id)
 export function workplace(job: JobId) {
-  return BUILDING_IDS.find((id) => BUILDINGS[id].job === job)
+  return WORKPLACE_BY_JOB.get(job)
+}
+// Jobs hosted by one workplace share its worker slots; a job without a
+// workplace (builders) keeps its own crew.
+export function workplaceJobs(job: JobId): readonly JobId[] {
+  const id = workplace(job)
+  return id ? buildingJobs(id) : [job]
+}
+export function workplaceStaff(state: GameState, job: JobId) {
+  const hosted = workplaceJobs(job)
+  return state.people.filter(
+    (p) => isWorkingJob(p.job) && hosted.includes(p.job),
+  ).length
 }
 export function assigned(state: GameState, job: JobId) {
   return state.people.filter((p) => p.job === job).length
@@ -149,7 +184,7 @@ export function fillWorkers(state: GameState, job: JobId) {
   return adjustWorkers(
     state,
     job,
-    Math.max(0, jobCapacity(state, job) - assigned(state, job)),
+    Math.max(0, jobCapacity(state, job) - workplaceStaff(state, job)),
   )
 }
 export function jobInput(state: GameState, job: JobId): Cost {
@@ -185,13 +220,14 @@ export function staffingMultiplier(
   job: WorkingJob,
   fullHealth = false,
 ) {
-  const x = state.people
-    .filter((p) => p.job === job)
-    .reduce(
-      (sum, p) =>
-        sum + workContribution(p, job, fullHealth ? 1 : healthMultiplier(p)),
-      0,
+  // Shared slots: everyone working at this workplace competes for capacity.
+  const hosted = workplaceJobs(job)
+  const x = state.people.reduce((sum, p) => {
+    if (!isWorkingJob(p.job) || !hosted.includes(p.job)) return sum
+    return (
+      sum + workContribution(p, p.job, fullHealth ? 1 : healthMultiplier(p))
     )
+  }, 0)
   const capacity = jobCapacity(state, job)
   return x && capacity ? effectiveStaff(x, capacity) / x : 0
 }
@@ -300,6 +336,9 @@ export function happinessTarget(state: GameState) {
       0.2 * clamp(leisure / n))
   )
 }
+const FOOD_ACTION_IDS = ACTION_IDS.filter(
+  (id) => ACTIONS[id].resource === 'food',
+)
 export function arrivalStatus(state: GameState) {
   const next = state.people.length + 1,
     buffer = 10 * next,
@@ -307,10 +346,11 @@ export function arrivalStatus(state: GameState) {
   let foodOutput = 0,
     recipeDemand = 0
   // Wild gathering covers food until farms outproduce it.
-  foodOutput +=
-    actionOutputRate(state, 'gather', {
-      happiness: town ? 0.75 : 1,
-    }) * 60
+  for (const id of FOOD_ACTION_IDS)
+    foodOutput +=
+      actionOutputRate(state, id, {
+        happiness: town ? 0.75 : 1,
+      }) * 60
   const checked = new Set<ProductionJob>()
   for (const p of state.people) {
     const job = p.job
