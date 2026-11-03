@@ -166,9 +166,6 @@ export function AwayReport({
             </div>
           )}
         </dl>
-        {report.effectiveSeconds < report.wallSeconds && (
-          <p className="away-note">Longer absences progress more slowly.</p>
-        )}
         {changedResources.length > 0 && (
           <section className="away-section" aria-label="Resource changes">
             <h3>Resource changes</h3>

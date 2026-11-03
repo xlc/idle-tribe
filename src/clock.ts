@@ -113,7 +113,7 @@ export function awayHighlight(report: AwayProgress) {
       ? r
       : chosen
   }, null)
-  if (!best) return 'Settlement saved'
+  if (!best) return ''
   const gain = report.gains[best]
   return `${gain >= 0 ? '+' : '−'}${formatCompactResource(Math.abs(gain))} ${RESOURCE_INFO[best].name.toLowerCase()}`
 }

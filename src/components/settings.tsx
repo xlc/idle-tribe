@@ -30,7 +30,6 @@ export function Settings({ session, confirm }: ViewProps) {
   return (
     <>
       <h2>Settings</h2>
-      <p>Manage this browser's local game data.</p>
       <div className="settings-actions">
         <Button color="grass" onClick={() => void refreshApp(session)}>
           Check for updates &amp; reload
@@ -76,9 +75,6 @@ export function Settings({ session, confirm }: ViewProps) {
       </section>
       <section className="event-log-section">
         <h2>Event log</h2>
-        <p className="event-log-note">
-          Events from this session. Refreshing the page clears the log.
-        </p>
         {session.events.length ? (
           <ul className="event-log">
             {[...session.events].reverse().map((event) => (
