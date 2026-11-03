@@ -32,8 +32,6 @@ import {
 } from './common'
 import { WorkerControls } from './worker-controls'
 
-const LEVEL_EFFECT_LABEL = 'Level effect:'
-
 function ActionSkill({
   level,
   xp,
@@ -294,9 +292,6 @@ export function ActionCard({
             {Object.keys(def.cost).length > 0 && (
               <Costs session={session} cost={def.cost} vertical />
             )}
-            <p className="action-skill-rules">
-              {LEVEL_EFFECT_LABEL} {def.levelEffect}
-            </p>
             {def.kind === 'exploration' && (
               <p className="action-hint">{exploreHint(skill.level)}</p>
             )}

@@ -74,7 +74,6 @@ export interface PerkDefinition {
 interface ActionDefinitionBase {
   name: string
   description: string
-  levelEffect: string
   seconds: number
   baseXp: number
   // XP granted per completion; defaults to 1 when unset.
