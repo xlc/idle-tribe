@@ -148,7 +148,7 @@ test('the initial era has one general storage building for its early resources',
     planks: 150,
     blocks: 150,
     tools: 60,
-    knowledge: 100,
+    knowledge: 200,
   })
 })
 

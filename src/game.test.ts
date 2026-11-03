@@ -88,9 +88,9 @@ test('cheat resource grants add only the requested stockpile amounts', () => {
   const s = createDefaultState(),
     game = createGame(s)
   game.grantResources({ food: 100, wood: 100, stone: 100 })
-  expect(s.resources.food).toBe(101)
-  expect(s.resources.wood).toBe(60)
-  expect(s.resources.stone).toBe(60)
+  expect(s.resources.food).toBe(50)
+  expect(s.resources.wood).toBe(50)
+  expect(s.resources.stone).toBe(50)
   expect(s.resources.planks).toBe(0)
 })
 
@@ -265,11 +265,11 @@ test('removal preserves people and stock, releases workers, and rebuilding accep
 test('storage capacity caps new resource gains while prices remain payable', () => {
   const s = createDefaultState()
   s.facilities.stockyard.level = 2
-  expect(storageCapacity(s, 'wood')).toBe(828)
-  s.resources.wood = 4 * 828
+  expect(storageCapacity(s, 'wood')).toBe(818)
+  s.resources.wood = 4 * 818
   expect(canAfford(s, { wood: 3000 })).toBe(true)
   removeFacility(s, 'stockyard')
-  expect(s.resources.wood).toBe(3312)
+  expect(s.resources.wood).toBe(3272)
   expect(storageFull(s, 'wood')).toBe(true)
 })
 
@@ -403,7 +403,7 @@ test('food gathering rewards the first second and opens exploration after five c
   advanceTime(s, 3600, false)
   expect(s.manual?.progress).toBeCloseTo(0.4)
   advanceTime(s, 0.6, true)
-  expect(s.resources.food).toBe(1)
+  expect(s.resources.food).toBe(2)
   expect(s.manual).toBeNull()
   for (let i = 0; i < 4; i++) {
     expect(startAction(s, 'gather')).toBe(true)
@@ -411,7 +411,7 @@ test('food gathering rewards the first second and opens exploration after five c
   }
   // The fourth completion reaches level 2 but still pays level-1 yield; only
   // the fifth collects the +2%.
-  expect(s.resources.food).toBeCloseTo(5.02, 6)
+  expect(s.resources.food).toBeCloseTo(6.02, 6)
   expect(s.exploreUnlocked).toBe(true)
 })
 
@@ -435,20 +435,20 @@ test.each([
 test('the gathering duration stays constant near the storage cap', () => {
   const s = createDefaultState()
   s.discovered.wood = true
-  s.resources.wood = 59
+  s.resources.wood = 49
   const duration = actionDuration(s, 'sticks')
   expect(duration).toBe(2)
   expect(startAction(s, 'sticks')).toBe(true)
   advanceTime(s, duration / 2, true)
   expect(s.manual?.progress).toBeCloseTo(0.5)
   advanceTime(s, duration / 2, true)
-  expect(s.resources.wood).toBe(60)
+  expect(s.resources.wood).toBe(50)
 })
 
 test('automated gathering follows the same storage cap timeline across tick sizes', () => {
   const s = createDefaultState()
   s.facilities.foraging.level = 10
-  s.resources.food = 119.1
+  s.resources.food = 49.1
   people(s, 'forager', 'forager')
   const sliced = structuredClone(s)
   advanceTime(s, 0.5, true)
@@ -457,7 +457,7 @@ test('automated gathering follows the same storage cap timeline across tick size
   expect(s.actionProgress.gather).toBeCloseTo(sliced.actionProgress.gather, 3)
   advanceTime(s, 4, true)
   advanceTime(sliced, 4, true)
-  expect(s.resources.food).toBeCloseTo(120, 8)
+  expect(s.resources.food).toBeCloseTo(50, 8)
   expect(s.resources.food).toBeCloseTo(sliced.resources.food, 4)
 })
 
@@ -494,7 +494,7 @@ test('completed gathering levels up, linearly improves yield, and persists', () 
   s.actionSkills.gather.level = 4
   expect(actionYield(s, 'gather')).toBeCloseTo(1.06, 8)
   expect(s.actionSkills.sticks).toEqual({ level: 1, xp: 0 })
-  expect(s.people[0]?.practice.forager).toBe(0)
+  expect(s.people).toHaveLength(0)
   expect(parseSave(JSON.stringify(s)).actionSkills).toEqual(s.actionSkills)
   startAction(s, 'gather')
   advanceTime(s, 0.2, true)

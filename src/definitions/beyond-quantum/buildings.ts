@@ -46,10 +46,10 @@ export const buildings = {
           'exotic-material': 100,
         },
         work: 90,
-        rate: 30,
+        rate: 12,
       },
     ],
-    effect: 'Stellar workplace; 0.5 metal/s per worker.',
+    effect: 'Stellar workplace; 0.2 metal/s per worker.',
     job: 'stellar-worker',
   },
 } satisfies Partial<Record<BuildingId, BuildingDefinition>>

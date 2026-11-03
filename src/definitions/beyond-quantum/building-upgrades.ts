@@ -56,4 +56,19 @@ export const buildingUpgrades = {
       input: { metal: 2, tools: 0.5, charge: 1, 'causal-models': 0.01 },
     },
   ],
+  study: [
+    {
+      name: 'Causal institute',
+      description: 'Conclusions now arrive slightly before the questions do.',
+      requires: { research: ['causal-engineering'] },
+      cost: {
+        machinery: 100,
+        circuits: 100,
+        'quantum-components': 30,
+        data: 400,
+      },
+      work: 40,
+      rate: 6,
+    },
+  ],
 } satisfies Partial<Record<BuildingId, FormDefinition[]>>

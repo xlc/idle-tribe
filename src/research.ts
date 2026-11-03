@@ -1,5 +1,6 @@
 import { BUILDINGS, EQUIPMENT, RESEARCH } from './definitions'
 import { RESEARCH_IDS, RESOURCES } from './ids'
+import { generatePersonName } from './names'
 import { hasResearch, researchLevel } from './research-effects'
 import {
   canAfford,
@@ -15,6 +16,7 @@ import {
   prestigeMultiplier,
   requirementBlocker,
 } from './settlement'
+import { createPerson } from './state'
 import type { Cost, GameState, Project, QueueId } from './types'
 export const QUEUES: QueueId[] = ['research', 'construction']
 export function researchQueueUnlocked(state: GameState) {
@@ -301,6 +303,10 @@ export function completeProject(state: GameState, project: Project) {
     if (firstCompletion && def.grant) {
       const f = state.facilities[def.grant.building]
       f.level = Math.max(1, f.level)
+      // The first follower arrives with automation: no mouths to feed before
+      // the player can see and assign people.
+      if (state.people.length === 0)
+        state.people.push(createPerson(generatePersonName(state.nameSeed)))
     }
   } else {
     const f = state.facilities[project.id]

@@ -302,7 +302,7 @@ export function happinessTarget(state: GameState) {
 }
 export function arrivalStatus(state: GameState) {
   const next = state.people.length + 1,
-    buffer = 20 * next,
+    buffer = 10 * next,
     town = happinessUnlocked(state)
   let foodOutput = 0,
     recipeDemand = 0

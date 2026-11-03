@@ -4,8 +4,8 @@ import type { ResearchDefinition } from '../../types'
 export const research = {
   writing: {
     name: 'Writing',
-    cost: { knowledge: 3600, planks: 1200, blocks: 900, tools: 360 },
-    seconds: 32400,
+    cost: { knowledge: 1800, planks: 1200, blocks: 900, tools: 360 },
+    seconds: 21600,
     effect:
       'Enter town era; unlock School, Library, Meeting place, happiness, and first specialization.',
     description:

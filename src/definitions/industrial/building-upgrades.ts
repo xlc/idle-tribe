@@ -17,7 +17,7 @@ export const buildingUpgrades = {
         planks: 150,
         blocks: 150,
         tools: 60,
-        knowledge: 100,
+        knowledge: 200,
         ore: 600,
       },
     },

@@ -210,10 +210,7 @@ export function parseSave(serialized: string | null, nameSeed = 0): GameState {
         practice: createRecord(WORKING_JOB_IDS, (job) => number(practice[job])),
       }
     })
-    if (
-      !s.people.length ||
-      s.people.some((person) => !jobUnlocked(s, person.job))
-    )
+    if (s.people.some((person) => !jobUnlocked(s, person.job)))
       throw new Error('Invalid people')
     s.exploreUnlocked = bool(p.exploreUnlocked)
     s.researchUnlocked = bool(p.researchUnlocked)
@@ -283,7 +280,7 @@ export function parseSave(serialized: string | null, nameSeed = 0): GameState {
         windowHours: number(a.windowHours, 8),
         settledSeconds: number(a.settledSeconds),
         resources: createRecord(RESOURCES, (r) => number(balances[r])),
-        population: number(a.population, 1, s.people.length, true),
+        population: number(a.population, 0, s.people.length, true),
         expertise: list(a.expertise).map((value) => {
           const levels = object(value)
           return createRecord(WORKING_JOB_IDS, (job) =>

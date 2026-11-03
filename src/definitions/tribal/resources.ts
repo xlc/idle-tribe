@@ -5,18 +5,18 @@ export const resources = {
   food: {
     name: 'Food',
     description: 'The one resource everyone insists on consuming.',
-    threshold: 120,
+    threshold: 50,
   },
   wood: {
     name: 'Wood',
     description: 'Future homes, currently shaped like trees.',
-    threshold: 60,
+    threshold: 50,
   },
   stone: {
     name: 'Stone',
     description:
       'The settlement’s oldest and least flexible building material.',
-    threshold: 60,
+    threshold: 50,
   },
   planks: {
     name: 'Planks',

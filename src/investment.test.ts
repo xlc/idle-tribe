@@ -42,11 +42,11 @@ test('unstaffed workplaces, housing and storage show a useful investment consequ
       target: 1,
       form: 0,
     }),
-  ).toEqual({ label: 'Food storage', before: 120, after: 520 })
+  ).toEqual({ label: 'Food storage', before: 50, after: 450 })
   completeProject(s, { kind: 'expand', id: 'food-store', target: 1, form: 0 })
   expect(
     investmentOutcome(s, { kind: 'convert', id: 'food-store', form: 1 }),
-  ).toEqual({ label: 'Food storage', before: 520, after: 1320 })
+  ).toEqual({ label: 'Food storage', before: 450, after: 1250 })
 })
 
 test('investment comparisons account for preceding queued construction', () => {

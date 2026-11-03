@@ -115,7 +115,7 @@ export const research = {
   },
   'seasonal-knowledge': {
     name: 'Seasonal knowledge',
-    cost: { knowledge: 120, planks: 50, blocks: 30, tools: 10 },
+    cost: { knowledge: 100, planks: 50, blocks: 30, tools: 10 },
     seconds: 360,
     effect: 'Food gathering automation +3 percentage points.',
     description: 'The bushes have a schedule, and we are finally catching on.',

@@ -12,6 +12,7 @@ import { EXPEDITION_ENCOUNTER_IDS } from './ids'
 import { storageCapacity } from './resources'
 import { advanceTime } from './simulation'
 import { createDefaultState } from './state'
+import { people } from './test-helpers'
 
 function encounterState() {
   const state = createDefaultState()
@@ -70,9 +71,7 @@ test('automated actions report active and paused states from their live inputs',
   const state = createDefaultState()
   state.exploreUnlocked = true
   state.facilities['expedition-camp'].level = 1
-  const founder = state.people[0]
-  if (!founder) throw new Error('Default state has no founder')
-  founder.job = 'explorer'
+  people(state, 'explorer')
   state.resources.food = 6
 
   expect(actionAvailability(state, 'explore')).toMatchObject({
@@ -103,9 +102,7 @@ test('full output storage does not block manual or automated work', () => {
   automated.discovered.wood = true
   automated.facilities.lumber.level = 1
   automated.resources.wood = storageCapacity(automated, 'wood')
-  const founder = automated.people[0]
-  if (!founder) throw new Error('Default state has no founder')
-  founder.job = 'woodcutter'
+  people(automated, 'woodcutter')
   expect(actionAvailability(automated, 'sticks')).toMatchObject({
     kind: 'automated',
     state: 'active',
@@ -163,10 +160,8 @@ test('automated encounters use their declared default and pause while a report i
   const state = encounterState()
   for (const id of EXPEDITION_ENCOUNTER_IDS.slice(1))
     state.completedEncounters[id] = true
-  const founder = state.people[0]
-  if (!founder) throw new Error('Default state has no founder')
   state.facilities['expedition-camp'].level = 1
-  founder.job = 'explorer'
+  people(state, 'explorer')
   const beforeWood = state.resources.wood
   triggerEncounter(state, 'automated', 0.1)
   expect(state.pendingEncounter).toBeNull()
@@ -225,9 +220,7 @@ test('a traveler lead becomes an idle settler when food and a room are ready', (
   state.research.shelters = 1
   state.facilities.housing.level = 1
   state.facilities.foraging.level = 1
-  const founder = state.people[0]
-  if (!founder) throw new Error('Default state has no founder')
-  founder.job = 'forager'
+  people(state, 'forager')
 
   triggerEncounter(state, 'manual')
   expect(resolveEncounter(state, 0)).toBe(true)
@@ -300,9 +293,7 @@ test('exploration expected rates include worker cadence', () => {
   for (const id of EXPEDITION_ENCOUNTER_IDS)
     state.completedEncounters[id] = true
   state.facilities['expedition-camp'].level = 1
-  const founder = state.people[0]
-  if (!founder) throw new Error('Default state has no founder')
-  founder.job = 'explorer'
+  people(state, 'explorer')
 
   const expected = exploreExpectedRewards(state),
     rate = exploreExpectedRate(state)

@@ -9,7 +9,9 @@ import { complete, required } from './test-helpers'
 
 test('founders get repeatable names from varied settlement seeds', () => {
   const names = Array.from({ length: 100 }, (_, seed) => {
-    const name = required(createDefaultState(seed).people[0]).name
+    const state = createDefaultState(seed)
+    complete(state, 'shelters')
+    const name = required(state.people[0]).name
     expect(name).toBe(generatePersonName(seed))
     expect(name.length).toBeLessThanOrEqual(PERSON_NAME_MAX_LENGTH)
     expect(name).toMatch(/^\S+ \S+$/)
@@ -56,6 +58,7 @@ test('a time-box reset starts a new name sequence', () => {
   state.research.writing = 1
   expect(resetRun(state)).toBe(true)
   expect(state.nameSeed).toBe(43)
+  complete(state, 'shelters')
   expect(required(state.people[0]).name).toBe(
     generatePersonName(state.nameSeed),
   )
