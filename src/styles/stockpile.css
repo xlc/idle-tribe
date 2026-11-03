@@ -59,7 +59,6 @@
 .resource-value[data-full="true"] {
   color: var(--color-warning);
 }
-.resource-rate[data-zero="true"],
 .recipe-output[data-zero="true"] {
   color: var(--color-neutral);
 }

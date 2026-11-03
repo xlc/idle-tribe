@@ -24,7 +24,6 @@ export function createPerson(
 }
 export function createDefaultState(nameSeed = 0): GameState {
   const resources = createRecord(RESOURCES, () => 0)
-  resources.food = 1
   return {
     actionSkills: createRecord(ACTION_IDS, () => ({ level: 1, xp: 0 })),
     actionProgress: createRecord(ACTION_IDS, () => 0),

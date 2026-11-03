@@ -30,6 +30,7 @@ node_modules/
 coverage/
 .nyc_output/
 test-results/
+.playwright-mcp/
 
 # Logs
 *.log

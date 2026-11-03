@@ -241,6 +241,15 @@ export function DisclosureToggle({
     </button>
   )
 }
+export function CostProgress({ progress }: { progress: number }) {
+  return (
+    <span
+      className="cost-progress"
+      aria-hidden="true"
+      style={{ width: `${progress * 100}%` }}
+    />
+  )
+}
 export function Costs({
   session,
   cost,

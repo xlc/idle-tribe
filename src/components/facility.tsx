@@ -22,7 +22,7 @@ import {
   previewProject,
   researchPlan,
 } from '../research'
-import { canAfford, storageCapacity } from '../resources'
+import { affordability, canAfford, storageCapacity } from '../resources'
 import {
   assigned,
   equipmentMultiplier,
@@ -34,7 +34,7 @@ import {
 import { resourceRates } from '../simulation'
 import type { BuildingId, GameState, Project } from '../types'
 import { BuildingArt } from './art'
-import { Button, Costs, type ViewProps } from './common'
+import { Button, CostProgress, Costs, type ViewProps } from './common'
 import { WorkerControls } from './worker-controls'
 
 function InvestmentChange({
@@ -179,6 +179,9 @@ export function Facility({
         }
         aria-label={form.name}
       >
+        {missingBuildCost && (
+          <CostProgress progress={affordability(s, quote.cost)} />
+        )}
         <div className="facility-overview">
           <BuildingArt building={id} />
           <div className="facility-info">

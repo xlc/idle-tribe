@@ -63,14 +63,12 @@ export function Stockpile({ session }: { session: GameSession }) {
           {formatCompactResource(capacity)}
         </strong>
         <div className="resource-meta">
-          <span
-            className="resource-rate"
-            data-negative={rate < 0}
-            data-zero={rate === 0}
-          >
-            {rate > 0 ? '+' : ''}
-            {formatCompactResource(rate)}/s
-          </span>
+          {rate !== 0 && (
+            <span className="resource-rate" data-negative={rate < 0}>
+              {rate > 0 ? '+' : ''}
+              {formatCompactResource(rate)}/s
+            </span>
+          )}
         </div>
       </section>
     )

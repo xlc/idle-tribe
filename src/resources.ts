@@ -29,6 +29,15 @@ export function difference(a: Cost, b: Cost): Cost {
 export function canAfford(state: GameState, cost: Cost) {
   return RESOURCES.every((r) => state.resources[r] + EPSILON >= (cost[r] ?? 0))
 }
+export function affordability(state: GameState, cost: Cost) {
+  let ratio = 1
+  for (const r of RESOURCES) {
+    const required = cost[r] ?? 0
+    if (required <= 0) continue
+    ratio = Math.min(ratio, state.resources[r] / required)
+  }
+  return Math.max(0, Math.min(1, ratio))
+}
 export function pay(state: GameState, cost: Cost) {
   for (const r of RESOURCES)
     state.resources[r] = Math.max(0, state.resources[r] - (cost[r] ?? 0))

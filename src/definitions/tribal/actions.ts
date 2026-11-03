@@ -4,7 +4,7 @@ import type { ActionDefinition } from '../../types'
 export const actions = {
   gather: {
     kind: 'resource',
-    name: 'Gather food',
+    name: 'Pick berries',
     description:
       'Investigate the bushes for something that counts as breakfast.',
     levelEffect: '+2% output · +2% speed',
@@ -23,7 +23,7 @@ export const actions = {
   },
   sticks: {
     kind: 'resource',
-    name: 'Gather wood',
+    name: 'Collect sticks',
     description: 'Find a branch with a promising future.',
     levelEffect: '+2% output · +2% speed',
     seconds: 2,
@@ -37,7 +37,7 @@ export const actions = {
   },
   stone: {
     kind: 'resource',
-    name: 'Gather stone',
+    name: 'Haul rocks',
     description: 'Pick up a rock and call it the start of something.',
     levelEffect: '+2% output · +2% speed',
     seconds: 3,

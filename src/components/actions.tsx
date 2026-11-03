@@ -17,6 +17,7 @@ import {
 import { ACTIONS } from '../definitions'
 import { formatCost, formatResource, formatResourceGain } from '../format'
 import { ACTION_IDS, type ActionId } from '../ids'
+import { affordability } from '../resources'
 import type { GameSession } from '../session'
 import type { GameState } from '../types'
 import { ResourceArt } from './art'
@@ -25,6 +26,7 @@ import {
   ActionProgress,
   Button,
   type Confirm,
+  CostProgress,
   Costs,
   DisclosureToggle,
 } from './common'
@@ -141,6 +143,7 @@ export function ActionCard({
   }
   const statusKind =
     availability.kind === 'locked' ? 'locked' : availability.state
+  const missingCost = statusKind !== 'running' && affordability(s, def.cost) < 1
   const icon = (
     <span
       className="action-icon"
@@ -157,7 +160,9 @@ export function ActionCard({
         aria-label={def.name}
         data-running={running}
         data-action-state={statusKind}
+        data-cost-missing={missingCost}
       >
+        {missingCost && <CostProgress progress={affordability(s, def.cost)} />}
         <div className="action-row">
           {availability.kind === 'automated' ? (
             <fieldset className="action-automated" aria-label={def.name}>

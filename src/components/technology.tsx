@@ -10,13 +10,14 @@ import {
   researchUpgradeVisible,
   researchVisible,
 } from '../research'
-import { canAfford } from '../resources'
+import { affordability, canAfford } from '../resources'
 import type { Project } from '../types'
 import { ViewIcon } from './art'
 import {
   ActionCountdown,
   ActionProgress,
   Button,
+  CostProgress,
   Costs,
   DisclosureToggle,
   SectionDisclosure,
@@ -151,7 +152,11 @@ function ResearchCard({
         aria-label={def.name}
         data-running={Boolean(activeResearch)}
         data-action-state={status}
+        data-cost-missing={!activeResearch && !affordable}
       >
+        {!activeResearch && !affordable && (
+          <CostProgress progress={affordability(s, quote.cost)} />
+        )}
         <div className="action-row">
           <button
             type="button"
