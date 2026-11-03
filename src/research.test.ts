@@ -133,6 +133,49 @@ test('early gathering research upgrades actions into better tiers', () => {
   expect(researchUpgradeVisible(state, 'stonecutting')).toBe(false)
 })
 
+test('multi-level quality-of-life research stacks per level', () => {
+  const state = createDefaultState()
+  state.discovered = { wood: true, stone: true }
+  state.researchUnlocked = true
+
+  expect(researchVisible(state, 'basket-weaving')).toBe(false)
+  expect(researchVisible(state, 'trail-marking')).toBe(false)
+  completeProject(state, { kind: 'research', id: 'shelters' })
+  expect(researchVisible(state, 'basket-weaving')).toBe(true)
+  expect(researchVisible(state, 'trail-marking')).toBe(true)
+  expect(researchUpgradeVisible(state, 'basket-weaving')).toBe(false)
+
+  completeProject(state, { kind: 'research', id: 'basket-weaving' })
+  completeProject(state, { kind: 'research', id: 'trail-marking' })
+  expect(researchEffects(state, 'basket-weaving').resourceStorage).toEqual({
+    food: 1.2,
+    wood: 1.2,
+    stone: 1.2,
+  })
+  expect(actionDuration(state, 'explore')).toBeCloseTo(4 * 0.92)
+
+  completeProject(state, { kind: 'research', id: 'carpentry' })
+  expect(researchUpgradeVisible(state, 'basket-weaving')).toBe(true)
+  completeProject(state, {
+    kind: 'research',
+    id: 'basket-weaving',
+    target: 3,
+  })
+  expect(researchEffects(state, 'basket-weaving').resourceStorage).toEqual({
+    food: 1.2 * 1.08 ** 2,
+    wood: 1.2 * 1.08 ** 2,
+    stone: 1.2 * 1.08 ** 2,
+  })
+
+  state.research.agriculture = 1
+  state.research.irrigation = 1
+  state.research['organized-work'] = 1
+  completeProject(state, { kind: 'research', id: 'crop-rotation', target: 3 })
+  expect(researchEffects(state, 'crop-rotation').jobBonus).toEqual({
+    farmer: 0.2 + 0.1 * 2,
+  })
+})
+
 test('reusable research effects follow the same gated level progression', () => {
   const state = createDefaultState()
 

@@ -51,6 +51,23 @@ export const research = {
     requires: { research: ['irrigation'] },
     effects: {},
   },
+  'crop-rotation': {
+    name: 'Crop rotation',
+    cost: { knowledge: 900, planks: 300, blocks: 200, tools: 60 },
+    seconds: 13500,
+    effect: 'Farm rates +20%.',
+    description: 'The fields appreciate a change of subject.',
+    requires: { research: ['irrigation'] },
+    effects: { jobBonus: { farmer: 0.2 } },
+    upgrade: {
+      maxLevel: 3,
+      requires: { research: ['organized-work'] },
+      costMultiplier: 1.75,
+      timeMultiplier: 1.2,
+      effect: 'Farm rates +10% per additional level.',
+      effects: { jobBonus: { farmer: 0.1 } },
+    },
+  },
   'inventory-keeping': {
     name: 'Inventory keeping',
     cost: { knowledge: 1200, planks: 480, blocks: 360 },

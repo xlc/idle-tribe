@@ -112,6 +112,9 @@ export const RESEARCH_IDS = [
   'woodcutting',
   'stonecutting',
   'field-practice',
+  'basket-weaving',
+  'trail-marking',
+  'crop-rotation',
 ] as const
 export const JOB_IDS = [
   'idle',
