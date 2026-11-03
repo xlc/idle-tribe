@@ -210,20 +210,14 @@ test('notifications are dismissible without removing their session history', () 
   const notice = session.notification
   expect(notice?.kind).toBe('notice')
   expect(session.events.at(-1)?.text).toBe('A local action')
-  if (!notice) throw new Error('Missing notice notification')
   session.setVisible(false, hour + 3000)
   expect(session.notification).toBeNull()
   expect(session.events.at(-1)?.text).toBe('A local action')
 
   session.setVisible(true, hour + 3000 + (MIN_AWAY_REPORT_SECONDS + 1) * 1000)
-  const away = session.notification
-  expect(away?.kind).toBe('away')
-  expect(session.events.at(-1)?.report).toBeDefined()
-  if (!away) throw new Error('Missing away notification')
-  session.dismissNotification(notice.id)
-  expect(session.notification?.id).toBe(away.id)
-  session.dismissNotification(away.id)
+  // Nothing changed while away, so the return is logged but stays silent.
   expect(session.notification).toBeNull()
+  expect(session.events.at(-1)?.report).toBeDefined()
 })
 
 test('repeated expedition outcomes still create distinct session events', () => {

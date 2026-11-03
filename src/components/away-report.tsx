@@ -64,10 +64,7 @@ export function SessionNotificationToast({
           >
             <span className="event-toast-kicker">Settlement report</span>
             <strong>Welcome back</strong>
-            <span className="event-toast-counts">
-              Away for {formatDuration(report.wallSeconds)} ·{' '}
-              {awayHighlight(report)}
-            </span>
+            <span className="event-toast-counts">{awayHighlight(report)}</span>
           </button>
         </Toast.Description>
       ) : (
@@ -138,34 +135,6 @@ export function AwayReport({
         <span className="away-summary-counts">{awayHighlight(report)}</span>
       </div>
       <div className="away-details">
-        <dl className="away-stats">
-          <div>
-            <dt>Time away</dt>
-            <dd>{formatDuration(report.wallSeconds)}</dd>
-          </div>
-          <div>
-            <dt>Simulated</dt>
-            <dd>{formatDuration(report.effectiveSeconds)}</dd>
-          </div>
-          {report.arrivals > 0 && (
-            <div>
-              <dt>Arrivals</dt>
-              <dd>{report.arrivals}</dd>
-            </div>
-          )}
-          {report.completed > 0 && (
-            <div>
-              <dt>Projects completed</dt>
-              <dd>{report.completed}</dd>
-            </div>
-          )}
-          {report.encounters > 0 && (
-            <div>
-              <dt>Expedition discoveries</dt>
-              <dd>{report.encounters}</dd>
-            </div>
-          )}
-        </dl>
         {changedResources.length > 0 && (
           <section className="away-section" aria-label="Resource changes">
             <h3>Resource changes</h3>

@@ -221,23 +221,6 @@
 .away-details {
   padding: 0 16px 16px;
 }
-.away-stats {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-  padding-top: 16px;
-  border-top: 1px solid var(--color-base-300);
-}
-.away-stats dt {
-  color: var(--color-neutral);
-  font-size: 11px;
-}
-.away-stats dd {
-  margin-top: 4px;
-  font-size: 18px;
-  font-weight: 650;
-  font-variant-numeric: tabular-nums;
-}
 .away-section {
   margin-top: 18px;
 }

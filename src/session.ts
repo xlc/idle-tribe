@@ -53,11 +53,14 @@ export function createSession(
   }
   function logAway(report: AwayProgress, notify = showing) {
     if (report.wallSeconds <= MIN_AWAY_REPORT_SECONDS) return
+    const summary = awaySummary(report)
     logEvent(
       'away',
-      `Away ${formatDuration(report.wallSeconds)} · ${awaySummary(report)}`,
+      summary
+        ? `Away ${formatDuration(report.wallSeconds)} · ${summary}`
+        : `Away ${formatDuration(report.wallSeconds)}`,
       report,
-      notify,
+      notify && Boolean(summary),
     )
   }
   // Events that happen while hidden are covered by the away report.
