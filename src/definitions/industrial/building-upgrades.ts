@@ -35,6 +35,7 @@ export const buildingUpgrades = {
         blocks: 500,
         tools: 200,
         ceramics: 500,
+        knowledge: 300,
         metal: 400,
         machinery: 100,
       },

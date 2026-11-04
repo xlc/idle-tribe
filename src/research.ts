@@ -9,6 +9,7 @@ import {
   marginal,
   pay,
   refund,
+  storageCapacity,
 } from './resources'
 import {
   assignJob,
@@ -235,10 +236,17 @@ export function queueBlocker(state: GameState, id: QueueId) {
   const entry = q.waiting[0]
   if (!entry) return 'Waiting'
   const quote = quoteProject(state, entry.project)
+  // Research may cost more than current storage (paid from over-cap stock or
+  // after later growth); a queued building whose cost exceeds capacity can
+  // never be funded, and "waiting" would mislead.
+  const exceedsStorage =
+    id === 'construction' &&
+    RESOURCES.some((r) => (quote.cost[r] ?? 0) > storageCapacity(state, r))
   return (
     quote.blocker ||
     (id === 'research' && firstIdlePerson(state) < 0 ? 'No idle people' : '') ||
     (id === 'construction' && !constructionSpeed(state) ? 'No builders' : '') ||
+    (exceedsStorage ? 'Exceeds storage' : '') ||
     (!canAfford(state, quote.cost) ? 'Waiting for materials' : '')
   )
 }

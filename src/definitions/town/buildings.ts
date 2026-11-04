@@ -11,7 +11,13 @@ export const buildings = {
         cost: { wood: 60, stone: 40 },
         work: 4,
         requires: { research: ['town-planning'] },
-        storage: { planks: 150, blocks: 150, tools: 60, ceramics: 150 },
+        storage: {
+          planks: 150,
+          blocks: 150,
+          tools: 60,
+          ceramics: 150,
+          knowledge: 150,
+        },
       },
     ],
     effect:
