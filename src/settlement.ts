@@ -57,8 +57,6 @@ export function happinessUnlocked(state: GameState) {
 // note seen when its dialog is dismissed.
 export function noteUnlocked(state: GameState, id: NoteId) {
   switch (id) {
-    case 'explore':
-      return state.exploreUnlocked
     case 'research':
       return state.researchUnlocked
     case 'jobs':

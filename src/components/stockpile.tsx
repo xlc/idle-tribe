@@ -7,11 +7,16 @@ import { ACTION_IDS, BUILDING_IDS, RESOURCES } from '../ids'
 import { isProductionJob } from '../jobs'
 import { storageCapacity, storageFull } from '../resources'
 import type { GameSession } from '../session'
-import { craftingJob, requirementBlocker } from '../settlement'
+import {
+  availablePeople,
+  craftingJob,
+  housingCapacity,
+  requirementBlocker,
+} from '../settlement'
 import type { ResourceFlowEntry } from '../simulation'
 import { resourceFlowEntries, resourceFlows } from '../simulation'
 import type { GameState, ResourceId } from '../types'
-import { ResourceArt } from './art'
+import { ResourceArt, ViewIcon } from './art'
 import { Button } from './common'
 
 export function Stockpile({ session }: { session: GameSession }) {
@@ -79,17 +84,34 @@ export function Stockpile({ session }: { session: GameSession }) {
     <>
       <Card asChild>
         <section className="stockpile-panel" aria-label="Stockpile">
-          <button
-            type="button"
-            className="stockpile-open"
-            aria-haspopup="dialog"
-            aria-label="Resource details"
-            onClick={() => setOpen(true)}
-          >
-            <div className="stockpile" id="stockpile-resources">
-              {visibleResources.map(resource)}
-            </div>
-          </button>
+          <div className="stockpile-row">
+            <button
+              type="button"
+              className="stockpile-open"
+              aria-haspopup="dialog"
+              aria-label="Resource details"
+              onClick={() => setOpen(true)}
+            >
+              <div className="stockpile" id="stockpile-resources">
+                {visibleResources.map(resource)}
+              </div>
+            </button>
+            <section
+              className="resource stockpile-people"
+              aria-label={`People, ${s.people.length} of ${housingCapacity(s)} housing, ${availablePeople(s)} idle`}
+            >
+              <span className="people-icon" aria-hidden="true">
+                <ViewIcon name="people" />
+              </span>
+              <span className="resource-name">People</span>
+              <strong className="resource-value">
+                {s.people.length} / {housingCapacity(s)}
+              </strong>
+              <div className="resource-meta">
+                <span>{availablePeople(s)} idle</span>
+              </div>
+            </section>
+          </div>
         </section>
       </Card>
       {open && (

@@ -62,6 +62,32 @@
 .recipe-output[data-zero="true"] {
   color: var(--color-neutral);
 }
+.stockpile-row {
+  display: flex;
+  align-items: stretch;
+}
+.stockpile-row .stockpile-open {
+  flex: 1;
+}
+.stockpile-people {
+  border-right: 0;
+  border-left: 1px solid var(--color-base-300);
+}
+.stockpile-people .people-icon {
+  grid-row: 1 / 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-neutral);
+}
+.stockpile-people .people-icon svg {
+  width: 26px;
+  height: 26px;
+}
+.stockpile-people .resource-meta {
+  font-size: 11px;
+  color: var(--color-neutral);
+}
 .stockpile-open {
   display: block;
   width: 100%;

@@ -4,13 +4,9 @@ import type { NoteId } from '../ids'
 // unlocks and re-readable from Settings. Keep them terse: facts, not
 // walkthroughs. Unlock conditions live in settlement.ts (noteUnlocked).
 export const NOTES: Record<NoteId, { title: string; text: string }> = {
-  explore: {
-    title: 'Explore',
-    text: 'Trips beyond the clearing return resources, discoveries, and sometimes travelers.',
-  },
   research: {
     title: 'Research',
-    text: 'Technology cards can queue plans. Research occupies one idle person at a time.',
+    text: 'Each research plan puts one idle person to work as its researcher until the plan completes or is stopped.',
   },
   jobs: {
     title: 'Jobs',

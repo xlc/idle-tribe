@@ -194,7 +194,6 @@ export const PERK_IDS = [
 ] as const
 export const SPECIALIZATION_IDS = ['forestry', 'stonecraft'] as const
 export const NOTE_IDS = [
-  'explore',
   'research',
   'jobs',
   'expedition',

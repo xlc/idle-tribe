@@ -20,8 +20,6 @@ import { complete, people, required, settlement } from './test-helpers'
 test('unlock notes follow their mechanic conditions', () => {
   const s = createDefaultState()
   expect(NOTE_IDS.every((id) => !noteUnlocked(s, id))).toBe(true)
-  s.exploreUnlocked = true
-  expect(noteUnlocked(s, 'explore')).toBe(true)
   s.researchUnlocked = true
   expect(noteUnlocked(s, 'research')).toBe(true)
   complete(s, 'foraging-rounds')

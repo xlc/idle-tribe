@@ -93,7 +93,7 @@ test('encounter schema changes reset incomplete saves', () => {
 
 test('current saves preserve seen unlock notes', () => {
   const s = createDefaultState()
-  s.seenNotes.explore = true
+  s.seenNotes.research = true
   s.seenNotes['time-box'] = true
   const loaded = parseSave(JSON.stringify(s))
   expect(loaded.seenNotes).toEqual(s.seenNotes)
