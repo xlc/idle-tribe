@@ -142,7 +142,7 @@ test('an older ready queue pays first, but a blocked queue does not reserve stoc
   s.discovered.wood = true
   people(s, 'builder')
   s.resources.food = 10
-  s.resources.wood = 15
+  s.resources.wood = BUILDINGS.housing.forms[0].cost.wood ?? 0
   enqueue(s, { kind: 'expand', id: 'housing', target: 1, form: 0 })
   enqueue(s, { kind: 'research', id: 'stone-tools' })
   startQueues(s)

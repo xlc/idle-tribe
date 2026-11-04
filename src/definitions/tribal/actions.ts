@@ -59,7 +59,7 @@ export const actions = {
       'The edge of the clearing is doing an excellent job of looking interesting.',
     seconds: 3,
     baseXp: 1,
-    cost: { food: 5 },
+    cost: { food: 3 },
     building: 'expedition-camp',
     job: 'explorer',
     visible: (s) => s.exploreUnlocked,

@@ -228,16 +228,16 @@ export function runBalance(
     gather('food', 48, deadline)
     while (!state.discovered.wood && wall < deadline)
       if (!manual('explore', deadline)) break
-    gather('wood', 10, deadline)
-    gather('food', 8, deadline)
+    gather('wood', 8, deadline)
+    gather('food', 6, deadline)
     controls.plan({ kind: 'research', id: 'sharpened-stick' })
     advance(0)
-    gather('wood', 20, deadline)
-    gather('food', 25, deadline)
+    gather('wood', 18, deadline)
+    gather('food', 20, deadline)
     waitForResearch(deadline, 'sharpened-stick')
     controls.plan({ kind: 'research', id: 'shelters' })
     advance(0)
-    gather('wood', 35, deadline)
+    gather('wood', 30, deadline)
     // Shelters research needs stone, and a full-scale manual explore always
     // makes the next discovery, so one trip finds it.
     while (!state.discovered.stone && wall < deadline)
@@ -252,9 +252,9 @@ export function runBalance(
     waitForResearch(deadline, 'foraging-rounds', 'timber-camps')
     controls.plan({ kind: 'expand', id: 'housing', target: 1, form: 0 })
     controls.plan({ kind: 'expand', id: 'lumber', target: 1, form: 0 })
-    // Pay for both buildings: 35 wood and 10 food beyond the research spend.
-    gather('wood', 36, deadline)
-    gather('food', 11, deadline)
+    // Pay for both buildings: 18 wood and 5 food beyond the research spend.
+    gather('wood', 27, deadline)
+    gather('food', 8, deadline)
     controls.assign(0, 'builder')
     while (
       (state.queues.construction.waiting.length ||
