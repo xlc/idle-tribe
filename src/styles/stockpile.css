@@ -62,3 +62,70 @@
 .recipe-output[data-zero="true"] {
   color: var(--color-neutral);
 }
+.stockpile-open {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: inherit;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.stockpile-open:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+  border-radius: 6px;
+}
+.stockpile-modal {
+  width: min(560px, calc(100% - 32px));
+  max-height: 85dvh;
+  overflow-y: auto;
+}
+.stockpile-details {
+  display: flex;
+  flex-direction: column;
+}
+.stockpile-detail {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-base-300);
+}
+.stockpile-detail:last-child {
+  border-bottom: 0;
+}
+.stockpile-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.stockpile-detail-header .painted-art {
+  width: 24px;
+  height: 24px;
+}
+.stockpile-detail-header > span {
+  margin-left: auto;
+  color: var(--color-neutral);
+  font-size: 13px;
+}
+.stockpile-detail-warning {
+  margin: 6px 0 0;
+  color: var(--color-warning);
+  font-size: 13px;
+}
+.stockpile-detail-flows {
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  font-variant-numeric: tabular-nums;
+}
+.stockpile-detail-flows li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 2px 0;
+  font-size: 13px;
+}

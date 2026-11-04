@@ -1,7 +1,9 @@
 import { expect, test } from 'bun:test'
-import { advanceTime } from './simulation'
+import { JOBS } from './definitions'
+import { RESOURCES } from './ids'
+import { advanceTime, resourceFlowEntries, resourceFlows } from './simulation'
 import { createDefaultState } from './state'
-import { people } from './test-helpers'
+import { people, settlement } from './test-helpers'
 
 test('automated level-ups change the remaining interval at the same timestamp across tick sizes', () => {
   const state = createDefaultState()
@@ -52,4 +54,43 @@ test('exploration pauses at a food shortage without banking unpaid trips', () =>
   advanceTime(state, 30)
   expect(state.exploreRolls).toBe(rolls)
   expect(state.actionProgress.explore).toBeCloseTo(0, 10)
+})
+
+test('itemized flow entries sum to the aggregate resource flows', () => {
+  const s = settlement()
+  people(s, 'sawyer', 'sawyer', 'scholar', 'explorer', 'forager')
+  s.actionSkills.explore.level = 5
+  const entries = resourceFlowEntries(s),
+    flows = resourceFlows(s)
+  for (const r of RESOURCES) {
+    const sum = (kind: 'production' | 'input' | 'meal') =>
+      entries[r]
+        .filter((e) => e.kind === kind)
+        .reduce((n, e) => n + e.amount, 0)
+    expect(sum('production')).toBeCloseTo(flows[r].production, 8)
+    expect(sum('input')).toBeCloseTo(flows[r].inputs, 8)
+    expect(sum('meal')).toBeCloseTo(flows[r].meals, 8)
+    for (const entry of entries[r]) expect(entry.amount).toBeGreaterThan(0)
+  }
+})
+
+test('flow entries name their sources', () => {
+  const s = settlement()
+  people(s, 'sawyer', 'explorer')
+  s.actionSkills.explore.level = 5
+  const entries = resourceFlowEntries(s)
+  expect(entries.planks.find((e) => e.kind === 'production')?.label).toBe(
+    JOBS.sawyer.name,
+  )
+  expect(
+    entries.wood.some(
+      (e) => e.label === JOBS.sawyer.name && e.kind === 'input',
+    ),
+  ).toBe(true)
+  expect(
+    entries.food.some((e) => e.label === 'Meals' && e.kind === 'meal'),
+  ).toBe(true)
+  expect(
+    entries.food.some((e) => e.label === 'Explore' && e.kind === 'input'),
+  ).toBe(true)
 })

@@ -48,7 +48,7 @@ import {
 } from './settlement'
 import { expertiseLevel, practiceThreshold } from './skills'
 import { createPerson } from './state'
-import type { GameState } from './types'
+import type { GameState, ResourceId } from './types'
 
 function settleEvents(state: GameState, visible: boolean) {
   let changed = false
@@ -315,28 +315,48 @@ export function advanceTime(
     if (settleEvents(state, visible) || learned) rules = intervalRules(state)
   }
 }
-export function resourceFlows(
+export interface ResourceFlowEntry {
+  label: string
+  amount: number
+  kind: 'production' | 'input' | 'meal'
+}
+// Per-minute flows grouped by named source: jobs and actions produce, recipes
+// and action costs consume, meals drain food. Zero entries are omitted.
+export function resourceFlowEntries(
   state: GameState,
   options: { ignoreInputs?: boolean } = {},
 ) {
-  const flows = createRecord(RESOURCES, () => ({
-    production: 0,
-    inputs: 0,
-    meals: 0,
-  }))
-  const production = workerRates(state, options)
+  const entries = createRecord(RESOURCES, () => [] as ResourceFlowEntry[])
+  const add = (
+    r: ResourceId,
+    label: string,
+    amount: number,
+    kind: ResourceFlowEntry['kind'],
+  ) => {
+    if (amount <= 0) return
+    const list = entries[r]
+    const existing = list.find((e) => e.label === label && e.kind === kind)
+    if (existing) existing.amount += amount
+    else list.push({ label, amount, kind })
+  }
+  const rates = workerRates(state, options)
   for (const [index, p] of state.people.entries())
     if (isProductionJob(p.job)) {
-      const output = jobRecipe(p.job).output
-      const rate = production[index] ?? 0
-      flows[output].production += rate
+      const rate = rates[index] ?? 0
+      add(jobRecipe(p.job).output, JOBS[p.job].name, rate, 'production')
       const input = jobInput(state, p.job)
-      for (const r of RESOURCES) flows[r].inputs += rate * (input[r] ?? 0)
+      for (const r of RESOURCES)
+        add(r, JOBS[p.job].name, rate * (input[r] ?? 0), 'input')
     }
   for (const id of ACTION_IDS) {
     const def = ACTIONS[id]
     if (def.resource) {
-      flows[def.resource].production += actionOutputRate(state, id) * 60
+      add(
+        def.resource,
+        def.name,
+        actionOutputRate(state, id) * 60,
+        'production',
+      )
       continue
     }
     const n = actionWorkers(state, id)
@@ -348,12 +368,29 @@ export function resourceFlows(
     )
       continue
     const rate = (n / actionDuration(state, id)) * 60
-    for (const r of RESOURCES) flows[r].inputs += rate * (def.cost[r] ?? 0)
+    for (const r of RESOURCES)
+      add(r, def.name, rate * (def.cost[r] ?? 0), 'input')
     const expected = exploreExpectedRewards(state)
-    for (const r of RESOURCES) flows[r].production += rate * (expected[r] ?? 0)
+    for (const r of RESOURCES)
+      add(r, def.name, rate * (expected[r] ?? 0), 'production')
   }
-  flows.food.meals = mealCost(state)
-  return flows
+  add('food', 'Meals', mealCost(state), 'meal')
+  return entries
+}
+export function resourceFlows(
+  state: GameState,
+  options: { ignoreInputs?: boolean } = {},
+) {
+  const entries = resourceFlowEntries(state, options)
+  return createRecord(RESOURCES, (r) => {
+    const flows = { production: 0, inputs: 0, meals: 0 }
+    for (const entry of entries[r]) {
+      if (entry.kind === 'production') flows.production += entry.amount
+      else if (entry.kind === 'input') flows.inputs += entry.amount
+      else flows.meals += entry.amount
+    }
+    return flows
+  })
 }
 export function resourceRates(
   state: GameState,
