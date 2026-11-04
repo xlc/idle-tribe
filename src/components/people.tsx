@@ -105,10 +105,7 @@ export function People({ session }: { session: GameSession }) {
                   ))}
                 </span>
               </div>
-              <label
-                className="person-job"
-                data-visible={unlocked.length > 1}
-              >
+              <div className="person-job" data-visible={unlocked.length > 1}>
                 <span className="person-field-label">Assign job</span>
                 <Select.Root
                   value={p.job}
@@ -129,7 +126,7 @@ export function People({ session }: { session: GameSession }) {
                     ))}
                   </Select.Content>
                 </Select.Root>
-              </label>
+              </div>
               <div className="person-meta">
                 <p className="person-output">
                   {isWorkingJob(p.job) ? output(s, p) : 'Ready for assignment'}

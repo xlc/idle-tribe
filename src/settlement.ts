@@ -1,7 +1,6 @@
 import { actionOutputRate } from './actions'
 import { WORKERS_PER_BUILDING_LEVEL } from './constants'
 import { ACTIONS, BUILDINGS, JOBS, PERKS, RESEARCH } from './definitions'
-import { healthMultiplier } from './food'
 import {
   ACTION_IDS,
   BUILDING_IDS,
@@ -60,7 +59,7 @@ export function prestigeMultiplier(state: GameState) {
   return 1 + 0.02 * Math.sqrt(state.legacy.lifetime)
 }
 export function effectiveStaff(x: number, capacity: number) {
-  return x <= capacity ? x : capacity * (1 + Math.log(x / capacity))
+  return Math.min(x, capacity)
 }
 export function equipmentMultiplier(tier: number) {
   return [1, 1.2, 1.45, 1.75][tier] ?? 1.75 + 0.5 * (Math.sqrt(tier - 2) - 1)
@@ -206,23 +205,12 @@ export function jobInput(state: GameState, job: JobId): Cost {
 interface RateOptions {
   happiness?: number
   ignoreInputs?: boolean
-  fullHealthCrew?: boolean
 }
-export function staffingMultiplier(
-  state: GameState,
-  job: WorkingJob,
-  fullHealth = false,
-) {
-  // Shared slots: everyone working at this workplace competes for capacity.
-  const hosted = workplaceJobs(job)
-  const x = state.people.reduce((sum, p) => {
-    if (!isWorkingJob(p.job) || !hosted.includes(p.job)) return sum
-    return (
-      sum + workContribution(p, p.job, fullHealth ? 1 : healthMultiplier(p))
-    )
-  }, 0)
+export function staffingMultiplier(state: GameState, job: WorkingJob) {
+  // Shared slots: capacity counts workers; extras at the workplace are idle.
+  const n = workplaceStaff(state, job)
   const capacity = jobCapacity(state, job)
-  return x && capacity ? effectiveStaff(x, capacity) / x : 0
+  return n && capacity ? Math.min(n, capacity) / n : 0
 }
 function workplaceRate(
   state: GameState,
@@ -255,7 +243,7 @@ function workplaceRate(
   return (
     (def.rate ?? 0) *
     (1 + 0.1 * (f.level - 1)) *
-    staffingMultiplier(state, job, options.fullHealthCrew) *
+    staffingMultiplier(state, job) *
     equipmentMultiplier(f.equipment) *
     technology *
     specialization *
@@ -368,15 +356,17 @@ export function arrivalStatus(state: GameState) {
         input *
         workers.reduce((sum, worker) => sum + personalWork(worker, job), 0) *
         workplaceRate(state, job, {
-          fullHealthCrew: true,
           happiness: town ? 1.25 : 1,
           ignoreInputs: true,
         })
   }
   const required = 1.1 * (next + recipeDemand)
+  // Food abundance draws newcomers faster: twice the required sustainable
+  // food halves the wait, capped at a 3x speedup.
+  const abundance = Math.min(3, foodOutput / required)
   const interval =
     (5 * Math.max(1, next / housingCapacity(state)) ** 2) /
-    (town ? 0.5 + state.happiness / 100 : 1)
+    (abundance * (town ? 0.5 + state.happiness / 100 : 1))
   return {
     blocker: arrivalBlocker(state, { buffer, foodOutput, required }),
     buffer,

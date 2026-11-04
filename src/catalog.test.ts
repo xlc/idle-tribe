@@ -222,7 +222,7 @@ test('gathering camp slots are shared across its actions', () => {
   expect(assigned(state, 'forager')).toBe(2)
   expect(fillWorkers(state, 'digger')).toBe(false)
 
-  // Overstaffing any job at the camp slows everyone working there.
+  // Overstaffing any job at the camp idles the surplus beyond capacity.
   expect(adjustWorkers(state, 'digger', 1)).toBe(true)
   expect(staffingMultiplier(state, 'forager')).toBeLessThan(1)
   expect(staffingMultiplier(state, 'digger')).toBeLessThan(1)

@@ -206,7 +206,9 @@ export function Facility({
                   {buildingResource(id) ?? 'explores'}
                   /s
                 </span>
-                <span className="recipe-input">Staff {n}/{slots}</span>
+                <span className="recipe-input">
+                  Staff {n}/{slots}
+                </span>
               </div>
             ) : craftingJob ? (
               <div className="building-recipe">

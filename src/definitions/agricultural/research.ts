@@ -4,7 +4,7 @@ import type { ResearchDefinition } from '../../types'
 export const research = {
   agriculture: {
     name: 'Agriculture',
-    cost: { knowledge: 180, food: 500, wood: 200, stone: 100, tools: 30 },
+    cost: { knowledge: 180, food: 250, wood: 200, stone: 100, tools: 30 },
     seconds: 21600,
     effect:
       'Enter agricultural era; unlock Farm, Cottages and Granary. A second Farm retires wild food gathering.',

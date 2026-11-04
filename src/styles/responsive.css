@@ -193,9 +193,6 @@
     flex-wrap: wrap;
     gap: 6px 10px;
   }
-  .staffing-efficiency {
-    flex-basis: 100%;
-  }
   .building-card {
     padding: 12px;
   }

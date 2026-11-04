@@ -33,6 +33,7 @@ import {
   adjustWorkers,
   assignJob,
   constructionSpeed,
+  crewSize,
   effectiveStaff,
   equipmentMultiplier,
   fillWorkers,
@@ -275,22 +276,22 @@ test('storage capacity caps new resource gains while prices remain payable', () 
   expect(storageFull(s, 'wood')).toBe(true)
 })
 
-test('health-weighted overstaffing always adds output and Fill only uses available people', () => {
+test('overstaffing beyond capacity adds no output and Fill only uses available people', () => {
   const s = settlement()
   s.resources.food = 0
   s.facilities.farm.level = 1
   people(s, 'farmer', 'farmer', 'idle', 'idle')
   const rate = () => s.people.reduce((n, p) => n + workerRate(s, p), 0),
     before = rate()
-  required(s.people[2]).health = 0
   assignJob(s, 2, 'farmer')
-  expect(rate()).toBeGreaterThan(before)
+  expect(rate()).toBeCloseTo(before)
   expect(fillWorkers(s, 'farmer')).toBe(false)
   expect(s.people[3]?.job).toBe('idle')
   assignJob(s, 3, 'farmer')
-  expect(rate()).toBeGreaterThan(before)
-  expect(effectiveStaff(8, 2)).toBeCloseTo(4.77258872)
-  expect(constructionSpeed(s, 8)).toBeGreaterThan(constructionSpeed(s, 4))
+  expect(rate()).toBeCloseTo(before)
+  expect(effectiveStaff(8, 2)).toBe(2)
+  const crew = crewSize(s)
+  expect(constructionSpeed(s, crew + 10)).toBe(constructionSpeed(s, crew))
 })
 
 test('tool refinements continue above tier three and replace rather than compound', () => {

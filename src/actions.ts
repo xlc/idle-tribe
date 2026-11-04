@@ -10,12 +10,12 @@ import { formatExploreNotice, formatExploreOutcome } from './format'
 import {
   ACTION_IDS,
   type ActionId,
-  type BuildingId,
   BUILDING_IDS,
+  type BuildingId,
   type JobId,
-  type ResourceId,
   RESEARCH_IDS,
   RESOURCES,
+  type ResourceId,
 } from './ids'
 import { hasResearch, researchEffects } from './research-effects'
 import { addResources, canAfford, pay, refund } from './resources'

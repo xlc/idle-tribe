@@ -4,7 +4,7 @@ import type { ResearchDefinition } from '../../types'
 export const research = {
   'sharpened-stick': {
     name: 'Sharpened stick',
-    cost: { wood: 6, food: 5 },
+    cost: { wood: 6, food: 3 },
     seconds: 6,
     effect: 'Learn Dig roots: +6 food per 4s trip',
     description: 'A stick with a surprisingly convincing point.',
@@ -13,7 +13,7 @@ export const research = {
   },
   shelters: {
     name: 'Shelters',
-    cost: { wood: 12, stone: 5, food: 8 },
+    cost: { wood: 12, stone: 5, food: 4 },
     seconds: 10,
     effect: 'Unlock Shelters housing.',
     description: 'The weather can conduct its business outside.',
@@ -22,7 +22,7 @@ export const research = {
   },
   'foraging-rounds': {
     name: 'Foraging rounds',
-    cost: { wood: 8, food: 10 },
+    cost: { wood: 8, food: 5 },
     seconds: 8,
     effect:
       'Unlock Foraging camp; the first follower arrives and the first camp is free.',
@@ -33,7 +33,7 @@ export const research = {
   },
   'timber-camps': {
     name: 'Timber camps',
-    cost: { wood: 6, food: 10 },
+    cost: { wood: 6, food: 5 },
     seconds: 10,
     effect: 'Unlock Lumber camp.',
     description: 'A camp by the treeline beats carrying every log home.',
@@ -42,7 +42,7 @@ export const research = {
   },
   'expedition-planning': {
     name: 'Expedition planning',
-    cost: { wood: 12, food: 10 },
+    cost: { wood: 12, food: 5 },
     seconds: 12,
     effect: 'Unlock Expedition camp.',
     description: 'Going far on purpose, with provisions.',
@@ -60,7 +60,7 @@ export const research = {
   },
   'stone-tools': {
     name: 'Stone tools',
-    cost: { wood: 16, stone: 12, food: 8 },
+    cost: { wood: 16, stone: 12, food: 4 },
     seconds: 16,
     effect: 'Unlock Quarry.',
     description: 'Some rocks are better at convincing other rocks.',
@@ -95,7 +95,7 @@ export const research = {
   },
   'oral-tradition': {
     name: 'Oral tradition',
-    cost: { food: 100, planks: 20 },
+    cost: { food: 50, planks: 20 },
     seconds: 144,
     effect:
       'Unlock Learning circle and Records shelter; automated gathering XP +2 percentage points.',
@@ -152,7 +152,7 @@ export const research = {
   },
   preparedness: {
     name: 'Preparedness',
-    cost: { knowledge: 40, tools: 20, food: 150 },
+    cost: { knowledge: 40, tools: 20, food: 80 },
     seconds: 240,
     effect: 'Learn Hunt game (+14 food per 12s trip); unlock Supply post.',
     description:
@@ -188,7 +188,7 @@ export const research = {
   },
   woodcutting: {
     name: 'Stone axes',
-    cost: { wood: 6, stone: 10, food: 6 },
+    cost: { wood: 6, stone: 10, food: 3 },
     seconds: 10,
     effect: 'Learn Chop wood: +5 wood per 6s trip',
     description: 'Shaped rock plus a handle: the tree is now out of excuses.',
@@ -197,7 +197,7 @@ export const research = {
   },
   stonecutting: {
     name: 'Stone splitting',
-    cost: { wood: 16, stone: 4, food: 8 },
+    cost: { wood: 16, stone: 4, food: 4 },
     seconds: 16,
     effect: 'Learn Quarry stone: +6 stone per 8s trip',
     description: 'Wooden wedges convince even stubborn rocks to come apart.',
@@ -206,7 +206,7 @@ export const research = {
   },
   'field-practice': {
     name: 'Field practice',
-    cost: { wood: 10, food: 20 },
+    cost: { wood: 10, food: 10 },
     seconds: 16,
     effect: 'Automated action XP +3 percentage points.',
     description: 'Repeated work turns sore hands into useful habits.',
@@ -268,7 +268,7 @@ export const research = {
   },
   'basket-weaving': {
     name: 'Basket weaving',
-    cost: { wood: 14, food: 10 },
+    cost: { wood: 14, food: 5 },
     seconds: 18,
     effect: 'Food, wood and stone storage ×1.20.',
     description: 'Containers, for when your hands are full of other plans.',
@@ -285,7 +285,7 @@ export const research = {
   },
   'trail-marking': {
     name: 'Trail marking',
-    cost: { wood: 10, food: 12 },
+    cost: { wood: 10, food: 6 },
     seconds: 16,
     effect: 'Explore trips 8% faster.',
     description: 'The way home is now clearly labeled.',

@@ -198,12 +198,9 @@
   margin-top: 5px;
   font-weight: 600;
 }
-.staffing-efficiency {
-  font-size: 11px;
-}
 .worker-allocation {
   display: grid;
-  grid-template-rows: 40px 16px 16px;
+  grid-template-rows: 40px;
   justify-items: center;
   gap: 4px;
   min-width: max-content;

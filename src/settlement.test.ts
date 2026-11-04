@@ -114,7 +114,8 @@ test('immigration pauses on inadequate sustainable supply, resumes, and arrivals
   s.resources.food = 100
   people(s, 'forager')
   advanceTime(s, 300)
-  expect(s.people.length).toBe(2)
+  // Food abundance draws arrivals faster than the five-minute base interval.
+  expect(s.people.length).toBeGreaterThanOrEqual(2)
   expect(s.people[1]?.job).toBe('idle')
   s.welcome = false
   const progress = s.arrivalProgress
@@ -126,6 +127,21 @@ test('immigration pauses on inadequate sustainable supply, resumes, and arrivals
   expect(s.arrivalProgress).toBe(progress)
   required(s.people[0]).job = 'forager'
   expect(arrivalStatus(s).foodOutput).toBeGreaterThan(arrivalStatus(s).required)
+})
+
+test('food abundance draws arrivals faster', () => {
+  const s = createDefaultState()
+  complete(s, 'sharpened-stick', 'shelters', 'foraging-rounds')
+  s.facilities.housing.level = 2
+  s.resources.food = 200
+  people(s, 'forager')
+  const lean = arrivalStatus(s)
+  people(s, 'forager', 'forager')
+  const rich = arrivalStatus(s)
+  expect(rich.foodOutput).toBeGreaterThan(lean.foodOutput)
+  expect(rich.interval).toBeLessThan(lean.interval)
+  // The abundance speedup caps at 3x, so the base interval is a floor of 5/3.
+  expect(rich.interval).toBeCloseTo(5 / 3, 6)
 })
 
 test('immigration stops at housing capacity and resumes after housing expands', () => {

@@ -1,11 +1,8 @@
-import { formatResource } from '../format'
-import { isWorkingJob } from '../ids'
 import type { GameSession } from '../session'
 import {
   assigned,
   jobCapacity,
   jobUnlocked,
-  staffingMultiplier,
   workplaceStaff,
 } from '../settlement'
 import type { JobId } from '../types'
@@ -60,11 +57,6 @@ export function WorkerControls({
           </Button>
         )}
       </fieldset>
-      {n > 0 && isWorkingJob(job) && staffingMultiplier(s, job) < 1 && (
-        <small className="staffing-efficiency">
-          {formatResource(staffingMultiplier(s, job) * 100)}% efficiency
-        </small>
-      )}
     </div>
   )
 }
