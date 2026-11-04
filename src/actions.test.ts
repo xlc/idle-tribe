@@ -10,6 +10,7 @@ import {
   exploreExpectedRewards,
   resolveEncounter,
   startAction,
+  syncUnlocks,
 } from './actions'
 import { EXPEDITION_ENCOUNTER_IDS } from './ids'
 import { completeProject } from './research'
@@ -42,6 +43,18 @@ function triggerEncounter(
   state.exploreRolls = 17
   applyExploreReward(state, scale, mode)
 }
+
+test('exploration unlocks when its reduced food cost is available', () => {
+  const state = createDefaultState()
+
+  state.resources.food = 2
+  syncUnlocks(state)
+  expect(state.exploreUnlocked).toBe(false)
+
+  state.resources.food = 3
+  syncUnlocks(state)
+  expect(state.exploreUnlocked).toBe(true)
+})
 
 test('action availability reports discovery, cost and active-work blockers', () => {
   const state = createDefaultState()

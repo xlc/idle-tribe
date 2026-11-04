@@ -394,7 +394,7 @@ test('a missing lower expansion can be rebuilt while a higher target stays queue
   expect(s.facilities.housing.form).toBe(1)
 })
 
-test('food gathering rewards the first second and opens exploration after five clicks', () => {
+test('food gathering rewards the first second and opens exploration once a trip is affordable', () => {
   const s = createDefaultState()
   expect(s.resources.food).toBe(0)
   expect(startAction(s, 'gather')).toBe(true)
@@ -409,10 +409,6 @@ test('food gathering rewards the first second and opens exploration after five c
     expect(startAction(s, 'gather')).toBe(true)
     advanceTime(s, 1, true)
   }
-  // The fourth completion reaches level 2 but still pays level-1 yield; only
-  // the fifth collects the +2%. The founder starved down while away and now
-  // eats two food per minute while gathering, so exploration opens on the
-  // sixth trip instead of the fifth.
   expect(s.resources.food).toBeCloseTo(5.791333333333332, 6)
   expect(s.exploreUnlocked).toBe(true)
 })

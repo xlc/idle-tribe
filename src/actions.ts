@@ -49,7 +49,8 @@ export const ACTION_BALANCE = {
 }
 
 export function syncUnlocks(state: GameState) {
-  if (state.resources.food >= 5) state.exploreUnlocked = true
+  if (state.resources.food >= (ACTIONS.explore.cost.food ?? 0))
+    state.exploreUnlocked = true
   if (state.resources.wood >= 2) state.researchUnlocked = true
 }
 // Static inversions of the action catalog; definitions never change at runtime.
