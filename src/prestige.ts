@@ -15,12 +15,11 @@ export function resetRun(state: GameState) {
   if (!canReset(state)) return false
   const reward = legacyReward(state),
     legacy = structuredClone(state.legacy),
-    welcome = state.welcome,
     savedAt = state.savedAt
   legacy.lifetime += reward
   legacy.points += reward
   legacy.highestEra = Math.max(legacy.highestEra, state.era)
-  resetState(state, { legacy, welcome, savedAt })
+  resetState(state, { legacy, savedAt })
   return true
 }
 export function buyPerk(state: GameState, id: PerkId) {

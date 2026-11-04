@@ -47,7 +47,6 @@ export function settlement(branch: Specialization = 'forestry') {
   for (const id of BUILDING_IDS)
     if (BUILDINGS[id].forms.some((form) => form.storage))
       state.facilities[id].level = 100_000
-  state.welcome = false
   return state
 }
 export function people(state: GameState, ...jobs: JobId[]) {

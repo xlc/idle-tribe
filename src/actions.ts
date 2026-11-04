@@ -22,7 +22,9 @@ import { addResources, canAfford, pay, refund } from './resources'
 import {
   firstIdlePerson,
   happinessMultiplier,
+  housingFull,
   requirementBlocker,
+  spawnSettler,
 } from './settlement'
 import type {
   Cost,
@@ -78,6 +80,11 @@ export function actionWorkers(state: GameState, id: ActionId) {
   const job = ACTIONS[id].job
   return state.people.reduce((n, person) => (person.job === job ? n + 1 : n), 0)
 }
+// The current price of one run; scaledCost overrides the base cost with a
+// state-dependent price. Start snapshots it into the manual entry's paid.
+export function actionCost(state: GameState, id: ActionId): Cost {
+  return ACTIONS[id].scaledCost?.(state) ?? ACTIONS[id].cost
+}
 
 export type ActionAvailability =
   | { kind: 'locked' }
@@ -111,7 +118,12 @@ export function actionAvailability(
         kind: 'automated',
         state: 'paused',
       }
-    if (!canAfford(state, def.cost))
+    if (def.kind === 'arrival' && housingFull(state))
+      return {
+        kind: 'automated',
+        state: 'paused',
+      }
+    if (!canAfford(state, actionCost(state, id)))
       return {
         kind: 'automated',
         state: 'paused',
@@ -136,7 +148,13 @@ export function actionAvailability(
       state: 'blocked',
     }
 
-  return !canAfford(state, def.cost)
+  if (def.kind === 'arrival' && housingFull(state))
+    return {
+      kind: 'manual',
+      state: 'blocked',
+    }
+
+  return !canAfford(state, actionCost(state, id))
     ? {
         kind: 'manual',
         state: 'missing-cost',
@@ -157,14 +175,14 @@ export function actionWorkersUnlocked(state: GameState, id: ActionId) {
 }
 
 export function startAction(state: GameState, id: ActionId) {
-  const def = ACTIONS[id]
   const availability = actionAvailability(state, id)
   if (availability.kind !== 'manual' || availability.state !== 'ready')
     return false
   const person = firstIdlePerson(state)
   if (person < 0) return false
-  pay(state, def.cost)
-  state.manual.push({ id, paid: { ...def.cost }, progress: 0, person })
+  const cost = actionCost(state, id)
+  pay(state, cost)
+  state.manual.push({ id, paid: { ...cost }, progress: 0, person })
   return true
 }
 export function actionRequiredXp(state: GameState, id: ActionId) {
@@ -257,10 +275,10 @@ export function automatedOutput(state: GameState, id: ActionId) {
 export function actionOutputRate(
   state: GameState,
   id: ActionId,
-  options: { happiness?: number } = {},
+  options: { happiness?: number; workers?: number } = {},
 ) {
   const def = ACTIONS[id],
-    n = actionWorkers(state, id)
+    n = options.workers ?? actionWorkers(state, id)
   if (!def.resource || n < 1 || !def.visible(state)) return 0
   return (
     (n / baseActionDuration(state, id)) *
@@ -288,7 +306,8 @@ export function actionJobActive(state: GameState, id: ActionId) {
     def.visible(state) &&
       actionWorkers(state, id) > 0 &&
       !(id === 'explore' && state.pendingEncounter) &&
-      canAfford(state, def.cost),
+      (def.kind !== 'arrival' || !housingFull(state)) &&
+      canAfford(state, actionCost(state, id)),
   )
 }
 
@@ -405,16 +424,13 @@ function applyEncounterEffect(
     const before = state.happiness
     state.happiness = Math.min(100, state.happiness + effect.amount * scale)
     outcome = { kind: 'happiness', amount: state.happiness - before }
+  } else if (spawnSettler(state)) {
+    outcome = { kind: 'arrival' }
   } else {
-    const before = state.arrivalProgress
-    state.arrivalProgress = Math.min(
-      1,
-      state.arrivalProgress + effect.amount * scale,
-    )
-    outcome = {
-      kind: 'arrival-progress',
-      amount: state.arrivalProgress - before,
-    }
+    // No room for the traveler; the meeting still teaches something.
+    const amount = 3
+    grantActionXp(state, 'explore', amount)
+    outcome = { kind: 'experience', amount }
   }
   state.completedEncounters[id] = true
   state.pendingEncounter = null
@@ -508,26 +524,22 @@ export function applyExploreReward(
     }
   }
   if (roll < discover + resources + rare + encounter + mini) {
-    if (exploreRand(state) < 0.5) {
-      const amount = 0.25 * scale,
-        before = state.arrivalProgress
-      state.arrivalProgress = Math.min(1, state.arrivalProgress + amount)
-      state.lastExploreOutcome = {
-        kind: 'arrival-progress',
-        amount: state.arrivalProgress - before,
-      }
-    } else {
+    const coin = exploreRand(state)
+    let outcome: ExploreOutcome | null = null
+    if (coin >= 0.5) {
       const amount = 5 * scale,
         before = state.happiness
       state.happiness = Math.min(100, state.happiness + amount)
-      state.lastExploreOutcome = {
-        kind: 'happiness',
-        amount: state.happiness - before,
-      }
+      outcome = { kind: 'happiness', amount: state.happiness - before }
+    } else if (spawnSettler(state)) outcome = { kind: 'arrival' }
+    // Without room for a traveler there is no outcome; fall through to
+    // experience below.
+    if (outcome) {
+      state.lastExploreOutcome = outcome
+      state.notice = formatExploreNotice(outcome)
+      state.expeditionUnlocked = true
+      return
     }
-    state.notice = formatExploreNotice(state.lastExploreOutcome)
-    state.expeditionUnlocked = true
-    return
   }
   // Even an empty-handed trip pays off in experience.
   const amount = 3
@@ -574,17 +586,28 @@ export function exploreExpectedRate(state: GameState): Cost {
 export function finishManual(state: GameState, entry: ManualAction) {
   const def = ACTIONS[entry.id]
   state.manual.splice(state.manual.indexOf(entry), 1)
-  // Rewards reflect the skill level the action ran at; level up afterwards.
-  if (def.resource) {
-    addResources(state, { [def.resource]: actionYield(state, entry.id) })
-  }
-  if (def.kind === 'exploration') applyExploreReward(state, 1, 'manual')
+  applyActionReward(state, entry.id, actionYield(state, entry.id), 1, 'manual')
   grantActionXp(state, entry.id, def.xp ?? 1)
   syncUnlocks(state)
 }
 
+// Rewards reflect the skill level the action ran at; level up afterwards.
+// Resource output is capped by addResources.
+function applyActionReward(
+  state: GameState,
+  id: ActionId,
+  amount: number,
+  exploreScale: number,
+  mode: 'manual' | 'automated' = 'automated',
+) {
+  const def = ACTIONS[id]
+  if (def.resource) addResources(state, { [def.resource]: amount })
+  if (def.kind === 'exploration') applyExploreReward(state, exploreScale, mode)
+  if (def.kind === 'arrival') spawnSettler(state)
+}
+
 // One automated completion. Explore pays its cost here, mirroring how
-// workplaces pay recipe inputs. Resource output is capped by addResources.
+// workplaces pay recipe inputs.
 export function completeAction(state: GameState, id: ActionId) {
   const def = ACTIONS[id]
   if (
@@ -593,14 +616,16 @@ export function completeAction(state: GameState, id: ActionId) {
     (id === 'explore' && state.pendingEncounter)
   )
     return false
-  if (!canAfford(state, def.cost)) return false
-  pay(state, def.cost)
-  // Rewards reflect the skill level the action ran at; level up afterwards.
-  if (def.resource) {
-    addResources(state, { [def.resource]: automatedOutput(state, id) })
-  }
-  if (def.kind === 'exploration')
-    applyExploreReward(state, automationFactor(state, id))
+  if (def.kind === 'arrival' && housingFull(state)) return false
+  const cost = actionCost(state, id)
+  if (!canAfford(state, cost)) return false
+  pay(state, cost)
+  applyActionReward(
+    state,
+    id,
+    automatedOutput(state, id),
+    automationFactor(state, id),
+  )
   grantActionXp(state, id, xpFactor(state, id) * (def.xp ?? 1))
   syncUnlocks(state)
   return true

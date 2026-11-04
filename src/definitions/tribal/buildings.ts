@@ -3,6 +3,7 @@ import type { BuildingDefinition } from '../../types'
 
 export const buildings = {
   housing: {
+    job: ['greeter'],
     forms: [
       {
         name: 'Shelters',

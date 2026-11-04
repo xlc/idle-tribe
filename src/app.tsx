@@ -11,89 +11,21 @@ import { Button, type Confirm, SectionDisclosure } from './components/common'
 import { ExpeditionEncounter } from './components/expedition'
 import { Legacy } from './components/legacy'
 import { OfflineStatus } from './components/offline-status'
-import { People } from './components/people'
+import { PeopleView } from './components/people'
 import { Production } from './components/production'
 import { Construction, QueueView } from './components/queues'
 import { Settings } from './components/settings'
 import { Stockpile } from './components/stockpile'
 import { Technology } from './components/technology'
-import { Workforce } from './components/workforce'
 import { ERAS } from './definitions'
 import { NOTES } from './definitions/notes'
 import { NOTE_IDS } from './ids'
-import { projectName, researchQueueUnlocked } from './research'
+import { researchQueueUnlocked } from './research'
 import type { GameSession } from './session'
-import {
-  automationUnlocked,
-  availablePeople,
-  housingCapacity,
-  noteUnlocked,
-} from './settlement'
+import { automationUnlocked, noteUnlocked } from './settlement'
 import { useSession } from './use-session'
 
 type View = 'settlement' | 'queue' | 'people' | 'legacy' | 'settings'
-
-function SettlementBrief({ session }: { session: GameSession }) {
-  const s = session.game.state
-  const construction = s.queues.construction.active
-    ? projectName(s, s.queues.construction.active.project)
-    : s.queues.construction.waiting.length
-      ? `${s.queues.construction.waiting.length} queued`
-      : 'No project'
-  const research = s.queues.research.active
-    ? projectName(s, s.queues.research.active.project)
-    : s.queues.research.waiting.length
-      ? `${s.queues.research.waiting.length} queued`
-      : 'No project'
-  const capacity = housingCapacity(s)
-  return (
-    <SectionDisclosure
-      className="settlement-brief"
-      title={
-        <>
-          <ViewIcon name="settlement" />
-          Settlement
-        </>
-      }
-      status={ERAS[s.era]?.name ?? 'Current era'}
-      ariaLabel="Settlement status"
-    >
-      <section className="settlement-brief-content">
-        <div className="settlement-brief-heading">
-          <div>
-            <span className="eyebrow">Current era</span>
-            <h1>{ERAS[s.era]?.name ?? 'Settlement'}</h1>
-          </div>
-        </div>
-        <p className="settlement-brief-description">
-          {ERAS[s.era]?.description}
-        </p>
-        <dl className="settlement-status-grid">
-          <div>
-            <dt>People</dt>
-            <dd>
-              {s.people.length} <small>{availablePeople(s)} unassigned</small>
-            </dd>
-          </div>
-          <div>
-            <dt>Housing capacity</dt>
-            <dd>
-              {s.people.length}/{capacity}
-            </dd>
-          </div>
-          <div>
-            <dt>Construction</dt>
-            <dd>{construction}</dd>
-          </div>
-          <div data-visible={s.researchUnlocked}>
-            <dt>Research</dt>
-            <dd>{research}</dd>
-          </div>
-        </dl>
-      </section>
-    </SectionDisclosure>
-  )
-}
 
 export function App({ session }: { session: GameSession }) {
   useSession(session)
@@ -245,11 +177,7 @@ export function App({ session }: { session: GameSession }) {
                   forceMount
                   hidden={view !== 'people'}
                 >
-                  <div className="people-view">
-                    <SettlementBrief session={session} />
-                    <Workforce session={session} />
-                    <People session={session} />
-                  </div>
+                  <PeopleView session={session} />
                 </Tabs.Content>
                 {s.legacy.discovered && (
                   <Tabs.Content

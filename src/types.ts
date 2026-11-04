@@ -31,14 +31,14 @@ export type EncounterOptionIndex = 0 | 1
 export type EncounterEffect =
   | { kind: 'resources'; amount: Cost }
   | { kind: 'happiness'; amount: number }
-  | { kind: 'arrival-progress'; amount: number }
+  | { kind: 'arrival' }
 export type ExploreOutcome =
   | { kind: 'resources'; amount: Cost }
   | { kind: 'discovery'; discovery: 'wood' | 'stone' }
   | { kind: 'knowledge'; amount: number }
   | { kind: 'experience'; amount: number }
   | { kind: 'encounter'; id: ExpeditionEncounterId }
-  | { kind: 'arrival-progress'; amount: number }
+  | { kind: 'arrival' }
   | { kind: 'happiness'; amount: number }
 export interface EncounterOption {
   label: string
@@ -80,6 +80,9 @@ interface ActionDefinitionBase {
   // XP granted per completion; defaults to 1 when unset.
   xp?: number
   cost: Cost
+  // Overrides cost with a state-dependent price (e.g. one that scales with
+  // population); the paid snapshot still freezes the price at start.
+  scaledCost?: (state: GameState) => Cost
   building: BuildingId
   job: ActionJob
   visible: (state: GameState) => boolean
@@ -92,6 +95,12 @@ export type ActionDefinition =
     })
   | (ActionDefinitionBase & {
       kind: 'exploration'
+      resource?: never
+      amount?: never
+    })
+  | (ActionDefinitionBase & {
+      kind: 'arrival'
+      scaledCost: (state: GameState) => Cost
       resource?: never
       amount?: never
     })
@@ -247,8 +256,6 @@ export interface GameState {
   nextSequence: number
   manual: ManualAction[]
   minuteProgress: number
-  arrivalProgress: number
-  welcome: boolean
   happiness: number
   era: number
   specialization: Specialization | null

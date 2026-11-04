@@ -1,14 +1,11 @@
 import { expect, test } from 'bun:test'
 import { PERKS } from './definitions'
-import { removeFacility } from './game'
 import { BUILDING_IDS, NOTE_IDS, PERK_IDS, RESOURCES } from './ids'
 import { createRecord } from './records'
 import { enqueue, nextExpansion } from './research'
 import { storageCapacity } from './resources'
 import {
-  arrivalStatus,
   happinessTarget,
-  housingCapacity,
   noteUnlocked,
   requirementBlocker,
   workerRate,
@@ -59,7 +56,6 @@ test('newly produced inputs start downstream work from that timestamp, without r
   s.discovered.wood = true
   s.facilities.lumber.level = 1
   s.facilities.sawmill.level = 1
-  s.welcome = false
   people(s, 'woodcutter', 'sawyer')
   s.resources.food = 10
   s.resources.wood = 2
@@ -88,7 +84,6 @@ test('live and sliced simulations have the same resources, projects, meals and a
     'scholar',
     'builder',
   )
-  initial.welcome = true
   initial.resources.food = 400
   enqueue(initial, nextExpansion(initial, 'food-store'))
   initial.research['record-keeping'] = 0
@@ -109,119 +104,10 @@ test('live and sliced simulations have the same resources, projects, meals and a
   })
 })
 
-test('simultaneous project completion changes housing before immigration checks', () => {
-  const s = createDefaultState()
-  complete(s, 'sharpened-stick', 'shelters', 'foraging-rounds')
-  people(s, 'forager', 'builder')
-  s.facilities.housing.level = 1
-  s.resources.food = 80
-  s.resources.wood = 100
-  enqueue(s, nextExpansion(s, 'housing'))
-  advanceTime(s, 0)
-  const active = s.queues.construction.active
-  if (!active) throw new Error('No project')
-  active.progress = active.total
-  s.arrivalProgress = 1
-  advanceTime(s, 0)
-  expect(s.facilities.housing.level).toBe(2)
-  expect(s.people.length).toBe(3)
-  expect(s.people[2]?.job).toBe('idle')
-})
-
-test('immigration pauses on inadequate sustainable supply, resumes, and arrivals stay unassigned', () => {
-  const s = createDefaultState()
-  complete(s, 'sharpened-stick', 'shelters', 'foraging-rounds')
-  s.facilities.housing.level = 1
-  s.resources.food = 100
-  people(s, 'forager')
-  advanceTime(s, 300)
-  // Food abundance draws arrivals faster than the five-minute base interval.
-  expect(s.people.length).toBeGreaterThanOrEqual(2)
-  expect(s.people[1]?.job).toBe('idle')
-  s.welcome = false
-  const progress = s.arrivalProgress
-  advanceTime(s, 600)
-  expect(s.arrivalProgress).toBe(progress)
-  s.welcome = true
-  required(s.people[0]).job = 'idle'
-  advanceTime(s, 600)
-  expect(s.arrivalProgress).toBe(progress)
-  required(s.people[0]).job = 'forager'
-  expect(arrivalStatus(s).foodOutput).toBeGreaterThan(arrivalStatus(s).required)
-})
-
-test('food abundance draws arrivals faster', () => {
-  const s = createDefaultState()
-  complete(s, 'sharpened-stick', 'shelters', 'foraging-rounds')
-  s.facilities.housing.level = 2
-  s.resources.food = 200
-  people(s, 'forager')
-  const lean = arrivalStatus(s)
-  people(s, 'forager', 'forager')
-  const rich = arrivalStatus(s)
-  expect(rich.foodOutput).toBeGreaterThan(lean.foodOutput)
-  expect(rich.interval).toBeLessThan(lean.interval)
-  // The abundance speedup caps at 3x, so the base interval is a floor of 5/3.
-  expect(rich.interval).toBeCloseTo(5 / 3, 6)
-})
-
-test('immigration stops at housing capacity and resumes after housing expands', () => {
-  const s = createDefaultState()
-  complete(s, 'sharpened-stick', 'shelters', 'foraging-rounds')
-  s.facilities.housing.level = 1
-  s.resources.food = 200
-  people(s, 'forager', 'idle', 'idle')
-
-  expect(housingCapacity(s)).toBe(s.people.length)
-  expect(arrivalStatus(s).blocker).toBe('Housing full · build housing')
-  advanceTime(s, 600)
-  expect(s.people).toHaveLength(3)
-
-  s.arrivalProgress = 1
-  s.facilities.housing.level = 2
-  advanceTime(s, 0)
-  expect(s.people).toHaveLength(4)
-  expect(s.people[3]?.job).toBe('idle')
-})
-
-test('overpopulation pauses new arrivals without removing existing people', () => {
-  const s = createDefaultState()
-  complete(s, 'sharpened-stick', 'shelters', 'foraging-rounds')
-  s.facilities.housing.level = 1
-  s.resources.food = 200
-  people(s, 'forager', 'idle', 'idle')
-
-  expect(removeFacility(s, 'housing')).toBe(true)
-  expect(housingCapacity(s)).toBe(1)
-  advanceTime(s, 600)
-  expect(s.people).toHaveLength(3)
-  expect(arrivalStatus(s).blocker).toBe('Housing full · build housing')
-})
-
-test('food security guard accounts for scholarship at maximum happiness and ignores temporary hoards', () => {
-  const s = settlement()
-  people(s, 'farmer', 'scholar', 'scholar')
-  s.facilities.farm.level = 1
-  s.facilities.study.level = 1
-  s.facilities.study.form = 1
-  s.welcome = true
-  s.resources.food = 100000
-  const high = arrivalStatus(s)
-  s.resources.food = high.buffer
-  const buffer = arrivalStatus(s)
-  expect(high.foodOutput).toBe(buffer.foodOutput)
-  expect(high.required).toBeGreaterThan(1.1 * 4)
-  s.happiness = 0
-  expect(arrivalStatus(s).foodOutput).toBe(high.foodOutput)
-  s.happiness = 100
-  expect(arrivalStatus(s).required).toBe(high.required)
-})
-
 test('injured villagers recover one heart per minute while food lasts', () => {
   const s = createDefaultState()
   complete(s, 'sharpened-stick', 'shelters', 'foraging-rounds')
   people(s, 'idle', 'idle')
-  s.welcome = false
   required(s.people[0]).health = 2
   required(s.people[1]).health = 3
   s.resources.food = 4
@@ -235,7 +121,6 @@ test('happiness begins at Writing and moves gradually after the shared meal', ()
   complete(s, 'sharpened-stick', 'shelters', 'foraging-rounds')
   s.facilities.housing.level = 12
   s.resources.food = 1000
-  s.welcome = false
   people(s, ...Array.from({ length: 20 }, () => 'idle' as const))
   s.facilities['public-well'].level = 2
   s.facilities['meeting-place'].level = 1

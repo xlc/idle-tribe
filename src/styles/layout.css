@@ -118,13 +118,6 @@
   display: grid;
   gap: 24px;
 }
-.people-view {
-  display: grid;
-  gap: 24px;
-}
-.people-view .settlement-brief {
-  margin-bottom: 0;
-}
 .building-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));

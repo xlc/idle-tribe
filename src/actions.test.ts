@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test'
 import {
   actionAvailability,
+  actionCost,
   actionDuration,
   actionRequiredXp,
   actionYield,
@@ -194,59 +195,102 @@ test('automated encounters use their declared default and pause while a report i
   expect(state.actionProgress.explore).toBeLessThan(1)
 })
 
-test('exploration can bring travelers to the next available room', () => {
-  const state = encounterState()
-  for (const id of EXPEDITION_ENCOUNTER_IDS)
-    state.completedEncounters[id] = id !== 'ridge-travelers'
-
-  triggerEncounter(state, 'manual')
-  expect(state.pendingEncounter).toBe('ridge-travelers')
-  expect(resolveEncounter(state, 0)).toBe(true)
-  expect(state.arrivalProgress).toBe(1)
-})
-
-test('exploration outcomes report the applied amount after caps', () => {
-  const state = encounterState()
-  for (const id of EXPEDITION_ENCOUNTER_IDS)
-    state.completedEncounters[id] = id !== 'ridge-travelers'
-  state.arrivalProgress = 0.9
-  triggerEncounter(state, 'manual')
-  expect(resolveEncounter(state, 0)).toBe(true)
-  expect(state.lastExploreOutcome?.kind).toBe('arrival-progress')
-  if (state.lastExploreOutcome?.kind !== 'arrival-progress') return
-  expect(state.lastExploreOutcome.amount).toBeCloseTo(0.1)
-})
-
-test('a traveler lead becomes an idle settler when food and a room are ready', () => {
+test('travelers on the ridge join as idle settlers when housing has room', () => {
   const state = encounterState()
   for (const id of EXPEDITION_ENCOUNTER_IDS)
     state.completedEncounters[id] = id !== 'ridge-travelers'
   state.research.shelters = 1
-  state.research['foraging-rounds'] = 1
   state.facilities.housing.level = 1
-  state.facilities.foraging.level = 1
-  people(state, 'forager')
+
+  triggerEncounter(state, 'manual')
+  expect(state.pendingEncounter).toBe('ridge-travelers')
+  expect(resolveEncounter(state, 0)).toBe(true)
+  expect(state.people).toHaveLength(2)
+  expect(state.people[1]?.job).toBe('idle')
+  expect(state.lastExploreOutcome).toEqual({ kind: 'arrival' })
+})
+
+test('travelers cannot join when housing is full', () => {
+  const state = encounterState()
+  for (const id of EXPEDITION_ENCOUNTER_IDS)
+    state.completedEncounters[id] = id !== 'ridge-travelers'
 
   triggerEncounter(state, 'manual')
   expect(resolveEncounter(state, 0)).toBe(true)
-  advanceTime(state, 0)
-  expect(state.people).toHaveLength(2)
-  expect(state.people[1]?.job).toBe('idle')
+  expect(state.people).toHaveLength(1)
+  expect(state.lastExploreOutcome?.kind).toBe('experience')
 })
 
-test('experienced explorers can find repeatable traveler leads', () => {
+test('experienced explorers sometimes meet a traveling settler', () => {
   const state = encounterState()
   for (const id of EXPEDITION_ENCOUNTER_IDS)
     state.completedEncounters[id] = true
+  state.research.shelters = 1
+  state.facilities.housing.level = 1
 
-  for (let attempt = 0; attempt < 100 && state.arrivalProgress === 0; attempt++)
+  for (let attempt = 0; attempt < 100 && state.people.length === 1; attempt++)
     applyExploreReward(state, 1, 'manual')
 
-  expect(state.arrivalProgress).toBeGreaterThan(0)
-  expect(state.notice).toBe('Explorers met travelers · arrival progress +25%')
-  expect(state.lastExploreOutcome).toMatchObject({
-    kind: 'arrival-progress',
-    amount: 0.25,
+  expect(state.people).toHaveLength(2)
+  expect(state.notice).toBe('Explorers met a traveler · they joined the tribe')
+  expect(state.lastExploreOutcome).toEqual({ kind: 'arrival' })
+})
+
+test('inviting settlers costs scaling food and spawns an idle newcomer', () => {
+  const state = createDefaultState()
+  state.research.shelters = 1
+  state.facilities.housing.level = 1
+  state.resources.food = 100
+  expect(actionAvailability(state, 'invite')).toMatchObject({
+    kind: 'manual',
+    state: 'ready',
+  })
+  expect(actionCost(state, 'invite')).toEqual({ food: 15 })
+  expect(startAction(state, 'invite')).toBe(true)
+  const paid = state.manual[0]?.paid
+  expect(paid).toEqual({ food: 15 })
+  advanceTime(state, actionDuration(state, 'invite'), true)
+  expect(state.manual).toHaveLength(0)
+  expect(state.people).toHaveLength(2)
+  expect(state.people[1]?.job).toBe('idle')
+  // The price was paid at start; only meals touch food during the trip.
+  expect(state.resources.food).toBeLessThan(85)
+  expect(state.resources.food).toBeGreaterThan(75)
+  expect(state.actionSkills.invite.xp).toBeGreaterThan(0)
+  expect(actionCost(state, 'invite')).toEqual({ food: 20 })
+})
+
+test('inviting stays locked before Shelters and blocked when housing is full', () => {
+  const state = createDefaultState()
+  expect(actionAvailability(state, 'invite')).toEqual({ kind: 'locked' })
+  state.research.shelters = 1
+  expect(actionAvailability(state, 'invite')).toEqual({
+    kind: 'manual',
+    state: 'blocked',
+  })
+  state.facilities.housing.level = 1
+  state.resources.food = 100
+  expect(actionAvailability(state, 'invite')).toMatchObject({
+    kind: 'manual',
+    state: 'ready',
+  })
+})
+
+test('greeters recruit automatically until housing fills', () => {
+  const state = createDefaultState()
+  state.research.shelters = 1
+  state.facilities.housing.level = 1
+  state.resources.food = 200
+  people(state, 'greeter')
+  expect(actionAvailability(state, 'invite')).toMatchObject({
+    kind: 'automated',
+    state: 'active',
+  })
+  advanceTime(state, actionDuration(state, 'invite') * 3)
+  expect(state.people).toHaveLength(3)
+  expect(actionAvailability(state, 'invite')).toMatchObject({
+    kind: 'automated',
+    state: 'paused',
   })
 })
 

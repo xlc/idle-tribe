@@ -7,9 +7,8 @@ import {
   quoteProject,
   researchVisible,
 } from '../src/research'
-import { canAfford } from '../src/resources'
+import { canAfford, storageCapacity } from '../src/resources'
 import {
-  arrivalStatus,
   assigned,
   assignJob,
   craftingJob,
@@ -188,8 +187,18 @@ export function makeDecisions(
       !allEntries(s).some(
         (e) => e.project.kind !== 'research' && e.project.id === id,
       )
-    )
-      controls.plan({ kind: 'convert', id, form: f.form + 1 })
+    ) {
+      // Converting an expanded building costs capital scaled by its level.
+      // Defer conversions whose cost exceeds storage capacity: they can never
+      // be funded, and queueing one blocks every project behind it.
+      const quote = quoteProject(s, {
+        kind: 'convert',
+        id,
+        form: f.form + 1,
+      })
+      if (RESOURCES.every((r) => (quote.cost[r] ?? 0) <= storageCapacity(s, r)))
+        controls.plan({ kind: 'convert', id, form: f.form + 1 })
+    }
   }
   if (!rebalance) return
   const actual = s
@@ -201,10 +210,9 @@ export function makeDecisions(
     return i >= 0 && assignJob(s, i, job)
   }
   add(food)
-  while (
-    arrivalStatus(s).foodOutput < arrivalStatus(s).required &&
-    assigned(s, 'idle') > 2
-  )
+  // Keep food sustainable before staffing anything else: net food must not
+  // decline while the settlement grows.
+  while (resourceRates(s).food <= 0 && assigned(s, 'idle') > 2)
     if (!add(food)) break
   const constructionHead = s.queues.construction.active
     ? s.queues.construction.active.project
@@ -238,8 +246,12 @@ export function makeDecisions(
   const roles = JOB_IDS.filter(isProductionJob).filter(
     (job) => JOBS[job].output !== 'food',
   )
-  for (const job of roles) if (jobUnlocked(s, job)) add(job)
-  while (assigned(s, 'idle')) {
+  // Staffed research occupies an idle person; keep one free whenever research
+  // is waiting, or the whole tech tree stalls behind "No idle people".
+  const researchReserve = s.queues.research.waiting.length ? 1 : 0
+  for (const job of roles)
+    if (jobUnlocked(s, job) && assigned(s, 'idle') > researchReserve) add(job)
+  while (assigned(s, 'idle') > researchReserve) {
     const demand: Partial<Record<(typeof RESOURCES)[number], number>> = {}
     for (const q of Object.values(s.queues)) {
       const head = q.waiting[0]
@@ -271,7 +283,7 @@ export function makeDecisions(
     const next = choices[0]
     if (!next || !add(next)) break
   }
-  while (arrivalStatus(s).foodOutput < arrivalStatus(s).required) {
+  while (resourceRates(s).food < 0) {
     const i = s.people.findIndex(
       (p) =>
         p.job !== food &&
@@ -297,12 +309,21 @@ export function makeDecisions(
     }
 }
 
-// Reallocate when a visit starts or the workforce/technology changes. Stock
-// fluctuations alone do not justify discarding partial worker cycles each minute.
+// Reallocate when a visit starts or the workforce, technology, or project
+// queues change. Stock fluctuations alone do not justify discarding partial
+// worker cycles each minute.
 export function allocationKey(s: GameState) {
   return JSON.stringify([
     s.people.map((p) => p.health),
     s.facilities,
     s.research,
+    // Queue identities, not progress: a new project needs workers, but a
+    // running one does not justify discarding partial worker cycles.
+    Object.fromEntries(
+      Object.entries(s.queues).map(([id, q]) => [
+        id,
+        [q.active?.sequence, ...q.waiting.map((e) => e.sequence)],
+      ]),
+    ),
   ])
 }

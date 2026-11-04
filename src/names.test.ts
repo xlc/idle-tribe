@@ -3,7 +3,7 @@ import { FAMILY_NAMES, GIVEN_NAMES } from './definitions/person-names'
 import { generatePersonName, PERSON_NAME_MAX_LENGTH } from './names'
 import { parseSave } from './persistence'
 import { resetRun } from './prestige'
-import { advanceTime } from './simulation'
+import { spawnSettler } from './settlement'
 import { createDefaultState } from './state'
 import { complete, required } from './test-helpers'
 
@@ -29,22 +29,17 @@ test('generation has no population limit at pool exhaustion', () => {
   expect(overflow).toMatch(/^\S+ \S+( \d+)?$/)
 })
 
-test('arrivals keep the same names across tick sizes and reloads', () => {
+test('settlers keep unique, reproducible names across reloads', () => {
   const state = createDefaultState(1942)
   complete(state, 'sharpened-stick', 'shelters', 'foraging-rounds')
-  state.resources.food = 10000
-  state.facilities.farm.level = 1
-  state.facilities['food-store'].level = 10000
   state.facilities.housing.level = 10
-  required(state.people[0]).job = 'farmer'
-  // Force the next arrival to draw a full name already used by the founder.
+  state.facilities.foraging.level = 1
+  // Force the next settler to draw a full name already used by the founder.
   required(state.people[0]).name = generatePersonName(state.nameSeed + 1)
-  const sliced = structuredClone(state)
-  advanceTime(state, 900)
-  for (let i = 0; i < 30; i++) advanceTime(sliced, 30)
-  const reloaded = parseSave(JSON.stringify(sliced), 999)
-  advanceTime(state, 900)
-  advanceTime(reloaded, 900)
+  for (let i = 0; i < 3; i++) expect(spawnSettler(state)).toBe(true)
+  const reloaded = parseSave(JSON.stringify(state))
+  expect(spawnSettler(reloaded)).toBe(true)
+  expect(spawnSettler(state)).toBe(true)
   const names = state.people.map((person) => person.name)
   expect(names.length).toBeGreaterThan(2)
   expect(names).toEqual(reloaded.people.map((person) => person.name))

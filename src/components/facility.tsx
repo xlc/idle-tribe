@@ -2,6 +2,7 @@ import { Card, Select } from '@radix-ui/themes'
 import { useState } from 'react'
 import {
   ACTION_BALANCE,
+  actionCost,
   actionRate,
   buildingActions,
   buildingResource,
@@ -98,7 +99,7 @@ export function Facility({
         ? JOBS[craftingJob].output
         : null,
     input = singleAction
-      ? ACTIONS[singleAction].cost
+      ? actionCost(s, singleAction)
       : craftingJob
         ? jobInput(s, craftingJob)
         : {}

@@ -1,8 +1,7 @@
-import { actionForJob, actionOutputRate, cancelManual } from './actions'
+import { actionForJob, cancelManual } from './actions'
 import { WORKERS_PER_BUILDING_LEVEL } from './constants'
-import { ACTIONS, BUILDINGS, JOBS, PERKS, RESEARCH } from './definitions'
+import { BUILDINGS, JOBS, PERKS, RESEARCH } from './definitions'
 import {
-  ACTION_IDS,
   BUILDING_IDS,
   type BuildingId,
   isActionJob,
@@ -14,9 +13,11 @@ import {
   WORKING_JOB_IDS,
 } from './ids'
 import { isProductionJob } from './jobs'
+import { generatePersonName } from './names'
 import { hasResearch, researchEffects } from './research-effects'
 import { canAfford } from './resources'
-import { personalWork, workContribution } from './skills'
+import { workContribution } from './skills'
+import { createPerson } from './state'
 import type {
   Cost,
   GameState,
@@ -206,20 +207,41 @@ export function adjustWorkers(state: GameState, job: JobId, change: number) {
   }
   return changed
 }
+// Aptitudes do nothing on action assignments, so arrivals draw from real
+// jobs only.
+function arrivalAptitudes(state: GameState) {
+  return WORKING_JOB_IDS.filter(
+    (job) => !isActionJob(job) && jobUnlocked(state, job),
+  )
+}
 // A reproducible draw per arrival keeps live, sliced, and reloaded timelines
 // identical without persisting a second random-state ledger.
 export function arrivalAptitude(state: GameState, draw?: number): WorkingJob {
   let seed = Math.imul(state.people.length ^ 0x9e3779b9, 0x21f0aaad)
   seed = Math.imul(seed ^ (seed >>> 16), 0x735a2d97)
   const roll = draw ?? ((seed ^ (seed >>> 15)) >>> 0) / 4294967296
-  // Aptitudes do nothing on action assignments, so arrivals draw from real
-  // jobs only.
-  const eligible = WORKING_JOB_IDS.filter(
-    (job) => !isActionJob(job) && jobUnlocked(state, job),
-  )
+  const eligible = arrivalAptitudes(state)
   const aptitude = eligible[Math.floor(roll * eligible.length)]
   if (!aptitude) throw new Error('Arrival requires an available job')
   return aptitude
+}
+export function housingFull(state: GameState) {
+  return housingCapacity(state) <= state.people.length
+}
+// Invited and found settlers join as idle people with a drawn aptitude;
+// returns false without a free bed or any unlocked job to be apt at.
+export function spawnSettler(state: GameState) {
+  if (housingFull(state) || arrivalAptitudes(state).length === 0) return false
+  state.people.push(
+    createPerson(
+      generatePersonName(
+        state.nameSeed + state.people.length,
+        state.people.map((person) => person.name),
+      ),
+      arrivalAptitude(state),
+    ),
+  )
+  return true
 }
 export function fillWorkers(state: GameState, job: JobId) {
   return adjustWorkers(
@@ -365,83 +387,4 @@ export function happinessTarget(state: GameState) {
       0.2 * clamp(amenities / n) +
       0.2 * clamp(leisure / n))
   )
-}
-const FOOD_ACTION_IDS = ACTION_IDS.filter(
-  (id) => ACTIONS[id].resource === 'food',
-)
-export function arrivalStatus(state: GameState) {
-  const next = state.people.length + 1,
-    buffer = 10 * next,
-    town = happinessUnlocked(state)
-  let foodOutput = 0,
-    recipeDemand = 0
-  // Wild gathering covers food until farms outproduce it.
-  for (const id of FOOD_ACTION_IDS)
-    foodOutput +=
-      actionOutputRate(state, id, {
-        happiness: town ? 0.75 : 1,
-      }) * 60
-  const checked = new Set<ProductionJob>()
-  for (const p of state.people) {
-    const job = p.job
-    if (!isProductionJob(job) || checked.has(job)) continue
-    checked.add(job)
-    const food = JOBS[job].output === 'food'
-    const input = jobInput(state, job).food ?? 0
-    if (!food && !input) continue
-    const workers = state.people.filter((worker) => worker.job === job)
-    if (food)
-      foodOutput +=
-        workers.reduce(
-          (sum, worker) => sum + workContribution(worker, job),
-          0,
-        ) *
-        workplaceRate(state, job, {
-          happiness: town ? 0.75 : 1,
-          ignoreInputs: true,
-        })
-    if (input)
-      recipeDemand +=
-        input *
-        workers.reduce((sum, worker) => sum + personalWork(worker, job), 0) *
-        workplaceRate(state, job, {
-          happiness: town ? 1.25 : 1,
-          ignoreInputs: true,
-        })
-  }
-  const required = 1.1 * (next + recipeDemand)
-  // Food abundance draws newcomers faster: twice the required sustainable
-  // food halves the wait, capped at a 3x speedup.
-  const abundance = Math.min(3, foodOutput / required)
-  const interval =
-    (5 * Math.max(1, next / housingCapacity(state)) ** 2) /
-    (abundance * (town ? 0.5 + state.happiness / 100 : 1))
-  return {
-    blocker: arrivalBlocker(state, { buffer, foodOutput, required }),
-    buffer,
-    foodOutput,
-    required,
-    interval,
-  }
-}
-
-export function arrivalBlocker(
-  state: GameState,
-  {
-    buffer,
-    foodOutput,
-    required,
-  }: { buffer: number; foodOutput: number; required: number },
-) {
-  return !automationUnlocked(state)
-    ? 'Requires Shelters'
-    : !state.welcome
-      ? 'Arrivals paused'
-      : housingCapacity(state) <= state.people.length
-        ? 'Housing full · build housing'
-        : state.resources.food < buffer
-          ? `Needs ${buffer} food buffer`
-          : foodOutput < required
-            ? 'Needs sustainable food production'
-            : ''
 }

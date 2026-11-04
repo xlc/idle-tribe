@@ -43,6 +43,13 @@ export function investmentOutcome(
     Math.abs(afterValue - beforeValue) > MIN_VISIBLE_RESOURCE_CHANGE
       ? { label, before: beforeValue, after: afterValue }
       : null
+  // Beds are the headline for housing expansions; staffing is secondary.
+  const housing = compare(
+    'Housing capacity',
+    housingCapacity(state),
+    housingCapacity(after),
+  )
+  if (housing) return housing
   const job = BUILDINGS[project.id].job,
     actions = buildingActions(project.id)
   if (job) {
@@ -104,12 +111,6 @@ export function investmentOutcome(
     )
     if (capacity) return capacity
   }
-  const housing = compare(
-    'Housing capacity',
-    housingCapacity(state),
-    housingCapacity(after),
-  )
-  if (housing) return housing
   for (const r of RESOURCES) {
     const storage = compare(
       `${RESOURCE_INFO[r].name} storage`,

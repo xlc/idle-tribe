@@ -7,11 +7,11 @@ import { cancelProject, enqueue, nextExpansion } from './research'
 import {
   adjustWorkers,
   arrivalAptitude,
-  arrivalStatus,
   assignJob,
   constructionSpeed,
   fillWorkers,
   jobUnlocked,
+  spawnSettler,
   workerRate,
   workerRates,
 } from './settlement'
@@ -23,7 +23,6 @@ import { complete, people, required, settlement } from './test-helpers'
 function camp() {
   const s = createDefaultState()
   complete(s, 'shelters', 'foraging-rounds')
-  s.welcome = false
   s.resources.food = 100000
   s.resources.wood = 100000
   s.facilities.stockyard.level = 100000
@@ -209,33 +208,15 @@ test('expertise raises aggregate output within capacity and per-person input dem
   )
 })
 
-test('food security uses every food producer and each scholar under conservative conditions', () => {
-  const s = settlement()
-  people(s, 'farmer', 'farmer', 'scholar', 'scholar')
-  s.facilities.farm.level = 4
-  s.facilities.study.level = 4
-  s.welcome = true
-  const initial = arrivalStatus(s)
-  required(s.people[1]).practice.farmer = practiceThreshold(9)
-  const trainedFood = arrivalStatus(s)
-  expect(trainedFood.foodOutput).toBeGreaterThan(initial.foodOutput)
-  required(s.people[3]).practice.scholar = practiceThreshold(9)
-  expect(arrivalStatus(s).required).toBeGreaterThan(trainedFood.required)
-  required(s.people[3]).health = 2
-  expect(arrivalStatus(s).required).toBeGreaterThan(trainedFood.required)
-})
-
-test('arrival aptitudes are available jobs and persist across a reload', () => {
+test('settler aptitudes are available jobs and persist across a reload', () => {
   const s = camp()
-  s.welcome = true
   s.resources.food = 100
   s.facilities.housing.level = 1
   people(s, 'forager')
   const expected = arrivalAptitude(s)
   expect(jobUnlocked(s, arrivalAptitude(s, 0))).toBe(true)
   expect(jobUnlocked(s, arrivalAptitude(s, 0.999))).toBe(true)
-  advanceTime(s, 300)
-  expect(s.people.length).toBeGreaterThanOrEqual(2)
+  expect(spawnSettler(s)).toBe(true)
   expect(required(s.people[1]).aptitude).toBe(expected)
   expect(parseSave(JSON.stringify(s)).people).toEqual(s.people)
 })
@@ -243,7 +224,6 @@ test('arrival aptitudes are available jobs and persist across a reload', () => {
 test('offline practice and milestone reports agree across hidden callbacks and reloads', () => {
   const initial = camp()
   people(initial, 'sawyer', 'farmer')
-  initial.welcome = true
   initial.facilities.housing.level = 2
   initial.savedAt = 1000
   beginAbsence(initial, 1000)

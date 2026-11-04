@@ -12,7 +12,7 @@ import {
   storageCapacity,
   storageFull,
 } from '../src/resources'
-import { arrivalStatus, assigned, jobInput } from '../src/settlement'
+import { assigned, housingCapacity, jobInput } from '../src/settlement'
 import { resourceRates } from '../src/simulation'
 import { createDefaultState } from '../src/state'
 import type {
@@ -70,7 +70,7 @@ export function snapshot(state: GameState) {
     people: state.people.length,
     healthy: state.people.filter((p) => p.health === 5).length,
     happiness: state.happiness,
-    arrivals: arrivalStatus(state),
+    housing: housingCapacity(state),
     workers: Object.fromEntries(
       JOB_IDS.map((job) => [job, assigned(state, job)]),
     ),
@@ -198,11 +198,17 @@ export function runBalance(
     },
   }
   function manual(id: ActionId, deadline = horizon) {
-    if (wall >= deadline || !startAction(state, id)) return false
-    actions.push({ wallSeconds: wall, kind: 'manual', detail: id, controls: 1 })
-    while (state.manual && wall < Math.min(deadline, horizon))
+    // The lone opener staffs research and manual work one at a time; wait for
+    // them to free up instead of abandoning the action.
+    while (wall < Math.min(deadline, horizon)) {
+      if (startAction(state, id)) break
       advance(Math.min(0.5, deadline - wall))
-    return !state.manual
+    }
+    if (!state.manual.some((m) => m.id === id)) return false
+    actions.push({ wallSeconds: wall, kind: 'manual', detail: id, controls: 1 })
+    while (state.manual.length && wall < Math.min(deadline, horizon))
+      advance(Math.min(0.5, deadline - wall))
+    return !state.manual.length
   }
   function gather(
     resource: 'food' | 'wood' | 'stone',
@@ -250,12 +256,12 @@ export function runBalance(
     controls.plan({ kind: 'research', id: 'timber-camps' })
     advance(0)
     waitForResearch(deadline, 'foraging-rounds', 'timber-camps')
-    controls.plan({ kind: 'expand', id: 'housing', target: 1, form: 0 })
-    controls.plan({ kind: 'expand', id: 'lumber', target: 1, form: 0 })
-    // Pay for both buildings: 18 wood and 5 food beyond the research spend.
+    // Shelters research grants the first housing, so only the lumber camp is
+    // built. Gather its 8 wood before queueing it: enqueueing construction
+    // claims the lone person as builder, leaving no idle hands to gather.
     gather('wood', 27, deadline)
     gather('food', 8, deadline)
-    controls.assign(0, 'builder')
+    controls.plan({ kind: 'expand', id: 'lumber', target: 1, form: 0 })
     while (
       (state.queues.construction.waiting.length ||
         state.queues.construction.active) &&

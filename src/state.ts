@@ -54,8 +54,6 @@ export function createDefaultState(nameSeed = 0): GameState {
     nextSequence: 1,
     manual: [],
     minuteProgress: 0,
-    arrivalProgress: 0,
-    welcome: true,
     happiness: 50,
     era: 0,
     specialization: null,
@@ -76,7 +74,7 @@ export function createDefaultState(nameSeed = 0): GameState {
 
 export function resetState(
   state: GameState,
-  preserved: Pick<GameState, 'legacy' | 'welcome' | 'savedAt'>,
+  preserved: Pick<GameState, 'legacy' | 'savedAt'>,
 ) {
   const fresh = createDefaultState((state.nameSeed + 1) >>> 0)
   state.actionSkills = fresh.actionSkills
@@ -97,8 +95,6 @@ export function resetState(
   state.nextSequence = fresh.nextSequence
   state.manual = fresh.manual
   state.minuteProgress = fresh.minuteProgress
-  state.arrivalProgress = fresh.arrivalProgress
-  state.welcome = preserved.welcome
   state.happiness = fresh.happiness
   state.era = fresh.era
   state.specialization = fresh.specialization

@@ -75,4 +75,9 @@ export const jobs = {
     output: 'knowledge',
     input: { food: 1 },
   },
+  greeter: {
+    name: 'Greeter',
+    aptitude: 'Hospitality',
+    learning: 'production',
+  },
 } satisfies Partial<Record<WorkingJob, JobDefinition>>

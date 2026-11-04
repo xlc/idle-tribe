@@ -52,8 +52,8 @@ export const EXPEDITION_ENCOUNTERS: Record<
     options: [
       {
         label: 'Invite them to settle',
-        description: 'Bring the next arrival all the way to your doorstep',
-        effect: { kind: 'arrival-progress', amount: 1 },
+        description: 'A traveler joins the tribe, if housing has room',
+        effect: { kind: 'arrival' },
       },
       {
         label: 'Share a meal',

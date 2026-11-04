@@ -53,10 +53,7 @@ export function formatExploreOutcome(outcome: ExploreOutcome) {
   if (outcome.kind === 'experience')
     return `+${formatResource(outcome.amount)} exploration XP`
   if (outcome.kind === 'encounter') return 'Expedition report ready'
-  if (outcome.kind === 'arrival-progress')
-    return outcome.amount > 0
-      ? `Arrival progress +${formatResource(outcome.amount * 100)}%`
-      : 'No arrival progress gained'
+  if (outcome.kind === 'arrival') return 'A settler joined the tribe'
   return outcome.amount > 0
     ? `+${formatResource(outcome.amount)} happiness`
     : 'No happiness gained'
@@ -69,8 +66,8 @@ export function formatExploreNotice(outcome: ExploreOutcome) {
   if (outcome.kind === 'experience')
     return `Explorers found a promising vantage point · ${detail}`
   if (outcome.kind === 'encounter') return 'Expedition report ready'
-  if (outcome.kind === 'arrival-progress')
-    return `Explorers met travelers · ${detail.toLowerCase()}`
+  if (outcome.kind === 'arrival')
+    return 'Explorers met a traveler · they joined the tribe'
   return `Explorers returned with good stories · ${detail}`
 }
 export function formatDuration(seconds: number) {

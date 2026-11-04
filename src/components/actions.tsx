@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import {
   actionAvailability,
   actionCompletionDuration,
+  actionCost,
   actionDuration,
   actionJobActive,
   actionOutputRate,
@@ -17,7 +18,7 @@ import { formatResource, formatResourceGain } from '../format'
 import { ACTION_IDS, type ActionId } from '../ids'
 import { affordability } from '../resources'
 import type { GameSession } from '../session'
-import { jobCapacity } from '../settlement'
+import { housingFull as isHousingFull, jobCapacity } from '../settlement'
 import type { GameState } from '../types'
 import { ResourceArt } from './art'
 import {
@@ -118,12 +119,14 @@ export function ActionCard({
   const entry = s.manual.find((m) => m.id === id)
   const def = ACTIONS[id],
     availability = actionAvailability(s, id),
+    cost = actionCost(s, id),
     slots = jobCapacity(s, def.job),
     running = Boolean(entry),
     rateMode = isRateMode(s, id),
     duration = actionCompletionDuration(s, id),
     skill = s.actionSkills[id],
-    workersUnlocked = actionWorkersUnlocked(s, id)
+    workersUnlocked = actionWorkersUnlocked(s, id),
+    housingFull = def.kind === 'arrival' && isHousingFull(s)
   const working =
     availability.kind === 'automated' &&
     availability.state === 'active' &&
@@ -140,7 +143,13 @@ export function ActionCard({
   }
   const statusKind =
     availability.kind === 'locked' ? 'locked' : availability.state
-  const missingCost = statusKind !== 'running' && affordability(s, def.cost) < 1
+  const missingCost = statusKind !== 'running' && affordability(s, cost) < 1
+  const yieldPrefix = def.resource
+    ? `+${formatResource(actionYield(s, id))} ${def.resource} · `
+    : def.kind === 'arrival'
+      ? '+1 settler · '
+      : null
+  const yieldLine = `${yieldPrefix ?? ''}${formatResource(duration)}s${housingFull ? ' · Housing full' : ''}`
   const icon = (
     <span
       className="action-icon"
@@ -159,19 +168,14 @@ export function ActionCard({
         data-action-state={statusKind}
         data-cost-missing={missingCost}
       >
-        {missingCost && <CostProgress progress={affordability(s, def.cost)} />}
+        {missingCost && <CostProgress progress={affordability(s, cost)} />}
         <div className="action-row">
           {availability.kind === 'automated' ? (
             <fieldset className="action-automated" aria-label={def.name}>
               {icon}
               <span className="action-copy">
                 <strong className="action-name">{def.name}</strong>
-                <span className="action-yield">
-                  {def.resource
-                    ? `+${formatResource(actionYield(s, id))} ${def.resource} · `
-                    : null}
-                  {formatResource(duration)}s
-                </span>
+                <span className="action-yield">{yieldLine}</span>
                 <ActionSkill
                   level={skill.level}
                   xp={skill.xp}
@@ -218,12 +222,7 @@ export function ActionCard({
               {icon}
               <span className="action-copy">
                 <strong className="action-name">{def.name}</strong>
-                <span className="action-yield">
-                  {def.resource
-                    ? `+${formatResource(actionYield(s, id))} ${def.resource} · `
-                    : null}
-                  {formatResource(duration)}s
-                </span>
+                <span className="action-yield">{yieldLine}</span>
                 <ActionSkill
                   level={skill.level}
                   xp={skill.xp}
@@ -297,8 +296,8 @@ export function ActionCard({
                   : `${formatResource(1 / duration)} explores/s`}
               </p>
             )}
-            {Object.keys(def.cost).length > 0 && (
-              <Costs session={session} cost={def.cost} vertical />
+            {Object.keys(cost).length > 0 && (
+              <Costs session={session} cost={cost} vertical />
             )}
             {def.kind === 'exploration' && (
               <p className="action-hint">{exploreHint(skill.level)}</p>

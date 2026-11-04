@@ -1,4 +1,6 @@
 .people {
+  display: grid;
+  gap: 10px;
   min-width: 0;
 }
 
@@ -6,47 +8,16 @@
   margin-top: 24px;
 }
 
-.workforce-panel {
+.happiness-stat {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(230px, 1.25fr);
-  gap: 10px;
-  margin-bottom: 4px;
-}
-
-.workforce-stat,
-.arrival-details {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-content: center;
+  gap: 2px 12px;
   min-width: 0;
-  border: 1px solid var(--color-base-300);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--color-base-100) 72%, transparent);
+  padding: 14px;
 }
 
-.workforce-stat {
-  display: grid;
-  align-content: start;
-  gap: 3px;
-  min-height: 94px;
-  padding: 12px 13px;
-}
-
-.person-expertise summary {
-  min-height: 34px;
-  padding: 8px 0 0;
-  color: var(--color-neutral);
-  font-size: 11px;
-}
-
-.workforce-stat-primary {
-  border-color: color-mix(
-    in srgb,
-    var(--color-primary) 34%,
-    var(--color-base-300)
-  );
-  background: color-mix(in srgb, var(--color-chip) 48%, var(--color-base-100));
-}
-
-.workforce-stat-label,
-.person-field-label {
+.stat-label {
   color: var(--color-neutral);
   font-size: 10px;
   font-weight: 700;
@@ -54,20 +25,14 @@
   text-transform: uppercase;
 }
 
-.workforce-stat-value {
+.stat-value {
   color: var(--color-base-content);
-  font-size: 24px;
+  font-size: 22px;
   line-height: 1.05;
   font-variant-numeric: tabular-nums;
 }
 
-.workforce-stat-value span {
-  color: var(--color-neutral);
-  font-size: 15px;
-  font-weight: 500;
-}
-
-.workforce-stat-caption {
+.stat-caption {
   overflow: hidden;
   color: var(--color-neutral);
   font-size: 12px;
@@ -75,17 +40,9 @@
   white-space: nowrap;
 }
 
-.workforce-stat-happiness {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.workforce-stat-happiness .workforce-stat-label,
-.workforce-stat-happiness .workforce-stat-caption {
+.happiness-stat .stat-label,
+.happiness-stat .stat-caption {
   grid-column: 1 / -1;
-}
-
-.workforce-stat-happiness .workforce-stat-value {
-  grid-column: 1;
 }
 
 .happiness-meter {
@@ -137,117 +94,24 @@
   background: var(--color-primary);
 }
 
-.arrival-details {
-  max-width: none;
-  padding: 0 13px;
-}
-
-.arrival-details summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  min-height: 44px;
-  padding: 10px 0;
-  color: var(--color-base-content);
-  font-size: 13px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.arrival-details[open] summary {
-  border-bottom: 1px solid var(--color-base-300);
-}
-
-.arrival-summary-status {
-  overflow: hidden;
-  color: var(--color-neutral);
-  font-size: 11px;
-  font-weight: 400;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.arrival-details > p {
-  margin: 10px 0 12px;
-  color: var(--color-neutral);
-  font-size: 12px;
-}
-
-.arrival-control {
-  display: grid;
-  gap: 8px;
-  padding-bottom: 12px;
-  font-size: 13px;
-}
-
-.arrival-control label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.arrival-control small {
-  line-height: 1.35;
-}
-
-.arrival-supply {
-  font-variant-numeric: tabular-nums;
-}
-
-.checkbox {
-  accent-color: var(--color-primary);
-  width: 18px;
-  height: 18px;
-}
-
-.people-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  max-height: 60svh;
-  overflow-y: auto;
-  padding: 10px;
-  overscroll-behavior: none;
-  touch-action: pan-y;
-  scrollbar-width: thin;
-}
-
-.opening .people-grid {
-  max-height: 300px;
-}
-
-.person-card {
+.people-roster {
   min-width: 0;
-  overflow-wrap: anywhere;
-  padding: 14px;
-  border: 1px solid var(--color-base-300);
-  border-radius: 10px;
-  background: var(--color-base-100);
-  font-size: 13px;
 }
 
-.person-card:focus-within {
-  border-color: color-mix(
-    in srgb,
-    var(--color-primary) 48%,
-    var(--color-base-300)
-  );
+.person-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(96px, auto);
+  align-items: start;
+  gap: 12px;
+  padding: 12px 14px;
 }
 
-.person-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-  width: 100%;
+.person-row + .person-row {
+  border-top: 1px solid var(--color-base-300);
 }
 
-.person-identity {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-  gap: 10px;
+.person-row:focus-within {
+  background: color-mix(in srgb, var(--color-base-200) 55%, transparent);
 }
 
 .person-avatar {
@@ -266,24 +130,25 @@
   letter-spacing: 0.04em;
 }
 
-.person-name-block {
+.person-main {
   display: grid;
+  gap: 3px;
   min-width: 0;
-  gap: 2px;
 }
 
-.person-heading > .person-identity strong {
+.person-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   min-width: 0;
-  overflow: hidden;
-  font-size: 18px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  margin: 0;
 }
 
-.person-role {
+.person-title strong {
+  flex: 0 1 auto;
   overflow: hidden;
-  color: var(--color-neutral);
-  font-size: 11px;
+  font-size: 15px;
+  min-width: 0;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -310,37 +175,13 @@
   opacity: 0.5;
 }
 
-.person-job {
-  display: grid;
-  gap: 6px;
-  margin-top: 14px;
-}
-
-.person-job[data-visible="false"] {
-  display: none;
-}
-
-.person-card[data-busy="true"] .person-job {
-  opacity: 0.55;
-}
-
-.person-job .rt-SelectTrigger {
-  width: 100%;
-  min-width: 0;
-}
-
-.person-meta {
+.person-status {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 11px;
-}
-
-.person-output,
-.person-aptitude {
+  gap: 6px;
   min-width: 0;
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .person-output {
@@ -352,80 +193,74 @@
   white-space: nowrap;
 }
 
+.person-row[data-busy="true"] .person-output {
+  color: var(--color-base-content);
+}
+
 .person-aptitude {
   overflow: hidden;
   color: var(--color-neutral);
   font-size: 11px;
-  text-align: right;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.person-side {
+  justify-self: end;
+}
+
+.person-side[data-visible="false"] {
+  display: none;
+}
+
+.person-row[data-busy="true"] .person-side {
+  opacity: 0.55;
+}
+
+.person-side .rt-SelectTrigger {
+  width: 100%;
+  min-width: 0;
+}
+
 .person-expertise {
-  margin-top: 10px;
-  border-top: 1px solid var(--color-base-300);
+  margin-top: 4px;
+}
+
+.person-expertise[data-visible="false"] {
+  display: none;
+}
+
+.person-expertise summary {
+  min-height: 30px;
+  padding: 6px 0 0;
+  color: var(--color-neutral);
+  font-size: 11px;
 }
 
 .job-practice {
   display: grid;
   gap: 5px;
-  margin: 12px 0;
+  margin: 10px 0 4px;
 }
 
-@media (max-width: 1000px) and (min-width: 720px) {
-  .workforce-panel {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+@media (max-width: 440px) {
+  .person-row {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 10px;
   }
 
-  .arrival-details {
-    grid-column: 1 / -1;
-  }
-}
-
-@media (max-width: 719px) {
-  .workforce-panel {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .person-side {
+    grid-column: 2;
+    justify-self: start;
+    margin-top: 6px;
   }
 
-  .workforce-stat {
-    min-height: 86px;
-    padding: 11px;
+  .person-status {
+    flex-wrap: wrap;
   }
 
-  .workforce-stat-value {
-    font-size: 21px;
-  }
-
-  .arrival-details {
-    grid-column: 1 / -1;
-  }
-
-  .people-grid {
-    grid-template-columns: minmax(0, 1fr);
-    padding: 8px;
-  }
-
-  .person-card {
-    padding: 13px;
-  }
-}
-
-@media (max-width: 380px) {
-  .workforce-panel {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .arrival-details {
-    grid-column: auto;
-  }
-
-  .person-meta {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 3px;
-  }
-
+  .person-output,
   .person-aptitude {
-    text-align: left;
+    white-space: normal;
   }
 }

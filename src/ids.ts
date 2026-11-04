@@ -155,6 +155,7 @@ export const JOB_IDS = [
   'stone-splitter',
   'stone-miner',
   'quarry-operator',
+  'greeter',
 ] as const
 export const ACTION_IDS = [
   // Group each upgrade next to the action it supersedes.
@@ -162,6 +163,7 @@ export const ACTION_IDS = [
   'dig-roots',
   'hunt-game',
   'explore',
+  'invite',
   'sticks',
   'chop-wood',
   'fell-timber',
@@ -190,6 +192,7 @@ export const ACTION_JOB_IDS = [
   'stone-splitter',
   'stone-miner',
   'quarry-operator',
+  'greeter',
 ] as const
 export const PERK_IDS = [
   'longer-preparations',

@@ -2,13 +2,21 @@ import { Card, Select } from '@radix-ui/themes'
 import { actionForJob, actionOutputRate, actionWorkers } from '../actions'
 import { ACTIONS, JOBS, RESOURCE_INFO } from '../definitions'
 import { formatDuration, formatResource } from '../format'
-import { isWorkingJob, JOB_IDS, WORKING_JOB_IDS } from '../ids'
+import {
+  ACTION_IDS,
+  type ActionId,
+  isWorkingJob,
+  JOB_IDS,
+  WORKING_JOB_IDS,
+} from '../ids'
 import { isProductionJob, jobRecipe } from '../jobs'
 import { projectName } from '../research'
 import type { GameSession } from '../session'
 import {
   busyWith,
   happinessMultiplier,
+  happinessTarget,
+  happinessUnlocked,
   jobUnlocked,
   prestigeMultiplier,
   staffingMultiplier,
@@ -21,8 +29,7 @@ import {
   workContribution,
 } from '../skills'
 import type { GameState, Person } from '../types'
-import { ViewIcon } from './art'
-import { ProgressBar, SectionDisclosure } from './common'
+import { ProgressBar } from './common'
 
 function initials(name: string) {
   return name
@@ -34,15 +41,21 @@ function initials(name: string) {
     .toUpperCase()
 }
 
-function output(state: GameState, person: Person) {
+// Per-person output text; `workers` maps each action to its staffed count so
+// the roster does not recount the workforce per row.
+function output(
+  state: GameState,
+  person: Person,
+  workers: ReadonlyMap<ActionId, number>,
+) {
   const job = person.job
-  if (!isWorkingJob(job)) return 'Unassigned'
+  if (!isWorkingJob(job)) return 'Ready for assignment'
   const action = actionForJob(job)
   if (action) {
     const def = ACTIONS[action],
-      workers = actionWorkers(state, action)
+      n = workers.get(action) ?? 0
     return def.resource
-      ? `${formatResource(workers ? actionOutputRate(state, action) / workers : 0)} ${RESOURCE_INFO[def.resource].name.toLowerCase()}/s`
+      ? `${formatResource(n ? actionOutputRate(state, action, { workers: n }) / n : 0)} ${RESOURCE_INFO[def.resource].name.toLowerCase()}/s`
       : `Works ${def.name.toLowerCase()}`
   }
   if (isProductionJob(job)) {
@@ -65,23 +78,37 @@ function activity(state: GameState, index: number): string | null {
   return null
 }
 
-export function People({ session }: { session: GameSession }) {
+export function PeopleView({ session }: { session: GameSession }) {
   const s = session.game.state,
-    unlocked = JOB_IDS.filter((job) => jobUnlocked(s, job))
+    target = happinessTarget(s),
+    targetText = formatResource(target),
+    unlocked = JOB_IDS.filter((job) => jobUnlocked(s, job)),
+    workers = new Map(ACTION_IDS.map((id) => [id, actionWorkers(s, id)]))
   return (
-    <SectionDisclosure
-      className="people"
-      title={
-        <>
-          <ViewIcon name="people" />
-          People
-        </>
-      }
-      status={`· ${s.people.length}`}
-      ariaLabel="People"
-    >
+    <div className="people">
+      {happinessUnlocked(s) && (
+        <Card asChild>
+          <section className="happiness-stat" aria-label="Happiness">
+            <span className="stat-label">Happiness</span>
+            <strong className="stat-value">
+              {formatResource(s.happiness)}
+            </strong>
+            <span className="stat-caption">target {targetText}</span>
+            <span className="status-meter happiness-meter">
+              <meter
+                min={0}
+                max={100}
+                value={s.happiness}
+                aria-label="Happiness"
+                aria-valuetext={`${formatResource(s.happiness)}, target ${targetText}`}
+              />
+              <span className="meter-marker" style={{ left: `${target}%` }} />
+            </span>
+          </section>
+        </Card>
+      )}
       <Card asChild>
-        <div className="people-grid">
+        <section className="people-roster" aria-label="Settlers">
           {s.people.map((p, i) => {
             const busy = busyWith(s, i),
               doing = busy ? activity(s, i) : null,
@@ -89,45 +116,79 @@ export function People({ session }: { session: GameSession }) {
               health = Math.round(p.health)
             return (
               <article
-                className="person-card"
+                className="person-row"
                 key={p.name}
                 aria-label={p.name}
                 data-busy={busy}
               >
-                <div className="person-heading">
-                  <div className="person-identity">
-                    <span className="person-avatar" aria-hidden="true">
-                      {initials(p.name)}
+                <span className="person-avatar" aria-hidden="true">
+                  {initials(p.name)}
+                </span>
+                <div className="person-main">
+                  <p className="person-title">
+                    <strong>{p.name}</strong>
+                    <span
+                      className="person-health"
+                      role="img"
+                      aria-label={`${p.name} health: ${health} of 5`}
+                      data-low={health <= 2}
+                    >
+                      {[1, 2, 3, 4, 5].map((point) => (
+                        <span
+                          key={point}
+                          aria-hidden="true"
+                          data-filled={point <= health}
+                        >
+                          {point <= health ? '♥' : '♡'}
+                        </span>
+                      ))}
                     </span>
-                    <div className="person-name-block">
-                      <strong>{p.name}</strong>
-                      <span className="person-role">
-                        {doing ??
-                          (isWorkingJob(p.job)
-                            ? JOBS[p.job].name
-                            : 'Available for assignment')}
-                      </span>
-                    </div>
-                  </div>
-                  <span
-                    className="person-health"
-                    role="img"
-                    aria-label={`${p.name} health: ${health} of 5`}
-                    data-low={health <= 2}
+                  </p>
+                  <p className="person-status">
+                    <span className="person-output">
+                      {doing ?? output(s, p, workers)}
+                    </span>
+                    <span className="person-aptitude">
+                      · {JOBS[p.aptitude].aptitude} aptitude
+                    </span>
+                  </p>
+                  <details
+                    className="person-expertise"
+                    data-visible={WORKING_JOB_IDS.some(
+                      (job) => p.practice[job] > 0 || job === p.job,
+                    )}
                   >
-                    {[1, 2, 3, 4, 5].map((point) => (
-                      <span
-                        key={point}
-                        aria-hidden="true"
-                        data-filled={point <= health}
-                      >
-                        {point <= health ? '♥' : '♡'}
-                      </span>
-                    ))}
-                  </span>
+                    <summary>Expertise</summary>
+                    {WORKING_JOB_IDS.filter(
+                      (job) => p.practice[job] > 0 || job === p.job,
+                    ).map((job) => {
+                      const seconds = p.practice[job],
+                        level = expertiseLevel(seconds),
+                        start = practiceThreshold(level),
+                        next = practiceThreshold(level + 1)
+                      return (
+                        <div className="job-practice" key={job}>
+                          <span>
+                            {JOBS[job].aptitude} · level {level}
+                          </span>
+                          <small>
+                            +{formatResource(expertiseBonus(seconds) * 100)}%
+                            expertise
+                          </small>
+                          <ProgressBar
+                            value={Math.max(0, seconds - start)}
+                            max={next - start}
+                            label={`${JOBS[job].aptitude} practice`}
+                          />
+                          <small>
+                            {formatDuration(seconds)} / {formatDuration(next)}
+                          </small>
+                        </div>
+                      )
+                    })}
+                  </details>
                 </div>
-                <div className="person-job" data-visible={unlocked.length > 1}>
-                  <span className="person-field-label">Assign job</span>
+                <div className="person-side" data-visible={unlocked.length > 1}>
                   <Select.Root
                     value={p.job}
                     size="2"
@@ -137,7 +198,9 @@ export function People({ session }: { session: GameSession }) {
                       if (job) session.change(() => session.game.assign(i, job))
                     }}
                   >
-                    <Select.Trigger aria-label={`${p.name} job`} />
+                    <Select.Trigger aria-label={`${p.name} job`} variant="soft">
+                      {isWorkingJob(p.job) ? JOBS[p.job].name : 'Unassigned'}
+                    </Select.Trigger>
                     <Select.Content>
                       {unlocked.map((job) => (
                         <Select.Item key={job} value={job}>
@@ -149,63 +212,11 @@ export function People({ session }: { session: GameSession }) {
                     </Select.Content>
                   </Select.Root>
                 </div>
-                <div className="person-meta">
-                  <p className="person-output">
-                    {doing
-                      ? 'Occupied'
-                      : isWorkingJob(p.job)
-                        ? output(s, p)
-                        : 'Ready for assignment'}
-                  </p>
-                  <p className="person-aptitude">
-                    {JOBS[p.aptitude].aptitude} aptitude · +5%
-                  </p>
-                </div>
-                <details
-                  className="person-expertise"
-                  data-visible={WORKING_JOB_IDS.some(
-                    (job) => p.practice[job] > 0 || job === p.job,
-                  )}
-                >
-                  <summary>
-                    Expertise
-                    {isWorkingJob(p.job)
-                      ? ` · level ${expertiseLevel(p.practice[p.job])}`
-                      : ''}
-                  </summary>
-                  {WORKING_JOB_IDS.filter(
-                    (job) => p.practice[job] > 0 || job === p.job,
-                  ).map((job) => {
-                    const seconds = p.practice[job],
-                      level = expertiseLevel(seconds),
-                      start = practiceThreshold(level),
-                      next = practiceThreshold(level + 1)
-                    return (
-                      <div className="job-practice" key={job}>
-                        <span>
-                          {JOBS[job].aptitude} · level {level}
-                        </span>
-                        <small>
-                          +{formatResource(expertiseBonus(seconds) * 100)}%
-                          expertise
-                        </small>
-                        <ProgressBar
-                          value={Math.max(0, seconds - start)}
-                          max={next - start}
-                          label={`${JOBS[job].aptitude} practice`}
-                        />
-                        <small>
-                          {formatDuration(seconds)} / {formatDuration(next)}
-                        </small>
-                      </div>
-                    )
-                  })}
-                </details>
               </article>
             )
           })}
-        </div>
+        </section>
       </Card>
-    </SectionDisclosure>
+    </div>
   )
 }

@@ -104,7 +104,7 @@ function exploreOutcome(v: JsonValue | undefined): ExploreOutcome | null {
       'knowledge',
       'experience',
       'encounter',
-      'arrival-progress',
+      'arrival',
       'happiness',
     ] as const)
   // Saves from before exploration always returned something.
@@ -114,6 +114,7 @@ function exploreOutcome(v: JsonValue | undefined): ExploreOutcome | null {
     return { kind, discovery: member(o.discovery, ['wood', 'stone'] as const) }
   if (kind === 'encounter')
     return { kind, id: member(o.id, EXPEDITION_ENCOUNTER_IDS) }
+  if (kind === 'arrival') return { kind }
   return { kind, amount: number(o.amount) }
 }
 function project(v: JsonValue | undefined): Project {
@@ -277,8 +278,6 @@ export function parseSave(serialized: string | null, nameSeed = 0): GameState {
     )
       throw new Error('Invalid queue worker')
     s.minuteProgress = number(p.minuteProgress, 0, 60)
-    s.arrivalProgress = number(p.arrivalProgress, 0, 1)
-    s.welcome = bool(p.welcome)
     s.happiness = number(p.happiness, 0, 100)
     s.era = number(p.era, 0, ERAS.length - 1, true)
     s.specialization =

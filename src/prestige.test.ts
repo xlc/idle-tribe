@@ -8,7 +8,6 @@ test('a supported prestige reset preserves only permanent progress and settings'
   s.legacy.discovered = true
   s.legacy.lifetime = 100
   s.legacy.points = 50
-  s.welcome = false
   s.seenNotes.research = true
   const reward = legacyReward(s),
     speed = prestigeMultiplier(s)
@@ -23,7 +22,6 @@ test('a supported prestige reset preserves only permanent progress and settings'
   expect(s.legacy.lifetime).toBe(100 + reward)
   expect(s.legacy.points).toBe(25 + reward)
   expect(s.legacy.perks['organized-records']).toBe(true)
-  expect(s.welcome).toBe(false)
   // Unlock notes never re-fire after a reset.
   expect(s.seenNotes.research).toBe(true)
   expect(canReset(s)).toBe(false)

@@ -1,7 +1,8 @@
 import { Card } from '@radix-ui/themes'
 import { useState } from 'react'
-import { formatCost, formatDuration } from '../format'
+import { formatCost, formatDuration, formatResource } from '../format'
 import { plannedQuotes, projectName, queueBlocker } from '../research'
+import type { GameSession } from '../session'
 import { constructionSpeed } from '../settlement'
 import type { QueueId } from '../types'
 import { ViewIcon } from './art'
@@ -14,7 +15,7 @@ import {
   ProgressBar,
   type ViewProps,
 } from './common'
-import { Builders } from './workforce'
+import { WorkerControls } from './worker-controls'
 
 export function Construction({
   compact = false,
@@ -26,6 +27,20 @@ export function Construction({
       aria-label="Construction management"
     >
       <Queue {...props} id="construction" compact={compact} />
+    </section>
+  )
+}
+
+function Builders({ session }: { session: GameSession }) {
+  const s = session.game.state,
+    speed = constructionSpeed(s)
+  return (
+    <section className="builders">
+      <div>
+        <h3>Builders</h3>
+        <p>{formatResource(speed / 60)} work/s</p>
+      </div>
+      <WorkerControls session={session} job="builder" />
     </section>
   )
 }

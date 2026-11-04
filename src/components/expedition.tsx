@@ -10,7 +10,7 @@ function effectSummary(option: EncounterOption) {
   if (effect.kind === 'resources') return formatResourceGain(effect.amount)
   if (effect.kind === 'happiness')
     return `+${formatResource(effect.amount)} happiness`
-  return `Arrival progress +${formatResource(effect.amount * 100)}%`
+  return '+1 settler'
 }
 
 export function ExpeditionEncounter({ session }: { session: GameSession }) {

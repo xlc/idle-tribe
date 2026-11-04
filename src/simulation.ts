@@ -1,4 +1,5 @@
 import {
+  actionCost,
   actionDuration,
   actionForJob,
   actionJobActive,
@@ -29,14 +30,10 @@ import {
   WORKING_JOB_IDS,
 } from './ids'
 import { isProductionJob, jobRecipe } from './jobs'
-import { generatePersonName } from './names'
 import { createRecord } from './records'
 import { completeProject, projectName, QUEUES, startQueues } from './research'
 import { addResources, canAfford, pay } from './resources'
 import {
-  arrivalAptitude,
-  arrivalBlocker,
-  arrivalStatus,
   constructionSpeed,
   happinessMultiplier,
   happinessTarget,
@@ -46,7 +43,6 @@ import {
   workerRates,
 } from './settlement'
 import { expertiseLevel, practiceThreshold } from './skills'
-import { createPerson } from './state'
 import type { GameState, ResourceId } from './types'
 
 function settleEvents(state: GameState, visible: boolean) {
@@ -110,19 +106,6 @@ function settleEvents(state: GameState, visible: boolean) {
         Math.min(2, happinessTarget(state) - state.happiness),
       )
   }
-  if (state.arrivalProgress >= 1 - EPSILON && !arrivalStatus(state).blocker) {
-    changed = true
-    state.people.push(
-      createPerson(
-        generatePersonName(
-          state.nameSeed + state.people.length,
-          state.people.map((person) => person.name),
-        ),
-        arrivalAptitude(state),
-      ),
-    )
-    state.arrivalProgress = 0
-  }
   const active = QUEUES.map((id) => state.queues[id].active?.sequence)
   startQueues(state)
   return (
@@ -181,7 +164,6 @@ function intervalRules(state: GameState) {
     ),
     inputs: createRecord(JOB_IDS, (job) => jobInput(state, job)),
     construction: constructionSpeed(state) / 60,
-    arrival: arrivalStatus(state),
     actions: actionRules(state),
   }
 }
@@ -205,6 +187,17 @@ export function advanceTime(
         ? (rules.rates[index] ?? 0) / 60
         : 0,
     )
+    // actionJobActive depends only on (state, action), not the person; share
+    // one evaluation per action across the roster within a substep.
+    const activeJobs = new Map<ActionId, boolean>()
+    const actionWorking = (id: ActionId) => {
+      let active = activeJobs.get(id)
+      if (active === undefined) {
+        active = actionJobActive(state, id)
+        activeJobs.set(id, active)
+      }
+      return active
+    }
     const practiceRates = state.people.map((person, index) => {
       const job = person.job
       if (!isWorkingJob(job)) return 0
@@ -215,7 +208,7 @@ export function advanceTime(
       const working =
         definition.learning === 'production'
           ? action
-            ? actionJobActive(state, action)
+            ? actionWorking(action)
             : (rates[index] ?? 0) > 0
           : Boolean(state.queues.construction.active && rules.construction > 0)
       if (!working) return 0
@@ -224,9 +217,9 @@ export function advanceTime(
     // Costs remain live: producers can fund a paused action, and a completed
     // trip can exhaust its inputs, between structural changes.
     const activeActions = rules.actions.filter(({ id }) =>
-      canAfford(state, ACTIONS[id].cost),
+      canAfford(state, actionCost(state, id)),
     )
-    const { construction, arrival } = rules
+    const { construction } = rules
     // Durations are fixed within a substep; they only change at level-ups and
     // completions, which refresh the rules loop anyway.
     const manual = visible
@@ -235,9 +228,6 @@ export function advanceTime(
           duration: actionDuration(state, entry.id),
         }))
       : []
-    const immigration = arrivalBlocker(state, arrival)
-      ? 0
-      : 1 / (arrival.interval * 60)
     let step = Math.min(remaining, 60 - state.minuteProgress)
     state.people.forEach((p, i) => {
       const rate = rates[i] ?? 0
@@ -275,11 +265,6 @@ export function advanceTime(
         )
       }
     }
-    if (immigration)
-      step = Math.min(
-        step,
-        Math.max(0, 1 - state.arrivalProgress) / immigration,
-      )
     // A zero-work conversion can complete without advancing the timeline.
     if (step <= EPSILON) {
       if (settleEvents(state, visible)) rules = intervalRules(state)
@@ -317,10 +302,6 @@ export function advanceTime(
       } else state.actionProgress[action.id] += rate * step
     }
     consumeMealTick(state, step)
-    state.arrivalProgress = Math.min(
-      1,
-      state.arrivalProgress + immigration * step,
-    )
     state.minuteProgress += step
     remaining -= step
     if (settleEvents(state, visible) || learned) rules = intervalRules(state)
@@ -371,16 +352,16 @@ export function resourceFlowEntries(
       continue
     }
     const n = actionWorkers(state, id)
+    const cost = actionCost(state, id)
     if (
       n < 1 ||
       !def.visible(state) ||
       (id === 'explore' && state.pendingEncounter) ||
-      !canAfford(state, def.cost)
+      !canAfford(state, cost)
     )
       continue
     const rate = (n / actionDuration(state, id)) * 60
-    for (const r of RESOURCES)
-      add(r, def.name, rate * (def.cost[r] ?? 0), 'input')
+    for (const r of RESOURCES) add(r, def.name, rate * (cost[r] ?? 0), 'input')
     const expected = exploreExpectedRewards(state)
     for (const r of RESOURCES)
       add(r, def.name, rate * (expected[r] ?? 0), 'production')
