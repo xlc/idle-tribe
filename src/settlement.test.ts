@@ -22,6 +22,8 @@ test('unlock notes follow their mechanic conditions', () => {
   complete(s, 'foraging-rounds')
   expect(noteUnlocked(s, 'jobs')).toBe(true)
   s.expeditionUnlocked = true
+  expect(noteUnlocked(s, 'expedition')).toBe(false)
+  complete(s, 'expedition-planning')
   expect(noteUnlocked(s, 'expedition')).toBe(true)
   complete(s, 'writing')
   expect(noteUnlocked(s, 'happiness')).toBe(true)

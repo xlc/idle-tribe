@@ -158,12 +158,11 @@ export const JOB_IDS = [
   'greeter',
 ] as const
 export const ACTION_IDS = [
-  // Group each upgrade next to the action it supersedes.
+  // Keep resource-gathering actions together, with each upgrade beside the
+  // action it supersedes.
   'gather',
   'dig-roots',
   'hunt-game',
-  'explore',
-  'invite',
   'sticks',
   'chop-wood',
   'fell-timber',
@@ -172,6 +171,8 @@ export const ACTION_IDS = [
   'quarry-stone',
   'mine-stone',
   'mechanized-quarrying',
+  'explore',
+  'invite',
 ] as const
 export const EXPEDITION_ENCOUNTER_IDS = [
   'abandoned-cache',

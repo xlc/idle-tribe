@@ -64,7 +64,9 @@ export function noteUnlocked(state: GameState, id: NoteId) {
     case 'jobs':
       return automationUnlocked(state)
     case 'expedition':
-      return state.expeditionUnlocked
+      return (
+        state.expeditionUnlocked && hasResearch(state, 'expedition-planning')
+      )
     case 'happiness':
       return happinessUnlocked(state)
     case 'paths':

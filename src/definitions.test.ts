@@ -58,6 +58,24 @@ test.each(catalogs)(
   },
 )
 
+test('resource gathering actions stay together before exploration and arrivals', () => {
+  expect(ACTION_IDS).toEqual([
+    'gather',
+    'dig-roots',
+    'hunt-game',
+    'sticks',
+    'chop-wood',
+    'fell-timber',
+    'mechanized-logging',
+    'stone',
+    'quarry-stone',
+    'mine-stone',
+    'mechanized-quarrying',
+    'explore',
+    'invite',
+  ])
+})
+
 const researchEras = new Map(
   ERA_DEFINITIONS.flatMap((era, index) =>
     Object.keys(era.research).map((id) => [id, index] as const),
