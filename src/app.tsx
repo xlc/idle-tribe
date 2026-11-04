@@ -19,12 +19,15 @@ import { Stockpile } from './components/stockpile'
 import { Technology } from './components/technology'
 import { Workforce } from './components/workforce'
 import { ERAS } from './definitions'
+import { NOTES } from './definitions/notes'
+import { NOTE_IDS } from './ids'
 import { projectName, researchQueueUnlocked } from './research'
 import type { GameSession } from './session'
 import {
   automationUnlocked,
   availablePeople,
   housingCapacity,
+  noteUnlocked,
 } from './settlement'
 import { useSession } from './use-session'
 
@@ -141,6 +144,11 @@ export function App({ session }: { session: GameSession }) {
     },
   ]
   const availableViews = views.filter((entry) => entry.available)
+  // First unlocked-but-unseen note; dismissing marks it seen and queues the next.
+  const note = NOTE_IDS.find((id) => noteUnlocked(s, id) && !s.seenNotes[id])
+  const dismissNote = () => {
+    if (note) session.change(() => (s.seenNotes[note] = true))
+  }
   const content = useRef<HTMLDivElement>(null)
   function showView(next: typeof view) {
     if (next !== view) session.dismissNotification()
@@ -326,6 +334,19 @@ export function App({ session }: { session: GameSession }) {
           </Flex>
         </Dialog.Content>
       </Dialog.Root>
+      {note && (
+        <Dialog.Root open onOpenChange={(open) => !open && dismissNote()}>
+          <Dialog.Content size="2">
+            <Dialog.Title>{NOTES[note].title}</Dialog.Title>
+            <Dialog.Description>{NOTES[note].text}</Dialog.Description>
+            <Flex justify="end" gap="3" mt="4">
+              <Button variant="solid" color="grass" onClick={dismissNote}>
+                Got it
+              </Button>
+            </Flex>
+          </Dialog.Content>
+        </Dialog.Root>
+      )}
     </main>
   )
 }

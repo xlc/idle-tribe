@@ -90,3 +90,17 @@ test('encounter schema changes reset incomplete saves', () => {
   const old = { ...s, pendingEncounter: undefined }
   expect(parseSave(JSON.stringify(old))).toEqual(createDefaultState())
 })
+
+test('current saves preserve seen unlock notes', () => {
+  const s = createDefaultState()
+  s.seenNotes.explore = true
+  s.seenNotes['time-box'] = true
+  const loaded = parseSave(JSON.stringify(s))
+  expect(loaded.seenNotes).toEqual(s.seenNotes)
+})
+
+test('missing unlock-note history resets the save', () => {
+  const s = createDefaultState()
+  const old = { ...s, seenNotes: undefined }
+  expect(parseSave(JSON.stringify(old))).toEqual(createDefaultState())
+})

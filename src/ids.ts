@@ -193,6 +193,16 @@ export const PERK_IDS = [
   'organized-records',
 ] as const
 export const SPECIALIZATION_IDS = ['forestry', 'stonecraft'] as const
+export const NOTE_IDS = [
+  'explore',
+  'research',
+  'jobs',
+  'expedition',
+  'happiness',
+  'paths',
+  'eras',
+  'time-box',
+] as const
 export type ResourceId = (typeof RESOURCES)[number]
 export type BuildingId = (typeof BUILDING_IDS)[number]
 export type ResearchId = (typeof RESEARCH_IDS)[number]
@@ -203,6 +213,7 @@ export type ActionJob = (typeof ACTION_JOB_IDS)[number]
 export type ProductionJob = Exclude<JobId, 'idle' | 'builder' | ActionJob>
 export type PerkId = (typeof PERK_IDS)[number]
 export type SpecializationId = (typeof SPECIALIZATION_IDS)[number]
+export type NoteId = (typeof NOTE_IDS)[number]
 
 export type WorkingJob = Exclude<JobId, 'idle'>
 export function isWorkingJob(job: JobId): job is WorkingJob {

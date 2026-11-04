@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 import { PERKS } from './definitions'
 import { removeFacility } from './game'
-import { BUILDING_IDS, PERK_IDS, RESOURCES } from './ids'
+import { BUILDING_IDS, NOTE_IDS, PERK_IDS, RESOURCES } from './ids'
 import { createRecord } from './records'
 import { enqueue, nextExpansion } from './research'
 import { storageCapacity } from './resources'
@@ -9,12 +9,35 @@ import {
   arrivalStatus,
   happinessTarget,
   housingCapacity,
+  noteUnlocked,
   requirementBlocker,
   workerRate,
 } from './settlement'
 import { advanceTime, resourceFlows, resourceRates } from './simulation'
 import { createDefaultState } from './state'
 import { complete, people, required, settlement } from './test-helpers'
+
+test('unlock notes follow their mechanic conditions', () => {
+  const s = createDefaultState()
+  expect(NOTE_IDS.every((id) => !noteUnlocked(s, id))).toBe(true)
+  s.exploreUnlocked = true
+  expect(noteUnlocked(s, 'explore')).toBe(true)
+  s.researchUnlocked = true
+  expect(noteUnlocked(s, 'research')).toBe(true)
+  complete(s, 'foraging-rounds')
+  expect(noteUnlocked(s, 'jobs')).toBe(true)
+  s.expeditionUnlocked = true
+  expect(noteUnlocked(s, 'expedition')).toBe(true)
+  complete(s, 'writing')
+  expect(noteUnlocked(s, 'happiness')).toBe(true)
+  s.specialization = 'forestry'
+  expect(noteUnlocked(s, 'paths')).toBe(true)
+  s.era = 1
+  expect(noteUnlocked(s, 'eras')).toBe(true)
+  s.legacy.discovered = true
+  expect(noteUnlocked(s, 'time-box')).toBe(true)
+  expect(NOTE_IDS.every((id) => noteUnlocked(s, id))).toBe(true)
+})
 
 test('processing consumes one recipe per completion; scarce inputs resolve in roster order', () => {
   const s = settlement()

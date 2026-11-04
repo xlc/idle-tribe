@@ -7,6 +7,7 @@ import {
   type BuildingId,
   isActionJob,
   isWorkingJob,
+  type NoteId,
   type ProductionJob,
   RESEARCH_IDS,
   RESOURCES,
@@ -51,6 +52,28 @@ export function happinessUnlocked(state: GameState) {
   return RESEARCH_IDS.some(
     (id) => hasResearch(state, id) && RESEARCH[id].unlockHappiness,
   )
+}
+// Whether a one-time unlock note's feature is unlocked; the UI marks the
+// note seen when its dialog is dismissed.
+export function noteUnlocked(state: GameState, id: NoteId) {
+  switch (id) {
+    case 'explore':
+      return state.exploreUnlocked
+    case 'research':
+      return state.researchUnlocked
+    case 'jobs':
+      return automationUnlocked(state)
+    case 'expedition':
+      return state.expeditionUnlocked
+    case 'happiness':
+      return happinessUnlocked(state)
+    case 'paths':
+      return state.specialization !== null
+    case 'eras':
+      return state.era >= 1
+    case 'time-box':
+      return state.legacy.discovered
+  }
 }
 export function happinessMultiplier(state: GameState) {
   return happinessUnlocked(state) ? 0.75 + 0.005 * state.happiness : 1

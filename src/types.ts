@@ -4,6 +4,7 @@ import type {
   BuildingId,
   ExpeditionEncounterId,
   JobId,
+  NoteId,
   PerkId,
   ResearchId,
   ResourceId,
@@ -18,6 +19,7 @@ export type {
   BuildingId,
   ExpeditionEncounterId,
   JobId,
+  NoteId,
   PerkId,
   ResearchId,
   ResourceId,
@@ -241,6 +243,7 @@ export interface GameState {
   exploreRolls: number
   pendingEncounter: ExpeditionEncounterId | null
   completedEncounters: Record<ExpeditionEncounterId, boolean>
+  seenNotes: Record<NoteId, boolean>
   queues: Record<QueueId, ProjectQueue>
   nextSequence: number
   manual: ManualAction[]

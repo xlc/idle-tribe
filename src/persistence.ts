@@ -5,6 +5,7 @@ import {
   BUILDING_IDS,
   EXPEDITION_ENCOUNTER_IDS,
   JOB_IDS,
+  NOTE_IDS,
   PERK_IDS,
   RESEARCH_IDS,
   RESOURCES,
@@ -227,6 +228,8 @@ export function parseSave(serialized: string | null, nameSeed = 0): GameState {
     s.completedEncounters = createRecord(EXPEDITION_ENCOUNTER_IDS, (id) =>
       bool(completedEncounters[id]),
     )
+    const seenNotes = object(p.seenNotes)
+    s.seenNotes = createRecord(NOTE_IDS, (id) => bool(seenNotes[id]))
     if (s.pendingEncounter && s.completedEncounters[s.pendingEncounter])
       throw new Error('Invalid pending encounter')
     s.queues = {
