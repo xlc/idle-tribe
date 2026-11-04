@@ -1,3 +1,4 @@
+import { EPSILON } from './constants'
 import { BUILDINGS, EQUIPMENT, RESEARCH } from './definitions'
 import { RESEARCH_IDS, RESOURCES } from './ids'
 import { hasResearch, researchLevel } from './research-effects'
@@ -241,7 +242,13 @@ export function queueBlocker(state: GameState, id: QueueId) {
   // never be funded, and "waiting" would mislead.
   const exceedsStorage =
     id === 'construction' &&
-    RESOURCES.some((r) => (quote.cost[r] ?? 0) > storageCapacity(state, r))
+    RESOURCES.some((r) => {
+      const required = quote.cost[r] ?? 0
+      return (
+        required > storageCapacity(state, r) &&
+        state.resources[r] + EPSILON < required
+      )
+    })
   return (
     quote.blocker ||
     (id === 'research' && firstIdlePerson(state) < 0 ? 'No idle people' : '') ||

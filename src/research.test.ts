@@ -100,6 +100,26 @@ test('starting a build takes an idle person as builder and reports why it cannot
   expect(buildBlocker(locked)).toBe('No builders')
 })
 
+test('over-cap stock can fund a queued construction project', () => {
+  const state = createDefaultState()
+  state.research.shelters = 1
+  state.research['oral-tradition'] = 1
+  state.facilities.study.level = 99
+  const founder = state.people[0]
+  if (!founder) throw new Error('Missing founder')
+  founder.job = 'builder'
+  for (const resource of Object.keys(state.resources) as Array<
+    keyof typeof state.resources
+  >)
+    state.resources[resource] = 1_000_000
+
+  const project = { kind: 'expand', id: 'study', target: 100, form: 0 } as const
+  expect(enqueue(state, project)).toBe(true)
+  expect(queueBlocker(state, 'construction')).toBe('')
+  startQueues(state)
+  expect(state.queues.construction.active?.project).toEqual(project)
+})
+
 test('repeatable research has gated levels, rising costs, and a hard maximum', () => {
   const state = createDefaultState()
   state.research['inventory-keeping'] = 1

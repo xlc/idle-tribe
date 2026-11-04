@@ -383,6 +383,7 @@ export function resourceFlowEntries(
       continue
     const rate = (n / actionDuration(state, id)) * 60
     for (const r of RESOURCES) add(r, def.name, rate * (cost[r] ?? 0), 'input')
+    if (def.kind !== 'exploration') continue
     const expected = exploreExpectedRewards(state)
     for (const r of RESOURCES)
       add(r, def.name, rate * (expected[r] ?? 0), 'production')

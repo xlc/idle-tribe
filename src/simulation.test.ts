@@ -96,3 +96,20 @@ test('flow entries name their sources', () => {
     entries.food.some((e) => e.label === 'Explore' && e.kind === 'input'),
   ).toBe(true)
 })
+
+test('arrival actions do not report exploration production', () => {
+  const s = createDefaultState()
+  s.research.shelters = 1
+  s.facilities.housing.level = 1
+  s.resources.food = 100
+  const founder = s.people[0]
+  if (!founder) throw new Error('Missing founder')
+  founder.job = 'greeter'
+
+  const invite = resourceFlowEntries(s).food.filter(
+    (entry) => entry.label === 'Invite settlers',
+  )
+  expect(invite).toEqual([
+    { label: 'Invite settlers', amount: 30, kind: 'input' },
+  ])
+})
