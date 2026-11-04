@@ -13,12 +13,12 @@ import {
   isRateMode,
 } from '../actions'
 import { ACTIONS } from '../definitions'
-import { formatCost, formatResource, formatResourceGain } from '../format'
+import { formatResource, formatResourceGain } from '../format'
 import { ACTION_IDS, type ActionId } from '../ids'
 import { affordability } from '../resources'
 import type { GameSession } from '../session'
 import { jobCapacity } from '../settlement'
-import type { Cost, GameState } from '../types'
+import type { GameState } from '../types'
 import { ResourceArt } from './art'
 import {
   ActionCountdown,
@@ -27,6 +27,7 @@ import {
   type Confirm,
   CostProgress,
   Costs,
+  confirmStop,
   DisclosureToggle,
 } from './common'
 import { WorkerControls } from './worker-controls'
@@ -114,12 +115,11 @@ export function ActionCard({
 }) {
   const [expanded, setExpanded] = useState(false)
   const s = session.game.state
-  // Instances of this action run in lockstep; one progress readout covers them.
-  const runs = s.manual.filter((m) => m.id === id)
+  const entry = s.manual.find((m) => m.id === id)
   const def = ACTIONS[id],
     availability = actionAvailability(s, id),
     slots = jobCapacity(s, def.job),
-    running = runs.length > 0,
+    running = Boolean(entry),
     rateMode = isRateMode(s, id),
     duration = actionCompletionDuration(s, id),
     skill = s.actionSkills[id],
@@ -129,20 +129,14 @@ export function ActionCard({
     availability.state === 'active' &&
     actionJobActive(s, id)
   const stop = () => {
-    if (!runs.length) return
-    const paid: Cost = {}
-    for (const run of runs)
-      for (const [resource, amount] of Object.entries(run.paid))
-        paid[resource as keyof Cost] =
-          (paid[resource as keyof Cost] ?? 0) + amount
-    const run = () => session.game.cancelAction(id)
-    if ((runs[0]?.progress ?? 0) * actionDuration(s, id) > 10) {
-      confirm(
-        `Stop ${def.name}?`,
-        `Refund ${formatCost(paid)}. Action progress will be lost.`,
-        run,
-      )
-    } else session.change(run)
+    if (!entry) return
+    confirmStop(confirm, session, {
+      title: `Stop ${def.name}?`,
+      paid: entry.paid,
+      loss: 'Action',
+      earned: entry.progress * actionDuration(s, id) > 10,
+      run: () => session.game.cancelAction(id),
+    })
   }
   const statusKind =
     availability.kind === 'locked' ? 'locked' : availability.state
@@ -229,7 +223,6 @@ export function ActionCard({
                     ? `+${formatResource(actionYield(s, id))} ${def.resource} · `
                     : null}
                   {formatResource(duration)}s
-                  {running && runs.length > 1 ? ` · ×${runs.length}` : ''}
                 </span>
                 <ActionSkill
                   level={skill.level}
@@ -245,14 +238,14 @@ export function ActionCard({
                   session={session}
                   duration={duration}
                   label={`${def.name} progress`}
-                  value={runs[0]?.progress ?? 0}
+                  value={entry?.progress ?? 0}
                   running={running}
                 />
                 <small>
                   <ActionCountdown
                     session={session}
                     duration={duration}
-                    value={runs[0]?.progress ?? 0}
+                    value={entry?.progress ?? 0}
                     running={running}
                   />
                 </small>

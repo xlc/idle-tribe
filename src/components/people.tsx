@@ -82,122 +82,126 @@ export function People({ session }: { session: GameSession }) {
     >
       <Card asChild>
         <div className="people-grid">
-          {s.people.map((p, i) => (
-            <article
-              className="person-card"
-              key={p.name}
-              aria-label={p.name}
-              data-busy={busyWith(s, i)}
-            >
-              <div className="person-heading">
-                <div className="person-identity">
-                  <span className="person-avatar" aria-hidden="true">
-                    {initials(p.name)}
-                  </span>
-                  <div className="person-name-block">
-                    <strong>{p.name}</strong>
-                    <span className="person-role">
-                      {activity(s, i) ??
-                        (isWorkingJob(p.job)
-                          ? JOBS[p.job].name
-                          : 'Available for assignment')}
-                    </span>
-                  </div>
-                </div>
-                <span
-                  className="person-health"
-                  role="img"
-                  aria-label={`${p.name} health: ${p.health} of 5`}
-                  data-low={p.health <= 2}
-                >
-                  {[1, 2, 3, 4, 5].map((point) => (
-                    <span
-                      key={point}
-                      aria-hidden="true"
-                      data-filled={point <= p.health}
-                    >
-                      {point <= p.health ? '♥' : '♡'}
-                    </span>
-                  ))}
-                </span>
-              </div>
-              <div className="person-job" data-visible={unlocked.length > 1}>
-                <span className="person-field-label">Assign job</span>
-                <Select.Root
-                  value={p.job}
-                  size="2"
-                  disabled={busyWith(s, i)}
-                  onValueChange={(value) => {
-                    const job = JOB_IDS.find((id) => id === value)
-                    if (job) session.change(() => session.game.assign(i, job))
-                  }}
-                >
-                  <Select.Trigger aria-label={`${p.name} job`} />
-                  <Select.Content>
-                    {unlocked.map((job) => (
-                      <Select.Item key={job} value={job}>
-                        {!isWorkingJob(job)
-                          ? 'Unassigned'
-                          : `${JOBS[job].name} · level ${expertiseLevel(p.practice[job])}`}
-                      </Select.Item>
-                    ))}
-                  </Select.Content>
-                </Select.Root>
-              </div>
-              <div className="person-meta">
-                <p className="person-output">
-                  {activity(s, i)
-                    ? 'Occupied'
-                    : isWorkingJob(p.job)
-                      ? output(s, p)
-                      : 'Ready for assignment'}
-                </p>
-                <p className="person-aptitude">
-                  {JOBS[p.aptitude].aptitude} aptitude · +5%
-                </p>
-              </div>
-              <details
-                className="person-expertise"
-                data-visible={WORKING_JOB_IDS.some(
-                  (job) => p.practice[job] > 0 || job === p.job,
-                )}
+          {s.people.map((p, i) => {
+            const busy = busyWith(s, i),
+              doing = busy ? activity(s, i) : null
+            return (
+              <article
+                className="person-card"
+                key={p.name}
+                aria-label={p.name}
+                data-busy={busy}
               >
-                <summary>
-                  Expertise
-                  {isWorkingJob(p.job)
-                    ? ` · level ${expertiseLevel(p.practice[p.job])}`
-                    : ''}
-                </summary>
-                {WORKING_JOB_IDS.filter(
-                  (job) => p.practice[job] > 0 || job === p.job,
-                ).map((job) => {
-                  const seconds = p.practice[job],
-                    level = expertiseLevel(seconds),
-                    start = practiceThreshold(level),
-                    next = practiceThreshold(level + 1)
-                  return (
-                    <div className="job-practice" key={job}>
-                      <span>
-                        {JOBS[job].aptitude} · level {level}
+                <div className="person-heading">
+                  <div className="person-identity">
+                    <span className="person-avatar" aria-hidden="true">
+                      {initials(p.name)}
+                    </span>
+                    <div className="person-name-block">
+                      <strong>{p.name}</strong>
+                      <span className="person-role">
+                        {doing ??
+                          (isWorkingJob(p.job)
+                            ? JOBS[p.job].name
+                            : 'Available for assignment')}
                       </span>
-                      <small>
-                        +{formatResource(expertiseBonus(seconds) * 100)}%
-                        expertise
-                      </small>
-                      <ProgressBar
-                        value={Math.max(0, seconds - start)}
-                        max={next - start}
-                        label={`${JOBS[job].aptitude} practice`}
-                      />
-                      <small>
-                        {formatDuration(seconds)} / {formatDuration(next)}
-                      </small>
                     </div>
-                  )
-                })}
-              </details>
-            </article>
-          ))}
+                  </div>
+                  <span
+                    className="person-health"
+                    role="img"
+                    aria-label={`${p.name} health: ${p.health} of 5`}
+                    data-low={p.health <= 2}
+                  >
+                    {[1, 2, 3, 4, 5].map((point) => (
+                      <span
+                        key={point}
+                        aria-hidden="true"
+                        data-filled={point <= p.health}
+                      >
+                        {point <= p.health ? '♥' : '♡'}
+                      </span>
+                    ))}
+                  </span>
+                </div>
+                <div className="person-job" data-visible={unlocked.length > 1}>
+                  <span className="person-field-label">Assign job</span>
+                  <Select.Root
+                    value={p.job}
+                    size="2"
+                    disabled={busy}
+                    onValueChange={(value) => {
+                      const job = JOB_IDS.find((id) => id === value)
+                      if (job) session.change(() => session.game.assign(i, job))
+                    }}
+                  >
+                    <Select.Trigger aria-label={`${p.name} job`} />
+                    <Select.Content>
+                      {unlocked.map((job) => (
+                        <Select.Item key={job} value={job}>
+                          {!isWorkingJob(job)
+                            ? 'Unassigned'
+                            : `${JOBS[job].name} · level ${expertiseLevel(p.practice[job])}`}
+                        </Select.Item>
+                      ))}
+                    </Select.Content>
+                  </Select.Root>
+                </div>
+                <div className="person-meta">
+                  <p className="person-output">
+                    {doing
+                      ? 'Occupied'
+                      : isWorkingJob(p.job)
+                        ? output(s, p)
+                        : 'Ready for assignment'}
+                  </p>
+                  <p className="person-aptitude">
+                    {JOBS[p.aptitude].aptitude} aptitude · +5%
+                  </p>
+                </div>
+                <details
+                  className="person-expertise"
+                  data-visible={WORKING_JOB_IDS.some(
+                    (job) => p.practice[job] > 0 || job === p.job,
+                  )}
+                >
+                  <summary>
+                    Expertise
+                    {isWorkingJob(p.job)
+                      ? ` · level ${expertiseLevel(p.practice[p.job])}`
+                      : ''}
+                  </summary>
+                  {WORKING_JOB_IDS.filter(
+                    (job) => p.practice[job] > 0 || job === p.job,
+                  ).map((job) => {
+                    const seconds = p.practice[job],
+                      level = expertiseLevel(seconds),
+                      start = practiceThreshold(level),
+                      next = practiceThreshold(level + 1)
+                    return (
+                      <div className="job-practice" key={job}>
+                        <span>
+                          {JOBS[job].aptitude} · level {level}
+                        </span>
+                        <small>
+                          +{formatResource(expertiseBonus(seconds) * 100)}%
+                          expertise
+                        </small>
+                        <ProgressBar
+                          value={Math.max(0, seconds - start)}
+                          max={next - start}
+                          label={`${JOBS[job].aptitude} practice`}
+                        />
+                        <small>
+                          {formatDuration(seconds)} / {formatDuration(next)}
+                        </small>
+                      </div>
+                    )
+                  })}
+                </details>
+              </article>
+            )
+          })}
         </div>
       </Card>
     </SectionDisclosure>

@@ -228,7 +228,14 @@ export function advanceTime(
       canAfford(state, ACTIONS[id].cost),
     )
     const { construction, arrival } = rules
-    const manual = visible ? state.manual : []
+    // Durations are fixed within a substep; they only change at level-ups and
+    // completions, which refresh the rules loop anyway.
+    const manual = visible
+      ? state.manual.map((entry) => ({
+          entry,
+          duration: actionDuration(state, entry.id),
+        }))
+      : []
     const immigration = arrivalBlocker(state, arrival)
       ? 0
       : 1 / (arrival.interval * 60)
@@ -251,11 +258,8 @@ export function advanceTime(
           Math.max(0, active.total - active.progress) / rate,
         )
     }
-    for (const entry of manual)
-      step = Math.min(
-        step,
-        Math.max(0, 1 - entry.progress) * actionDuration(state, entry.id),
-      )
+    for (const { entry, duration } of manual)
+      step = Math.min(step, Math.max(0, 1 - entry.progress) * duration)
     for (const action of activeActions) {
       const rate = action.speed
       if (rate <= 0) continue
@@ -296,8 +300,7 @@ export function advanceTime(
       if (active)
         active.progress += step * (id === 'research' ? 1 : construction)
     }
-    for (const entry of manual)
-      entry.progress += step / actionDuration(state, entry.id)
+    for (const { entry, duration } of manual) entry.progress += step / duration
     for (const action of activeActions) {
       const resource = ACTIONS[action.id].resource,
         rate = action.speed

@@ -11,7 +11,7 @@ import {
 } from 'react'
 import { EPSILON } from '../constants'
 import { RESOURCE_INFO } from '../definitions'
-import { formatResource } from '../format'
+import { formatCost, formatResource } from '../format'
 import { RESOURCES } from '../ids'
 import type { GameSession } from '../session'
 import type { Cost } from '../types'
@@ -21,6 +21,33 @@ export type Confirm = (
   run: () => void,
   options?: { direct?: boolean },
 ) => void
+// Stops a running project with a refund. Progress worth keeping asks first;
+// fresh runs stop without a dialog.
+export function confirmStop(
+  confirm: Confirm,
+  session: GameSession,
+  {
+    title,
+    paid,
+    loss,
+    earned,
+    run,
+  }: {
+    title: string
+    paid: Cost
+    loss: string
+    earned: boolean
+    run: () => void
+  },
+) {
+  if (earned)
+    confirm(
+      title,
+      `Refund ${formatCost(paid)}. ${loss} progress will be lost.`,
+      run,
+    )
+  else session.change(run)
+}
 export interface ViewProps {
   session: GameSession
   confirm: Confirm

@@ -125,7 +125,7 @@ export function App({ session }: { session: GameSession }) {
       id: 'people',
       label: 'People',
       mobileLabel: 'People',
-      available: s.people.length > 0,
+      available: true,
     },
     {
       id: 'legacy',
@@ -232,19 +232,17 @@ export function App({ session }: { session: GameSession }) {
                 >
                   <QueueView {...props} />
                 </Tabs.Content>
-                {s.people.length > 0 && (
-                  <Tabs.Content
-                    value="people"
-                    forceMount
-                    hidden={view !== 'people'}
-                  >
-                    <div className="people-view">
-                      <SettlementBrief session={session} />
-                      <Workforce session={session} />
-                      <People session={session} />
-                    </div>
-                  </Tabs.Content>
-                )}
+                <Tabs.Content
+                  value="people"
+                  forceMount
+                  hidden={view !== 'people'}
+                >
+                  <div className="people-view">
+                    <SettlementBrief session={session} />
+                    <Workforce session={session} />
+                    <People session={session} />
+                  </div>
+                </Tabs.Content>
                 {s.legacy.discovered && (
                   <Tabs.Content
                     className="legacy"

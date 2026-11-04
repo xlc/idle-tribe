@@ -10,6 +10,7 @@ import {
   ActionProgress,
   Button,
   Costs,
+  confirmStop,
   ProgressBar,
   type ViewProps,
 } from './common'
@@ -68,14 +69,13 @@ export function Queue({
     id === 'research' && active ? projectName(s, active.project) : undefined
   const cancelActive = () => {
     if (!active || id !== 'research') return
-    const run = () => game.cancel(id, active.sequence)
-    if (active.progress > 10) {
-      confirm(
-        'Stop research?',
-        `Refund ${formatCost(active.paid)}. Research progress will be lost.`,
-        run,
-      )
-    } else session.change(run)
+    confirmStop(confirm, session, {
+      title: 'Stop research?',
+      paid: active.paid,
+      loss: 'Research',
+      earned: active.progress > 10,
+      run: () => game.cancel(id, active.sequence),
+    })
   }
   const queue = (
     <section

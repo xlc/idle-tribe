@@ -45,6 +45,7 @@ import {
   Button,
   CostProgress,
   Costs,
+  confirmStop,
   type ViewProps,
 } from './common'
 import { WorkerControls } from './worker-controls'
@@ -173,14 +174,13 @@ export function Facility({
   }
   const stopConstruction = () => {
     if (!activeEntry) return
-    const run = () => session.game.cancel('construction', activeEntry.sequence)
-    if (activeEntry.progress > 10) {
-      confirm(
-        'Cancel project?',
-        `Refund ${formatCost(activeEntry.paid)}. Work progress will be lost.`,
-        run,
-      )
-    } else session.change(run)
+    confirmStop(confirm, session, {
+      title: 'Cancel project?',
+      paid: activeEntry.paid,
+      loss: 'Work',
+      earned: activeEntry.progress > 10,
+      run: () => session.game.cancel('construction', activeEntry.sequence),
+    })
   }
   const investment = activeEntry ? (
     <div

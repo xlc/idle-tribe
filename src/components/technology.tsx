@@ -1,7 +1,7 @@
 import { Card } from '@radix-ui/themes'
 import { useState } from 'react'
 import { RESEARCH } from '../definitions'
-import { formatCost, formatDuration } from '../format'
+import { formatDuration } from '../format'
 import { RESEARCH_IDS } from '../ids'
 import {
   allEntries,
@@ -19,6 +19,7 @@ import {
   Button,
   CostProgress,
   Costs,
+  confirmStop,
   DisclosureToggle,
   SectionDisclosure,
   type ViewProps,
@@ -123,14 +124,13 @@ function ResearchCard({
   ) : null
   const cancelResearch = () => {
     if (!activeResearch) return
-    const run = () => session.game.cancel('research', activeResearch.sequence)
-    if (activeResearch.progress > 10) {
-      confirm(
-        `Stop ${def.name}?`,
-        `Refund ${formatCost(activeResearch.paid)}. Research progress will be lost.`,
-        run,
-      )
-    } else session.change(run)
+    confirmStop(confirm, session, {
+      title: `Stop ${def.name}?`,
+      paid: activeResearch.paid,
+      loss: 'Research',
+      earned: activeResearch.progress > 10,
+      run: () => session.game.cancel('research', activeResearch.sequence),
+    })
   }
   const runResearch = (action: 'start' | 'queue') => {
     if (def.branch) {

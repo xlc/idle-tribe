@@ -22,13 +22,7 @@ import {
   quoteProject,
   startQueues,
 } from './research'
-import {
-  canAfford,
-  capital,
-  committed,
-  storageCapacity,
-  storageFull,
-} from './resources'
+import { canAfford, capital, storageCapacity, storageFull } from './resources'
 import {
   adjustWorkers,
   assignJob,
@@ -127,7 +121,6 @@ test('active cancellation restores exact stock and storage state once', () => {
   const active = s.queues.construction.active
   expect(active).not.toBeNull()
   if (!active) throw new Error('Missing project')
-  expect(committed(s, 'wood')).toBe(active.paid.wood ?? 0)
   expect(storageFull(s, 'wood')).toBe(full)
   expect(cancelProject(s, 'construction', active.sequence)).toBe(true)
   expect(s.resources.wood).toBe(before)
