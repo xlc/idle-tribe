@@ -107,7 +107,8 @@ function exploreOutcome(v: JsonValue | undefined): ExploreOutcome | null {
       'arrival-progress',
       'happiness',
     ] as const)
-  if (kind === 'nothing') return { kind }
+  // Saves from before exploration always returned something.
+  if (kind === 'nothing') return null
   if (kind === 'resources') return { kind, amount: cost(o.amount) }
   if (kind === 'discovery')
     return { kind, discovery: member(o.discovery, ['wood', 'stone'] as const) }

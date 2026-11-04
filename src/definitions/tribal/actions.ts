@@ -71,7 +71,6 @@ export const actions = {
       'A sharpened stick persuades the ground to give up its reserves.',
     seconds: 4,
     baseXp: 5,
-    xp: 2,
     cost: {},
     building: 'foraging',
     job: 'digger',

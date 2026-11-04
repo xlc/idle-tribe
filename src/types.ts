@@ -33,7 +33,6 @@ export type EncounterEffect =
   | { kind: 'happiness'; amount: number }
   | { kind: 'arrival-progress'; amount: number }
 export type ExploreOutcome =
-  | { kind: 'nothing' }
   | { kind: 'resources'; amount: Cost }
   | { kind: 'discovery'; discovery: 'wood' | 'stone' }
   | { kind: 'knowledge'; amount: number }

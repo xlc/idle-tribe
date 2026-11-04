@@ -78,7 +78,7 @@ test('the opening discovers resources and grants a camp without assigning worker
   expect(s.research['foraging-rounds']).toBe(1)
   expect(s.facilities.foraging.level).toBe(1)
   expect(s.people[0]?.job).toBe('idle')
-  expect(s.facilities.housing.level).toBe(0)
+  expect(s.facilities.housing.level).toBe(1)
 })
 
 test('cheat resource grants add only the requested stockpile amounts', () => {
@@ -132,6 +132,8 @@ test('active cancellation restores exact stock and storage state once', () => {
 test('an older ready queue pays first, but a blocked queue does not reserve stock', () => {
   const s = createDefaultState()
   complete(s, 'sharpened-stick', 'shelters')
+  // Shelters research grants the first housing level; build from scratch.
+  s.facilities.housing.level = 0
   s.discovered.wood = true
   people(s, 'builder')
   s.resources.food = 10
@@ -143,6 +145,7 @@ test('an older ready queue pays first, but a blocked queue does not reserve stoc
   expect(s.resources.wood).toBe(0)
   const other = createDefaultState()
   complete(other, 'sharpened-stick', 'shelters')
+  other.facilities.housing.level = 0
   people(other, 'builder')
   other.resources.wood = 20
   other.resources.food = 10
@@ -402,13 +405,15 @@ test('food gathering rewards the first second and opens exploration after five c
   advanceTime(s, 0.6, true)
   expect(s.resources.food).toBe(1)
   expect(s.manual).toHaveLength(0)
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 5; i++) {
     expect(startAction(s, 'gather')).toBe(true)
     advanceTime(s, 1, true)
   }
   // The fourth completion reaches level 2 but still pays level-1 yield; only
-  // the fifth collects the +2%.
-  expect(s.resources.food).toBeCloseTo(5.02, 6)
+  // the fifth collects the +2%. The founder starved down while away and now
+  // eats two food per minute while gathering, so exploration opens on the
+  // sixth trip instead of the fifth.
+  expect(s.resources.food).toBeCloseTo(5.02 + 1.02 - (2 * 5) / 60, 6)
   expect(s.exploreUnlocked).toBe(true)
 })
 
@@ -454,7 +459,8 @@ test('automated gathering follows the same storage cap timeline across tick size
   expect(s.actionProgress.gather).toBeCloseTo(sliced.actionProgress.gather, 3)
   advanceTime(s, 4, true)
   advanceTime(sliced, 4, true)
-  expect(s.resources.food).toBeCloseTo(50, 8)
+  // Two healthy foragers eat one food per minute each while filling storage.
+  expect(s.resources.food).toBeCloseTo(50 - (2 * 4.5) / 60, 8)
   expect(s.resources.food).toBeCloseTo(sliced.resources.food, 4)
 })
 

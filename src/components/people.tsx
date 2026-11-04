@@ -84,7 +84,9 @@ export function People({ session }: { session: GameSession }) {
         <div className="people-grid">
           {s.people.map((p, i) => {
             const busy = busyWith(s, i),
-              doing = busy ? activity(s, i) : null
+              doing = busy ? activity(s, i) : null,
+              // Health moves fractionally with per-tick meals; show whole hearts.
+              health = Math.round(p.health)
             return (
               <article
                 className="person-card"
@@ -110,16 +112,16 @@ export function People({ session }: { session: GameSession }) {
                   <span
                     className="person-health"
                     role="img"
-                    aria-label={`${p.name} health: ${p.health} of 5`}
-                    data-low={p.health <= 2}
+                    aria-label={`${p.name} health: ${health} of 5`}
+                    data-low={health <= 2}
                   >
                     {[1, 2, 3, 4, 5].map((point) => (
                       <span
                         key={point}
                         aria-hidden="true"
-                        data-filled={point <= p.health}
+                        data-filled={point <= health}
                       >
-                        {point <= p.health ? '♥' : '♡'}
+                        {point <= health ? '♥' : '♡'}
                       </span>
                     ))}
                   </span>

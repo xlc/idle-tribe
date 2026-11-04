@@ -15,10 +15,11 @@ export const research = {
     name: 'Shelters',
     cost: { wood: 12, stone: 5, food: 4 },
     seconds: 10,
-    effect: 'Unlock Shelters housing.',
+    effect: 'Unlock Shelters housing; the first shelter is free.',
     description: 'The weather can conduct its business outside.',
     requires: { research: ['sharpened-stick'] },
     effects: {},
+    grant: { building: 'housing' },
   },
   'foraging-rounds': {
     name: 'Foraging rounds',
@@ -63,7 +64,12 @@ export const research = {
     seconds: 16,
     effect: 'Unlock Quarry.',
     description: 'Some rocks are better at convincing other rocks.',
-    requires: { research: ['sharpened-stick'], discovery: 'stone' },
+    // The quarry only becomes visible once shelters open the settlement
+    // view, so stone tools wait for it too.
+    requires: {
+      research: ['sharpened-stick', 'shelters'],
+      discovery: 'stone',
+    },
     effects: {},
   },
   carpentry: {
@@ -297,6 +303,71 @@ export const research = {
       timeMultiplier: 1.2,
       effect: 'Explore trips 4% faster per additional level.',
       effects: { actionDuration: { explore: -0.04 } },
+    },
+  },
+  'working-rhythm': {
+    name: 'Working rhythm',
+    cost: { wood: 8, food: 4 },
+    seconds: 8,
+    effect: 'Early gathering trips 8% faster.',
+    description: 'The workday acquires a beat, and the beat is faster.',
+    requires: { research: ['sharpened-stick'] },
+    effects: {
+      actionDuration: {
+        gather: -0.08,
+        'dig-roots': -0.08,
+        sticks: -0.08,
+        stone: -0.08,
+      },
+    },
+    upgrade: {
+      maxLevel: 3,
+      requires: { research: ['sharpened-stick'] },
+      costMultiplier: 1.75,
+      timeMultiplier: 1.2,
+      effect: 'Early gathering trips 4% faster per additional level.',
+      effects: {
+        actionDuration: {
+          gather: -0.04,
+          'dig-roots': -0.04,
+          sticks: -0.04,
+          stone: -0.04,
+        },
+      },
+    },
+  },
+  bundling: {
+    name: 'Bundling',
+    cost: { wood: 10, food: 5 },
+    seconds: 10,
+    effect: 'Wood gathering yields +25%.',
+    description: 'Carrying more per trip begins with tying things together.',
+    requires: { research: ['sharpened-stick'], discovery: 'wood' },
+    effects: { actionYield: { sticks: 0.25, 'chop-wood': 0.25 } },
+    upgrade: {
+      maxLevel: 3,
+      requires: { research: ['woodcutting'] },
+      costMultiplier: 1.75,
+      timeMultiplier: 1.2,
+      effect: 'Wood gathering yields +10% per additional level.',
+      effects: { actionYield: { sticks: 0.1, 'chop-wood': 0.1 } },
+    },
+  },
+  'stone-hauling': {
+    name: 'Stone hauling',
+    cost: { wood: 10, food: 5 },
+    seconds: 10,
+    effect: 'Stone gathering yields +25%.',
+    description: 'Rocks travel better rolled, dragged, and stacked.',
+    requires: { research: ['sharpened-stick'], discovery: 'stone' },
+    effects: { actionYield: { stone: 0.25, 'quarry-stone': 0.25 } },
+    upgrade: {
+      maxLevel: 3,
+      requires: { research: ['stonecutting'] },
+      costMultiplier: 1.75,
+      timeMultiplier: 1.2,
+      effect: 'Stone gathering yields +10% per additional level.',
+      effects: { actionYield: { stone: 0.1, 'quarry-stone': 0.1 } },
     },
   },
 } satisfies Partial<Record<ResearchId, ResearchDefinition>>

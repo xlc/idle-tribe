@@ -529,8 +529,12 @@ export function applyExploreReward(
     state.expeditionUnlocked = true
     return
   }
-  state.lastExploreOutcome = { kind: 'nothing' }
+  // Even an empty-handed trip pays off in experience.
+  const amount = 3
+  grantActionXp(state, 'explore', amount)
+  state.lastExploreOutcome = { kind: 'experience', amount }
   state.notice = formatExploreNotice(state.lastExploreOutcome)
+  state.expeditionUnlocked = true
 }
 
 // Probability-weighted explore rewards per completion, for rate displays.

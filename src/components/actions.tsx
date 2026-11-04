@@ -81,7 +81,7 @@ function exploreHint(level: number) {
     return 'Finds: resources · discoveries · rare finds · travelers and stories'
   if (level >= 5)
     return 'Finds: resources · discoveries · rare finds · travelers'
-  return 'Finds: resources · discoveries · sometimes nothing'
+  return 'Finds: resources · discoveries · exploration XP'
 }
 
 function ExploreSummary({

@@ -1,4 +1,5 @@
-// Catalog arrays are stable UI order. Append new entries; do not insert them.
+// Catalog arrays are stable UI order. Append new entries; keep each action
+// grouped next to the action it supersedes.
 export const RESOURCES = [
   'food',
   'wood',
@@ -119,6 +120,9 @@ export const RESEARCH_IDS = [
   'timber-camps',
   'expedition-planning',
   'stockpiling',
+  'working-rhythm',
+  'bundling',
+  'stone-hauling',
 ] as const
 export const JOB_IDS = [
   'idle',
@@ -153,15 +157,16 @@ export const JOB_IDS = [
   'quarry-operator',
 ] as const
 export const ACTION_IDS = [
+  // Group each upgrade next to the action it supersedes.
   'gather',
-  'sticks',
-  'stone',
-  'explore',
   'dig-roots',
   'hunt-game',
+  'explore',
+  'sticks',
   'chop-wood',
   'fell-timber',
   'mechanized-logging',
+  'stone',
   'quarry-stone',
   'mine-stone',
   'mechanized-quarrying',

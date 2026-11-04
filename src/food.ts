@@ -1,4 +1,3 @@
-import { EPSILON } from './constants'
 import type { GameState, Person } from './types'
 export function healthMultiplier(person: Person) {
   return person.health > 3 ? 1 : person.health > 2 ? 0.8 : 0.5
@@ -11,12 +10,16 @@ export function mealPortion(person: Person) {
 export function mealCost(state: GameState) {
   return state.people.reduce((sum, p) => sum + mealPortion(p), 0)
 }
-export function consumeMeal(state: GameState) {
+// Meals are eaten per tick: food drains at one meal per minute and health
+// follows at one heart per minute. When food runs short the weakest eat
+// first, mirroring the shared-meal priority.
+export function consumeMealTick(state: GameState, seconds: number) {
+  const share = seconds / 60
   for (const p of [...state.people].sort((a, b) => a.health - b.health)) {
-    const cost = mealPortion(p)
-    if (state.resources.food + EPSILON >= cost) {
+    const cost = mealPortion(p) * share
+    if (state.resources.food >= cost) {
       state.resources.food = Math.max(0, state.resources.food - cost)
-      p.health = Math.min(5, p.health + 1)
-    } else p.health = Math.max(0, p.health - 1)
+      p.health = Math.min(5, p.health + share)
+    } else p.health = Math.max(0, p.health - share)
   }
 }

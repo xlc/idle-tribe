@@ -32,9 +32,13 @@ test('reloading cancels only manual work and refunds its exact commitment once',
   startAction(s, 'explore')
   advanceTime(s, 1, true)
   const loaded = parseSave(JSON.stringify(s))
-  expect(loaded.resources.food).toBe(20)
+  // Two healthy people eat one food per minute each during the visible second.
+  expect(loaded.resources.food).toBeCloseTo(20 - 2 / 60, 8)
   expect(loaded.manual).toHaveLength(0)
-  expect(parseSave(JSON.stringify(loaded)).resources.food).toBe(20)
+  expect(parseSave(JSON.stringify(loaded)).resources.food).toBeCloseTo(
+    20 - 2 / 60,
+    8,
+  )
 })
 
 test('singleton-manual saves reset to a fresh settlement', () => {

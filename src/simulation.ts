@@ -18,7 +18,7 @@ import {
 } from './actions'
 import { EPSILON } from './constants'
 import { ACTIONS, JOBS, RESEARCH } from './definitions'
-import { consumeMeal, healthMultiplier, mealCost } from './food'
+import { consumeMealTick, healthMultiplier, mealCost } from './food'
 import {
   ACTION_IDS,
   type ActionId,
@@ -104,7 +104,6 @@ function settleEvents(state: GameState, visible: boolean) {
   if (state.minuteProgress >= 60 - EPSILON) {
     state.minuteProgress = Math.max(0, state.minuteProgress - 60)
     changed = true
-    consumeMeal(state)
     if (happinessUnlocked(state))
       state.happiness += Math.max(
         -2,
@@ -317,6 +316,7 @@ export function advanceTime(
           (state.actionProgress[action.id] + rate * step) % 1
       } else state.actionProgress[action.id] += rate * step
     }
+    consumeMealTick(state, step)
     state.arrivalProgress = Math.min(
       1,
       state.arrivalProgress + immigration * step,

@@ -44,7 +44,7 @@ test('expertise earned at a threshold changes only subsequent work', () => {
   expect(p.practice.farmer).toBeCloseTo(920, 8)
   expect(expertiseLevel(p.practice.farmer)).toBe(1)
   expect(s.resources.food - 100000 + p.progress).toBeCloseTo(
-    (18 * 10) / 60 + (18 * 1.05 * 20) / 60,
+    (18 * 10) / 60 + (18 * 1.05 * 20) / 60 - 30 / 60,
     8,
   )
 })
@@ -98,18 +98,18 @@ test('crowding slows practice while storage does not change efficiency', () => {
   expect(required(stock.people[0]).practice.farmer - before).toBeCloseTo(30, 8)
 })
 
-test('injured villagers spend two food to recover one heart per minute', () => {
+test('injured villagers spend two food per minute to recover one heart per minute', () => {
   const s = camp()
   people(s, 'idle')
   const p = required(s.people[0])
   p.health = 2
   s.resources.food = 4
   advanceTime(s, 60)
-  expect(p.health).toBe(3)
-  expect(s.resources.food).toBe(2)
+  expect(p.health).toBeCloseTo(3, 8)
+  expect(s.resources.food).toBeCloseTo(2, 8)
   advanceTime(s, 60)
-  expect(p.health).toBe(4)
-  expect(s.resources.food).toBe(0)
+  expect(p.health).toBeCloseTo(4, 8)
+  expect(s.resources.food).toBeCloseTo(0, 8)
 })
 
 test('builders learn through active work, preserve practice on cancellation, and stop after completion', () => {
@@ -127,8 +127,9 @@ test('builders learn through active work, preserve practice on cancellation, and
   expect(s.resources.wood).toBe(100)
   enqueue(s, nextExpansion(s, 'housing'))
   advanceTime(s, 300)
-  expect(s.facilities.housing.level).toBe(1)
-  expect(p.practice.builder).toBeCloseTo(150, 8)
+  // Shelters research already granted level 1, so this build reaches level 2.
+  expect(s.facilities.housing.level).toBe(2)
+  expect(p.practice.builder).toBeCloseTo(30 + 2 * 1.5625 * 60, 8)
   expect(constructionSpeed(s)).toBe(1)
 })
 

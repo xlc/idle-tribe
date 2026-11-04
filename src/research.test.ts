@@ -206,6 +206,41 @@ test('early gathering research unlocks better actions beside the base ones', () 
   expect(researchUpgradeVisible(state, 'stonecutting')).toBe(false)
 })
 
+test('early boost research speeds trips and raises yields per level', () => {
+  const state = createDefaultState()
+  state.discovered = { wood: true, stone: true }
+  state.researchUnlocked = true
+
+  expect(researchVisible(state, 'working-rhythm')).toBe(false)
+  expect(researchVisible(state, 'bundling')).toBe(false)
+  expect(researchVisible(state, 'stone-hauling')).toBe(false)
+  completeProject(state, { kind: 'research', id: 'sharpened-stick' })
+  expect(researchVisible(state, 'working-rhythm')).toBe(true)
+  expect(researchVisible(state, 'bundling')).toBe(true)
+  expect(researchVisible(state, 'stone-hauling')).toBe(true)
+
+  completeProject(state, { kind: 'research', id: 'working-rhythm' })
+  expect(actionDuration(state, 'dig-roots')).toBeCloseTo(4 * 0.92)
+  expect(researchUpgradeVisible(state, 'working-rhythm')).toBe(true)
+  completeProject(state, {
+    kind: 'research',
+    id: 'working-rhythm',
+    target: 3,
+  })
+  expect(actionDuration(state, 'dig-roots')).toBeCloseTo(4 * (1 - 0.08 - 0.08))
+
+  completeProject(state, { kind: 'research', id: 'bundling' })
+  expect(actionYield(state, 'sticks')).toBeCloseTo(1.25)
+  // Upgrade levels stay closed until the next wood action is learned.
+  expect(researchUpgradeVisible(state, 'bundling')).toBe(false)
+  completeProject(state, { kind: 'research', id: 'stone-tools' })
+  completeProject(state, { kind: 'research', id: 'woodcutting' })
+  expect(researchUpgradeVisible(state, 'bundling')).toBe(true)
+
+  completeProject(state, { kind: 'research', id: 'stone-hauling' })
+  expect(actionYield(state, 'stone')).toBeCloseTo(1.25)
+})
+
 test('multi-level quality-of-life research stacks per level', () => {
   const state = createDefaultState()
   state.discovered = { wood: true, stone: true }

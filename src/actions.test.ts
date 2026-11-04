@@ -268,19 +268,26 @@ test('every ordinary exploration returns a concrete resource outcome', () => {
   expect(Object.values(state.lastExploreOutcome.amount)[0]).toBeGreaterThan(0)
 })
 
-test('exploration reports a toast-worthy result when nothing is found', () => {
+test('exploration without a find still reports bonus exploration XP', () => {
   const state = createDefaultState()
   state.discovered = { wood: true, stone: true }
+  // Below level 5 the rare, encounter and mini branches stay closed, so the
+  // only XP source is the empty-handed fallback; level 4 keeps the grant
+  // from crossing a level boundary.
+  state.actionSkills.explore = { level: 4, xp: 0 }
 
   for (
     let attempt = 0;
-    attempt < 100 && state.lastExploreOutcome?.kind !== 'nothing';
+    attempt < 100 && state.lastExploreOutcome?.kind !== 'experience';
     attempt++
   )
     applyExploreReward(state, 1, 'manual')
 
-  expect(state.lastExploreOutcome).toEqual({ kind: 'nothing' })
-  expect(state.notice).toBe('Explorers found nothing this time')
+  expect(state.lastExploreOutcome).toEqual({ kind: 'experience', amount: 3 })
+  expect(state.notice).toBe(
+    'Explorers found a promising vantage point · +3 exploration XP',
+  )
+  expect(state.actionSkills.explore.xp).toBeGreaterThan(0)
 })
 
 test('exploration rates include automated encounter resources', () => {
