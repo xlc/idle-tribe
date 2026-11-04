@@ -1,7 +1,7 @@
 import { EPSILON } from './constants'
 import { BUILDINGS, EQUIPMENT, RESEARCH } from './definitions'
 import { RESEARCH_IDS, RESOURCES } from './ids'
-import { hasResearch, researchLevel } from './research-effects'
+import { hasResearch } from './research-effects'
 import {
   canAfford,
   capital,
@@ -46,7 +46,7 @@ export function quoteProject(
 ): { cost: Cost; total: number; blocker: string; obsolete: boolean } {
   if (project.kind === 'research') {
     const def = RESEARCH[project.id],
-      current = researchLevel(state, project.id),
+      current = state.research[project.id],
       target = project.target ?? 1,
       upgrade = def.upgrade,
       isUpgrade = target > 1,
@@ -321,7 +321,7 @@ export function moveProject(
 export function completeProject(state: GameState, project: Project) {
   if (project.kind === 'research') {
     const def = RESEARCH[project.id],
-      previous = researchLevel(state, project.id),
+      previous = state.research[project.id],
       target = project.target ?? 1,
       firstCompletion = previous === 0
     state.research[project.id] = Math.max(previous, target)
@@ -433,7 +433,7 @@ export function researchUpgradeVisible(
   id: import('./ids').ResearchId,
 ) {
   const def = RESEARCH[id],
-    level = researchLevel(state, id),
+    level = state.research[id],
     upgrade = def.upgrade
   if (!upgrade || level < 1 || level >= upgrade.maxLevel) return false
   const target = level + 1

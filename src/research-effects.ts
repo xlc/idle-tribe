@@ -55,22 +55,15 @@ function addCostMap(
   return result
 }
 
-export function researchLevel(
-  state: GameState,
-  id: import('./ids').ResearchId,
-) {
-  return state.research[id]
-}
-
 export function hasResearch(state: GameState, id: import('./ids').ResearchId) {
-  return researchLevel(state, id) > 0
+  return state.research[id] > 0
 }
 
 export function researchEffects(
   state: GameState,
   id: import('./ids').ResearchId,
 ): Effects {
-  const level = researchLevel(state, id)
+  const level = state.research[id]
   const base = RESEARCH[id].effects
   const upgrade = RESEARCH[id].upgrade
   const byLevel = EFFECT_CACHE.get(id) ?? new Map<number, EffectCacheEntry>()
