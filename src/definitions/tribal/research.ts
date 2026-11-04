@@ -76,7 +76,7 @@ export const research = {
     name: 'Carpentry',
     cost: { wood: 50, stone: 24 },
     seconds: 40,
-    effect: 'Unlock Sawmill and Warehouse.',
+    effect: 'Unlock Sawmill.',
     description: 'Wood behaves better once you explain the corners.',
     requires: { research: ['shelters', 'stone-tools'] },
     effects: {},

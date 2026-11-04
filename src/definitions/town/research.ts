@@ -27,7 +27,7 @@ export const research = {
     name: 'Town planning',
     cost: { knowledge: 500, planks: 150, blocks: 150, tools: 40 },
     seconds: 10800,
-    effect: 'Unlock Town houses and Public well.',
+    effect: 'Unlock Town houses, Granary, Warehouse, and Public well.',
     description:
       'Someone should probably decide where all these neighbors are going.',
     requires: { research: ['writing'] },
