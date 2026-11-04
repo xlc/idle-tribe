@@ -1,4 +1,4 @@
-import { startAction } from '../src/actions'
+import { actionCost, startAction } from '../src/actions'
 import { beginAbsence, settleAbsence } from '../src/clock'
 import { RESEARCH } from '../src/definitions'
 import { createGame } from '../src/game'
@@ -198,10 +198,11 @@ export function runBalance(
     },
   }
   function manual(id: ActionId, deadline = horizon) {
-    // The lone opener staffs research and manual work one at a time; wait for
-    // them to free up instead of abandoning the action.
     while (wall < Math.min(deadline, horizon)) {
       if (startAction(state, id)) break
+      // Wait only while a busy researcher or runner will free up soon;
+      // otherwise the action is not runnable and waiting would burn the visit.
+      if (!state.queues.research.active && !state.manual.length) return false
       advance(Math.min(0.5, deadline - wall))
     }
     if (!state.manual.some((m) => m.id === id)) return false
@@ -218,6 +219,22 @@ export function runBalance(
     const action = { food: 'gather', wood: 'sticks', stone: 'stone' } as const
     while (state.resources[resource] < amount && wall < deadline)
       if (!manual(action[resource], deadline)) break
+  }
+  // Growth is explicit: invite settlers while a bed stays free and the trip
+  // is affordable for a settlement that can feed itself. Freeing one person
+  // for the trip models the player staffing food production first.
+  function invite(deadline: number) {
+    while (
+      wall < deadline &&
+      state.people.length < housingCapacity(state) &&
+      canAfford(state, actionCost(state, 'invite')) &&
+      resourceRates(state).food >= 0
+    ) {
+      const index = state.people.findIndex((p) => p.job !== 'idle')
+      if (index >= 0 && !controls.assign(index, 'idle')) break
+      const before = state.people.length
+      if (!manual('invite', deadline) || state.people.length === before) break
+    }
   }
   function waitForResearch(deadline: number, ...ids: ResearchId[]) {
     while (
@@ -315,6 +332,7 @@ export function runBalance(
       if (!manual('explore', deadline)) break
     if (state.discovered.stone && !state.facilities.quarry.level)
       gather('stone', 40, deadline)
+    invite(deadline)
     let previousAllocation = ''
     while (wall < deadline) {
       if (

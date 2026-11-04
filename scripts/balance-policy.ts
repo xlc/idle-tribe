@@ -1,3 +1,4 @@
+import { actionCost } from '../src/actions'
 import { BUILDINGS, JOBS, RESEARCH } from '../src/definitions'
 import { BUILDING_IDS, JOB_IDS, RESEARCH_IDS, RESOURCES } from '../src/ids'
 import { isProductionJob, jobRecipe } from '../src/jobs'
@@ -12,6 +13,7 @@ import {
   assigned,
   assignJob,
   craftingJob,
+  housingCapacity,
   jobCapacity,
   jobUnlocked,
   requirementBlocker,
@@ -243,6 +245,15 @@ export function makeDecisions(
   // keep their discovered sources staffed so the policy can fund its queues.
   for (const job of ['woodcutter', 'stoneworker'] as const)
     if (jobUnlocked(s, job)) add(job)
+  // Growth is explicit: a greeter invites settlers while a bed is free and
+  // the settlement can both fund the trip and feed itself.
+  if (
+    jobUnlocked(s, 'greeter') &&
+    housingCapacity(s) > s.people.length &&
+    canAfford(s, actionCost(s, 'invite')) &&
+    resourceRates(s).food >= 0
+  )
+    add('greeter')
   const roles = JOB_IDS.filter(isProductionJob).filter(
     (job) => JOBS[job].output !== 'food',
   )

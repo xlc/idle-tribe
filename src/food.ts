@@ -15,7 +15,12 @@ export function mealCost(state: GameState) {
 // first, mirroring the shared-meal priority.
 export function consumeMealTick(state: GameState, seconds: number) {
   const share = seconds / 60
-  for (const p of [...state.people].sort((a, b) => a.health - b.health)) {
+  // With enough food for everyone the order is irrelevant, and skipping the
+  // sort keeps long absence settles cheap at large populations.
+  const fed = state.resources.food >= mealCost(state) * share
+  for (const p of fed
+    ? state.people
+    : [...state.people].sort((a, b) => a.health - b.health)) {
     const cost = mealPortion(p) * share
     if (state.resources.food >= cost) {
       state.resources.food = Math.max(0, state.resources.food - cost)

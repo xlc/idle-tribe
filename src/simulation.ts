@@ -176,8 +176,11 @@ export function advanceTime(
   settleEvents(state, visible)
   let remaining = seconds
   let rules = intervalRules(state)
+  // Jobs cannot change within one advance; only held jobs need input checks,
+  // which keeps substeps cheap when few of many jobs are staffed.
+  const held = [...new Set(state.people.map((p) => p.job))]
   while (remaining > EPSILON) {
-    const available = createRecord(JOB_IDS, (job) =>
+    const available = createRecord(held, (job) =>
       canAfford(state, rules.inputs[job]),
     )
     const rates = state.people.map((person, index) =>
@@ -217,7 +220,7 @@ export function advanceTime(
     // Costs remain live: producers can fund a paused action, and a completed
     // trip can exhaust its inputs, between structural changes.
     const activeActions = rules.actions.filter(({ id }) =>
-      canAfford(state, actionCost(state, id)),
+      actionJobActive(state, id),
     )
     const { construction } = rules
     // Durations are fixed within a substep; they only change at level-ups and
