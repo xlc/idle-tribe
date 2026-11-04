@@ -88,7 +88,7 @@ small {
 /* Display serif for names and plan headings. */
 .plan-category,
 .action-name,
-.person-heading > strong {
+.person-title > strong {
   font-family: Georgia, serif;
   font-weight: 700;
 }
