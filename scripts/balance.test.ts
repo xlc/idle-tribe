@@ -17,17 +17,13 @@ for (const branch of ['forestry', 'stonecraft'] as Specialization[]) {
       schedule: 'frequent',
       days: 8,
       goal: 'mechanization',
+      collectDetails: false,
     })
     expect(result.status).toBe('completed')
     expect(result.wallSeconds / HOURS).toBeLessThan(8 * 24)
     // Everyone must stay healthy at every return; sickness indicates a food
     // balance failure, not just slow play.
-    expect(
-      Math.min(
-        1,
-        ...result.visits.map((v) => v.before.healthy / v.before.people),
-      ),
-    ).toBe(1)
+    expect(result.minimumHealthyRatio).toBe(1)
     // The scripted opening establishes the settlement within its hour.
     expect(result.openingSeconds).toBeLessThan(HOURS)
   }, 30_000)

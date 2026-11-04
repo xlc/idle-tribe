@@ -32,7 +32,7 @@ import {
 import { isProductionJob, jobRecipe } from './jobs'
 import { createRecord } from './records'
 import { completeProject, projectName, QUEUES, startQueues } from './research'
-import { addResources, canAfford, pay } from './resources'
+import { addResources, canAfford, pay, storageCapacity } from './resources'
 import {
   constructionSpeed,
   happinessMultiplier,
@@ -163,6 +163,9 @@ function intervalRules(state: GameState) {
       staffingMultiplier(state, job),
     ),
     inputs: createRecord(JOB_IDS, (job) => jobInput(state, job)),
+    capacities: createRecord(RESOURCES, (resource) =>
+      storageCapacity(state, resource),
+    ),
     construction: constructionSpeed(state) / 60,
     actions: actionRules(state),
   }
@@ -293,9 +296,11 @@ export function advanceTime(
         rate = action.speed
       if (action.rateMode) {
         if (resource)
-          addResources(state, {
-            [resource]: rate * action.outputPerCompletion * step,
-          })
+          addResources(
+            state,
+            { [resource]: rate * action.outputPerCompletion * step },
+            rules.capacities,
+          )
         const previousLevel = state.actionSkills[action.id].level
         grantActionXp(state, action.id, rate * action.xpPerCompletion * step)
         learned =

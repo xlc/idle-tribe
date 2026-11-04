@@ -4,6 +4,15 @@ import type { Cost, Effects, GameState } from './types'
 
 type NumericMap<K extends string> = Partial<Record<K, number>>
 
+type EffectCacheEntry = {
+  base: Effects
+  upgrade: Effects | undefined
+  result: Effects
+}
+// Definition identities are part of the key so test-time catalog edits do not
+// reuse stale derived effects.
+const EFFECT_CACHE = new Map<string, Map<number, EffectCacheEntry>>()
+
 function addMap<K extends string>(
   base: NumericMap<K> | undefined,
   upgrade: NumericMap<K> | undefined,
@@ -62,11 +71,25 @@ export function researchEffects(
   id: import('./ids').ResearchId,
 ): Effects {
   const level = researchLevel(state, id)
-  if (!level) return {}
   const base = RESEARCH[id].effects
   const upgrade = RESEARCH[id].upgrade
+  const byLevel = EFFECT_CACHE.get(id) ?? new Map<number, EffectCacheEntry>()
+  const cached = byLevel.get(level)
+  if (cached && cached.base === base && cached.upgrade === upgrade?.effects)
+    return cached.result
+  if (!level) {
+    const result = {}
+    byLevel.set(level, { base, upgrade: upgrade?.effects, result })
+    EFFECT_CACHE.set(id, byLevel)
+    return result
+  }
   const extraLevels = upgrade ? Math.min(level, upgrade.maxLevel) - 1 : 0
-  if (extraLevels <= 0 || !upgrade) return { ...base }
+  if (extraLevels <= 0 || !upgrade) {
+    const result = { ...base }
+    byLevel.set(level, { base, upgrade: upgrade?.effects, result })
+    EFFECT_CACHE.set(id, byLevel)
+    return result
+  }
   const extra = upgrade.effects
   const result: Effects = { ...base }
   if (base.jobBonus || extra.jobBonus)
@@ -128,5 +151,7 @@ export function researchEffects(
   if (base.offlineHours !== undefined || extra.offlineHours !== undefined)
     result.offlineHours =
       (base.offlineHours ?? 0) + (extra.offlineHours ?? 0) * extraLevels
+  byLevel.set(level, { base, upgrade: upgrade.effects, result })
+  EFFECT_CACHE.set(id, byLevel)
   return result
 }

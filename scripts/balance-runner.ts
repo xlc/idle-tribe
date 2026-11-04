@@ -1,17 +1,14 @@
 import { actionCost, startAction } from '../src/actions'
 import { beginAbsence, settleAbsence } from '../src/clock'
+import { EPSILON } from '../src/constants'
 import { RESEARCH } from '../src/definitions'
 import { createGame } from '../src/game'
 import { JOB_IDS, RESEARCH_IDS, RESOURCES } from '../src/ids'
 import { isProductionJob } from '../src/jobs'
 import { buyPerk, canReset, legacyReward, resetRun } from '../src/prestige'
+import { createRecord } from '../src/records'
 import { queueBlocker } from '../src/research'
-import {
-  canAfford,
-  committed,
-  storageCapacity,
-  storageFull,
-} from '../src/resources'
+import { canAfford, committed, storageCapacity } from '../src/resources'
 import { assigned, housingCapacity, jobInput } from '../src/settlement'
 import { resourceRates } from '../src/simulation'
 import { createDefaultState } from '../src/state'
@@ -46,6 +43,9 @@ export interface RunOptions {
   skipVisit?: number
   absenceHours?: number
   finishAtHorizon?: boolean
+  // Detailed snapshots are useful for balance reports but unnecessary for the
+  // CI guard. Disable them there to avoid cloning and recomputing diagnostics.
+  collectDetails?: boolean
 }
 export interface Checkpoint {
   state: GameState
@@ -65,6 +65,7 @@ export interface ActionRecord {
   controls: number
 }
 export function snapshot(state: GameState) {
+  const capacities = createRecord(RESOURCES, (r) => storageCapacity(state, r))
   return {
     era: state.era,
     people: state.people.length,
@@ -78,11 +79,9 @@ export function snapshot(state: GameState) {
     // These are instantaneous estimates, never integrated as realized output.
     netRates: resourceRates(state),
     storageFull: Object.fromEntries(
-      RESOURCES.map((r) => [r, storageFull(state, r)]),
+      RESOURCES.map((r) => [r, state.resources[r] + EPSILON >= capacities[r]]),
     ),
-    storageCapacity: Object.fromEntries(
-      RESOURCES.map((r) => [r, storageCapacity(state, r)]),
-    ),
+    storageCapacity: capacities,
     commitments: Object.fromEntries(
       RESOURCES.map((r) => [r, committed(state, r)]),
     ),
@@ -112,6 +111,7 @@ export function runBalance(
   start?: Checkpoint,
   progress?: (message: string) => void,
 ) {
+  const collectDetails = options.collectDetails !== false
   const state = start ? structuredClone(start.state) : createDefaultState()
   const game = createGame(state)
   const schedule = SCHEDULES[options.schedule]
@@ -139,6 +139,7 @@ export function runBalance(
     state: ReturnType<typeof snapshot>
   }[] = []
   let observed = new Set(RESEARCH_IDS.filter((id) => state.research[id] > 0))
+  let minimumHealthyRatio = 1
   let longestAbsenceMs = 0
   const calculationStart = performance.now()
   function checkpoint(): Checkpoint {
@@ -161,6 +162,13 @@ export function runBalance(
         checkpoints[id] = checkpoint()
     }
     lastObserved = wall
+  }
+  function observeHealth() {
+    if (state.people.length === 0) return
+    minimumHealthyRatio = Math.min(
+      minimumHealthyRatio,
+      state.people.filter((p) => p.health === 5).length / state.people.length,
+    )
   }
   function advance(seconds: number) {
     const step = Math.min(seconds, Math.max(0, horizon - wall))
@@ -324,7 +332,8 @@ export function runBalance(
     state.absence = null
     wall = returnAt
     observe()
-    const before = snapshot(state),
+    observeHealth()
+    const before = collectDetails ? snapshot(state) : undefined,
       visitStart = wall,
       actionStart = actions.length
     const deadline = Math.min(horizon, visitStart + schedule.minutes * 60)
@@ -377,32 +386,37 @@ export function runBalance(
       )
       previousAllocation = key
       advance(0)
-      decisions.push({ wallSeconds: wall, state: snapshot(state) })
+      if (collectDetails)
+        decisions.push({ wallSeconds: wall, state: snapshot(state) })
       advance(Math.min(60, deadline - wall))
     }
-    visits.push({
-      wallSeconds: visitStart,
-      durationSeconds: wall - visitStart,
-      controls: actions.slice(actionStart).reduce((n, a) => n + a.controls, 0),
-      before,
-      after: snapshot(state),
-    })
+    if (collectDetails)
+      visits.push({
+        wallSeconds: visitStart,
+        durationSeconds: wall - visitStart,
+        controls: actions
+          .slice(actionStart)
+          .reduce((n, a) => n + a.controls, 0),
+        before: before as ReturnType<typeof snapshot>,
+        after: snapshot(state),
+      })
     if (state.research.shelters <= 0 && wall < horizon) {
       // Account for all manual and automated action work; never hide it in an
       // 8-minute visit.
       const resetStart = wall,
         resetActions = actions.length,
-        beforeOpening = snapshot(state)
+        beforeOpening = collectDetails ? snapshot(state) : undefined
       opening()
-      visits.push({
-        wallSeconds: resetStart,
-        durationSeconds: wall - resetStart,
-        controls: actions
-          .slice(resetActions)
-          .reduce((n, a) => n + a.controls, 0),
-        before: beforeOpening,
-        after: snapshot(state),
-      })
+      if (collectDetails)
+        visits.push({
+          wallSeconds: resetStart,
+          durationSeconds: wall - resetStart,
+          controls: actions
+            .slice(resetActions)
+            .reduce((n, a) => n + a.controls, 0),
+          before: beforeOpening as ReturnType<typeof snapshot>,
+          after: snapshot(state),
+        })
     }
     nextVisit = returnAt + schedule.intervalHours * 3600
   }
@@ -441,6 +455,7 @@ export function runBalance(
     final: snapshot(state),
     finalCheckpoint: checkpoint(),
     checkpoints,
+    minimumHealthyRatio,
   }
 }
 export type BalanceResult = ReturnType<typeof runBalance>

@@ -42,13 +42,17 @@ export function pay(state: GameState, cost: Cost) {
   for (const r of RESOURCES)
     state.resources[r] = Math.max(0, state.resources[r] - (cost[r] ?? 0))
 }
-export function addResources(state: GameState, amount: Cost) {
+export function addResources(
+  state: GameState,
+  amount: Cost,
+  capacities?: Record<ResourceId, number>,
+) {
   const added: Cost = {}
   for (const r of RESOURCES) {
     const delta = amount[r] ?? 0
     if (delta <= 0) continue
     const before = state.resources[r],
-      capacity = storageCapacity(state, r)
+      capacity = capacities?.[r] ?? storageCapacity(state, r)
     if (before >= capacity - EPSILON) continue
     const next = Math.min(capacity, before + delta)
     state.resources[r] = next
