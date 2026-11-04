@@ -6,30 +6,30 @@ import type { NoteId } from '../ids'
 export const NOTES: Record<NoteId, { title: string; text: string }> = {
   research: {
     title: 'Research',
-    text: 'Each research plan puts one idle person to work as its researcher until the plan completes or is stopped.',
+    text: 'Manual actions and manual research each require an idle worker. The worker stays busy until the action or research completes or you stop it.',
   },
   jobs: {
     title: 'Jobs',
-    text: 'People can take jobs at workplaces. Assign them from the People tab or a card’s + controls.',
+    text: 'Assign people to workplace jobs from the People tab or with a card’s + control.',
   },
   expedition: {
     title: 'Expedition camp',
-    text: 'Successful explores open the expedition camp and its encounters.',
+    text: 'A successful explore unlocks the expedition camp and its encounters.',
   },
   happiness: {
     title: 'Happiness',
-    text: 'Happiness tracks food, housing, and leisure, and scales everything people produce.',
+    text: 'Food, housing, and leisure shape happiness, which scales everything people produce.',
   },
   paths: {
     title: 'Paths',
-    text: 'Completing a branch research commits the settlement; the other branch stays closed.',
+    text: 'Completing one branch of research commits the settlement and closes the other branch.',
   },
   eras: {
     title: 'New era',
-    text: 'A new era brings its own buildings, jobs, and research.',
+    text: 'Each new era brings its own buildings, jobs, and research.',
   },
   'time-box': {
     title: 'Time box',
-    text: 'The time box can start a new settlement, keeping legacy points and perks.',
+    text: 'The time box starts a new settlement while keeping your legacy points and perks.',
   },
 }
