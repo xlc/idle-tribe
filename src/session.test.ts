@@ -150,7 +150,7 @@ test('leaving preserves the unfinished manual cycle', () => {
 test('a productive return highlights gains even without arrivals or completed projects', () => {
   const s = settlement()
   people(s, 'farmer')
-  s.resources.food = 0
+  s.resources.food = 1000
   beginAbsence(s, hour)
   const report = settleAbsence(s, hour + 60000)
   expect(report).not.toBeNull()

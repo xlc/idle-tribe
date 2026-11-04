@@ -27,6 +27,7 @@ import { createDefaultState } from './state'
 
 test('reloading a queued project does not allow the same project to be queued again', () => {
   const state = createDefaultState()
+  state.resources.food = 100
   completeProject(state, { kind: 'research', id: 'foraging-rounds' })
   expect(
     enqueue(state, { kind: 'expand', id: 'housing', target: 1, form: 0 }),
@@ -71,6 +72,7 @@ test('research waits for an idle person, binds one, and releases them on cancel'
 test('starting a build takes an idle person as builder and reports why it cannot', () => {
   const state = createDefaultState()
   completeProject(state, { kind: 'research', id: 'foraging-rounds' })
+  state.resources.food = 100
   state.resources.wood = 100
   state.resources.stone = 100
 

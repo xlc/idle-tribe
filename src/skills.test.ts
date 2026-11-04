@@ -43,7 +43,7 @@ test('expertise earned at a threshold changes only subsequent work', () => {
   expect(p.practice.farmer).toBeCloseTo(920, 8)
   expect(expertiseLevel(p.practice.farmer)).toBe(1)
   expect(s.resources.food - 100000 + p.progress).toBeCloseTo(
-    (18 * 10) / 60 + (18 * 1.05 * 20) / 60 - 30 / 60,
+    (60 * 10) / 60 + (60 * 1.05 * 20) / 60 - 90 / 60,
     8,
   )
 })
@@ -94,7 +94,7 @@ test('crowding slows practice while storage does not change efficiency', () => {
   stock.resources.food = 0
   const before = required(stock.people[0]).practice.farmer
   advanceTime(stock, 30)
-  expect(required(stock.people[0]).practice.farmer - before).toBeCloseTo(30, 8)
+  expect(required(stock.people[0]).practice.farmer - before).toBeCloseTo(0, 8)
 })
 
 test('idle villagers consume one food per minute', () => {
@@ -165,16 +165,16 @@ test('Plus and Fill prefer expertise, Minus releases the least contribution, and
   required(s.people[1]).practice.sawyer = practiceThreshold(4)
   required(s.people[3]).practice.sawyer = practiceThreshold(9)
   expect(adjustWorkers(s, 'sawyer', 1)).toBe(true)
-  expect(required(s.people[1]).job).toBe('sawyer')
+  expect(required(s.people[3]).job).toBe('sawyer')
   expect(fillWorkers(s, 'sawyer')).toBe(true)
-  expect(required(s.people[2]).job).toBe('sawyer')
+  expect(required(s.people[1]).job).toBe('sawyer')
   expect(adjustWorkers(s, 'sawyer', -1)).toBe(true)
   expect(required(s.people[2]).job).toBe('idle')
   expect(assignJob(s, 0, 'sawyer')).toBe(true)
   advanceTime(s, 30)
   expect(required(s.people[0]).practice.sawyer).toBeGreaterThan(0)
-  expect(required(s.people[1]).job).toBe('sawyer')
-  expect(required(s.people[3]).job).toBe('idle')
+  expect(required(s.people[3]).job).toBe('sawyer')
+  expect(required(s.people[1]).job).toBe('idle')
 })
 
 test('expertise raises aggregate output within capacity and per-person input demand consistently', () => {

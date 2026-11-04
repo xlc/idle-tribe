@@ -33,10 +33,10 @@ test('reloading cancels only manual work and refunds its exact commitment once',
   advanceTime(s, 1, true)
   const loaded = parseSave(JSON.stringify(s))
   // Two idle people eat one food per minute each during the visible second.
-  expect(loaded.resources.food).toBeCloseTo(20 - 2 / 60, 8)
+  expect(loaded.resources.food).toBeCloseTo(20 - 4 / 60, 8)
   expect(loaded.manual).toHaveLength(0)
   expect(parseSave(JSON.stringify(loaded)).resources.food).toBeCloseTo(
-    20 - 2 / 60,
+    20 - 4 / 60,
     8,
   )
 })

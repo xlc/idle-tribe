@@ -10,6 +10,7 @@ test('automated level-ups change the remaining interval at the same timestamp ac
   state.discovered.wood = true
   state.facilities.lumber.level = 1
   state.actionSkills.sticks.xp = 2.99
+  state.resources.food = 100
   people(state, 'woodcutter')
   const sliced = structuredClone(state)
   advanceTime(state, 3)
@@ -27,6 +28,7 @@ test('exploration starts when newly produced food can pay for a trip', () => {
   state.exploreUnlocked = true
   state.facilities['expedition-camp'].level = 1
   state.facilities.farm.level = 1
+  state.resources.food = 100
   people(state, 'explorer', 'farmer')
   const sliced = structuredClone(state)
   advanceTime(state, 30)

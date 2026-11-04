@@ -107,6 +107,7 @@ test('full output storage does not block manual or automated work', () => {
   automated.discovered.wood = true
   automated.facilities.lumber.level = 1
   automated.resources.wood = storageCapacity(automated, 'wood')
+  automated.resources.food = 100
   people(automated, 'woodcutter')
   expect(actionAvailability(automated, 'sticks')).toMatchObject({
     kind: 'automated',

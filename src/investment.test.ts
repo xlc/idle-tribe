@@ -7,6 +7,7 @@ import { people } from './test-helpers'
 test('output previews compare the current workforce through expansions and equipment without mutating the settlement', () => {
   const s = createDefaultState()
   s.facilities.farm.level = 1
+  s.resources.food = 100
   people(s, 'farmer')
   const original = structuredClone(s)
   const expansion = investmentOutcome(s, {
@@ -16,14 +17,14 @@ test('output previews compare the current workforce through expansions and equip
     form: 0,
   })
   expect(expansion?.label).toBe('Food/s')
-  expect(expansion?.before).toBeCloseTo(0.3)
-  expect(expansion?.after).toBeCloseTo(0.33)
+  expect(expansion?.before).toBeCloseTo(1)
+  expect(expansion?.after).toBeCloseTo(1.1)
   const equipment = investmentOutcome(s, {
     kind: 'equip',
     id: 'farm',
     target: 1,
   })
-  expect(equipment?.after).toBeCloseTo(0.36)
+  expect(equipment?.after).toBeCloseTo(1.2)
   expect(s).toEqual(original)
 })
 
@@ -52,6 +53,7 @@ test('unstaffed workplaces, housing and storage show a useful investment consequ
 test('investment comparisons account for preceding queued construction', () => {
   const s = createDefaultState()
   s.research.agriculture = 1
+  s.resources.food = 100
   completeProject(s, { kind: 'research', id: 'shelters' })
   s.facilities.farm.level = 1
   people(s, 'farmer', 'builder')
@@ -62,7 +64,7 @@ test('investment comparisons account for preceding queued construction', () => {
     target: 3,
     form: 0,
   })
-  expect(outcome?.before).toBeCloseTo(0.33)
-  expect(outcome?.after).toBeCloseTo(0.36)
+  expect(outcome?.before).toBeCloseTo(1.1)
+  expect(outcome?.after).toBeCloseTo(1.2)
   expect(s.facilities.farm.level).toBe(1)
 })

@@ -36,10 +36,10 @@ export const buildings = {
         cost: { planks: 30, blocks: 20, tools: 10 },
         work: 15,
         requires: { research: ['agriculture'] },
-        rate: 18,
+        rate: 60,
       },
     ],
-    effect: 'Farmer workplace; 0.3 food/s per worker',
+    effect: 'Farmer workplace; 1 food/s per worker',
     job: 'farmer',
   },
 } satisfies Partial<Record<BuildingId, BuildingDefinition>>
