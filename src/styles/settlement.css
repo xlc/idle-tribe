@@ -83,6 +83,16 @@
   border-color: var(--color-error);
   box-shadow: 0 0 0 1px var(--color-error);
 }
+.building-card[data-action-state="constructing"] {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent);
+}
+.facility-construction .action-stop.rt-Button {
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
 .building-card[data-built="false"] {
   background: color-mix(in srgb, var(--color-base-100) 70%, transparent);
 }

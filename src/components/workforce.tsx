@@ -2,7 +2,7 @@ import { formatResource } from '../format'
 import type { GameSession } from '../session'
 import {
   arrivalStatus,
-  assigned,
+  availablePeople,
   constructionSpeed,
   happinessTarget,
   happinessUnlocked,
@@ -17,7 +17,7 @@ export function Workforce({ session }: { session: GameSession }) {
     arrival = arrivalStatus(s),
     target = happinessTarget(s),
     capacity = housingCapacity(s),
-    unassigned = assigned(s, 'idle'),
+    unassigned = availablePeople(s),
     spaceMessage =
       capacity > s.people.length
         ? `${capacity - s.people.length} available space${capacity - s.people.length === 1 ? '' : 's'}`

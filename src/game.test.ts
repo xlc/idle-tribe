@@ -161,7 +161,7 @@ test('an older ready queue pays first, but a blocked queue does not reserve stoc
 
 test('both eligible queue heads use enqueue order and preserve it through reorder', () => {
   const s = settlement()
-  people(s, 'builder')
+  people(s, 'builder', 'idle')
   s.research['record-keeping'] = 0
   s.resources.planks = 200
   s.resources.blocks = 100
@@ -308,7 +308,7 @@ test('tool refinements continue above tier three and replace rather than compoun
 for (const branch of ['forestry', 'stonecraft'] as const)
   test(`${branch} reaches Mechanization without the Great Hall or other branch`, () => {
     const s = settlement(branch)
-    people(s, 'forager')
+    people(s, 'forager', 'idle')
     const game = createGame(s)
     expect(game.enqueue({ kind: 'research', id: 'mechanization' })).toBe(true)
     game.advanceTime(
@@ -403,12 +403,12 @@ test('food gathering rewards the first second and opens exploration after five c
   expect(s.resources.food).toBe(0)
   expect(startAction(s, 'gather')).toBe(true)
   advanceTime(s, 0.4, true)
-  expect(s.manual?.progress).toBeCloseTo(0.4)
+  expect(s.manual[0]?.progress).toBeCloseTo(0.4)
   advanceTime(s, 3600, false)
-  expect(s.manual?.progress).toBeCloseTo(0.4)
+  expect(s.manual[0]?.progress).toBeCloseTo(0.4)
   advanceTime(s, 0.6, true)
   expect(s.resources.food).toBe(1)
-  expect(s.manual).toBeNull()
+  expect(s.manual).toHaveLength(0)
   for (let i = 0; i < 4; i++) {
     expect(startAction(s, 'gather')).toBe(true)
     advanceTime(s, 1, true)
@@ -429,10 +429,10 @@ test.each([
     s.discovered[resource] = true
     expect(startAction(s, action)).toBe(true)
     advanceTime(s, seconds / 2, true)
-    expect(s.manual?.progress).toBeCloseTo(0.5)
+    expect(s.manual[0]?.progress).toBeCloseTo(0.5)
     advanceTime(s, seconds / 2, true)
     expect(s.resources[resource]).toBe(1)
-    expect(s.manual).toBeNull()
+    expect(s.manual).toHaveLength(0)
   },
 )
 
@@ -444,7 +444,7 @@ test('the gathering duration stays constant near the storage cap', () => {
   expect(duration).toBe(1.5)
   expect(startAction(s, 'sticks')).toBe(true)
   advanceTime(s, duration / 2, true)
-  expect(s.manual?.progress).toBeCloseTo(0.5)
+  expect(s.manual[0]?.progress).toBeCloseTo(0.5)
   advanceTime(s, duration / 2, true)
   expect(s.resources.wood).toBe(50)
 })
@@ -469,7 +469,7 @@ test('queued Writing follows a paid farm investment and retains its research cos
   const s = settlement()
   s.research.writing = 0
   s.facilities.farm.level = 0
-  people(s, 'builder', 'forager')
+  people(s, 'builder', 'forager', 'idle')
   const before = s.resources.knowledge
   enqueue(s, { kind: 'research', id: 'writing' })
   enqueue(s, nextExpansion(s, 'farm'))
@@ -498,13 +498,13 @@ test('completed gathering levels up, linearly improves yield, and persists', () 
   s.actionSkills.gather.level = 4
   expect(actionYield(s, 'gather')).toBeCloseTo(1.06, 8)
   expect(s.actionSkills.sticks).toEqual({ level: 1, xp: 0 })
-  expect(s.people).toHaveLength(0)
+  expect(s.people).toHaveLength(1)
   expect(parseSave(JSON.stringify(s)).actionSkills).toEqual(s.actionSkills)
   startAction(s, 'gather')
   advanceTime(s, 0.2, true)
   const loaded = parseSave(JSON.stringify(s))
   expect(loaded.actionSkills).toEqual(s.actionSkills)
-  expect(loaded.manual).toBeNull()
+  expect(loaded.manual).toHaveLength(0)
 })
 
 test('explore discovers wood then stone through its random rewards', () => {

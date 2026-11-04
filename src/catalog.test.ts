@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { actionSlots } from './actions'
+import { WORKERS_PER_BUILDING_LEVEL } from './constants'
 import { ACTIONS, BUILDINGS, RESEARCH } from './definitions'
 import {
   ACTION_IDS,
@@ -200,13 +200,15 @@ test('all orbital extractor forms require a launch complex even when rebuilding 
     ).toBe('Requires Launch complex level 1')
 })
 
-test('action slots and workplace capacity agree for every action', () => {
+test('every action job belongs to its workplace', () => {
   const state = createDefaultState()
   for (const id of ACTION_IDS) {
     const def = ACTIONS[id]
     for (const level of [0, 1, 5]) {
       state.facilities[def.building].level = level
-      expect(actionSlots(state, id)).toBe(jobCapacity(state, def.job))
+      expect(jobCapacity(state, def.job)).toBe(
+        WORKERS_PER_BUILDING_LEVEL * level,
+      )
     }
     expect(buildingJobs(def.building)).toContain(def.job)
   }

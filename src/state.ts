@@ -7,6 +7,7 @@ import {
   RESOURCES,
   WORKING_JOB_IDS,
 } from './ids'
+import { generatePersonName } from './names'
 import { createRecord } from './records'
 import type { GameState, Person, WorkingJob } from './types'
 export function createPerson(
@@ -35,7 +36,8 @@ export function createDefaultState(nameSeed = 0): GameState {
     })),
     research: createRecord(RESEARCH_IDS, () => 0),
     nameSeed,
-    people: [],
+    // The player starts as the settlement's first person.
+    people: [createPerson(generatePersonName(nameSeed))],
     discovered: { wood: false, stone: false },
     exploreUnlocked: false,
     researchUnlocked: false,
@@ -48,7 +50,7 @@ export function createDefaultState(nameSeed = 0): GameState {
       construction: { active: null, waiting: [] },
     },
     nextSequence: 1,
-    manual: null,
+    manual: [],
     minuteProgress: 0,
     arrivalProgress: 0,
     welcome: true,

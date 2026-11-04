@@ -13,7 +13,6 @@ import {
   finishManual,
   grantActionXp,
   isRateMode,
-  manualRate,
   syncUnlocks,
   xpFactor,
 } from './actions'
@@ -76,9 +75,14 @@ function settleEvents(state: GameState, visible: boolean) {
           : `Completed ${projectName(state, active.project)}`
     }
   }
-  if (visible && state.manual && state.manual.progress >= 1 - EPSILON) {
-    finishManual(state)
-    changed = true
+  if (visible && state.manual.length) {
+    let done = false
+    for (const entry of [...state.manual])
+      if (entry.progress >= 1 - EPSILON) {
+        finishManual(state, entry)
+        done = true
+      }
+    changed = done || changed
   }
   // Automated actions run whether or not the settlement is visible.
   for (const id of ACTION_IDS) {
@@ -224,7 +228,7 @@ export function advanceTime(
       canAfford(state, ACTIONS[id].cost),
     )
     const { construction, arrival } = rules
-    const manual = visible ? manualRate(state) : 0
+    const manual = visible ? state.manual : []
     const immigration = arrivalBlocker(state, arrival)
       ? 0
       : 1 / (arrival.interval * 60)
@@ -247,8 +251,11 @@ export function advanceTime(
           Math.max(0, active.total - active.progress) / rate,
         )
     }
-    if (manual && state.manual)
-      step = Math.min(step, Math.max(0, 1 - state.manual.progress) / manual)
+    for (const entry of manual)
+      step = Math.min(
+        step,
+        Math.max(0, 1 - entry.progress) * actionDuration(state, entry.id),
+      )
     for (const action of activeActions) {
       const rate = action.speed
       if (rate <= 0) continue
@@ -289,7 +296,8 @@ export function advanceTime(
       if (active)
         active.progress += step * (id === 'research' ? 1 : construction)
     }
-    if (state.manual) state.manual.progress += manual * step
+    for (const entry of manual)
+      entry.progress += step / actionDuration(state, entry.id)
     for (const action of activeActions) {
       const resource = ACTIONS[action.id].resource,
         rate = action.speed

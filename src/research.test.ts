@@ -3,26 +3,35 @@ import {
   actionAvailability,
   actionDuration,
   actionYield,
+  cancelManual,
+  startAction,
   xpFactor,
 } from './actions'
 import { RESEARCH } from './definitions'
 import { parseSave } from './persistence'
 import {
+  buildBlocker,
+  cancelProject,
   completeProject,
   enqueue,
+  queueBlocker,
   quoteProject,
   researchQueueUnlocked,
   researchUpgradeVisible,
   researchVisible,
+  startQueues,
 } from './research'
 import { researchEffects } from './research-effects'
+import { firstIdlePerson } from './settlement'
 import { createDefaultState } from './state'
 
 test('reloading a queued project does not allow the same project to be queued again', () => {
   const state = createDefaultState()
+  completeProject(state, { kind: 'research', id: 'foraging-rounds' })
   expect(
     enqueue(state, { kind: 'expand', id: 'housing', target: 1, form: 0 }),
   ).toBe(true)
+  expect(state.people[0]?.job).toBe('builder')
   const restored = parseSave(JSON.stringify(state))
   expect(restored.queues.construction.waiting).toHaveLength(1)
   expect(
@@ -32,6 +41,61 @@ test('reloading a queued project does not allow the same project to be queued ag
     enqueue(restored, { kind: 'expand', id: 'housing', target: 2, form: 0 }),
   ).toBe(true)
   expect(restored.queues.construction.waiting).toHaveLength(2)
+})
+
+test('research waits for an idle person, binds one, and releases them on cancel', () => {
+  const state = createDefaultState()
+  state.discovered.wood = true
+  state.resources.wood = 100
+  state.resources.food = 100
+  // The founder is busy gathering, so research cannot start.
+  startAction(state, 'gather')
+  enqueue(state, { kind: 'research', id: 'sharpened-stick' })
+  startQueues(state)
+  expect(state.queues.research.active).toBeNull()
+  expect(queueBlocker(state, 'research')).toBe('No idle people')
+
+  cancelManual(state)
+  startQueues(state)
+  const active = state.queues.research.active
+  expect(active?.project.id).toBe('sharpened-stick')
+  expect(active?.worker).toBe(0)
+  expect(state.people[0]?.job).toBe('idle')
+
+  if (!active) throw new Error('Research did not start')
+  cancelProject(state, 'research', active.sequence)
+  expect(state.queues.research.active).toBeNull()
+  expect(firstIdlePerson(state)).toBe(0)
+})
+
+test('starting a build takes an idle person as builder and reports why it cannot', () => {
+  const state = createDefaultState()
+  completeProject(state, { kind: 'research', id: 'foraging-rounds' })
+  state.resources.wood = 100
+  state.resources.stone = 100
+
+  expect(
+    enqueue(state, { kind: 'expand', id: 'housing', target: 1, form: 0 }),
+  ).toBe(true)
+  expect(state.people[0]?.job).toBe('builder')
+
+  // The founder is now building; a second project still enqueues because a
+  // builder is on hand.
+  expect(
+    enqueue(state, { kind: 'expand', id: 'foraging', target: 2, form: 0 }),
+  ).toBe(true)
+
+  const alone = createDefaultState()
+  completeProject(alone, { kind: 'research', id: 'foraging-rounds' })
+  startAction(alone, 'gather')
+  expect(buildBlocker(alone)).toBe('No builders')
+  expect(
+    enqueue(alone, { kind: 'expand', id: 'housing', target: 1, form: 0 }),
+  ).toBe(false)
+
+  const locked = createDefaultState()
+  startAction(locked, 'gather')
+  expect(buildBlocker(locked)).toBe('No builders')
 })
 
 test('repeatable research has gated levels, rising costs, and a hard maximum', () => {

@@ -18,15 +18,18 @@ import { investmentOutcome } from '../investment'
 import { isProductionJob } from '../jobs'
 import {
   allEntries,
+  buildBlocker,
   nextEquipment,
   nextExpansion,
   previewProject,
+  projectName,
   researchPlan,
 } from '../research'
 import { affordability, canAfford, storageCapacity } from '../resources'
 import {
   assigned,
   buildingJobs,
+  constructionSpeed,
   equipmentMultiplier,
   housingCapacity,
   jobInput,
@@ -36,7 +39,14 @@ import {
 import { resourceRates } from '../simulation'
 import type { BuildingId, GameState, Project } from '../types'
 import { BuildingArt } from './art'
-import { Button, CostProgress, Costs, type ViewProps } from './common'
+import {
+  ActionCountdown,
+  ActionProgress,
+  Button,
+  CostProgress,
+  Costs,
+  type ViewProps,
+} from './common'
 import { WorkerControls } from './worker-controls'
 
 function InvestmentChange({
@@ -105,7 +115,15 @@ export function Facility({
           : jobs.length && !n
             ? 'No workers'
             : ''
-  const active = s.queues.construction.active?.project.id === id
+  const activeEntry =
+      s.queues.construction.active?.project.id === id
+        ? s.queues.construction.active
+        : null,
+    waitingIndex = s.queues.construction.waiting.findIndex(
+      (entry) => entry.project.id === id,
+    ),
+    speed = constructionSpeed(s) / 60,
+    blocker = activeEntry ? '' : buildBlocker(s)
   const workplaceType = form.housing
     ? 'Housing'
     : form.storage
@@ -153,39 +171,103 @@ export function Facility({
       () => session.game.remove(id),
     )
   }
-  const investment =
-    def.unique && f.level > 0 ? null : (
-      <div className="facility-investment">
-        <div className="facility-investment-heading">
-          <span>{f.level ? 'Next upgrade' : 'Build this workplace'}</span>
-          <small>{formatResource(quote.total)} work</small>
-        </div>
-        <Costs session={session} cost={quote.cost} />
-        <InvestmentChange state={s} project={expansion} />
-        <div className="building-controls">
-          <Button
-            variant="solid"
-            color="grass"
-            onClick={() =>
-              session.change(() => session.game.build(id, selectedForm))
-            }
-          >
-            {buildLabel}
-          </Button>
-        </div>
+  const stopConstruction = () => {
+    if (!activeEntry) return
+    const run = () => session.game.cancel('construction', activeEntry.sequence)
+    if (activeEntry.progress > 10) {
+      confirm(
+        'Cancel project?',
+        `Refund ${formatCost(activeEntry.paid)}. Work progress will be lost.`,
+        run,
+      )
+    } else session.change(run)
+  }
+  const investment = activeEntry ? (
+    <div
+      className="research-active facility-construction"
+      data-running={speed > 0}
+    >
+      <span className="action-icon facility-art" aria-hidden="true">
+        <BuildingArt building={id} />
+      </span>
+      <span className="action-copy">
+        <strong className="action-name">
+          {projectName(s, activeEntry.project)}
+        </strong>
+        <span className="action-yield">
+          {speed > 0 ? (
+            <>
+              <ActionCountdown
+                session={session}
+                duration={activeEntry.total / speed}
+                value={activeEntry.progress / activeEntry.total}
+                running
+              />{' '}
+              remaining
+            </>
+          ) : (
+            'No builders'
+          )}
+        </span>
+      </span>
+      <Button
+        className="action-stop"
+        color="red"
+        aria-label="Stop construction"
+        title="Stop construction"
+        onClick={stopConstruction}
+      >
+        Stop
+      </Button>
+      <span className="project-progress research-progress">
+        <ActionProgress
+          session={session}
+          duration={speed > 0 ? activeEntry.total / speed : Infinity}
+          label="Construction progress"
+          value={activeEntry.progress / activeEntry.total}
+          running={speed > 0}
+        />
+      </span>
+    </div>
+  ) : def.unique && f.level > 0 ? null : (
+    <div className="facility-investment">
+      <div className="facility-investment-heading">
+        <span>{f.level ? 'Next upgrade' : 'Build this workplace'}</span>
+        <small>{formatResource(quote.total)} work</small>
       </div>
-    )
+      <Costs session={session} cost={quote.cost} />
+      <InvestmentChange state={s} project={expansion} />
+      <div className="building-controls">
+        <Button
+          variant="solid"
+          color="grass"
+          disabled={Boolean(blocker)}
+          onClick={() =>
+            session.change(() => session.game.build(id, selectedForm))
+          }
+        >
+          {buildLabel}
+        </Button>
+      </div>
+    </div>
+  )
   return (
     <Card asChild>
       <article
         className="building-card"
         data-built={f.level > 0}
         data-action-state={
-          missingBuildCost ? 'missing-cost' : blocked ? 'blocked' : undefined
+          activeEntry
+            ? 'constructing'
+            : missingBuildCost
+              ? 'missing-cost'
+              : blocked
+                ? 'blocked'
+                : undefined
         }
         aria-label={form.name}
       >
-        {missingBuildCost && (
+        {missingBuildCost && !activeEntry && (
           <CostProgress progress={affordability(s, quote.cost)} />
         )}
         <div className="facility-overview">
@@ -238,8 +320,16 @@ export function Facility({
                     : def.effect}
               </p>
             )}
-            <p className="building-status" data-visible={Boolean(blocked)}>
-              {blocked || '\u00a0'}
+            <p
+              className="building-status"
+              data-visible={Boolean(blocked || blocker || waitingIndex >= 0)}
+            >
+              {blocked ||
+                blocker ||
+                (waitingIndex >= 0
+                  ? `Queued · position ${waitingIndex + 1}`
+                  : '') ||
+                '\u00a0'}
             </p>
           </div>
           {craftingJob && (
@@ -371,7 +461,10 @@ export function Facility({
             </div>
           )}
           <div className="facility-remove-slot" data-visible={f.level > 0}>
-            <Button disabled={!f.level || active} onClick={remove}>
+            <Button
+              disabled={!f.level || Boolean(activeEntry)}
+              onClick={remove}
+            >
               Remove facility
             </Button>
           </div>

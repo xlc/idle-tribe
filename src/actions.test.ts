@@ -13,6 +13,7 @@ import {
 import { EXPEDITION_ENCOUNTER_IDS } from './ids'
 import { completeProject } from './research'
 import { storageCapacity } from './resources'
+import { adjustWorkers, assignJob, firstIdlePerson } from './settlement'
 import { advanceTime } from './simulation'
 import { createDefaultState } from './state'
 import { people } from './test-helpers'
@@ -99,7 +100,7 @@ test('full output storage does not block manual or automated work', () => {
   expect(startAction(manual, 'gather')).toBe(true)
   advanceTime(manual, actionDuration(manual, 'gather'), true)
   expect(manual.resources.food).toBe(storageCapacity(manual, 'food'))
-  expect(manual.manual).toBeNull()
+  expect(manual.manual).toHaveLength(0)
 
   const automated = createDefaultState()
   automated.discovered.wood = true
@@ -336,6 +337,45 @@ test('better gathering actions award more XP per manual completion', () => {
   expect(startAction(state, 'chop-wood')).toBe(true)
   advanceTime(state, actionDuration(state, 'chop-wood'), true)
   expect(state.actionSkills['chop-wood'].xp).toBeCloseTo(2)
+})
+
+test('manual work occupies idle people and blocks assignment while running', () => {
+  const state = createDefaultState()
+  people(state, 'idle', 'idle')
+  state.discovered.wood = true
+  state.exploreUnlocked = true
+  state.resources.food = 6
+  completeProject(state, { kind: 'research', id: 'foraging-rounds' })
+
+  expect(startAction(state, 'gather')).toBe(true)
+  expect(startAction(state, 'sticks')).toBe(true)
+  // Both people are busy: a third manual action cannot start.
+  expect(startAction(state, 'explore')).toBe(false)
+  expect(actionAvailability(state, 'explore')).toMatchObject({
+    kind: 'manual',
+    state: 'blocked',
+  })
+  // Busy people cannot be hired.
+  expect(assignJob(state, 0, 'builder')).toBe(false)
+  expect(adjustWorkers(state, 'builder', 1)).toBe(false)
+
+  advanceTime(state, actionDuration(state, 'gather'), true)
+  expect(state.manual).toHaveLength(1)
+  // The freed person can now take a job.
+  expect(assignJob(state, firstIdlePerson(state), 'builder')).toBe(true)
+})
+
+test('staffing an action job stops its manual runs with a refund', () => {
+  const state = createDefaultState()
+  people(state, 'idle', 'idle')
+  completeProject(state, { kind: 'research', id: 'foraging-rounds' })
+  const before = state.resources.food
+  expect(startAction(state, 'gather')).toBe(true)
+  expect(state.manual).toHaveLength(1)
+
+  assignJob(state, 1, 'forager')
+  expect(state.manual).toHaveLength(0)
+  expect(state.resources.food).toBe(before)
 })
 
 test('completing action-unlocking research keeps the plain completion notice', () => {

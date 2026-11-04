@@ -21,7 +21,11 @@ import { Workforce } from './components/workforce'
 import { ERAS } from './definitions'
 import { projectName, researchQueueUnlocked } from './research'
 import type { GameSession } from './session'
-import { assigned, automationUnlocked, housingCapacity } from './settlement'
+import {
+  automationUnlocked,
+  availablePeople,
+  housingCapacity,
+} from './settlement'
 import { useSession } from './use-session'
 
 type View = 'settlement' | 'queue' | 'people' | 'legacy' | 'settings'
@@ -65,7 +69,7 @@ function SettlementBrief({ session }: { session: GameSession }) {
           <div>
             <dt>People</dt>
             <dd>
-              {s.people.length} <small>{assigned(s, 'idle')} unassigned</small>
+              {s.people.length} <small>{availablePeople(s)} unassigned</small>
             </dd>
           </div>
           <div>
@@ -121,7 +125,7 @@ export function App({ session }: { session: GameSession }) {
       id: 'people',
       label: 'People',
       mobileLabel: 'People',
-      available: automated,
+      available: s.people.length > 0,
     },
     {
       id: 'legacy',
@@ -228,7 +232,7 @@ export function App({ session }: { session: GameSession }) {
                 >
                   <QueueView {...props} />
                 </Tabs.Content>
-                {automated && (
+                {s.people.length > 0 && (
                   <Tabs.Content
                     value="people"
                     forceMount

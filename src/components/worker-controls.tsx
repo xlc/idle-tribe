@@ -1,6 +1,7 @@
 import type { GameSession } from '../session'
 import {
   assigned,
+  availablePeople,
   jobCapacity,
   jobUnlocked,
   workplaceStaff,
@@ -22,7 +23,7 @@ export function WorkerControls({
   const s = session.game.state,
     n = assigned(s, job),
     cap = jobCapacity(s, job),
-    available = assigned(s, 'idle')
+    available = availablePeople(s)
   return (
     <div className="worker-allocation">
       <fieldset className="worker-control" aria-label={`${job} staffing`}>

@@ -320,6 +320,10 @@
   display: none;
 }
 
+.person-card[data-busy="true"] .person-job {
+  opacity: 0.55;
+}
+
 .person-job .rt-SelectTrigger {
   width: 100%;
   min-width: 0;

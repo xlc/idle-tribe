@@ -24,8 +24,7 @@ export const research = {
     name: 'Foraging rounds',
     cost: { wood: 8, food: 5 },
     seconds: 8,
-    effect:
-      'Unlock Foraging camp; the first follower arrives and the first camp is free.',
+    effect: 'Unlock Foraging camp; the first camp is free.',
     description: 'The good bushes finally get a schedule.',
     requires: { research: ['shelters'] },
     effects: {},

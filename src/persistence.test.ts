@@ -26,13 +26,21 @@ test('current saves preserve active paid projects and queued ordering without re
 test('reloading cancels only manual work and refunds its exact commitment once', () => {
   const s = createDefaultState()
   s.exploreUnlocked = true
+  people(s, 'idle', 'idle')
   s.resources.food = 20
+  startAction(s, 'explore')
   startAction(s, 'explore')
   advanceTime(s, 1, true)
   const loaded = parseSave(JSON.stringify(s))
   expect(loaded.resources.food).toBe(20)
-  expect(loaded.manual).toBeNull()
+  expect(loaded.manual).toHaveLength(0)
   expect(parseSave(JSON.stringify(loaded)).resources.food).toBe(20)
+})
+
+test('singleton-manual saves reset to a fresh settlement', () => {
+  const state = createDefaultState()
+  const old = { ...state, manual: null }
+  expect(parseSave(JSON.stringify(old))).toEqual(createDefaultState())
 })
 
 test('incompatible and incomplete saves reset projects and absence timestamps together', () => {

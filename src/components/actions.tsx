@@ -7,7 +7,6 @@ import {
   actionJobActive,
   actionOutputRate,
   actionRequiredXp,
-  actionSlots,
   actionWorkersUnlocked,
   actionYield,
   exploreExpectedRate,
@@ -18,7 +17,8 @@ import { formatCost, formatResource, formatResourceGain } from '../format'
 import { ACTION_IDS, type ActionId } from '../ids'
 import { affordability } from '../resources'
 import type { GameSession } from '../session'
-import type { GameState } from '../types'
+import { jobCapacity } from '../settlement'
+import type { Cost, GameState } from '../types'
 import { ResourceArt } from './art'
 import {
   ActionCountdown,
@@ -113,12 +113,13 @@ export function ActionCard({
   id: ActionId
 }) {
   const [expanded, setExpanded] = useState(false)
-  const s = session.game.state,
-    active = s.manual
+  const s = session.game.state
+  // Instances of this action run in lockstep; one progress readout covers them.
+  const runs = s.manual.filter((m) => m.id === id)
   const def = ACTIONS[id],
     availability = actionAvailability(s, id),
-    slots = actionSlots(s, id),
-    running = active?.id === id,
+    slots = jobCapacity(s, def.job),
+    running = runs.length > 0,
     rateMode = isRateMode(s, id),
     duration = actionCompletionDuration(s, id),
     skill = s.actionSkills[id],
@@ -128,12 +129,17 @@ export function ActionCard({
     availability.state === 'active' &&
     actionJobActive(s, id)
   const stop = () => {
-    if (!active) return
-    const run = () => session.game.cancelAction()
-    if (active.progress * actionDuration(s, id) > 10) {
+    if (!runs.length) return
+    const paid: Cost = {}
+    for (const run of runs)
+      for (const [resource, amount] of Object.entries(run.paid))
+        paid[resource as keyof Cost] =
+          (paid[resource as keyof Cost] ?? 0) + amount
+    const run = () => session.game.cancelAction(id)
+    if ((runs[0]?.progress ?? 0) * actionDuration(s, id) > 10) {
       confirm(
         `Stop ${def.name}?`,
-        `Refund ${formatCost(active.paid)}. Action progress will be lost.`,
+        `Refund ${formatCost(paid)}. Action progress will be lost.`,
         run,
       )
     } else session.change(run)
@@ -199,7 +205,6 @@ export function ActionCard({
                 <WorkerControls
                   session={session}
                   job={def.job}
-                  assignable={!active}
                   showFill={false}
                 />
               </span>
@@ -224,7 +229,7 @@ export function ActionCard({
                     ? `+${formatResource(actionYield(s, id))} ${def.resource} · `
                     : null}
                   {formatResource(duration)}s
-                  {slots > 0 ? ` · ${slots} slot${slots === 1 ? '' : 's'}` : ''}
+                  {running && runs.length > 1 ? ` · ×${runs.length}` : ''}
                 </span>
                 <ActionSkill
                   level={skill.level}
@@ -240,14 +245,14 @@ export function ActionCard({
                   session={session}
                   duration={duration}
                   label={`${def.name} progress`}
-                  value={running && active ? active.progress : 0}
+                  value={runs[0]?.progress ?? 0}
                   running={running}
                 />
                 <small>
                   <ActionCountdown
                     session={session}
                     duration={duration}
-                    value={running && active ? active.progress : 0}
+                    value={runs[0]?.progress ?? 0}
                     running={running}
                   />
                 </small>
@@ -262,7 +267,6 @@ export function ActionCard({
               <WorkerControls
                 session={session}
                 job={def.job}
-                assignable={!active}
                 showFill={false}
               />
             </span>
@@ -288,6 +292,11 @@ export function ActionCard({
         {expanded && (
           <div className="action-details" id={`${id}-details`}>
             <p className="action-description">{def.description}</p>
+            {slots > 0 && (
+              <p className="action-hint">
+                {slots} worker slot{slots === 1 ? '' : 's'}
+              </p>
+            )}
             {availability.kind === 'automated' && working && (
               <p className="action-hint">
                 {def.resource

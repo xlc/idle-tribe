@@ -201,6 +201,8 @@ export interface ActiveProject extends QueueEntry {
   paid: Cost
   progress: number
   total: number
+  // Index of the idle person staffing this project; research only.
+  worker?: number
 }
 export interface ProjectQueue {
   active: ActiveProject | null
@@ -211,6 +213,8 @@ export interface ManualAction {
   id: ActionId
   paid: Cost
   progress: number
+  // Index of the idle person running this action.
+  person: number
 }
 export interface Absence {
   start: number
@@ -239,7 +243,7 @@ export interface GameState {
   completedEncounters: Record<ExpeditionEncounterId, boolean>
   queues: Record<QueueId, ProjectQueue>
   nextSequence: number
-  manual: ManualAction | null
+  manual: ManualAction[]
   minuteProgress: number
   arrivalProgress: number
   welcome: boolean

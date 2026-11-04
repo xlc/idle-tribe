@@ -1,6 +1,5 @@
 import { BUILDINGS, EQUIPMENT, RESEARCH } from './definitions'
 import { RESEARCH_IDS, RESOURCES } from './ids'
-import { generatePersonName } from './names'
 import { hasResearch, researchLevel } from './research-effects'
 import {
   canAfford,
@@ -12,11 +11,13 @@ import {
   refund,
 } from './resources'
 import {
+  assignJob,
   constructionSpeed,
+  firstIdlePerson,
+  jobUnlocked,
   prestigeMultiplier,
   requirementBlocker,
 } from './settlement'
-import { createPerson } from './state'
 import type { Cost, GameState, Project, QueueId } from './types'
 export const QUEUES: QueueId[] = ['research', 'construction']
 export function researchQueueUnlocked(state: GameState) {
@@ -174,6 +175,14 @@ function sameProject(a: Project, b: Project) {
     ('form' in a ? a.form : undefined) === ('form' in b ? b.form : undefined)
   )
 }
+// Surfaces why a build cannot start: no builder on hand and no idle person
+// who can become one.
+export function buildBlocker(state: GameState) {
+  return constructionSpeed(state) > 0 ||
+    (jobUnlocked(state, 'builder') && firstIdlePerson(state) >= 0)
+    ? ''
+    : 'No builders'
+}
 export function enqueue(state: GameState, project: Project) {
   const normalized =
     project.kind === 'research' && project.target === undefined
@@ -205,6 +214,12 @@ export function enqueue(state: GameState, project: Project) {
     )
       return false
   }
+  // Construction needs at least one builder; starting one takes an idle
+  // person and puts them to work.
+  if (queue === 'construction' && !constructionSpeed(state)) {
+    const person = firstIdlePerson(state)
+    if (person < 0 || !assignJob(state, person, 'builder')) return false
+  }
   state.queues[queue].waiting.push({
     sequence: state.nextSequence++,
     project: normalized,
@@ -222,6 +237,7 @@ export function queueBlocker(state: GameState, id: QueueId) {
   const quote = quoteProject(state, entry.project)
   return (
     quote.blocker ||
+    (id === 'research' && firstIdlePerson(state) < 0 ? 'No idle people' : '') ||
     (id === 'construction' && !constructionSpeed(state) ? 'No builders' : '') ||
     (!canAfford(state, quote.cost) ? 'Waiting for materials' : '')
   )
@@ -256,6 +272,7 @@ export function startQueues(state: GameState) {
       paid: { ...quote.cost },
       progress: 0,
       total: quote.total,
+      ...(id === 'research' ? { worker: firstIdlePerson(state) } : {}),
     }
   }
 }
@@ -303,10 +320,6 @@ export function completeProject(state: GameState, project: Project) {
     if (firstCompletion && def.grant) {
       const f = state.facilities[def.grant.building]
       f.level = Math.max(1, f.level)
-      // The first follower arrives with automation: no mouths to feed before
-      // the player can see and assign people.
-      if (state.people.length === 0)
-        state.people.push(createPerson(generatePersonName(state.nameSeed)))
     }
   } else {
     const f = state.facilities[project.id]

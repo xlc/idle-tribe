@@ -61,7 +61,7 @@ export function createGame(state: GameState) {
     adjust: (job: JobId, n: number) => adjustWorkers(state, job, n),
     fill: (job: JobId) => fillWorkers(state, job),
     startAction: (id: import('./ids').ActionId) => startAction(state, id),
-    cancelAction: () => cancelManual(state),
+    cancelAction: (id?: import('./ids').ActionId) => cancelManual(state, id),
     grantResources: (amount: import('./types').Cost) =>
       addResources(state, amount),
     resolveEncounter: (option: EncounterOptionIndex) =>

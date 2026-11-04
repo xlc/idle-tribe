@@ -16,7 +16,8 @@ test('a supported prestige reset preserves only permanent progress and settings'
   expect(canReset(s)).toBe(true)
   expect(resetRun(s)).toBe(true)
   expect(s.resources.food).toBe(0)
-  expect(s.people).toHaveLength(0)
+  // The reset settlement restarts with its single founder.
+  expect(s.people).toHaveLength(1)
   expect(s.specialization).toBeNull()
   expect(s.legacy.lifetime).toBe(100 + reward)
   expect(s.legacy.points).toBe(25 + reward)

@@ -1,4 +1,4 @@
-import { EPSILON, WORKERS_PER_BUILDING_LEVEL } from './constants'
+import { EPSILON } from './constants'
 import { ACTIONS, BUILDINGS } from './definitions'
 import {
   type Discovery,
@@ -19,13 +19,18 @@ import {
 } from './ids'
 import { hasResearch, researchEffects } from './research-effects'
 import { addResources, canAfford, pay, refund } from './resources'
-import { happinessMultiplier, requirementBlocker } from './settlement'
+import {
+  firstIdlePerson,
+  happinessMultiplier,
+  requirementBlocker,
+} from './settlement'
 import type {
   Cost,
   EncounterOptionIndex,
   ExpeditionEncounterId,
   ExploreOutcome,
   GameState,
+  ManualAction,
 } from './types'
 
 // Shared action balance. Keep cadence, displayed output, and simulation on the
@@ -43,12 +48,6 @@ export const ACTION_BALANCE = {
 export function syncUnlocks(state: GameState) {
   if (state.resources.food >= 5) state.exploreUnlocked = true
   if (state.resources.wood >= 2) state.researchUnlocked = true
-}
-
-export function actionSlots(state: GameState, id: ActionId) {
-  return (
-    WORKERS_PER_BUILDING_LEVEL * state.facilities[ACTIONS[id].building].level
-  )
 }
 // Static inversions of the action catalog; definitions never change at runtime.
 const ACTIONS_BY_BUILDING = new Map<BuildingId, readonly ActionId[]>(
@@ -96,7 +95,7 @@ export function actionAvailability(
   id: ActionId,
 ): ActionAvailability {
   const def = ACTIONS[id]
-  if (state.manual?.id === id) {
+  if (state.manual.some((m) => m.id === id)) {
     return {
       kind: 'manual',
       state: 'running',
@@ -123,7 +122,8 @@ export function actionAvailability(
     }
   }
 
-  if (state.manual) {
+  // Manual work occupies idle people; no hands free means no start.
+  if (firstIdlePerson(state) < 0) {
     return {
       kind: 'manual',
       state: 'blocked',
@@ -161,8 +161,10 @@ export function startAction(state: GameState, id: ActionId) {
   const availability = actionAvailability(state, id)
   if (availability.kind !== 'manual' || availability.state !== 'ready')
     return false
+  const person = firstIdlePerson(state)
+  if (person < 0) return false
   pay(state, def.cost)
-  state.manual = { id, paid: { ...def.cost }, progress: 0 }
+  state.manual.push({ id, paid: { ...def.cost }, progress: 0, person })
   return true
 }
 export function actionRequiredXp(state: GameState, id: ActionId) {
@@ -266,10 +268,6 @@ export function actionOutputRate(
     automationFactor(state, id) *
     (options.happiness ?? happinessMultiplier(state))
   )
-}
-
-export function manualRate(state: GameState) {
-  return state.manual ? 1 / actionDuration(state, state.manual.id) : 0
 }
 
 // Per-second output of one staffed action, whatever mode it runs in: resource
@@ -569,17 +567,15 @@ export function exploreExpectedRate(state: GameState): Cost {
   )
 }
 
-export function finishManual(state: GameState) {
-  const active = state.manual
-  if (!active) return
-  const def = ACTIONS[active.id]
-  state.manual = null
+export function finishManual(state: GameState, entry: ManualAction) {
+  const def = ACTIONS[entry.id]
+  state.manual.splice(state.manual.indexOf(entry), 1)
   // Rewards reflect the skill level the action ran at; level up afterwards.
   if (def.resource) {
-    addResources(state, { [def.resource]: actionYield(state, active.id) })
+    addResources(state, { [def.resource]: actionYield(state, entry.id) })
   }
   if (def.kind === 'exploration') applyExploreReward(state, 1, 'manual')
-  grantActionXp(state, active.id, def.xp ?? 1)
+  grantActionXp(state, entry.id, def.xp ?? 1)
   syncUnlocks(state)
 }
 
@@ -606,8 +602,11 @@ export function completeAction(state: GameState, id: ActionId) {
   return true
 }
 
-export function cancelManual(state: GameState) {
-  if (!state.manual) return
-  refund(state, state.manual.paid)
-  state.manual = null
+// Cancels every running manual action, or one action's runs, with refunds.
+export function cancelManual(state: GameState, id?: ActionId) {
+  const runs = id ? state.manual.filter((m) => m.id === id) : state.manual
+  for (const run of [...runs]) {
+    refund(state, run.paid)
+    state.manual.splice(state.manual.indexOf(run), 1)
+  }
 }

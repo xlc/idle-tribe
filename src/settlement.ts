@@ -1,4 +1,4 @@
-import { actionOutputRate } from './actions'
+import { actionForJob, actionOutputRate, cancelManual } from './actions'
 import { WORKERS_PER_BUILDING_LEVEL } from './constants'
 import { ACTIONS, BUILDINGS, JOBS, PERKS, RESEARCH } from './definitions'
 import {
@@ -129,10 +129,37 @@ export function jobUnlocked(state: GameState, job: JobId) {
 }
 export function assignJob(state: GameState, index: number, job: JobId) {
   const person = state.people[index]
-  if (!person || !jobUnlocked(state, job) || person.job === job) return false
+  if (
+    !person ||
+    !jobUnlocked(state, job) ||
+    person.job === job ||
+    busyWith(state, index)
+  )
+    return false
   person.job = job
   person.progress = 0
+  // Staffing an action's job supersedes any manual runs of it.
+  const action = actionForJob(job)
+  if (action) cancelManual(state, action)
   return true
+}
+// A person occupied by manual work or the active research project. Busy
+// people keep the idle job; they simply cannot take another assignment.
+export function busyWith(state: GameState, index: number) {
+  return (
+    state.manual.some((m) => m.person === index) ||
+    state.queues.research.active?.worker === index
+  )
+}
+export function firstIdlePerson(state: GameState) {
+  return state.people.findIndex(
+    (person, index) => person.job === 'idle' && !busyWith(state, index),
+  )
+}
+export function availablePeople(state: GameState) {
+  return state.people.filter(
+    (person, index) => person.job === 'idle' && !busyWith(state, index),
+  ).length
 }
 export function workerCandidate(state: GameState, job: JobId, release = false) {
   if (!isWorkingJob(job)) return -1
@@ -140,6 +167,7 @@ export function workerCandidate(state: GameState, job: JobId, release = false) {
   let score = release ? Infinity : -Infinity
   for (const [index, person] of state.people.entries()) {
     if (person.job !== (release ? job : 'idle')) continue
+    if (!release && busyWith(state, index)) continue
     const contribution = workContribution(person, job)
     if (release ? contribution < score : contribution > score) {
       best = index

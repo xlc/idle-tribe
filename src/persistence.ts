@@ -146,6 +146,9 @@ function active(v: JsonValue | undefined): ActiveProject | null {
     paid: cost(a.paid),
     total,
     progress: number(a.progress, 0, total + 1e-7),
+    ...(a.worker === undefined
+      ? {}
+      : { worker: number(a.worker, 0, Infinity, true) }),
   }
 }
 function queue(v: JsonValue | undefined): ProjectQueue {
@@ -244,14 +247,31 @@ export function parseSave(serialized: string | null, nameSeed = 0): GameState {
         sequences.add(e.sequence)
       }
     }
-    if (p.manual !== null) {
-      const m = object(p.manual)
-      s.manual = {
+    s.manual = list(p.manual).map((v) => {
+      const m = object(v)
+      return {
         id: member(m.id, ACTION_IDS),
         paid: cost(m.paid),
         progress: number(m.progress, 0, 1),
+        person: number(m.person, 0, s.people.length - 1, true),
       }
+    })
+    const busy = new Set<number>()
+    for (const m of s.manual) {
+      if (busy.has(m.person) || s.people[m.person]?.job !== 'idle')
+        throw new Error('Invalid manual work')
+      busy.add(m.person)
     }
+    const researcher = s.queues.research.active?.worker
+    if (
+      s.queues.construction.active?.worker !== undefined ||
+      (researcher !== undefined) !== Boolean(s.queues.research.active) ||
+      (researcher !== undefined &&
+        (researcher >= s.people.length ||
+          s.people[researcher]?.job !== 'idle' ||
+          busy.has(researcher)))
+    )
+      throw new Error('Invalid queue worker')
     s.minuteProgress = number(p.minuteProgress, 0, 60)
     s.arrivalProgress = number(p.arrivalProgress, 0, 1)
     s.welcome = bool(p.welcome)

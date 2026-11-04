@@ -4,8 +4,10 @@ import { ACTIONS, JOBS, RESOURCE_INFO } from '../definitions'
 import { formatDuration, formatResource } from '../format'
 import { isWorkingJob, JOB_IDS, WORKING_JOB_IDS } from '../ids'
 import { isProductionJob, jobRecipe } from '../jobs'
+import { projectName } from '../research'
 import type { GameSession } from '../session'
 import {
+  busyWith,
   happinessMultiplier,
   jobUnlocked,
   prestigeMultiplier,
@@ -54,6 +56,15 @@ function output(state: GameState, person: Person) {
   return `${formatResource(rate / 60)} work/s`
 }
 
+function activity(state: GameState, index: number): string | null {
+  const run = state.manual.find((m) => m.person === index)
+  if (run) return ACTIONS[run.id].name
+  const active = state.queues.research.active
+  if (active?.worker === index)
+    return `Researching ${projectName(state, active.project)}`
+  return null
+}
+
 export function People({ session }: { session: GameSession }) {
   const s = session.game.state,
     unlocked = JOB_IDS.filter((job) => jobUnlocked(s, job))
@@ -72,8 +83,12 @@ export function People({ session }: { session: GameSession }) {
       <Card asChild>
         <div className="people-grid">
           {s.people.map((p, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: People are append-only during a run; roster positions are their stable identity.
-            <article className="person-card" key={i} aria-label={p.name}>
+            <article
+              className="person-card"
+              key={p.name}
+              aria-label={p.name}
+              data-busy={busyWith(s, i)}
+            >
               <div className="person-heading">
                 <div className="person-identity">
                   <span className="person-avatar" aria-hidden="true">
@@ -82,9 +97,10 @@ export function People({ session }: { session: GameSession }) {
                   <div className="person-name-block">
                     <strong>{p.name}</strong>
                     <span className="person-role">
-                      {isWorkingJob(p.job)
-                        ? JOBS[p.job].name
-                        : 'Available for assignment'}
+                      {activity(s, i) ??
+                        (isWorkingJob(p.job)
+                          ? JOBS[p.job].name
+                          : 'Available for assignment')}
                     </span>
                   </div>
                 </div>
@@ -110,6 +126,7 @@ export function People({ session }: { session: GameSession }) {
                 <Select.Root
                   value={p.job}
                   size="2"
+                  disabled={busyWith(s, i)}
                   onValueChange={(value) => {
                     const job = JOB_IDS.find((id) => id === value)
                     if (job) session.change(() => session.game.assign(i, job))
@@ -129,7 +146,11 @@ export function People({ session }: { session: GameSession }) {
               </div>
               <div className="person-meta">
                 <p className="person-output">
-                  {isWorkingJob(p.job) ? output(s, p) : 'Ready for assignment'}
+                  {activity(s, i)
+                    ? 'Occupied'
+                    : isWorkingJob(p.job)
+                      ? output(s, p)
+                      : 'Ready for assignment'}
                 </p>
                 <p className="person-aptitude">
                   {JOBS[p.aptitude].aptitude} aptitude · +5%

@@ -50,7 +50,7 @@ test('hidden callbacks and reloads preserve one snapshotted absence', () => {
 
 test('an offline upgrade extends the next absence without changing this one', () => {
   const s = settlement()
-  people(s, 'forager')
+  people(s, 'forager', 'idle')
   s.research['record-keeping'] = 0
   s.savedAt = hour
   enqueue(s, { kind: 'research', id: 'record-keeping' })
@@ -68,7 +68,7 @@ test('an offline upgrade extends the next absence without changing this one', ()
 
 test('manual work pauses while hidden; research continues; duplicate restoration settles once', () => {
   const s = settlement()
-  people(s, 'idle')
+  people(s, 'idle', 'idle')
   s.research['record-keeping'] = 0
   const session = createSession(s, () => {}, hour, true)
   session.change(() => {
@@ -81,18 +81,18 @@ test('manual work pauses while hidden; research continues; duplicate restoration
     id: 'record-keeping',
   }).total
   const completionAt = hour + 500 + (researchDuration + 1) * 1000
-  const manual = s.manual?.progress
+  const manual = s.manual[0]?.progress
   expect(manual).toBeGreaterThan(0)
   expect(manual).toBeLessThan(1)
   session.tick(completionAt)
-  expect(s.manual?.progress).toBe(manual)
+  expect(s.manual[0]?.progress).toBe(manual)
   expect(s.research['record-keeping']).toBe(1)
   session.setVisible(true, completionAt)
   const before = { ...s.resources }
   session.setVisible(true, completionAt)
   expect(s.resources).toEqual(before)
   session.tick(completionAt + 30000)
-  expect(s.manual).toBeNull()
+  expect(s.manual).toHaveLength(0)
 })
 
 test('actions settle elapsed gameplay before spending newly produced stock', () => {
@@ -138,12 +138,12 @@ test('leaving preserves the unfinished manual cycle', () => {
   const session = createSession(s, () => {}, hour, true)
   session.change(() => session.game.startAction('gather'), hour)
   session.setVisible(false, hour + 200)
-  const paused = s.manual?.progress
+  const paused = s.manual[0]?.progress
   session.tick(hour + 10000)
-  expect(s.manual?.progress).toBe(paused)
+  expect(s.manual[0]?.progress).toBe(paused)
   session.setVisible(true, hour + 10000)
   session.tick(hour + 15000)
-  expect(s.manual).toBeNull()
+  expect(s.manual).toHaveLength(0)
   expect(s.actionSkills.gather.xp).toBe(1)
 })
 

@@ -63,7 +63,7 @@ export function committed(state: GameState, r: ResourceId) {
   return (
     (state.queues.research.active?.paid[r] ?? 0) +
     (state.queues.construction.active?.paid[r] ?? 0) +
-    (state.manual?.paid[r] ?? 0)
+    state.manual.reduce((n, m) => n + (m.paid[r] ?? 0), 0)
   )
 }
 export function storageCapacity(state: GameState, r: ResourceId) {
