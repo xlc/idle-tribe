@@ -247,7 +247,6 @@ for (const mistake of ['food', 'consumers', 'queue', 'week-away'] as const) {
     advanceTime(start.state, 60, true)
     recovery.push({
       minute: minute + 1,
-      healthy: start.state.people.filter((p) => p.health === 5).length,
       people: start.state.people.length,
       food: start.state.resources.food,
     })

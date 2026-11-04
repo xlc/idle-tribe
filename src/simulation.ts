@@ -19,7 +19,7 @@ import {
 } from './actions'
 import { EPSILON } from './constants'
 import { ACTIONS, JOBS, RESEARCH } from './definitions'
-import { consumeMealTick, healthMultiplier, mealCost } from './food'
+import { automatedWorkAllowed, consumeMealTick, mealCost } from './food'
 import {
   ACTION_IDS,
   type ActionId,
@@ -115,7 +115,7 @@ function settleEvents(state: GameState, visible: boolean) {
     )
   )
 }
-// Structure, health and expertise bonuses change at discrete events. Keep stock,
+// Structure and expertise bonuses change at discrete events. Keep stock,
 // commitment and cycle-progress checks live between those events.
 type ActionRule = {
   id: ActionId
@@ -188,6 +188,7 @@ export function advanceTime(
     )
     const rates = state.people.map((person, index) =>
       isProductionJob(person.job) &&
+      automatedWorkAllowed(state) &&
       available[person.job] &&
       person.progress < 1 - EPSILON
         ? (rules.rates[index] ?? 0) / 60
@@ -218,7 +219,7 @@ export function advanceTime(
             : (rates[index] ?? 0) > 0
           : Boolean(state.queues.construction.active && rules.construction > 0)
       if (!working) return 0
-      return healthMultiplier(person) * rules.staffing[job]
+      return automatedWorkAllowed(state) ? rules.staffing[job] : 0
     })
     // Costs remain live: producers can fund a paused action, and a completed
     // trip can exhaust its inputs, between structural changes.
@@ -235,6 +236,14 @@ export function advanceTime(
         }))
       : []
     let step = Math.min(remaining, 60 - state.minuteProgress)
+    if (
+      automatedWorkAllowed(state) &&
+      (state.people.some((person) => person.job !== 'idle') ||
+        QUEUES.some((id) => state.queues[id].active))
+    ) {
+      const foodRate = mealCost(state) / 60
+      if (foodRate > 0) step = Math.min(step, state.resources.food / foodRate)
+    }
     state.people.forEach((p, i) => {
       const rate = rates[i] ?? 0
       if (rate > 0) step = Math.min(step, Math.max(0, 1 - p.progress) / rate)
@@ -246,7 +255,11 @@ export function advanceTime(
     })
     for (const id of QUEUES) {
       const active = state.queues[id].active,
-        rate = id === 'research' ? 1 : construction
+        rate = automatedWorkAllowed(state)
+          ? id === 'research'
+            ? 1
+            : construction
+          : 0
       if (active && rate > 0)
         step = Math.min(
           step,

@@ -111,9 +111,7 @@ export function PeopleView({ session }: { session: GameSession }) {
         <section className="people-roster" aria-label="Settlers">
           {s.people.map((p, i) => {
             const busy = busyWith(s, i),
-              doing = busy ? activity(s, i) : null,
-              // Health moves fractionally with per-tick meals; show whole hearts.
-              health = Math.round(p.health)
+              doing = busy ? activity(s, i) : null
             return (
               <article
                 className="person-row"
@@ -127,22 +125,6 @@ export function PeopleView({ session }: { session: GameSession }) {
                 <div className="person-main">
                   <p className="person-title">
                     <strong>{p.name}</strong>
-                    <span
-                      className="person-health"
-                      role="img"
-                      aria-label={`${p.name} health: ${health} of 5`}
-                      data-low={health <= 2}
-                    >
-                      {[1, 2, 3, 4, 5].map((point) => (
-                        <span
-                          key={point}
-                          aria-hidden="true"
-                          data-filled={point <= health}
-                        >
-                          {point <= health ? '♥' : '♡'}
-                        </span>
-                      ))}
-                    </span>
                   </p>
                   <p className="person-status">
                     <span className="person-output">

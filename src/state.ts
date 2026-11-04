@@ -17,7 +17,6 @@ export function createPerson(
 ): Person {
   return {
     name,
-    health: 5,
     job: 'idle',
     progress: 0,
     aptitude,

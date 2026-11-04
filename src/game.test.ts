@@ -459,7 +459,7 @@ test('automated gathering follows the same storage cap timeline across tick size
   expect(s.actionProgress.gather).toBeCloseTo(sliced.actionProgress.gather, 3)
   advanceTime(s, 4, true)
   advanceTime(sliced, 4, true)
-  // Two healthy foragers eat one food per minute each while filling storage.
+  // Two working foragers eat three food per minute each while filling storage.
   expect(s.resources.food).toBeCloseTo(50 - (2 * 4.5) / 60, 8)
   expect(s.resources.food).toBeCloseTo(sliced.resources.food, 4)
 })

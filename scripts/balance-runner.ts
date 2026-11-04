@@ -69,7 +69,6 @@ export function snapshot(state: GameState) {
   return {
     era: state.era,
     people: state.people.length,
-    healthy: state.people.filter((p) => p.health === 5).length,
     happiness: state.happiness,
     housing: housingCapacity(state),
     workers: Object.fromEntries(
@@ -139,7 +138,6 @@ export function runBalance(
     state: ReturnType<typeof snapshot>
   }[] = []
   let observed = new Set(RESEARCH_IDS.filter((id) => state.research[id] > 0))
-  let minimumHealthyRatio = 1
   let longestAbsenceMs = 0
   const calculationStart = performance.now()
   function checkpoint(): Checkpoint {
@@ -162,13 +160,6 @@ export function runBalance(
         checkpoints[id] = checkpoint()
     }
     lastObserved = wall
-  }
-  function observeHealth() {
-    if (state.people.length === 0) return
-    minimumHealthyRatio = Math.min(
-      minimumHealthyRatio,
-      state.people.filter((p) => p.health === 5).length / state.people.length,
-    )
   }
   function advance(seconds: number) {
     const step = Math.min(seconds, Math.max(0, horizon - wall))
@@ -332,7 +323,6 @@ export function runBalance(
     state.absence = null
     wall = returnAt
     observe()
-    observeHealth()
     const before = collectDetails ? snapshot(state) : undefined,
       visitStart = wall,
       actionStart = actions.length
@@ -455,7 +445,6 @@ export function runBalance(
     final: snapshot(state),
     finalCheckpoint: checkpoint(),
     checkpoints,
-    minimumHealthyRatio,
   }
 }
 export type BalanceResult = ReturnType<typeof runBalance>

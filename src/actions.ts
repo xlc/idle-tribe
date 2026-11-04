@@ -6,6 +6,7 @@ import {
   EXPLORE_DISCOVERIES,
   EXPLORE_FINDS,
 } from './definitions/tribal/exploration'
+import { automatedWorkAllowed } from './food'
 import { formatExploreNotice, formatExploreOutcome } from './format'
 import {
   ACTION_IDS,
@@ -279,7 +280,13 @@ export function actionOutputRate(
 ) {
   const def = ACTIONS[id],
     n = options.workers ?? actionWorkers(state, id)
-  if (!def.resource || n < 1 || !def.visible(state)) return 0
+  if (
+    !def.resource ||
+    n < 1 ||
+    !def.visible(state) ||
+    !automatedWorkAllowed(state)
+  )
+    return 0
   return (
     (n / baseActionDuration(state, id)) *
     actionYield(state, id) *
@@ -307,6 +314,7 @@ export function actionJobActive(state: GameState, id: ActionId) {
       actionWorkers(state, id) > 0 &&
       !(id === 'explore' && state.pendingEncounter) &&
       (def.kind !== 'arrival' || !housingFull(state)) &&
+      automatedWorkAllowed(state) &&
       canAfford(state, actionCost(state, id)),
   )
 }

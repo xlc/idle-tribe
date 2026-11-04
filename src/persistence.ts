@@ -209,7 +209,6 @@ export function parseSave(serialized: string | null, nameSeed = 0): GameState {
         name = personName(person.name)
       return {
         name,
-        health: number(person.health, 0, 5),
         job: member(person.job, JOB_IDS),
         progress: number(person.progress, 0, 1),
         aptitude: member(person.aptitude, WORKING_JOB_IDS),

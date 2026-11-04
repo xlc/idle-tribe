@@ -60,7 +60,7 @@ export function Stockpile({ session }: { session: GameSession }) {
       <section
         className="resource"
         data-warning={warning}
-        aria-label={`${RESOURCE_INFO[r].name} resource, ${formatResource(s.resources[r])} of ${formatResource(capacity)} storage${full ? ', full' : ''}${warning ? ', starving, health at risk' : ''}`}
+        aria-label={`${RESOURCE_INFO[r].name} resource, ${formatResource(s.resources[r])} of ${formatResource(capacity)} storage${full ? ', full' : ''}${warning ? ', automated work paused' : ''}`}
         key={r}
       >
         <ResourceArt resource={r} />
@@ -185,7 +185,7 @@ function ResourceDetails({
       </header>
       {(warning || full) && (
         <p className="stockpile-detail-warning">
-          {warning ? 'Starving · health at risk' : 'Storage full'}
+          {warning ? 'Starving · automated work paused' : 'Storage full'}
         </p>
       )}
       {visible.length > 0 && (

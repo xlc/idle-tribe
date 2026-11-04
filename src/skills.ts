@@ -1,5 +1,4 @@
 import { EPSILON } from './constants'
-import { healthMultiplier } from './food'
 import type { Person, WorkingJob } from './types'
 
 export function practiceThreshold(level: number) {
@@ -18,10 +17,6 @@ export function personalWork(person: Person, job: WorkingJob) {
     (person.aptitude === job ? 0.05 : 0)
   )
 }
-export function workContribution(
-  person: Person,
-  job: WorkingJob,
-  health = healthMultiplier(person),
-) {
-  return health * personalWork(person, job)
+export function workContribution(person: Person, job: WorkingJob) {
+  return personalWork(person, job)
 }

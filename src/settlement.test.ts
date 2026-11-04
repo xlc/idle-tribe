@@ -100,20 +100,17 @@ test('live and sliced simulations have the same resources, projects, meals and a
   expect(one.happiness).toBeCloseTo(many.happiness, 3)
   one.people.forEach((p, i) => {
     expect(p.progress).toBeCloseTo(many.people[i]?.progress ?? -1, 3)
-    expect(p.health).toBeCloseTo(required(many.people[i]).health, 5)
   })
 })
 
-test('injured villagers recover one heart per minute while food lasts', () => {
+test('villagers never die and food consumption continues while they are idle', () => {
   const s = createDefaultState()
   complete(s, 'sharpened-stick', 'shelters', 'foraging-rounds')
   people(s, 'idle', 'idle')
-  required(s.people[0]).health = 2
-  required(s.people[1]).health = 3
   s.resources.food = 4
   advanceTime(s, 60)
-  expect(s.people.map((p) => p.health).map(Math.round)).toEqual([3, 4])
-  expect(s.resources.food).toBeCloseTo(0, 6)
+  expect(s.people).toHaveLength(2)
+  expect(s.resources.food).toBeCloseTo(2, 6)
 })
 
 test('happiness begins at Writing and moves gradually after the shared meal', () => {

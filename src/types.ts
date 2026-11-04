@@ -187,7 +187,6 @@ export interface JobDefinition {
 }
 export interface Person {
   name: string
-  health: number
   job: JobId
   progress: number
   aptitude: WorkingJob

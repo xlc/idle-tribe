@@ -160,8 +160,8 @@ test('late recipes, archives and partial cycles survive saves and sliced elapsed
   for (let i = 0; i < 60; i++) advanceTime(restored, 10)
   for (const r of RESOURCES)
     expect(restored.resources[r]).toBeCloseTo(direct.resources[r], 6)
-  expect(restored.people.map((p) => p.health)).toEqual(
-    direct.people.map((p) => p.health),
+  expect(restored.people.map((p) => p.name)).toEqual(
+    direct.people.map((p) => p.name),
   )
   expect(restored.resources['causal-models']).toBeGreaterThan(
     s.resources['causal-models'],

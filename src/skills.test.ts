@@ -97,18 +97,12 @@ test('crowding slows practice while storage does not change efficiency', () => {
   expect(required(stock.people[0]).practice.farmer - before).toBeCloseTo(30, 8)
 })
 
-test('injured villagers spend two food per minute to recover one heart per minute', () => {
+test('idle villagers consume one food per minute', () => {
   const s = camp()
   people(s, 'idle')
-  const p = required(s.people[0])
-  p.health = 2
   s.resources.food = 4
   advanceTime(s, 60)
-  expect(p.health).toBeCloseTo(3, 8)
-  expect(s.resources.food).toBeCloseTo(2, 8)
-  advanceTime(s, 60)
-  expect(p.health).toBeCloseTo(4, 8)
-  expect(s.resources.food).toBeCloseTo(0, 8)
+  expect(s.resources.food).toBeCloseTo(3, 8)
 })
 
 test('builders learn through active work, preserve practice on cancellation, and stop after completion', () => {
@@ -156,7 +150,7 @@ test('expertise survives conversion and reassignment while a new job starts fres
   )
 })
 
-test('Plus and Fill prefer healthy expertise, Minus releases the least contribution, and explicit assignment trains newcomers', () => {
+test('Plus and Fill prefer expertise, Minus releases the least contribution, and explicit assignment trains newcomers', () => {
   const s = camp()
   s.people = [
     createPerson('Novice', 'builder'),
@@ -170,7 +164,6 @@ test('Plus and Fill prefer healthy expertise, Minus releases the least contribut
   required(s.people[3]).job = 'idle'
   required(s.people[1]).practice.sawyer = practiceThreshold(4)
   required(s.people[3]).practice.sawyer = practiceThreshold(9)
-  required(s.people[3]).health = 2
   expect(adjustWorkers(s, 'sawyer', 1)).toBe(true)
   expect(required(s.people[1]).job).toBe('sawyer')
   expect(fillWorkers(s, 'sawyer')).toBe(true)

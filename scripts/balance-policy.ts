@@ -325,7 +325,7 @@ export function makeDecisions(
 // worker cycles each minute.
 export function allocationKey(s: GameState) {
   return JSON.stringify([
-    s.people.map((p) => p.health),
+    s.people.map((p) => p.job),
     s.facilities,
     s.research,
     // Queue identities, not progress: a new project needs workers, but a

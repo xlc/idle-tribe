@@ -153,28 +153,6 @@
   white-space: nowrap;
 }
 
-.person-health {
-  display: inline-flex;
-  flex: 0 0 auto;
-  gap: 1px;
-  white-space: nowrap;
-  color: var(--color-success);
-}
-
-.person-health span {
-  width: 0.9em;
-  text-align: center;
-}
-
-.person-health[data-low="true"] {
-  color: var(--color-warning);
-}
-
-.person-health [data-filled="false"] {
-  color: var(--color-neutral);
-  opacity: 0.5;
-}
-
 .person-status {
   display: flex;
   align-items: baseline;

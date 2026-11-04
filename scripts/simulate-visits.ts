@@ -85,10 +85,6 @@ for (const branch of branches)
             0,
             ...result.visits.map((v) => v.controls),
           ),
-          minHealthyFractionAtReturns: Math.min(
-            1,
-            ...result.visits.map((v) => v.before.healthy / v.before.people),
-          ),
           milestones: Object.fromEntries(
             result.milestones
               .filter((m) =>

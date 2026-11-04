@@ -1,6 +1,7 @@
 import { actionForJob, cancelManual } from './actions'
 import { WORKERS_PER_BUILDING_LEVEL } from './constants'
 import { BUILDINGS, JOBS, PERKS, RESEARCH } from './definitions'
+import { automatedWorkAllowed } from './food'
 import {
   BUILDING_IDS,
   type BuildingId,
@@ -327,17 +328,17 @@ export function workerRate(
   person: Person,
   options: RateOptions = {},
 ) {
-  if (!isProductionJob(person.job)) return 0
+  if (!isProductionJob(person.job) || !automatedWorkAllowed(state)) return 0
   return (
     workplaceRate(state, person.job, options) *
     workContribution(person, person.job)
   )
 }
-// Cache workplace factors only; health and expertise belong to each person.
+// Cache workplace factors only; expertise belongs to each person.
 export function workerRates(state: GameState, options: RateOptions = {}) {
   const shared = new Map<JobId, number>()
   return state.people.map((person) => {
-    if (!isProductionJob(person.job)) return 0
+    if (!isProductionJob(person.job) || !automatedWorkAllowed(state)) return 0
     let rate = shared.get(person.job)
     if (rate === undefined) {
       rate = workplaceRate(state, person.job, options)
@@ -347,6 +348,7 @@ export function workerRates(state: GameState, options: RateOptions = {}) {
   })
 }
 export function constructionSpeed(state: GameState, extra = 0) {
+  if (!automatedWorkAllowed(state)) return 0
   const x = Math.max(
     0,
     state.people
