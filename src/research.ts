@@ -332,10 +332,6 @@ export function completeProject(state: GameState, project: Project) {
     }
     if (firstCompletion && def.unlockHappiness) state.happiness = 50
     if (firstCompletion && def.discoverTimeBox) state.legacy.discovered = true
-    if (firstCompletion && def.grant) {
-      const f = state.facilities[def.grant.building]
-      f.level = Math.max(1, f.level)
-    }
   } else {
     const f = state.facilities[project.id]
     if (project.kind === 'expand') {

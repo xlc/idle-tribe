@@ -434,6 +434,7 @@ test('staffing an action job stops its manual runs with a refund', () => {
   const state = createDefaultState()
   people(state, 'idle', 'idle')
   completeProject(state, { kind: 'research', id: 'foraging-rounds' })
+  state.facilities.foraging.level = 1
   const before = state.resources.food
   expect(startAction(state, 'gather')).toBe(true)
   expect(state.manual).toHaveLength(1)

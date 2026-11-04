@@ -48,7 +48,9 @@ export function requirementBlocker(
   return ''
 }
 export function automationUnlocked(state: GameState) {
-  return RESEARCH_IDS.some((id) => hasResearch(state, id) && RESEARCH[id].grant)
+  return RESEARCH_IDS.some(
+    (id) => hasResearch(state, id) && RESEARCH[id].unlocksJobs,
+  )
 }
 export function happinessUnlocked(state: GameState) {
   return RESEARCH_IDS.some(

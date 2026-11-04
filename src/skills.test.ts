@@ -25,6 +25,7 @@ function camp() {
   complete(s, 'shelters', 'foraging-rounds')
   s.resources.food = 100000
   s.resources.wood = 100000
+  s.facilities.foraging.level = 1
   s.facilities.stockyard.level = 100000
   s.facilities['food-store'].level = 100000
   s.facilities.lumber.level = 1
@@ -120,9 +121,9 @@ test('builders learn through active work, preserve practice on cancellation, and
   expect(s.resources.wood).toBe(100)
   enqueue(s, nextExpansion(s, 'housing'))
   advanceTime(s, 300)
-  // Shelters research already granted level 1, so this build reaches level 2.
-  expect(s.facilities.housing.level).toBe(2)
-  expect(p.practice.builder).toBeCloseTo(30 + 2 * 1.5625 * 60, 8)
+  // Shelters research unlocks housing, so this build creates level 1.
+  expect(s.facilities.housing.level).toBe(1)
+  expect(p.practice.builder).toBeCloseTo(30 + 2 * 60, 8)
   expect(constructionSpeed(s)).toBe(1)
 })
 

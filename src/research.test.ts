@@ -25,6 +25,25 @@ import { researchEffects } from './research-effects'
 import { firstIdlePerson } from './settlement'
 import { createDefaultState } from './state'
 
+test('opening research keeps wood costs and work times light', () => {
+  const opening = [
+    'sharpened-stick',
+    'shelters',
+    'foraging-rounds',
+    'timber-camps',
+    'expedition-planning',
+    'stockpiling',
+    'stone-tools',
+  ] as const
+
+  expect(opening.map((id) => RESEARCH[id].cost.wood)).toEqual([
+    4, 8, 6, 4, 8, 8, 12,
+  ])
+  expect(opening.map((id) => RESEARCH[id].seconds)).toEqual([
+    4, 8, 6, 8, 9, 10, 12,
+  ])
+})
+
 test('reloading a queued project does not allow the same project to be queued again', () => {
   const state = createDefaultState()
   state.resources.food = 100

@@ -147,7 +147,7 @@ export interface ResearchDefinition {
   upgrade?: ResearchUpgradeDefinition
   branch?: Specialization
   branchIdentity?: string
-  grant?: { building: BuildingId }
+  unlocksJobs?: boolean
   era?: number
   unlockHappiness?: boolean
   discoverTimeBox?: boolean

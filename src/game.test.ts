@@ -40,7 +40,7 @@ import { advanceTime } from './simulation'
 import { createDefaultState } from './state'
 import { complete, people, required, settlement } from './test-helpers'
 
-test('the opening discovers resources and grants a camp without assigning workers', () => {
+test('the opening discovers resources and unlocks camps without building them', () => {
   const s = createDefaultState()
   for (let i = 0; i < 15; i++) {
     expect(startAction(s, 'gather')).toBe(true)
@@ -76,9 +76,9 @@ test('the opening discovers resources and grants a camp without assigning worker
   advanceTime(s, 180)
   expect(s.research.shelters).toBe(1)
   expect(s.research['foraging-rounds']).toBe(1)
-  expect(s.facilities.foraging.level).toBe(1)
+  expect(s.facilities.foraging.level).toBe(0)
   expect(s.people[0]?.job).toBe('idle')
-  expect(s.facilities.housing.level).toBe(1)
+  expect(s.facilities.housing.level).toBe(0)
 })
 
 test('cheat resource grants add only the requested stockpile amounts', () => {
@@ -132,7 +132,7 @@ test('active cancellation restores exact stock and storage state once', () => {
 test('an older ready queue pays first, but a blocked queue does not reserve stock', () => {
   const s = createDefaultState()
   complete(s, 'sharpened-stick', 'shelters')
-  // Shelters research grants the first housing level; build from scratch.
+  // Shelters research unlocks housing; build from scratch.
   s.facilities.housing.level = 0
   s.discovered.wood = true
   people(s, 'builder')

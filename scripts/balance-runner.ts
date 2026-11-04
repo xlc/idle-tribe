@@ -272,11 +272,13 @@ export function runBalance(
     controls.plan({ kind: 'research', id: 'timber-camps' })
     advance(0)
     waitForResearch(deadline, 'foraging-rounds', 'timber-camps')
-    // Shelters research grants the first housing, so only the lumber camp is
-    // built. Gather its 8 wood before queueing it: enqueueing construction
-    // claims the lone person as builder, leaving no idle hands to gather.
+    // Research unlocks the building forms; construction still needs to be
+    // queued and paid for. Gather all three opening building costs before
+    // queueing them because construction claims the lone person as builder.
     gather('wood', 27, deadline)
     gather('food', 8, deadline)
+    controls.plan({ kind: 'expand', id: 'housing', target: 1, form: 0 })
+    controls.plan({ kind: 'expand', id: 'foraging', target: 1, form: 0 })
     controls.plan({ kind: 'expand', id: 'lumber', target: 1, form: 0 })
     while (
       (state.queues.construction.waiting.length ||
@@ -287,7 +289,9 @@ export function runBalance(
     controls.assign(0, 'forager')
     if (
       wall < horizon &&
-      (!state.facilities.housing.level || !state.facilities.lumber.level)
+      (!state.facilities.housing.level ||
+        !state.facilities.foraging.level ||
+        !state.facilities.lumber.level)
     )
       throw new Error(
         'Opening policy did not establish its settlement within one hour',
