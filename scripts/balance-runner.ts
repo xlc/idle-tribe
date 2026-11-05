@@ -24,6 +24,7 @@ import {
   type Controls,
   makeDecisions,
   type Policy,
+  type PolicyContext,
 } from './balance-policy'
 
 export const SCHEDULES = {
@@ -38,6 +39,7 @@ export interface RunOptions {
   schedule: Schedule
   days: number
   goal: ResearchId
+  pathSeed?: number
   resetAt?: ResearchId
   perk?: PerkId
   skipVisit?: number
@@ -137,6 +139,8 @@ export function runBalance(
     wallSeconds: number
     state: ReturnType<typeof snapshot>
   }[] = []
+  let decisionIndex = 0
+  let maxVisitControls = 0
   let observed = new Set(RESEARCH_IDS.filter((id) => state.research[id] > 0))
   let longestAbsenceMs = 0
   const calculationStart = performance.now()
@@ -371,12 +375,18 @@ export function runBalance(
       // A reset's manual opening is deliberately a separate session below.
       if (state.research.shelters <= 0) break
       const key = allocationKey(state)
+      const shouldRebalance = key !== previousAllocation
+      if (shouldRebalance) decisionIndex++
       makeDecisions(
         state,
         options.branch,
         options.policy,
         controls,
-        key !== previousAllocation,
+        shouldRebalance,
+        {
+          seed: options.pathSeed ?? 0,
+          decision: decisionIndex,
+        } satisfies PolicyContext,
       )
       previousAllocation = key
       advance(0)
@@ -384,6 +394,10 @@ export function runBalance(
         decisions.push({ wallSeconds: wall, state: snapshot(state) })
       advance(Math.min(60, deadline - wall))
     }
+    maxVisitControls = Math.max(
+      maxVisitControls,
+      actions.slice(actionStart).reduce((n, action) => n + action.controls, 0),
+    )
     if (collectDetails)
       visits.push({
         wallSeconds: visitStart,
@@ -436,6 +450,7 @@ export function runBalance(
         : ('unfinished' as 'completed' | 'unfinished'),
     openingSeconds,
     openingControls,
+    maxVisitControls,
     wallSeconds: wall,
     effectiveSeconds: effective,
     activeSeconds: active,

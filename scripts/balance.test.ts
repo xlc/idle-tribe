@@ -25,3 +25,24 @@ for (const branch of ['forestry', 'stonecraft'] as Specialization[]) {
     expect(result.openingSeconds).toBeLessThan(HOURS)
   }, 30_000)
 }
+
+test('exploratory paths are repeatable for the same seed', () => {
+  const options = {
+    branch: 'forestry' as const,
+    policy: 'exploratory' as const,
+    schedule: 'frequent' as const,
+    days: 2,
+    goal: 'mechanization' as const,
+    pathSeed: 42,
+    finishAtHorizon: true,
+    collectDetails: false,
+  }
+  const first = runBalance(options),
+    second = runBalance(options),
+    different = runBalance({ ...options, pathSeed: 43 })
+  expect(second.actions).toEqual(first.actions)
+  expect(second.milestones).toEqual(first.milestones)
+  expect(second.final).toEqual(first.final)
+  expect(second.maxVisitControls).toBe(first.maxVisitControls)
+  expect(different.actions).not.toEqual(first.actions)
+})

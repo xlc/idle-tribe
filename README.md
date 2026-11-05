@@ -68,6 +68,18 @@ bun run check
 | `bun run preview` | Build and serve locally using Cloudflare's runtime. |
 | `bun run deploy` | Build and publish to Cloudflare Workers. |
 
+Balance runs can generate repeatable exploratory paths against the real game
+simulation. For example:
+
+```sh
+bun run balance -- --policy exploratory --paths 100 --seed 42 --days 30 --out balance-results/latest
+```
+
+The output includes `summary.json`, one compact record per path in
+`paths.jsonl`, and an AI-friendly `report.md`. Reuse the same `--seed` and
+options to compare a balance change against the same paths. Use `--path N`
+with the same branch, policy, and schedule options to rerun one reported path.
+
 ## Cloudflare deployment
 
 [Cloudflare Workers Static Assets](https://developers.cloudflare.com/workers/static-assets/) serves `dist/`; `wrangler.jsonc` names the Worker `idle-tribe`. Use `bun run preview` to inspect the production build locally. To publish:

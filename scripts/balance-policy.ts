@@ -28,13 +28,29 @@ import type {
   Specialization,
 } from '../src/types'
 
-export type Policy = 'simple' | 'bottleneck'
+export type Policy = 'simple' | 'bottleneck' | 'exploratory'
 export interface Controls {
   plan: (project: Project) => boolean
   assign: (index: number, job: JobId) => boolean
 }
+export interface PolicyContext {
+  seed: number
+  decision: number
+}
+
+// The game itself is deterministic. Exploratory paths only use this stable
+// hash to choose between otherwise comparable player decisions.
+function policyRandom(context: PolicyContext, index: number) {
+  let value = Math.imul(context.seed ^ 0x9e3779b9, 0x85ebca6b)
+  value = Math.imul(value ^ context.decision, 0xc2b2ae35)
+  value = Math.imul(value ^ index, 0x27d4eb2d)
+  value ^= value >>> 16
+  value = Math.imul(value, 0x85ebca6b)
+  value ^= value >>> 13
+  return (value >>> 0) / 4294967296
+}
 // A player's published build order, not game rules. Targets are policy choices,
-// not facility limits. Both policies share this order to isolate allocation.
+// not facility limits. All policies share this order to isolate allocation.
 const plan: [BuildingId, number][] = [
   ['housing', 3],
   ['foraging', 2],
@@ -118,6 +134,7 @@ export function makeDecisions(
   policy: Policy,
   controls: Controls,
   rebalance = true,
+  context: PolicyContext = { seed: 0, decision: 0 },
 ) {
   for (const id of RESEARCH_IDS) {
     if (RESEARCH[id].branch && RESEARCH[id].branch !== branch) continue
@@ -138,9 +155,18 @@ export function makeDecisions(
     return Number(!s.facilities[id].level)
   }
   const priorities =
-    policy === 'bottleneck'
-      ? [...plan].sort(([a], [b]) => priority(b) - priority(a))
-      : plan
+    policy === 'simple'
+      ? plan
+      : [...plan]
+          .map((entry, index) => ({
+            entry,
+            tie: policy === 'exploratory' ? policyRandom(context, index) : 0,
+          }))
+          .sort(
+            (a, b) =>
+              priority(b.entry[0]) - priority(a.entry[0]) || b.tie - a.tie,
+          )
+          .map(({ entry }) => entry)
   for (const [id, target] of priorities) {
     if (
       s.facilities[id].level >= target ||
@@ -234,7 +260,7 @@ export function makeDecisions(
     add('builder')
     // The deliberate planner uses the displayed efficient crew size, just as
     // Fill does. The simple policy keeps one builder and more producers.
-    if (policy === 'bottleneck')
+    if (policy !== 'simple')
       while (
         assigned(s, 'builder') < jobCapacity(s, 'builder') &&
         assigned(s, 'idle') > 1
@@ -290,8 +316,13 @@ export function makeDecisions(
         (policy === 'simple' ? 1 : (building?.forms[0]?.rate ?? 1))
       )
     }
-    choices.sort((a, b) => score(b) - score(a))
-    const next = choices[0]
+    const ranked = choices
+      .map((job, index) => ({
+        job,
+        tie: policy === 'exploratory' ? policyRandom(context, index) : 0,
+      }))
+      .sort((a, b) => score(b.job) - score(a.job) || b.tie - a.tie)
+    const next = ranked[0]?.job
     if (!next || !add(next)) break
   }
   while (resourceRates(s).food < 0) {
