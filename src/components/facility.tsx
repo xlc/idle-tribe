@@ -126,7 +126,7 @@ export function Facility({
     ),
     speed = constructionSpeed(s) / 60,
     blocker = activeEntry ? '' : buildBlocker(s)
-  const workplaceType = form.housing
+  const facilityType = form.housing
     ? 'Housing'
     : form.storage
       ? 'Storage'
@@ -280,7 +280,7 @@ export function Facility({
           <div className="action-copy facility-info">
             <div className="facility-title-row">
               <h3>{form.name}</h3>
-              <span className="facility-type">{workplaceType}</span>
+              <span className="facility-type">{facilityType}</span>
             </div>
             <span className="facility-level">
               {f.level ? `Level ${f.level}` : 'Ready to build'}

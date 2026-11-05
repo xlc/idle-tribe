@@ -10,7 +10,7 @@ export const NOTES: Record<NoteId, { title: string; text: string }> = {
   },
   jobs: {
     title: 'Jobs',
-    text: 'Assign people to workplace jobs from the People tab or with a card’s + control.',
+    text: 'Assign people to jobs from the People tab or with a card’s + control.',
   },
   expedition: {
     title: 'Expedition camp',

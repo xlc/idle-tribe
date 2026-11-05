@@ -119,7 +119,7 @@ export function quoteProject(
       blocker: !def.job
         ? 'Not a production facility'
         : !f.level
-          ? 'Requires workplace'
+          ? 'Requires building'
           : f.equipment !== tier - 1
             ? `Requires tools ${tier - 1}`
             : requirementBlocker(state, { research: [milestone.research] }),
@@ -137,7 +137,7 @@ export function quoteProject(
       total: Math.max(0, target.work - form.work) * cumulative(f.level),
       obsolete: f.form >= project.form,
       blocker: !f.level
-        ? 'Requires workplace'
+        ? 'Requires building'
         : requirementBlocker(state, target.requires),
     }
   return {

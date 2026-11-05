@@ -28,7 +28,7 @@ export function Production({
       BUILDINGS[id].forms.some((f) => !requirementBlocker(planned, f.requires))
     )
   })
-  // Keep action placement stable; workplaces only describe the facility.
+  // Keep action placement stable; facility cards describe the building.
   const actions = ACTION_IDS.filter((id) => ACTIONS[id].visible(s))
   return (
     <section className="production-view">
@@ -49,11 +49,11 @@ export function Production({
       <SectionDisclosure
         title={
           <>
-            <ViewIcon name="workplaces" />
-            Workplaces
+            <ViewIcon name="buildings" />
+            Buildings
           </>
         }
-        ariaLabel="Workplaces"
+        ariaLabel="Buildings"
       >
         <div className="building-grid">
           {available.map((id) => (
