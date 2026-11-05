@@ -76,7 +76,9 @@ export function Queue({
     status = active
       ? speed
         ? formatDuration((active.total - active.progress) / speed)
-        : 'No builders'
+        : s.resources.food <= 0
+          ? 'Paused · Gather food'
+          : 'No builders'
       : q.waiting.length
         ? queueBlocker(s, id)
         : 'No project'

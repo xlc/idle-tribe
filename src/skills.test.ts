@@ -3,7 +3,7 @@ import { beginAbsence, effectiveOfflineSeconds, settleAbsence } from './clock'
 import { RESOURCES, WORKING_JOB_IDS } from './ids'
 import { parseSave } from './persistence'
 import { resetRun } from './prestige'
-import { cancelProject, enqueue, nextExpansion } from './research'
+import { cancelProject, enqueue, nextExpansion, quoteProject } from './research'
 import {
   adjustWorkers,
   arrivalAptitude,
@@ -110,20 +110,22 @@ test('builders learn through active work, preserve practice on cancellation, and
   const s = camp()
   people(s, 'builder')
   s.resources.wood = 100
+  s.facilities.housing.level = 2
   const p = required(s.people[0])
-  enqueue(s, nextExpansion(s, 'housing'))
+  const project = nextExpansion(s, 'housing')
+  const quote = quoteProject(s, project)
+  enqueue(s, project)
   advanceTime(s, 30)
   expect(p.practice.builder).toBeCloseTo(30, 8)
-  expect(s.queues.construction.active?.progress).toBeCloseTo(0.5, 8)
-  const project = required(s.queues.construction.active ?? undefined)
-  expect(cancelProject(s, 'construction', project.sequence)).toBe(true)
+  const active = required(s.queues.construction.active ?? undefined)
+  expect(active.progress).toBeCloseTo(30 / 60, 8)
+  expect(cancelProject(s, 'construction', active.sequence)).toBe(true)
   expect(p.practice.builder).toBeCloseTo(30, 8)
   expect(s.resources.wood).toBe(100)
   enqueue(s, nextExpansion(s, 'housing'))
   advanceTime(s, 300)
-  // Shelters research unlocks housing, so this build creates level 1.
-  expect(s.facilities.housing.level).toBe(1)
-  expect(p.practice.builder).toBeCloseTo(30 + 2 * 60, 8)
+  expect(s.facilities.housing.level).toBe(3)
+  expect(p.practice.builder).toBeCloseTo(30 + quote.total * 60, 8)
   expect(constructionSpeed(s)).toBe(1)
 })
 

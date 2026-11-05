@@ -191,10 +191,11 @@ test('converting at different levels charges the same cumulative modern material
     late = settlement()
   early.facilities.housing.level = 1
   late.facilities.housing.level = 4
+  const baseWork = BUILDINGS.housing.forms[0]?.work ?? 0
   const first = quoteProject(early, { kind: 'convert', id: 'housing', form: 1 })
   completeProject(early, { kind: 'convert', id: 'housing', form: 1 })
   let planks = first.cost.planks ?? 0,
-    work = first.total + 2
+    work = first.total + baseWork
   for (let target = 2; target <= 4; target++) {
     const p = {
         kind: 'expand' as const,
@@ -214,7 +215,7 @@ test('converting at different levels charges the same cumulative modern material
   })
   expect(planks).toBe(conversion.cost.planks ?? 0)
   expect(work).toBeCloseTo(
-    conversion.total + 2 * (1 + 1.5625 + 2.25 + 3.0625),
+    conversion.total + baseWork * (1 + 1.5625 + 2.25 + 3.0625),
     8,
   )
   expect(planks).toBe(capital({ planks: 12 }, 4).planks ?? 0)

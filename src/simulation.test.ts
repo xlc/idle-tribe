@@ -1,6 +1,8 @@
 import { expect, test } from 'bun:test'
+import { startAction } from './actions'
 import { JOBS } from './definitions'
 import { RESOURCES } from './ids'
+import { enqueue, nextExpansion, quoteProject } from './research'
 import { advanceTime, resourceFlowEntries, resourceFlows } from './simulation'
 import { createDefaultState } from './state'
 import { people, settlement } from './test-helpers'
@@ -56,6 +58,44 @@ test('exploration pauses at a food shortage without banking unpaid trips', () =>
   advanceTime(state, 30)
   expect(state.exploreRolls).toBe(rolls)
   expect(state.actionProgress.explore).toBeCloseTo(0, 10)
+})
+
+test('food starvation releases builders for manual gathering and resumes construction', () => {
+  const state = createDefaultState()
+  state.research.shelters = 1
+  state.facilities.housing.level = 1
+  state.resources.wood = 10
+  state.resources.food = 5
+  const project = nextExpansion(state, 'housing')
+  expect(enqueue(state, project)).toBe(true)
+  expect(state.people[0]?.job).toBe('builder')
+
+  advanceTime(state, 30, true)
+
+  expect(state.resources.food).toBe(0)
+  expect(state.people[0]?.job).toBe('idle')
+  expect(state.queues.construction.active?.progress).toBeGreaterThan(0)
+  expect(startAction(state, 'gather')).toBe(true)
+
+  advanceTime(state, 1, true)
+
+  expect(state.resources.food).toBeGreaterThan(0)
+  expect(state.people[0]?.job).toBe('builder')
+})
+
+test('the first shelter is a quick, cheap build and later levels scale up', () => {
+  const state = createDefaultState()
+  state.research.shelters = 1
+  const first = quoteProject(state, nextExpansion(state, 'housing'))
+  expect(first.cost.wood).toBe(4)
+  expect(first.cost.food).toBe(2)
+  expect(first.total).toBe(0.25)
+
+  state.facilities.housing.level = 1
+  const second = quoteProject(state, nextExpansion(state, 'housing'))
+  expect(second.cost.wood).toBeGreaterThan(first.cost.wood ?? 0)
+  expect(second.cost.food).toBeGreaterThan(first.cost.food ?? 0)
+  expect(second.total).toBeGreaterThan(first.total)
 })
 
 test('itemized flow entries sum to the aggregate resource flows', () => {

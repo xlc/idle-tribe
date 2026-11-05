@@ -255,6 +255,18 @@ export function fillWorkers(state: GameState, job: JobId) {
     Math.max(0, jobCapacity(state, job) - workplaceStaff(state, job)),
   )
 }
+// Construction is automated work. When the shared food supply is empty,
+// release builders so at least one person can switch to manual gathering.
+export function releaseBuilders(state: GameState) {
+  let changed = false
+  for (const person of state.people)
+    if (person.job === 'builder') {
+      person.job = 'idle'
+      person.progress = 0
+      changed = true
+    }
+  return changed
+}
 export function jobInput(state: GameState, job: JobId): Cost {
   if (!isProductionJob(job)) return {}
   const id = workplace(job)

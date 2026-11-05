@@ -39,6 +39,7 @@ import {
   happinessTarget,
   happinessUnlocked,
   jobInput,
+  releaseBuilders,
   staffingMultiplier,
   workerRates,
 } from './settlement'
@@ -47,6 +48,7 @@ import type { GameState, ResourceId } from './types'
 
 function settleEvents(state: GameState, visible: boolean) {
   let changed = false
+  if (!automatedWorkAllowed(state) && releaseBuilders(state)) changed = true
   for (const p of state.people)
     if (isProductionJob(p.job) && p.progress >= 1 - EPSILON) {
       const input = jobInput(state, p.job)

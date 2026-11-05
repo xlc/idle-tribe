@@ -1,5 +1,6 @@
 import { EPSILON } from './constants'
 import { BUILDINGS, EQUIPMENT, RESEARCH } from './definitions'
+import { automatedWorkAllowed } from './food'
 import { RESEARCH_IDS, RESOURCES } from './ids'
 import { hasResearch } from './research-effects'
 import {
@@ -277,6 +278,15 @@ export function startQueues(state: GameState) {
   )
   for (const id of order) {
     const q = state.queues[id]
+    if (
+      id === 'construction' &&
+      q.active &&
+      automatedWorkAllowed(state) &&
+      !constructionSpeed(state)
+    ) {
+      const person = firstIdlePerson(state)
+      if (person >= 0) assignJob(state, person, 'builder')
+    }
     if (q.active || queueBlocker(state, id)) continue
     const entry = q.waiting.shift()
     if (!entry) continue

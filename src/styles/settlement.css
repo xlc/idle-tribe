@@ -1,8 +1,10 @@
 .building-card,
 .tech-card {
   position: relative;
-  padding: 14px;
   min-width: 0;
+}
+.building-card {
+  padding: 0;
 }
 .building-card[data-action-state="blocked"] {
   border-color: var(--color-warning);
@@ -26,14 +28,20 @@
   background: color-mix(in srgb, var(--color-base-100) 70%, transparent);
 }
 .facility-overview {
-  display: grid;
-  grid-template-columns: 56px minmax(0, 1fr) auto;
-  align-items: start;
+  display: flex;
+  align-items: center;
   gap: 12px;
+  min-width: 0;
+  padding: 10px 12px;
 }
-.facility-overview > .painted-art {
-  width: 56px;
-  height: 56px;
+.facility-overview > .facility-art {
+  flex-basis: 40px;
+  width: 40px;
+  height: 40px;
+}
+.facility-art .painted-art {
+  width: 40px;
+  height: 40px;
 }
 .facility-worker-slot[data-visible="false"],
 .building-status[data-visible="false"],
@@ -61,6 +69,7 @@
   gap: 5px 8px;
 }
 .facility-info {
+  flex: 1;
   min-width: 0;
 }
 .facility-level {
@@ -107,9 +116,7 @@
   margin-top: 8px;
 }
 .facility-investment {
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid var(--color-base-300);
+  margin: 0;
 }
 .facility-investment-heading {
   display: flex;

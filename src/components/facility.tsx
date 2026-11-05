@@ -206,6 +206,8 @@ export function Facility({
               />{' '}
               remaining
             </>
+          ) : s.resources.food <= 0 ? (
+            'Paused · Gather food'
           ) : (
             'No builders'
           )}
@@ -231,7 +233,7 @@ export function Facility({
       </span>
     </div>
   ) : def.unique && f.level > 0 ? null : (
-    <div className="facility-investment">
+    <div className="action-details facility-investment">
       <div className="facility-investment-heading">
         <span>{f.level ? 'Next upgrade' : 'Build this workplace'}</span>
         <small>{formatResource(quote.total)} work</small>
@@ -255,7 +257,7 @@ export function Facility({
   return (
     <Card asChild>
       <article
-        className="building-card"
+        className="manual-action building-card"
         data-built={f.level > 0}
         data-action-state={
           activeEntry
@@ -271,9 +273,11 @@ export function Facility({
         {missingBuildCost && !activeEntry && (
           <CostProgress progress={affordability(s, quote.cost)} />
         )}
-        <div className="facility-overview">
-          <BuildingArt building={id} />
-          <div className="facility-info">
+        <div className="action-row facility-overview">
+          <span className="action-icon facility-art" aria-hidden="true">
+            <BuildingArt building={id} />
+          </span>
+          <div className="action-copy facility-info">
             <div className="facility-title-row">
               <h3>{form.name}</h3>
               <span className="facility-type">{workplaceType}</span>
@@ -322,7 +326,7 @@ export function Facility({
               </p>
             )}
             <p
-              className="building-status"
+              className="action-status building-status"
               data-visible={Boolean(blocked || blocker || waitingIndex >= 0)}
             >
               {blocked ||
