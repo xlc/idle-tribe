@@ -341,13 +341,20 @@ export function makeDecisions(
   for (const job of JOB_IDS) {
     while (job !== 'idle' && assigned(s, job) > (targets.get(job) ?? 0)) {
       const index = workerCandidate(s, job, true)
-      if (index < 0 || !controls.assign(index, 'idle')) break
+      const before = assigned(s, job)
+      if (
+        index < 0 ||
+        !controls.assign(index, 'idle') ||
+        assigned(s, job) >= before
+      )
+        break
     }
   }
   for (const job of JOB_IDS)
     while (job !== 'idle' && assigned(s, job) < (targets.get(job) ?? 0)) {
       const i = workerCandidate(s, job)
-      if (i < 0 || !controls.assign(i, job)) break
+      const before = assigned(s, job)
+      if (i < 0 || !controls.assign(i, job) || assigned(s, job) <= before) break
     }
 }
 

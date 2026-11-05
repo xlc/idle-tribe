@@ -46,3 +46,18 @@ test('exploratory paths are repeatable for the same seed', () => {
   expect(second.maxVisitControls).toBe(first.maxVisitControls)
   expect(different.actions).not.toEqual(first.actions)
 })
+
+test('daily exploratory paths recover when food releases construction workers', () => {
+  const result = runBalance({
+    branch: 'forestry',
+    policy: 'exploratory',
+    schedule: 'daily',
+    days: 5,
+    goal: 'mechanization',
+    pathSeed: 42,
+    finishAtHorizon: true,
+    collectDetails: false,
+  })
+  expect(result.wallSeconds).toBe(5 * 24 * HOURS)
+  expect(result.final.people).toBeGreaterThan(0)
+}, 30_000)
