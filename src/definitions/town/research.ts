@@ -169,7 +169,7 @@ export const research = {
   'record-keeping': {
     name: 'Record keeping',
     cost: { knowledge: 600, planks: 200, blocks: 100 },
-    seconds: 10800,
+    seconds: 9000,
     effect:
       'Knowledge capacity \u00d71.50 in addition to other storage effects; full-speed offline window +4h.',
     description:
