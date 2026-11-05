@@ -30,7 +30,6 @@ export function Production({
   })
   // Keep action placement stable; workplaces only describe the facility.
   const actions = ACTION_IDS.filter((id) => ACTIONS[id].visible(s))
-  const built = available.filter((id) => s.facilities[id].level > 0).length
   return (
     <section className="production-view">
       {actions.length > 0 && (
@@ -54,12 +53,8 @@ export function Production({
             Workplaces
           </>
         }
-        status={`${built} built · ${available.length} available`}
         ariaLabel="Workplaces"
       >
-        <p className="section-description">
-          Build spaces that turn people, time, and materials into progress.
-        </p>
         <div className="building-grid">
           {available.map((id) => (
             <Facility key={id} {...props} id={id} />
