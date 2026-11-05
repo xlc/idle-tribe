@@ -40,11 +40,7 @@ export function Stockpile({ session }: { session: GameSession }) {
         )
       }),
   )
-  const foodNet = flows.food.production - flows.food.inputs - flows.food.meals
-  const foodShortage =
-    flows.food.meals > 0 &&
-    foodNet < -EPSILON &&
-    s.resources.food + EPSILON < flows.food.meals
+  const noFood = s.resources.food <= EPSILON
   function resource(r: ResourceId) {
     const capacity = storageCapacity(s, r),
       full = storageFull(s, r),
@@ -54,18 +50,20 @@ export function Stockpile({ session }: { session: GameSession }) {
       rate =
         Math.abs(effectiveNet) < MIN_VISIBLE_RESOURCE_CHANGE
           ? 0
-          : effectiveNet / 60,
-      warning = r === 'food' && foodShortage
+          : effectiveNet / 60
     return (
       <section
         className="resource"
-        data-warning={warning}
-        aria-label={`${RESOURCE_INFO[r].name} resource, ${formatResource(s.resources[r])} of ${formatResource(capacity)} storage${full ? ', full' : ''}${warning ? ', automated work paused' : ''}`}
+        aria-label={`${RESOURCE_INFO[r].name} resource, ${formatResource(s.resources[r])} of ${formatResource(capacity)} storage${full ? ', full' : ''}`}
         key={r}
       >
         <ResourceArt resource={r} />
         <span className="resource-name">{RESOURCE_INFO[r].name}</span>
-        <strong className="resource-value" data-full={full}>
+        <strong
+          className="resource-value"
+          data-full={full}
+          data-zero={r === 'food' && s.resources[r] <= EPSILON}
+        >
           {formatCompactResource(s.resources[r])} /{' '}
           {formatCompactResource(capacity)}
         </strong>
@@ -126,7 +124,7 @@ export function Stockpile({ session }: { session: GameSession }) {
                   state={s}
                   flow={flows[r]}
                   entries={entries[r]}
-                  warning={r === 'food' && foodShortage}
+                  warning={r === 'food' && noFood}
                 />
               ))}
             </div>
@@ -185,14 +183,18 @@ function ResourceDetails({
       </header>
       {(warning || full) && (
         <p className="stockpile-detail-warning">
-          {warning ? 'Starving · automated work paused' : 'Storage full'}
+          {warning ? 'No food · automated work paused' : 'Storage full'}
         </p>
       )}
       {visible.length > 0 && (
         <ul className="stockpile-detail-flows">
           {visible.map((entry) => (
             <li key={`${entry.label}:${entry.kind}`}>
-              <span>{entry.label}</span>
+              <span>
+                {entry.kind === 'meal'
+                  ? `${entry.label} · ${s.people.length} ${s.people.length === 1 ? 'person' : 'people'}`
+                  : entry.label}
+              </span>
               <span
                 className="resource-rate"
                 data-negative={entry.kind !== 'production'}
