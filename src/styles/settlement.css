@@ -297,10 +297,12 @@
 .research-active[data-running="true"] {
   border-top-color: var(--color-accent);
 }
-.research-icon {
+.research-icon,
+.construction-icon {
   color: var(--color-primary);
 }
-.research-icon svg {
+.research-icon svg,
+.construction-icon svg {
   width: 28px;
   height: 28px;
 }

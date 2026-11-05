@@ -39,7 +39,7 @@ import {
 } from '../settlement'
 import { resourceRates } from '../simulation'
 import type { BuildingId, GameState, Project } from '../types'
-import { BuildingArt } from './art'
+import { BuildingArt, ViewIcon } from './art'
 import {
   ActionCountdown,
   ActionProgress,
@@ -188,8 +188,8 @@ export function Facility({
       className="research-active facility-construction"
       data-running={speed > 0}
     >
-      <span className="action-icon facility-art" aria-hidden="true">
-        <BuildingArt building={id} />
+      <span className="action-icon construction-icon" aria-hidden="true">
+        <ViewIcon name="buildings" />
       </span>
       <span className="action-copy">
         <strong className="action-name">
