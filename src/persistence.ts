@@ -119,7 +119,7 @@ function exploreOutcome(v: JsonValue | undefined): ExploreOutcome | null {
 }
 function project(v: JsonValue | undefined): Project {
   const p = object(v),
-    kind = member(p.kind, ['research', 'expand', 'convert', 'equip'] as const)
+    kind = member(p.kind, ['research', 'expand', 'equip'] as const)
   if (kind === 'research')
     return {
       kind,
@@ -127,11 +127,8 @@ function project(v: JsonValue | undefined): Project {
       target: number(p.target, 1, Infinity, true),
     }
   const id = member(p.id, BUILDING_IDS)
-  if (kind === 'equip')
-    return { kind, id, target: number(p.target, 1, Infinity, true) }
-  const form = number(p.form, 0, BUILDINGS[id].forms.length - 1, true)
-  if (kind === 'convert') return { kind, id, form }
-  return { kind, id, form, target: number(p.target, 1, Infinity, true) }
+  const target = number(p.target, 1, Infinity, true)
+  return kind === 'expand' ? { kind, id, target } : { kind, id, target }
 }
 function entry(v: JsonValue | undefined): QueueEntry {
   const e = object(v)
@@ -193,11 +190,11 @@ export function parseSave(serialized: string | null, nameSeed = 0): GameState {
     s.facilities = createRecord(BUILDING_IDS, (id) => {
       const f = object(facilities[id]),
         level = number(f.level, 0, BUILDINGS[id].unique ? 1 : Infinity, true),
-        form = number(f.form, 0, BUILDINGS[id].forms.length - 1, true),
         equipment = number(f.equipment, 0, Infinity, true)
-      if ((!level && (form || equipment)) || (equipment && !BUILDINGS[id].job))
+      if ((!level && equipment) || (equipment && !BUILDINGS[id].job))
         throw new Error('Invalid facility')
-      return { level, form, equipment }
+      if ('form' in f) throw new Error('Invalid facility')
+      return { level, equipment }
     })
     s.discovered = {
       wood: bool(discovered.wood),

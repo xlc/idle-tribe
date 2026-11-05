@@ -89,10 +89,8 @@ export function investmentOutcome(
         if (outcome) return outcome
         const base = compare(
           `${RESOURCE_INFO[jobRecipe(craft).output].name}/s base`,
-          (BUILDINGS[project.id].forms[state.facilities[project.id].form]
-            ?.rate ?? 0) / 60,
-          (BUILDINGS[project.id].forms[after.facilities[project.id].form]
-            ?.rate ?? 0) / 60,
+          (BUILDINGS[project.id]?.rate ?? 0) / 60,
+          (BUILDINGS[project.id]?.rate ?? 0) / 60,
         )
         if (base) return base
         const tools = compare(

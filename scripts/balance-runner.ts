@@ -276,14 +276,14 @@ export function runBalance(
     controls.plan({ kind: 'research', id: 'timber-camps' })
     advance(0)
     waitForResearch(deadline, 'foraging-rounds', 'timber-camps')
-    // Research unlocks the building forms; construction still needs to be
+    // Research unlocks the building; construction still needs to be
     // queued and paid for. Gather all three opening building costs before
     // queueing them because construction claims the lone person as builder.
     gather('wood', 27, deadline)
     gather('food', 8, deadline)
-    controls.plan({ kind: 'expand', id: 'housing', target: 1, form: 0 })
-    controls.plan({ kind: 'expand', id: 'foraging', target: 1, form: 0 })
-    controls.plan({ kind: 'expand', id: 'lumber', target: 1, form: 0 })
+    controls.plan({ kind: 'expand', id: 'housing', target: 1 })
+    controls.plan({ kind: 'expand', id: 'foraging', target: 1 })
+    controls.plan({ kind: 'expand', id: 'lumber', target: 1 })
     while (
       (state.queues.construction.waiting.length ||
         state.queues.construction.active) &&

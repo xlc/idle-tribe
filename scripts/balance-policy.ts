@@ -8,7 +8,7 @@ import {
   quoteProject,
   researchVisible,
 } from '../src/research'
-import { canAfford, storageCapacity } from '../src/resources'
+import { canAfford } from '../src/resources'
 import {
   assigned,
   assignJob,
@@ -170,7 +170,7 @@ export function makeDecisions(
   for (const [id, target] of priorities) {
     if (
       s.facilities[id].level >= target ||
-      requirementBlocker(s, BUILDINGS[id].forms[0]?.requires ?? {})
+      requirementBlocker(s, BUILDINGS[id].requires)
     )
       continue
     if (
@@ -204,29 +204,6 @@ export function makeDecisions(
     )
     if (s.queues.construction.waiting.length < 2 && supplied)
       controls.plan(project)
-  }
-  for (const id of BUILDING_IDS) {
-    const f = s.facilities[id],
-      next = BUILDINGS[id].forms[f.form + 1]
-    if (
-      f.level &&
-      next &&
-      !requirementBlocker(s, next.requires) &&
-      !allEntries(s).some(
-        (e) => e.project.kind !== 'research' && e.project.id === id,
-      )
-    ) {
-      // Converting an expanded building costs capital scaled by its level.
-      // Defer conversions whose cost exceeds storage capacity: they can never
-      // be funded, and queueing one blocks every project behind it.
-      const quote = quoteProject(s, {
-        kind: 'convert',
-        id,
-        form: f.form + 1,
-      })
-      if (RESOURCES.every((r) => (quote.cost[r] ?? 0) <= storageCapacity(s, r)))
-        controls.plan({ kind: 'convert', id, form: f.form + 1 })
-    }
   }
   if (!rebalance) return
   const actual = s
@@ -313,7 +290,7 @@ export function makeDecisions(
           : 1) +
           (rates[output] < 0 ? 100000 : 0)) /
           (1 + assigned(s, job))) *
-        (policy === 'simple' ? 1 : (building?.forms[0]?.rate ?? 1))
+        (policy === 'simple' ? 1 : (building?.rate ?? 1))
       )
     }
     const ranked = choices

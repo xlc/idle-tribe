@@ -10,7 +10,6 @@ import type {
   ActionDefinition,
   BuildingDefinition,
   EquipmentDefinition,
-  FormDefinition,
   JobDefinition,
   PerkDefinition,
   ResearchDefinition,
@@ -23,7 +22,6 @@ export interface EraDefinition {
   landscape: 'camp' | 'town' | 'future'
   resources: Partial<Record<ResourceId, ResourceDefinition>>
   buildings: Partial<Record<BuildingId, BuildingDefinition>>
-  buildingUpgrades: Partial<Record<BuildingId, FormDefinition[]>>
   research: Partial<Record<ResearchId, ResearchDefinition>>
   jobs: Partial<Record<WorkingJob, JobDefinition>>
   actions: Partial<Record<ActionId, ActionDefinition>>

@@ -286,7 +286,7 @@ export function advanceTime(
         )
       }
     }
-    // A zero-work conversion can complete without advancing the timeline.
+    // A zero-work project can complete without advancing the timeline.
     if (step <= EPSILON) {
       if (settleEvents(state, visible)) rules = intervalRules(state)
       step = Math.min(remaining, EPSILON)

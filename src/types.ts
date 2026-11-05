@@ -152,7 +152,7 @@ export interface ResearchDefinition {
   unlockHappiness?: boolean
   discoverTimeBox?: boolean
 }
-export interface FormDefinition {
+export interface BuildingDefinition {
   name: string
   description: string
   requires: Requirements
@@ -164,18 +164,12 @@ export interface FormDefinition {
   housing?: number
   input?: Cost
   offlineHours?: number
-}
-export interface BuildingDefinition {
-  forms: FormDefinition[]
   effect: string
-  // One job for crafting workplaces; several for gathering camps that host
-  // multiple actions.
   job?: JobId | readonly JobId[]
   unique?: boolean
   crew?: number
   leisure?: number
   amenities?: number
-  offlineHours?: number
   jobBonus?: Partial<Record<JobId, number>>
 }
 export interface JobDefinition {
@@ -194,13 +188,11 @@ export interface Person {
 }
 export interface Facility {
   level: number
-  form: number
   equipment: number
 }
 export type Project =
   | { kind: 'research'; id: ResearchId; target?: number }
-  | { kind: 'expand'; id: BuildingId; target: number; form: number }
-  | { kind: 'convert'; id: BuildingId; form: number }
+  | { kind: 'expand'; id: BuildingId; target: number }
   | { kind: 'equip'; id: BuildingId; target: number }
 export interface QueueEntry {
   sequence: number
@@ -210,7 +202,6 @@ export interface ActiveProject extends QueueEntry {
   paid: Cost
   progress: number
   total: number
-  // Index of the idle person staffing this project; research only.
   worker?: number
 }
 export interface ProjectQueue {

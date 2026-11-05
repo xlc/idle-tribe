@@ -14,15 +14,13 @@ import { parseSave } from './persistence'
 import {
   allEntries,
   cancelProject,
-  completeProject,
   enqueue,
   moveProject,
   nextExpansion,
-  plannedQuotes,
   quoteProject,
   startQueues,
 } from './research'
-import { canAfford, capital, storageCapacity, storageFull } from './resources'
+import { canAfford, storageCapacity, storageFull } from './resources'
 import {
   adjustWorkers,
   assignJob,
@@ -137,8 +135,8 @@ test('an older ready queue pays first, but a blocked queue does not reserve stoc
   s.discovered.wood = true
   people(s, 'builder')
   s.resources.food = 10
-  s.resources.wood = BUILDINGS.housing.forms[0]?.cost.wood ?? 0
-  enqueue(s, { kind: 'expand', id: 'housing', target: 1, form: 0 })
+  s.resources.wood = BUILDINGS.housing.cost.wood ?? 0
+  enqueue(s, { kind: 'expand', id: 'housing', target: 1 })
   enqueue(s, { kind: 'research', id: 'stone-tools' })
   startQueues(s)
   expect(s.queues.construction.active?.project.kind).toBe('expand')
@@ -150,7 +148,7 @@ test('an older ready queue pays first, but a blocked queue does not reserve stoc
   other.resources.wood = 20
   other.resources.food = 10
   enqueue(other, { kind: 'research', id: 'stone-tools' })
-  enqueue(other, { kind: 'expand', id: 'housing', target: 1, form: 0 })
+  enqueue(other, { kind: 'expand', id: 'housing', target: 1 })
   startQueues(other)
   expect(other.queues.construction.active?.project.kind).toBe('expand')
 })
@@ -162,14 +160,13 @@ test('both eligible queue heads use enqueue order and preserve it through reorde
   s.resources.planks = 200
   s.resources.blocks = 100
   enqueue(s, { kind: 'research', id: 'record-keeping' })
-  enqueue(s, { kind: 'expand', id: 'sawmill', target: 3, form: 0 })
+  enqueue(s, { kind: 'expand', id: 'sawmill', target: 3 })
   // Both need resources shared with construction; the oldest research wins.
   s.facilities.sawmill.level = 0
   required(s.queues.construction.waiting[0]).project = {
     kind: 'expand',
     id: 'farm',
     target: 3,
-    form: 0,
   }
   startQueues(s)
   expect(s.queues.research.active?.project.id).toBe('record-keeping')
@@ -186,70 +183,7 @@ test('both eligible queue heads use enqueue order and preserve it through reorde
   expect(quoteProject(q, second.project).blocker).toBe('Requires level 3')
 })
 
-test('converting at different levels charges the same cumulative modern materials and work', () => {
-  const early = settlement(),
-    late = settlement()
-  early.facilities.housing.level = 1
-  late.facilities.housing.level = 4
-  const baseWork = BUILDINGS.housing.forms[0]?.work ?? 0
-  const first = quoteProject(early, { kind: 'convert', id: 'housing', form: 1 })
-  completeProject(early, { kind: 'convert', id: 'housing', form: 1 })
-  let planks = first.cost.planks ?? 0,
-    work = first.total + baseWork
-  for (let target = 2; target <= 4; target++) {
-    const p = {
-        kind: 'expand' as const,
-        id: 'housing' as const,
-        target,
-        form: 1,
-      },
-      q = quoteProject(early, p)
-    planks += q.cost.planks ?? 0
-    work += q.total
-    completeProject(early, p)
-  }
-  const conversion = quoteProject(late, {
-    kind: 'convert',
-    id: 'housing',
-    form: 1,
-  })
-  expect(planks).toBe(conversion.cost.planks ?? 0)
-  expect(work).toBeCloseTo(
-    conversion.total + baseWork * (1 + 1.5625 + 2.25 + 3.0625),
-    8,
-  )
-  expect(planks).toBe(capital({ planks: 12 }, 4).planks ?? 0)
-})
-
-test('conversion preserves staffing, partial cycles, levels, and tools', () => {
-  const s = settlement()
-  people(s, 'woodcutter', 'builder')
-  required(s.people[0]).progress = 0.6
-  s.facilities.lumber.equipment = 2
-  completeProject(s, { kind: 'convert', id: 'lumber', form: 1 })
-  expect(s.facilities.lumber).toEqual({ level: 2, form: 1, equipment: 2 })
-  expect(s.people[0]?.progress).toBe(0.6)
-  expect(s.people[0]?.job).toBe('woodcutter')
-})
-
-test('planning quotes use target levels and preceding forms, actual payment uses current form', () => {
-  const s = settlement()
-  people(s, 'builder')
-  enqueue(s, { kind: 'convert', id: 'housing', form: 1 })
-  enqueue(s, nextExpansion(s, 'housing'))
-  const entry = s.queues.construction.waiting[1]
-  if (!entry) throw new Error('No planned entry')
-  const quote = plannedQuotes(s, 'construction').get(entry.sequence)
-  expect(quote?.cost.planks).toBeGreaterThan(0)
-  expect(quote?.cost.wood).toBe(0)
-  const before = s.resources.planks
-  advanceTime(s, 3600)
-  expect(s.facilities.housing.form).toBe(1)
-  expect(s.facilities.housing.level).toBe(3)
-  expect(s.resources.planks).toBeLessThan(before)
-})
-
-test('removal preserves people and stock, releases workers, and rebuilding accepts a modern form', () => {
+test('removal preserves people and stock, releases workers, and rebuilding starts from the base building', () => {
   const s = settlement()
   people(s, 'woodcutter', 'builder')
   s.facilities.lumber.equipment = 2
@@ -257,9 +191,9 @@ test('removal preserves people and stock, releases workers, and rebuilding accep
   expect(removeFacility(s, 'lumber')).toBe(true)
   expect(s.people[0]?.job).toBe('idle')
   expect(s.resources.wood).toBe(wood)
-  enqueue(s, { kind: 'expand', id: 'lumber', target: 1, form: 1 })
+  enqueue(s, { kind: 'expand', id: 'lumber', target: 1 })
   advanceTime(s, 900)
-  expect(s.facilities.lumber).toEqual({ level: 1, form: 1, equipment: 0 })
+  expect(s.facilities.lumber).toEqual({ level: 1, equipment: 0 })
 })
 
 test('storage capacity caps new resource gains while prices remain payable', () => {
@@ -360,8 +294,8 @@ test('the common research graph is reachable independently of either branch', ()
             (id) => RESEARCH[id].requires.facilities?.[facility] ?? 0,
           ),
         )
-        const form = BUILDINGS[facility].forms[0]
-        if (form && !requirementBlocker(s, form.requires))
+        const building = BUILDINGS[facility]
+        if (building && !requirementBlocker(s, building.requires))
           s.facilities[facility].level = Math.max(
             s.facilities[facility].level,
             needed,
@@ -384,15 +318,14 @@ test('a missing lower expansion can be rebuilt while a higher target stays queue
   const s = settlement()
   people(s, 'builder')
   s.facilities.housing.level = 0
-  enqueue(s, { kind: 'expand', id: 'housing', target: 2, form: 0 })
-  const rebuild = nextExpansion(s, 'housing', 1)
-  expect(rebuild).toEqual({ kind: 'expand', id: 'housing', target: 1, form: 1 })
+  enqueue(s, { kind: 'expand', id: 'housing', target: 2 })
+  const rebuild = nextExpansion(s, 'housing')
+  expect(rebuild).toEqual({ kind: 'expand', id: 'housing', target: 1 })
   enqueue(s, rebuild)
   const entry = required(s.queues.construction.waiting[1])
   moveProject(s, 'construction', entry.sequence, -1)
   advanceTime(s, 2400)
   expect(s.facilities.housing.level).toBe(2)
-  expect(s.facilities.housing.form).toBe(1)
 })
 
 test('food gathering rewards the first second and opens exploration once a trip is affordable', () => {

@@ -169,10 +169,10 @@ export function actionAvailability(
 
 export function actionWorkersUnlocked(state: GameState, id: ActionId) {
   const def = ACTIONS[id]
-  const form = BUILDINGS[def.building].forms[0]
+  const building = BUILDINGS[def.building]
   return (
     state.facilities[def.building].level > 0 &&
-    !requirementBlocker(state, form?.requires ?? {})
+    !requirementBlocker(state, building.requires)
   )
 }
 
@@ -239,7 +239,7 @@ export function isRateMode(state: GameState, id: ActionId) {
 }
 
 // Automated output keeps the old worker-job balance: 10% of yield per
-// completion, raised by research, building forms and equipment, with
+// completion, raised by research, equipment, with
 // happiness as the final multiplier. Manual clicks give full yield.
 export function automationFactor(state: GameState, id: ActionId) {
   let factor = ACTION_BALANCE.baseAutomation
@@ -248,8 +248,7 @@ export function automationFactor(state: GameState, id: ActionId) {
       factor += researchEffects(state, r).actionAutomation?.[id] ?? 0
   const facility = state.facilities[ACTIONS[id].building]
   if (facility.level > 0) {
-    const form = BUILDINGS[ACTIONS[id].building].forms[facility.form]
-    factor += form?.actionAutomation?.[id] ?? 0
+    factor += BUILDINGS[ACTIONS[id].building].actionAutomation?.[id] ?? 0
     factor += ACTION_BALANCE.automationPerEquipment * facility.equipment
   }
   return factor

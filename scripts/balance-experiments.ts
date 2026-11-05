@@ -6,7 +6,7 @@ import {
   offlineWindow,
   settleAbsence,
 } from '../src/clock'
-import { BUILDINGS, JOBS } from '../src/definitions'
+import { JOBS } from '../src/definitions'
 import { createGame } from '../src/game'
 import { PERK_IDS, RESOURCES } from '../src/ids'
 import { isProductionJob } from '../src/jobs'
@@ -103,8 +103,6 @@ const cases: {
 for (const scenario of cases) {
   const base = structuredClone(checkpoint(scenario.milestone).state)
   clearPlans(base)
-  const def = BUILDINGS[scenario.workplace],
-    facility = base.facilities[scenario.workplace]
   const candidates: { name: string; project?: Project; staff?: true }[] = [
     { name: 'hold' },
     { name: 'expand', project: nextExpansion(base, scenario.workplace) },
@@ -112,15 +110,6 @@ for (const scenario of cases) {
     { name: 'storage', project: nextExpansion(base, scenario.storage) },
     { name: 'staff', staff: true },
   ]
-  if (def.forms[facility.form + 1])
-    candidates.push({
-      name: 'convert',
-      project: {
-        kind: 'convert',
-        id: scenario.workplace,
-        form: facility.form + 1,
-      },
-    })
   for (const candidate of candidates) {
     const state = structuredClone(base),
       game = createGame(state)

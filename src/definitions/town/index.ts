@@ -1,5 +1,4 @@
 import type { EraDefinition } from '../types'
-import { buildingUpgrades } from './building-upgrades'
 import { buildings } from './buildings'
 import { equipment } from './equipment'
 import { jobs } from './jobs'
@@ -13,7 +12,6 @@ export const TOWN = {
     'A settlement large enough for everyone to have opinions about it.',
   resources,
   buildings,
-  buildingUpgrades,
   research,
   jobs,
   actions: {},

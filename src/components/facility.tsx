@@ -1,5 +1,4 @@
-import { Card, Select } from '@radix-ui/themes'
-import { useState } from 'react'
+import { Card } from '@radix-ui/themes'
 import {
   ACTION_BALANCE,
   actionCost,
@@ -18,13 +17,11 @@ import { RESOURCES } from '../ids'
 import { investmentOutcome } from '../investment'
 import { isProductionJob } from '../jobs'
 import {
-  allEntries,
   buildBlocker,
   nextEquipment,
   nextExpansion,
   previewProject,
   projectName,
-  researchPlan,
 } from '../research'
 import { affordability, canAfford, storageCapacity } from '../resources'
 import {
@@ -34,7 +31,6 @@ import {
   equipmentMultiplier,
   housingCapacity,
   jobInput,
-  requirementBlocker,
   workerRate,
 } from '../settlement'
 import { resourceRates } from '../simulation'
@@ -75,13 +71,10 @@ export function Facility({
   const s = session.game.state,
     def = BUILDINGS[id],
     f = s.facilities[id],
-    [selectedForm, setSelectedForm] = useState(f.form)
-  const form = def.forms[f.level ? f.form : selectedForm],
     jobs = buildingJobs(id),
     actions = buildingActions(id),
     visibleActions = actions.filter((a) => ACTIONS[a].visible(s))
-  if (!form) return null
-  const expansion = nextExpansion(s, id, selectedForm),
+  const expansion = nextExpansion(s, id),
     quote = previewProject(s, expansion),
     n = jobs.reduce((sum, job) => sum + assigned(s, job), 0)
   const singleAction = actions.length === 1 ? actions[0] : undefined,
@@ -126,9 +119,9 @@ export function Facility({
     ),
     speed = constructionSpeed(s) / 60,
     blocker = activeEntry ? '' : buildBlocker(s)
-  const facilityType = form.housing
+  const facilityType = def.housing
     ? 'Housing'
-    : form.storage
+    : def.storage
       ? 'Storage'
       : actions.length
         ? 'Gathering'
@@ -139,7 +132,7 @@ export function Facility({
     ? expansion.kind === 'expand'
       ? `Expand to level ${expansion.target}`
       : 'Upgrade workplace'
-    : `Build ${form.name}`
+    : `Build ${def.name}`
   const missingBuildCost = !canAfford(s, quote.cost)
   const equipment = nextEquipment(s, id),
     equipmentQuote = previewProject(s, equipment)
@@ -168,7 +161,7 @@ export function Facility({
         ? `Housing capacity ${housingCapacity(s)} → ${housingCapacity(after)}. `
         : ''
     confirm(
-      `Remove ${form.name}?`,
+      `Remove ${def.name}?`,
       `${housing}${losses.join('; ')}${losses.length ? '. ' : ''}${jobs.length ? `${n} workers become unassigned;${output ? ` ${formatResource(production)} ${RESOURCE_INFO[output].name.toLowerCase()}/s production removed. ` : ' '}` : ''}${rateChanges ? `${rateChanges}. ` : ''}Levels and equipment are lost with no refund. People and stockpiles remain.`,
       () => session.game.remove(id),
     )
@@ -245,9 +238,7 @@ export function Facility({
           variant="solid"
           color="grass"
           disabled={Boolean(blocker)}
-          onClick={() =>
-            session.change(() => session.game.build(id, selectedForm))
-          }
+          onClick={() => session.change(() => session.game.build(id))}
         >
           {buildLabel}
         </Button>
@@ -268,7 +259,7 @@ export function Facility({
                 ? 'blocked'
                 : undefined
         }
-        aria-label={form.name}
+        aria-label={def.name}
       >
         {missingBuildCost && !activeEntry && (
           <CostProgress progress={affordability(s, quote.cost)} />
@@ -279,7 +270,7 @@ export function Facility({
           </span>
           <div className="action-copy facility-info">
             <div className="facility-title-row">
-              <h3>{form.name}</h3>
+              <h3>{def.name}</h3>
               <span className="facility-type">{facilityType}</span>
             </div>
             <span className="facility-level">
@@ -313,13 +304,13 @@ export function Facility({
               </div>
             ) : (
               <p className="building-recipe">
-                {form.housing
-                  ? `Adds +${form.housing} housing capacity per level`
-                  : form.storage
-                    ? RESOURCES.filter((r) => form.storage?.[r])
+                {def.housing
+                  ? `Adds +${def.housing} housing capacity per level`
+                  : def.storage
+                    ? RESOURCES.filter((r) => def.storage?.[r])
                         .map(
                           (r) =>
-                            `Adds +${form.storage?.[r]} ${RESOURCE_INFO[r].name.toLowerCase()} storage`,
+                            `Adds +${def.storage?.[r]} ${RESOURCE_INFO[r].name.toLowerCase()} storage`,
                         )
                         .join(' · ')
                     : def.effect}
@@ -351,16 +342,16 @@ export function Facility({
         {investment}
         <details className="facility-detail">
           <summary>More details & upgrades</summary>
-          <p className="flavor">{form.description}</p>
+          <p className="flavor">{def.description}</p>
           {craftingJob && output && RESOURCES.some((r) => input[r]) && (
             <p>
               {formatCost(input)} → 1 {RESOURCE_INFO[output].name.toLowerCase()}
             </p>
           )}
-          {(form.rate || (jobs && f.equipment) || quote.blocker) && (
+          {(def.rate || (jobs && f.equipment) || quote.blocker) && (
             <p>
-              {form.rate
-                ? `Base ${formatResource(form.rate / 60)}/s per worker. `
+              {def.rate
+                ? `Base ${formatResource(def.rate / 60)}/s per worker. `
                 : ''}
               {jobs && f.equipment
                 ? actions.length
@@ -370,83 +361,6 @@ export function Facility({
               {quote.blocker}
             </p>
           )}
-          {!f.level && def.forms.length > 1 && (
-            <label htmlFor={`build-form-${id}`}>
-              Build form{' '}
-              <Select.Root
-                value={String(selectedForm)}
-                size="2"
-                onValueChange={(value) => setSelectedForm(Number(value))}
-              >
-                <Select.Trigger
-                  id={`build-form-${id}`}
-                  aria-label="Build form"
-                />
-                <Select.Content>
-                  {def.forms.map(
-                    (v, i) =>
-                      !requirementBlocker(researchPlan(s), v.requires) && (
-                        <Select.Item key={v.name} value={String(i)}>
-                          {v.name}
-                        </Select.Item>
-                      ),
-                  )}
-                </Select.Content>
-              </Select.Root>
-            </label>
-          )}
-          {f.level > 0 &&
-            def.forms.map(
-              (v, i) =>
-                i > f.form &&
-                !requirementBlocker(researchPlan(s), v.requires) && (
-                  <div key={v.name}>
-                    <p>
-                      {v.name} · {v.description}
-                    </p>
-                    <p>
-                      {v.rate
-                        ? `${formatResource(v.rate / 60)}/s per worker before bonuses. `
-                        : ''}
-                      {v.housing
-                        ? `${v.housing} housing capacity per level. `
-                        : ''}
-                      {v.storage
-                        ? `Base storage: ${formatCost(v.storage)}. `
-                        : ''}
-                      {v.offlineHours
-                        ? `Offline window +${v.offlineHours} × √level hours. `
-                        : ''}
-                      {craftingJob && output
-                        ? `Recipe: ${formatCost(jobInput({ ...s, facilities: { ...s.facilities, [id]: { ...f, form: i } } }, craftingJob))} → 1 ${RESOURCE_INFO[output].name.toLowerCase()}.`
-                        : ''}
-                    </p>
-                    <Costs
-                      session={session}
-                      cost={
-                        previewProject(s, { kind: 'convert', id, form: i }).cost
-                      }
-                    />
-                    <InvestmentChange
-                      state={s}
-                      project={{ kind: 'convert', id, form: i }}
-                    />
-                    <Button
-                      disabled={allEntries(s).some(
-                        (e) =>
-                          e.project.kind === 'convert' &&
-                          e.project.id === id &&
-                          e.project.form === i,
-                      )}
-                      onClick={() =>
-                        session.change(() => session.game.convert(id, i))
-                      }
-                    >
-                      Convert to {v.name}
-                    </Button>
-                  </div>
-                ),
-            )}
           {jobs && f.level > 0 && (
             <div
               className="facility-equipment-slot"

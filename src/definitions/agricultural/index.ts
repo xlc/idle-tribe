@@ -1,5 +1,4 @@
 import type { EraDefinition } from '../types'
-import { buildingUpgrades } from './building-upgrades'
 import { buildings } from './buildings'
 import { equipment } from './equipment'
 import { jobs } from './jobs'
@@ -11,7 +10,6 @@ export const AGRICULTURAL = {
   description: 'Dinner has put down roots, and so have we.',
   resources: {},
   buildings,
-  buildingUpgrades,
   research,
   jobs,
   actions: {},

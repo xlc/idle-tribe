@@ -104,20 +104,14 @@ function requirementEra(requirements: Requirements) {
   )
 }
 
-test('research and building forms are owned by the era that unlocks them', () => {
+test('research and buildings are owned by the era that unlocks them', () => {
   ERA_DEFINITIONS.forEach((era, index) => {
     for (const definition of Object.values(era.research))
       expect(
         Math.max(definition.era ?? 0, requirementEra(definition.requires)),
       ).toBe(index)
     for (const definition of Object.values(era.buildings))
-      for (const form of definition.forms)
-        expect(requirementEra(form.requires)).toBe(index)
-    for (const [id, forms] of Object.entries(era.buildingUpgrades)) {
-      expect(buildingEras.get(id)).toBeLessThan(index)
-      for (const form of forms)
-        expect(requirementEra(form.requires)).toBe(index)
-    }
+      expect(requirementEra(definition.requires)).toBe(index)
   })
 })
 

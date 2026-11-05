@@ -1,5 +1,4 @@
 import type { EraDefinition } from '../types'
-import { buildingUpgrades } from './building-upgrades'
 import { buildings } from './buildings'
 import { jobs } from './jobs'
 import { perks } from './perks'
@@ -12,7 +11,6 @@ export const INDUSTRIAL = {
   description: 'The settlement has discovered a louder way to work.',
   resources,
   buildings,
-  buildingUpgrades,
   research,
   jobs,
   actions: {},

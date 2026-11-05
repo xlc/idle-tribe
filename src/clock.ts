@@ -12,8 +12,7 @@ export function offlineWindow(state: GameState) {
   let hours = 8 + (state.legacy.perks['longer-preparations'] ? 2 : 0)
   for (const id of BUILDING_IDS)
     hours +=
-      ((BUILDINGS[id].offlineHours ?? 0) +
-        (BUILDINGS[id].forms[state.facilities[id].form]?.offlineHours ?? 0)) *
+      ((BUILDINGS[id].offlineHours ?? 0) + (BUILDINGS[id].offlineHours ?? 0)) *
       Math.sqrt(state.facilities[id].level)
   for (const id of RESEARCH_IDS)
     if (hasResearch(state, id))

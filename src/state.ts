@@ -31,7 +31,6 @@ export function createDefaultState(nameSeed = 0): GameState {
     resources,
     facilities: createRecord(BUILDING_IDS, () => ({
       level: 0,
-      form: 0,
       equipment: 0,
     })),
     research: createRecord(RESEARCH_IDS, () => 0),

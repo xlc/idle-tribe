@@ -4,195 +4,140 @@ import type { BuildingDefinition } from '../../types'
 export const buildings = {
   housing: {
     job: ['greeter'],
-    forms: [
-      {
-        name: 'Shelters',
-        description: 'A roof over your head beats a leaf on your head.',
-        cost: { wood: 4, food: 2 },
-        work: 0.25,
-        requires: { research: ['shelters'] },
-        housing: 2,
-      },
-    ],
-    effect: 'Housing; later forms increase capacity.',
+
+    name: 'Shelters',
+    description: 'A roof over your head beats a leaf on your head.',
+    cost: { wood: 4, food: 2 },
+    work: 0.25,
+    requires: { research: ['shelters'] },
+    housing: 2,
+    effect: 'Housing; higher levels increase capacity.',
   },
   stockyard: {
-    forms: [
-      {
-        name: 'Barn',
-        description:
-          'One roof for every pile: food, materials, tools, and ideas.',
-        cost: { wood: 16, stone: 8 },
-        work: 2,
-        requires: { research: ['stockpiling'] },
-        storage: {
-          food: 400,
-          wood: 300,
-          stone: 300,
-          planks: 150,
-          blocks: 150,
-          tools: 60,
-          knowledge: 200,
-        },
-      },
-    ],
+    name: 'Barn',
+    description: 'One roof for every pile: food, materials, tools, and ideas.',
+    cost: { wood: 16, stone: 8 },
+    work: 2,
+    requires: { research: ['stockpiling'] },
+    storage: {
+      food: 400,
+      wood: 300,
+      stone: 300,
+      planks: 150,
+      blocks: 150,
+      tools: 60,
+      knowledge: 200,
+      ore: 600,
+    },
     effect:
-      'General storage for every early resource; later forms add capacity.',
+      'General storage for every early resource; higher levels add capacity.',
   },
   library: {
-    forms: [
-      {
-        name: 'Records shelter',
-        description: 'Good ideas finally have somewhere to stay overnight.',
-        cost: { planks: 8, blocks: 4 },
-        work: 2,
-        requires: { research: ['oral-tradition'] },
-      },
-    ],
+    name: 'Records shelter',
+    description: 'Good ideas finally have somewhere to stay overnight.',
+    cost: { planks: 8, blocks: 4 },
+    work: 2,
+    requires: { research: ['oral-tradition'] },
     effect:
       'Unlocks the research queue; later archives store knowledge and data.',
   },
   'builders-lodge': {
-    forms: [
-      {
-        name: "Builders' lodge",
-        description:
-          'More builders, fewer arguments about who is holding the ladder.',
-        cost: { planks: 12, blocks: 8 },
-        work: 4,
-        requires: { research: ['masonry'] },
-      },
-    ],
+    name: "Builders' lodge",
+    description:
+      'More builders, fewer arguments about who is holding the ladder.',
+    cost: { planks: 12, blocks: 8 },
+    work: 4,
+    requires: { research: ['masonry'] },
     effect: '+1 organized crew size per level',
     crew: 1,
   },
   'supply-post': {
-    forms: [
-      {
-        name: 'Supply post',
-        description:
-          'Someone remembered to pack for the part where you are away.',
-        cost: { planks: 16, blocks: 8, tools: 4 },
-        work: 6,
-        requires: { research: ['preparedness'] },
-      },
-    ],
+    name: 'Supply post',
+    description: 'Someone remembered to pack for the part where you are away.',
+    cost: { planks: 16, blocks: 8, tools: 4 },
+    work: 6,
+    requires: { research: ['preparedness'] },
     effect: '+2 \u00d7 sqrt(level) full-speed offline hours',
     offlineHours: 2,
   },
   foraging: {
-    forms: [
-      {
-        name: 'Foraging camp',
-        description:
-          'A meeting point for people who know which bushes are lunch.',
-        cost: { wood: 4 },
-        work: 0.5,
-        requires: { research: ['foraging-rounds'] },
-      },
-    ],
+    name: 'Foraging camp',
+    description: 'A meeting point for people who know which bushes are lunch.',
+    cost: { wood: 4 },
+    work: 0.5,
+    requires: { research: ['foraging-rounds'] },
     effect:
       '2 shared worker slots per level for its food actions; equipment improves automation.',
     job: ['forager', 'digger', 'hunter'],
   },
   lumber: {
-    forms: [
-      {
-        name: 'Lumber camp',
-        description: 'Where standing timber begins a career in construction.',
-        cost: { wood: 6 },
-        work: 1,
-        requires: { research: ['timber-camps'], discovery: 'wood' },
-      },
-    ],
+    name: 'Lumber camp',
+    description: 'Where standing timber begins a career in construction.',
+    cost: { wood: 6 },
+    work: 1,
+    requires: { research: ['timber-camps'], discovery: 'wood' },
     effect:
-      '2 shared worker slots per level for its wood actions; forms and equipment improve automation.',
+      '2 shared worker slots per level for its wood actions; levels and equipment improve automation.',
     job: ['woodcutter', 'chopper', 'feller', 'logging-operator'],
   },
   quarry: {
-    forms: [
-      {
-        name: 'Quarry',
-        description: 'A reliable source of rocks and opinions about rocks.',
-        cost: { wood: 8, stone: 4 },
-        work: 1.5,
-        requires: { research: ['stone-tools'] },
-      },
-    ],
+    name: 'Quarry',
+    description: 'A reliable source of rocks and opinions about rocks.',
+    cost: { wood: 8, stone: 4 },
+    work: 1.5,
+    requires: { research: ['stone-tools'] },
     effect:
-      '2 shared worker slots per level for its stone actions; forms and equipment improve automation.',
+      '2 shared worker slots per level for its stone actions; levels and equipment improve automation.',
     job: ['stoneworker', 'stone-splitter', 'stone-miner', 'quarry-operator'],
   },
   'expedition-camp': {
-    forms: [
-      {
-        name: 'Expedition camp',
-        description:
-          'Base camp for people who keep coming back with interesting stories.',
-        cost: { wood: 8, food: 4 },
-        work: 1.5,
-        requires: { research: ['expedition-planning'], expedition: true },
-      },
-    ],
+    name: 'Expedition camp',
+    description:
+      'Base camp for people who keep coming back with interesting stories.',
+    cost: { wood: 8, food: 4 },
+    work: 1.5,
+    requires: { research: ['expedition-planning'], expedition: true },
     effect: 'Explorer workplace; 2 explore slots per level',
     job: 'explorer',
   },
   sawmill: {
-    forms: [
-      {
-        name: 'Sawmill',
-        description: 'Logs enter round and leave with better prospects.',
-        cost: { wood: 32, stone: 20 },
-        work: 3,
-        requires: { research: ['carpentry'] },
-        rate: 0.5,
-      },
-    ],
-    effect: 'Plank production; later forms improve the base rate.',
+    name: 'Sawmill',
+    description: 'Logs enter round and leave with better prospects.',
+    cost: { wood: 32, stone: 20 },
+    work: 3,
+    requires: { research: ['carpentry'] },
+    rate: 0.5,
+    effect: 'Plank production; higher levels improve the base rate.',
     job: 'sawyer',
   },
   stoneworks: {
-    forms: [
-      {
-        name: 'Stoneworks',
-        description:
-          'We found the useful blocks hiding inside the awkward rocks.',
-        cost: { wood: 28, stone: 32 },
-        work: 3,
-        requires: { research: ['masonry'] },
-        rate: 0.5,
-      },
-    ],
-    effect: 'Block production; later forms improve the base rate.',
+    name: 'Stoneworks',
+    description: 'We found the useful blocks hiding inside the awkward rocks.',
+    cost: { wood: 28, stone: 32 },
+    work: 3,
+    requires: { research: ['masonry'] },
+    rate: 0.5,
+    effect: 'Block production; higher levels improve the base rate.',
     job: 'mason',
   },
   'tool-workshop': {
-    forms: [
-      {
-        name: 'Tool workshop',
-        description: 'Making the tools that make making things easier.',
-        cost: { planks: 14, blocks: 8 },
-        work: 4,
-        requires: { research: ['toolmaking'] },
-        rate: 0.2,
-      },
-    ],
-    effect: 'Tool production; later forms improve the base rate.',
+    name: 'Tool workshop',
+    description: 'Making the tools that make making things easier.',
+    cost: { planks: 14, blocks: 8 },
+    work: 4,
+    requires: { research: ['toolmaking'] },
+    rate: 0.2,
+    effect: 'Tool production; higher levels improve the base rate.',
     job: 'toolmaker',
   },
   study: {
-    forms: [
-      {
-        name: 'Learning circle',
-        description:
-          'Sit down with a question and leave with several better ones.',
-        cost: { planks: 16, blocks: 8, food: 30 },
-        work: 4,
-        requires: { research: ['oral-tradition'] },
-        rate: 0.4,
-      },
-    ],
-    effect: 'Knowledge production; later forms improve the base rate.',
+    name: 'Learning circle',
+    description: 'Sit down with a question and leave with several better ones.',
+    cost: { planks: 16, blocks: 8, food: 30 },
+    work: 4,
+    requires: { research: ['oral-tradition'] },
+    rate: 0.4,
+    effect: 'Knowledge production; higher levels improve the base rate.',
     job: 'scholar',
   },
 } satisfies Partial<Record<BuildingId, BuildingDefinition>>

@@ -12,7 +12,6 @@ export const TRIBAL = {
   description: 'Civilization begins with lunch and a fairly optimistic stick.',
   resources,
   buildings,
-  buildingUpgrades: {},
   research,
   jobs,
   actions,

@@ -111,11 +111,4 @@ const BASE_BUILDINGS: Record<BuildingId, BuildingDefinition> = {
   ...BEYOND_QUANTUM.buildings,
 }
 
-// Append later-era forms chronologically, preserving the saved form indexes.
-export const BUILDINGS = createRecord(BUILDING_IDS, (id) => ({
-  ...BASE_BUILDINGS[id],
-  forms: [
-    ...BASE_BUILDINGS[id].forms,
-    ...ERA_DEFINITIONS.flatMap((era) => era.buildingUpgrades[id] ?? []),
-  ],
-}))
+export const BUILDINGS = createRecord(BUILDING_IDS, (id) => BASE_BUILDINGS[id])

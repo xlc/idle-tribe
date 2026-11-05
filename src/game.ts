@@ -38,7 +38,7 @@ export function removeFacility(state: GameState, id: BuildingId) {
         p.job = 'idle'
         p.progress = 0
       }
-  state.facilities[id] = { level: 0, form: 0, equipment: 0 }
+  state.facilities[id] = { level: 0, equipment: 0 }
   return true
 }
 export function createGame(state: GameState) {
@@ -48,11 +48,8 @@ export function createGame(state: GameState) {
     advanceTime: (seconds: number, visible = false) =>
       advanceTime(state, seconds, visible),
     enqueue: (project: Project) => enqueue(state, project),
-    build: (id: BuildingId, form = state.facilities[id].form) =>
-      enqueue(state, nextExpansion(state, id, form)),
+    build: (id: BuildingId) => enqueue(state, nextExpansion(state, id)),
     equip: (id: BuildingId) => enqueue(state, nextEquipment(state, id)),
-    convert: (id: BuildingId, form: number) =>
-      enqueue(state, { kind: 'convert', id, form }),
     remove: (id: BuildingId) => removeFacility(state, id),
     cancel: (id: QueueId, seq: number) => cancelProject(state, id, seq),
     move: (id: QueueId, seq: number, direction: number) =>

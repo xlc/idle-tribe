@@ -30,11 +30,9 @@ import { advancedSettlement, people } from './test-helpers'
 import type { Cost } from './types'
 
 test.each(SPECIALIZATION_IDS)(
-  '%s can supply every resource, building form and eligible research without circular costs',
+  '%s can supply every resource and eligible research without circular costs',
   (branch) => {
     const state = createDefaultState()
-    // Discovery and optional prestige are available; materials must still have
-    // a reachable source before they can fund research, construction or recipes.
     state.discovered = { wood: true, stone: true }
     state.expeditionUnlocked = true
     state.legacy.perks = createRecord(PERK_IDS, () => true)
@@ -45,7 +43,6 @@ test.each(SPECIALIZATION_IDS)(
     }
     const payable = (cost: Cost) =>
       RESOURCES.every((r) => !cost[r] || supply.has(r))
-    const forms = new Set<string>()
     let changed = true
     while (changed) {
       changed = false
@@ -62,30 +59,24 @@ test.each(SPECIALIZATION_IDS)(
         changed = true
       }
       for (const id of BUILDING_IDS) {
+        const def = BUILDINGS[id]
+        if (
+          state.facilities[id].level ||
+          requirementBlocker(state, def.requires) ||
+          !payable(def.cost)
+        )
+          continue
+        completeProject(state, { kind: 'expand', id, target: 1 })
         const crafting = craftingJob(id)
-        for (const [form, def] of BUILDINGS[id].forms.entries()) {
-          const key = `${id}:${form}`
-          if (
-            forms.has(key) ||
-            requirementBlocker(state, def.requires) ||
-            !payable(def.cost) ||
-            (crafting &&
-              isProductionJob(crafting) &&
-              !payable(def.input ?? jobRecipe(crafting).input))
-          )
-            continue
-          forms.add(key)
-          completeProject(state, { kind: 'expand', id, form, target: 1 })
-          // Switching forms does not remove sources already established.
-          state.facilities[id].form = form
-          if (crafting && isProductionJob(crafting))
-            supply.add(jobRecipe(crafting).output)
-          changed = true
-        }
+        if (
+          crafting &&
+          isProductionJob(crafting) &&
+          payable(def.input ?? jobRecipe(crafting).input)
+        )
+          supply.add(jobRecipe(crafting).output)
+        changed = true
       }
     }
-
-    // Only the other specialization and its descendants may be unreachable.
     const locked = new Set<ResearchId>(
       RESEARCH_IDS.filter(
         (id) => RESEARCH[id].branch && RESEARCH[id].branch !== branch,
@@ -108,51 +99,27 @@ test.each(SPECIALIZATION_IDS)(
       RESEARCH_IDS.filter((id) => locked.has(id)),
     )
     expect(RESOURCES.filter((r) => !supply.has(r))).toEqual([])
-    expect(
-      BUILDING_IDS.flatMap((id) =>
-        BUILDINGS[id].forms.flatMap((form, index) =>
-          forms.has(`${id}:${index}`) ? [] : [form.name],
-        ),
-      ),
-    ).toEqual([])
   },
 )
 
-test('storage upgrades retain existing resources and every resource has expandable storage', () => {
-  const state = createDefaultState()
+test('storage buildings cover every resource', () => {
   for (const resource of RESOURCES)
     expect(
-      BUILDING_IDS.some((id) =>
-        BUILDINGS[id].forms.some((form) => (form.storage?.[resource] ?? 0) > 0),
-      ),
+      BUILDING_IDS.some((id) => (BUILDINGS[id].storage?.[resource] ?? 0) > 0),
     ).toBe(true)
-  for (const id of BUILDING_IDS) {
-    const facility = state.facilities[id]
-    facility.level = 2
-    for (let form = 1; form < BUILDINGS[id].forms.length; form++) {
-      facility.form = form - 1
-      const before = createRecord(RESOURCES, (r) => storageCapacity(state, r))
-      completeProject(state, { kind: 'convert', id, form })
-      for (const resource of RESOURCES)
-        expect(storageCapacity(state, resource)).toBeGreaterThanOrEqual(
-          before[resource],
-        )
-    }
-    facility.level = 0
-  }
 })
 
 test('the initial era has one general storage building for its early resources', () => {
   const state = createDefaultState()
   completeProject(state, { kind: 'research', id: 'shelters' })
   completeProject(state, { kind: 'research', id: 'stockpiling' })
-  const available = BUILDING_IDS.filter((id) => {
-    const form = BUILDINGS[id].forms[0]
-    if (!form?.storage) return false
-    return !requirementBlocker(state, form.requires)
-  })
+  const available = BUILDING_IDS.filter(
+    (id) =>
+      BUILDINGS[id].storage &&
+      !requirementBlocker(state, BUILDINGS[id].requires),
+  )
   expect(available).toEqual(['stockyard'])
-  expect(BUILDINGS.stockyard.forms[0]?.storage).toEqual({
+  expect(BUILDINGS.stockyard.storage).toEqual({
     food: 400,
     wood: 300,
     stone: 300,
@@ -160,44 +127,25 @@ test('the initial era has one general storage building for its early resources',
     blocks: 150,
     tools: 60,
     knowledge: 200,
+    ore: 600,
   })
 })
 
 test('storing ceramics raises its storage capacity through warehouse investment', () => {
   const state = createDefaultState()
   state.resources.ceramics = 120
-  completeProject(state, {
-    kind: 'expand',
-    id: 'storehouse',
-    target: 1,
-    form: 0,
-  })
+  completeProject(state, { kind: 'expand', id: 'storehouse', target: 1 })
   const base = storageCapacity(state, 'ceramics')
-  completeProject(state, { kind: 'convert', id: 'storehouse', form: 1 })
+  completeProject(state, { kind: 'expand', id: 'storehouse', target: 2 })
   expect(storageCapacity(state, 'ceramics')).toBeGreaterThan(base)
-  const upgraded = storageCapacity(state, 'ceramics')
-  completeProject(state, {
-    kind: 'expand',
-    id: 'storehouse',
-    target: 2,
-    form: 1,
-  })
-  expect(storageCapacity(state, 'ceramics')).toBeGreaterThan(upgraded)
 })
 
-test('all orbital extractor forms require a launch complex even when rebuilding directly', () => {
+test('orbital extraction requires a launch complex', () => {
   const state = advancedSettlement()
   state.facilities['launch-complex'].level = 0
-  state.facilities['orbital-extractor'] = { level: 0, form: 0, equipment: 0 }
-  for (const form of BUILDINGS['orbital-extractor'].forms.keys())
-    expect(
-      quoteProject(state, {
-        kind: 'expand',
-        id: 'orbital-extractor',
-        target: 1,
-        form,
-      }).blocker,
-    ).toBe('Requires Launch complex level 1')
+  expect(
+    requirementBlocker(state, BUILDINGS['orbital-extractor'].requires),
+  ).toBe('Requires Launch complex level 1')
 })
 
 test('every action job belongs to its workplace', () => {

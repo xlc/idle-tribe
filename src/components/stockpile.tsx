@@ -36,7 +36,7 @@ export function Stockpile({ session }: { session: GameSession }) {
           crafting &&
           isProductionJob(crafting) &&
           JOBS[crafting].output === r &&
-          !requirementBlocker(s, BUILDINGS[id].forms[0]?.requires ?? {})
+          !requirementBlocker(s, BUILDINGS[id].requires)
         )
       }),
   )

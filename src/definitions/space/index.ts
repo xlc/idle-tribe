@@ -1,5 +1,4 @@
 import type { EraDefinition } from '../types'
-import { buildingUpgrades } from './building-upgrades'
 import { buildings } from './buildings'
 import { jobs } from './jobs'
 import { research } from './research'
@@ -11,7 +10,6 @@ export const SPACE = {
   description: 'The roof was becoming a limitation.',
   resources,
   buildings,
-  buildingUpgrades,
   research,
   jobs,
   actions: {},

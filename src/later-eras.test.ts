@@ -30,7 +30,7 @@ test('industrial workers turn newly mined ore into metal and machinery in roster
   const s = settlement()
   complete(s, 'mechanization')
   for (const id of ['ore-mine', 'foundry', 'machine-shop'] as const)
-    completeProject(s, { kind: 'expand', id, target: 1, form: 0 })
+    completeProject(s, { kind: 'expand', id, target: 1 })
   people(s, 'miner', 'smelter', 'machinist')
   for (const person of s.people) person.progress = 1
   s.resources.ore = 2
@@ -47,22 +47,6 @@ test('industrial workers turn newly mined ore into metal and machinery in roster
     s.resources.tools,
   ]).toEqual([0, 0, 0, 0])
   expect(s.people.map((p) => p.progress)).toEqual([0, 0, 0])
-})
-
-test('electric conversion changes the recipe; solar generation removes fuel demand', () => {
-  const s = advancedSettlement()
-  people(s, 'power-worker', 'smelter')
-  s.resources.wood = 0
-  s.resources.charge = 0
-  s.resources.ore = 3
-  s.resources.metal = 0
-  required(s.people[0]).progress = 1
-  required(s.people[1]).progress = 1
-  advanceTime(s, 0)
-  expect(s.resources.metal).toBe(1)
-  expect(s.resources.ore).toBe(0)
-  expect(s.resources.charge).toBe(0)
-  expect(jobInput(s, 'power-worker')).toEqual({})
 })
 
 test('Chronometry earns discovery through a paid timer, then reset purchases open optional astronomy', () => {
@@ -95,7 +79,7 @@ test('Chronometry earns discovery through a paid timer, then reset purchases ope
 test('the launch project gates orbital work, and quantum materials sustain causal synthesis', () => {
   const s = advancedSettlement()
   s.facilities['launch-complex'].level = 0
-  const orbital = required(BUILDINGS['orbital-extractor'].forms[0])
+  const orbital = required(BUILDINGS['orbital-extractor'])
   expect(requirementBlocker(s, orbital.requires)).toBe(
     'Requires Launch complex level 1',
   )
@@ -103,19 +87,18 @@ test('the launch project gates orbital work, and quantum materials sustain causa
     kind: 'expand',
     id: 'launch-complex',
     target: 1,
-    form: 0,
   })
   expect(requirementBlocker(s, orbital.requires)).toBe('')
   people(s, 'quantum-engineer', 'causal-researcher')
   for (const person of s.people) person.progress = 1
   s.resources['exotic-material'] = 2
-  s.resources.data = 13
-  s.resources.charge = 22
-  s.resources['quantum-components'] = 0
+  s.resources.data = 15
+  s.resources.charge = 30
+  s.resources['quantum-components'] = 2
   s.resources['causal-models'] = 0
   advanceTime(s, 0)
   expect(s.resources['causal-models']).toBe(1)
-  expect(s.resources['quantum-components']).toBe(0)
+  expect(s.resources['quantum-components']).toBe(1)
   expect(s.resources.data).toBe(0)
   expect(s.resources.charge).toBe(0)
 })
@@ -156,8 +139,8 @@ test('late recipes, archives and partial cycles survive saves and sliced elapsed
   expect(offlineWindow(s)).toBeGreaterThan(24)
   const restored = parseSave(JSON.stringify(s)),
     direct = structuredClone(s)
-  advanceTime(direct, 600)
-  for (let i = 0; i < 60; i++) advanceTime(restored, 10)
+  advanceTime(direct, 6000)
+  for (let i = 0; i < 600; i++) advanceTime(restored, 10)
   for (const r of RESOURCES)
     expect(restored.resources[r]).toBeCloseTo(direct.resources[r], 6)
   expect(restored.people.map((p) => p.name)).toEqual(

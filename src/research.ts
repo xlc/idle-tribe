@@ -6,7 +6,6 @@ import { hasResearch } from './research-effects'
 import {
   canAfford,
   capital,
-  cumulative,
   difference,
   marginal,
   pay,
@@ -26,20 +25,13 @@ export const QUEUES: QueueId[] = ['research', 'construction']
 export function researchQueueUnlocked(state: GameState) {
   return state.facilities.library.level > 0
 }
-export function projectName(state: GameState, project: Project) {
+export function projectName(_state: GameState, project: Project) {
   if (project.kind === 'research') {
     const level = project.target ?? 1
     return `${RESEARCH[project.id].name}${level > 1 ? ` · level ${level}` : ''}`
   }
-  const def = BUILDINGS[project.id],
-    f = state.facilities[project.id]
-  const form =
-    def.forms[
-      project.kind === 'convert' || (project.kind === 'expand' && !f.level)
-        ? project.form
-        : f.form
-    ]
-  return `${form?.name ?? project.id}${project.kind === 'equip' ? ` · tools ${project.target}` : project.kind === 'expand' ? ` · level ${project.target}` : ' · conversion'}`
+  const name = BUILDINGS[project.id].name
+  return `${name}${project.kind === 'equip' ? ` · tools ${project.target}` : ` · level ${project.target}`}`
 }
 export function quoteProject(
   state: GameState,
@@ -96,9 +88,7 @@ export function quoteProject(
     }
   }
   const def = BUILDINGS[project.id],
-    f = state.facilities[project.id],
-    form = def.forms[f.form]
-  if (!form) throw new Error('Invalid facility form')
+    f = state.facilities[project.id]
   if (project.kind === 'equip') {
     const tier = project.target
     const milestone = EQUIPMENT[Math.min(EQUIPMENT.length, tier) - 1]
@@ -125,34 +115,17 @@ export function quoteProject(
             : requirementBlocker(state, { research: [milestone.research] }),
     }
   }
-  const target =
-    def.forms[project.kind === 'convert' || !f.level ? project.form : f.form]
-  if (!target) throw new Error('Invalid target form')
-  if (project.kind === 'convert')
-    return {
-      cost: difference(
-        capital(target.cost, f.level),
-        capital(form.cost, f.level),
-      ),
-      total: Math.max(0, target.work - form.work) * cumulative(f.level),
-      obsolete: f.form >= project.form,
-      blocker: !f.level
-        ? 'Requires building'
-        : requirementBlocker(state, target.requires),
-    }
+  const target = project.target
   return {
-    cost: difference(
-      capital(target.cost, project.target),
-      capital(target.cost, project.target - 1),
-    ),
-    total: target.work * marginal(project.target - 1),
-    obsolete: f.level >= project.target || Boolean(def.unique && f.level),
+    cost: difference(capital(def.cost, target), capital(def.cost, target - 1)),
+    total: def.work * marginal(target - 1),
+    obsolete: f.level >= target || Boolean(def.unique && f.level),
     blocker:
-      def.unique && project.target > 1
+      def.unique && target > 1
         ? 'Unique milestone'
-        : f.level !== project.target - 1
-          ? `Requires level ${project.target - 1}`
-          : requirementBlocker(state, target.requires),
+        : f.level !== target - 1
+          ? `Requires level ${target - 1}`
+          : requirementBlocker(state, def.requires),
   }
 }
 export function allEntries(state: GameState) {
@@ -163,19 +136,7 @@ export function allEntries(state: GameState) {
 }
 function sameProject(a: Project, b: Project) {
   return (
-    a.kind === b.kind &&
-    a.id === b.id &&
-    (a.kind === 'research'
-      ? (a.target ?? 1)
-      : 'target' in a
-        ? a.target
-        : undefined) ===
-      (b.kind === 'research'
-        ? (b.target ?? 1)
-        : 'target' in b
-          ? b.target
-          : undefined) &&
-    ('form' in a ? a.form : undefined) === ('form' in b ? b.form : undefined)
+    a.kind === b.kind && a.id === b.id && (a.target ?? 1) === (b.target ?? 1)
   )
 }
 // Surfaces why a build cannot start: no builder on hand and no idle person
@@ -344,11 +305,7 @@ export function completeProject(state: GameState, project: Project) {
     if (firstCompletion && def.discoverTimeBox) state.legacy.discovered = true
   } else {
     const f = state.facilities[project.id]
-    if (project.kind === 'expand') {
-      if (!f.level) f.form = project.form
-      f.level = project.target
-    }
-    if (project.kind === 'convert') f.form = project.form
+    if (project.kind === 'expand') f.level = project.target
     if (project.kind === 'equip') f.equipment = project.target
   }
 }
@@ -370,7 +327,6 @@ export function plannedQuotes(state: GameState, id: QueueId) {
 export function nextExpansion(
   state: GameState,
   id: import('./ids').BuildingId,
-  form = state.facilities[id].form,
 ): Project {
   const targets = allEntries(state).flatMap((e) =>
     e.project.kind === 'expand' && e.project.id === id
@@ -379,12 +335,7 @@ export function nextExpansion(
   )
   let target = state.facilities[id].level + 1
   while (targets.includes(target)) target++
-  return {
-    kind: 'expand',
-    id,
-    target,
-    form,
-  }
+  return { kind: 'expand', id, target }
 }
 export function nextEquipment(
   state: GameState,

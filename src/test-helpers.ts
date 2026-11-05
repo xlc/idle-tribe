@@ -37,7 +37,7 @@ export function settlement(branch: Specialization = 'forestry') {
   for (const id of BUILDING_IDS) {
     if (
       BUILDINGS[id].unique ||
-      requirementBlocker(state, BUILDINGS[id].forms[0]?.requires ?? {})
+      requirementBlocker(state, BUILDINGS[id].requires)
     )
       continue
     state.facilities[id].level = 2
@@ -45,8 +45,7 @@ export function settlement(branch: Specialization = 'forestry') {
   // Keep the all-resources fixture supplied for broad integration tests below
   // each resource's cap; focused storage tests use a fresh default state.
   for (const id of BUILDING_IDS)
-    if (BUILDINGS[id].forms.some((form) => form.storage))
-      state.facilities[id].level = 100_000
+    if (BUILDINGS[id].storage) state.facilities[id].level = 100_000
   return state
 }
 export function people(state: GameState, ...jobs: JobId[]) {
@@ -79,11 +78,11 @@ export function advancedSettlement(branch: Specialization = 'forestry') {
   }
   for (const id of BUILDING_IDS) {
     const def = BUILDINGS[id]
-    for (const [form, value] of def.forms.entries()) {
-      if (!requirementBlocker(state, value.requires)) {
-        state.facilities[id] = { level: def.unique ? 1 : 2, form, equipment: 0 }
+    if (!requirementBlocker(state, def.requires))
+      state.facilities[id] = {
+        level: Math.max(state.facilities[id].level, def.unique ? 1 : 2),
+        equipment: 0,
       }
-    }
   }
   return state
 }

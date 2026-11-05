@@ -136,8 +136,7 @@ test('happiness begins at Writing and moves gradually after the shared meal', ()
 
 test('ceramic craft turns town inputs into a happiness investment', () => {
   const s = settlement()
-  for (const id of BUILDING_IDS)
-    s.facilities[id] = { level: 0, form: 0, equipment: 0 }
+  for (const id of BUILDING_IDS) s.facilities[id] = { level: 0, equipment: 0 }
   people(s, 'potter')
   s.resources.blocks = 2
   s.resources.wood = 1

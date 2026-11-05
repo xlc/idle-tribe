@@ -48,18 +48,18 @@ test('reloading a queued project does not allow the same project to be queued ag
   const state = createDefaultState()
   state.resources.food = 100
   completeProject(state, { kind: 'research', id: 'foraging-rounds' })
-  expect(
-    enqueue(state, { kind: 'expand', id: 'housing', target: 1, form: 0 }),
-  ).toBe(true)
+  expect(enqueue(state, { kind: 'expand', id: 'housing', target: 1 })).toBe(
+    true,
+  )
   expect(state.people[0]?.job).toBe('builder')
   const restored = parseSave(JSON.stringify(state))
   expect(restored.queues.construction.waiting).toHaveLength(1)
-  expect(
-    enqueue(restored, { kind: 'expand', id: 'housing', target: 1, form: 0 }),
-  ).toBe(false)
-  expect(
-    enqueue(restored, { kind: 'expand', id: 'housing', target: 2, form: 0 }),
-  ).toBe(true)
+  expect(enqueue(restored, { kind: 'expand', id: 'housing', target: 1 })).toBe(
+    false,
+  )
+  expect(enqueue(restored, { kind: 'expand', id: 'housing', target: 2 })).toBe(
+    true,
+  )
   expect(restored.queues.construction.waiting).toHaveLength(2)
 })
 
@@ -95,24 +95,24 @@ test('starting a build takes an idle person as builder and reports why it cannot
   state.resources.wood = 100
   state.resources.stone = 100
 
-  expect(
-    enqueue(state, { kind: 'expand', id: 'housing', target: 1, form: 0 }),
-  ).toBe(true)
+  expect(enqueue(state, { kind: 'expand', id: 'housing', target: 1 })).toBe(
+    true,
+  )
   expect(state.people[0]?.job).toBe('builder')
 
   // The founder is now building; a second project still enqueues because a
   // builder is on hand.
-  expect(
-    enqueue(state, { kind: 'expand', id: 'foraging', target: 2, form: 0 }),
-  ).toBe(true)
+  expect(enqueue(state, { kind: 'expand', id: 'foraging', target: 2 })).toBe(
+    true,
+  )
 
   const alone = createDefaultState()
   completeProject(alone, { kind: 'research', id: 'foraging-rounds' })
   startAction(alone, 'gather')
   expect(buildBlocker(alone)).toBe('No builders')
-  expect(
-    enqueue(alone, { kind: 'expand', id: 'housing', target: 1, form: 0 }),
-  ).toBe(false)
+  expect(enqueue(alone, { kind: 'expand', id: 'housing', target: 1 })).toBe(
+    false,
+  )
 
   const locked = createDefaultState()
   startAction(locked, 'gather')
@@ -132,7 +132,7 @@ test('over-cap stock can fund a queued construction project', () => {
   >)
     state.resources[resource] = 1_000_000
 
-  const project = { kind: 'expand', id: 'study', target: 100, form: 0 } as const
+  const project = { kind: 'expand', id: 'study', target: 100 } as const
   expect(enqueue(state, project)).toBe(true)
   expect(queueBlocker(state, 'construction')).toBe('')
   startQueues(state)

@@ -37,7 +37,7 @@ export function requirementBlocker(
     return 'Requires a successful expedition'
   for (const id of BUILDING_IDS)
     if (state.facilities[id].level < (req.facilities?.[id] ?? 0))
-      return `Requires ${BUILDINGS[id].forms[0]?.name} level ${req.facilities?.[id]}`
+      return `Requires ${BUILDINGS[id].name} level ${req.facilities?.[id]}`
   if (req.perk && !state.legacy.perks[req.perk])
     return `Requires permanent ${PERKS[req.perk].name} perk`
   const missing = req.research?.filter((id) => !hasResearch(state, id)) ?? []
@@ -270,9 +270,9 @@ export function releaseBuilders(state: GameState) {
 export function jobInput(state: GameState, job: JobId): Cost {
   if (!isProductionJob(job)) return {}
   const id = workplace(job)
-  const facility = id ? state.facilities[id] : null
-  const form = id && facility ? BUILDINGS[id].forms[facility.form] : null
-  const input = { ...(form?.input ?? JOBS[job].input) }
+  const input = {
+    ...(id ? (BUILDINGS[id].input ?? JOBS[job].input) : JOBS[job].input),
+  }
   for (const id of RESEARCH_IDS)
     if (hasResearch(state, id)) {
       const reduction = researchEffects(state, id).recipeReduction?.[job]
@@ -308,7 +308,7 @@ function workplaceRate(
   const id = workplace(job)
   if (!id) return 0
   const f = state.facilities[id],
-    def = BUILDINGS[id].forms[f.form]
+    def = BUILDINGS[id]
   if (
     !f.level ||
     !def ||
@@ -382,7 +382,7 @@ export function housingCapacity(state: GameState) {
     multiplier = 1
   for (const id of BUILDING_IDS) {
     const f = state.facilities[id]
-    housing += (BUILDINGS[id].forms[f.form]?.housing ?? 0) * f.level
+    housing += (BUILDINGS[id]?.housing ?? 0) * f.level
   }
   for (const id of RESEARCH_IDS)
     if (hasResearch(state, id))

@@ -16,7 +16,7 @@ import {
   workerRates,
 } from './settlement'
 import { advanceTime, resourceRates } from './simulation'
-import { expertiseLevel, personalWork, practiceThreshold } from './skills'
+import { expertiseLevel, practiceThreshold } from './skills'
 import { createDefaultState, createPerson } from './state'
 import { complete, people, required, settlement } from './test-helpers'
 
@@ -127,30 +127,6 @@ test('builders learn through active work, preserve practice on cancellation, and
   expect(s.facilities.housing.level).toBe(3)
   expect(p.practice.builder).toBeCloseTo(30 + quote.total * 60, 8)
   expect(constructionSpeed(s)).toBe(1)
-})
-
-test('expertise survives conversion and reassignment while a new job starts fresh', () => {
-  const s = settlement()
-  people(s, 'sawyer')
-  const p = required(s.people[0])
-  p.practice.sawyer = practiceThreshold(4)
-  p.progress = 0.7
-  expect(assignJob(s, 0, 'farmer')).toBe(true)
-  expect(personalWork(p, 'farmer')).toBe(1)
-  expect(p.progress).toBe(0)
-  advanceTime(s, 10)
-  expect(p.practice.farmer).toBeGreaterThan(0)
-  expect(assignJob(s, 0, 'sawyer')).toBe(true)
-  expect(expertiseLevel(p.practice.sawyer)).toBe(4)
-  complete(s, 'forestry-methods')
-  people(s, 'builder', 'sawyer')
-  enqueue(s, { kind: 'convert', id: 'lumber', form: 1 })
-  required(s.people[1]).practice.sawyer = practiceThreshold(4)
-  advanceTime(s, 10000)
-  expect(s.facilities.lumber.form).toBe(1)
-  expect(required(s.people[1]).practice.sawyer).toBeGreaterThan(
-    practiceThreshold(4),
-  )
 })
 
 test('Plus and Fill prefer expertise, Minus releases the least contribution, and explicit assignment trains newcomers', () => {

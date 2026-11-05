@@ -25,7 +25,7 @@ export function Production({
       return false
     return (
       s.facilities[id].level > 0 ||
-      BUILDINGS[id].forms.some((f) => !requirementBlocker(planned, f.requires))
+      !requirementBlocker(planned, BUILDINGS[id].requires)
     )
   })
   // Keep action placement stable; facility cards describe the building.

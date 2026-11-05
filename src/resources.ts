@@ -74,8 +74,7 @@ export function storageCapacity(state: GameState, r: ResourceId) {
   let total = RESOURCE_INFO[r].threshold
   for (const id of BUILDING_IDS) {
     const f = state.facilities[id]
-    total +=
-      (BUILDINGS[id].forms[f.form]?.storage?.[r] ?? 0) * cumulative(f.level)
+    total += (BUILDINGS[id].storage?.[r] ?? 0) * cumulative(f.level)
   }
   for (const id of RESEARCH_IDS)
     if (hasResearch(state, id)) {
