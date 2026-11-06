@@ -343,7 +343,7 @@ test('food gathering rewards the first second and opens exploration once a trip 
     expect(startAction(s, 'gather')).toBe(true)
     advanceTime(s, 1, true)
   }
-  expect(s.resources.food).toBeCloseTo(5.791333333333332, 6)
+  expect(s.resources.food).toBeCloseTo(5.8908, 6)
   expect(s.exploreUnlocked).toBe(true)
 })
 
@@ -389,8 +389,8 @@ test('automated gathering follows the same storage cap timeline across tick size
   expect(s.actionProgress.gather).toBeCloseTo(sliced.actionProgress.gather, 3)
   advanceTime(s, 4, true)
   advanceTime(sliced, 4, true)
-  // Two working foragers eat three food per minute each while filling storage.
-  expect(s.resources.food).toBeCloseTo(50 - (3 * 2 * 4.5) / 60, 8)
+  // Two working foragers eat 1.8 food per minute each while filling storage.
+  expect(s.resources.food).toBeCloseTo(50 - (1.8 * 2 * 4.5) / 60, 8)
   expect(s.resources.food).toBeCloseTo(sliced.resources.food, 4)
 })
 

@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test'
 import {
+  actionArrivals,
   actionAvailability,
   actionCost,
   actionDuration,
@@ -306,6 +307,23 @@ test('greeters recruit automatically until housing fills', () => {
     kind: 'automated',
     state: 'paused',
   })
+})
+
+test('feasts attract more settlers as the action reaches higher levels', () => {
+  const state = createDefaultState()
+  state.research.shelters = 1
+  state.facilities.housing.level = 2
+  state.resources.food = 200
+  state.actionSkills.invite.level = 2
+
+  expect(actionArrivals(state, 'invite')).toBe(2)
+  people(state, 'greeter')
+  expect(actionAvailability(state, 'invite')).toMatchObject({
+    kind: 'automated',
+    state: 'active',
+  })
+  advanceTime(state, actionDuration(state, 'invite'))
+  expect(state.people).toHaveLength(3)
 })
 
 test('every ordinary exploration returns a concrete resource outcome', () => {

@@ -101,6 +101,7 @@ export type ActionDefinition =
   | (ActionDefinitionBase & {
       kind: 'arrival'
       scaledCost: (state: GameState) => Cost
+      arrivals?: (state: GameState) => number
       resource?: never
       amount?: never
     })

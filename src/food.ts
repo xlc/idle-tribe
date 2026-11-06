@@ -1,7 +1,10 @@
+import { EPSILON } from './constants'
 import type { GameState } from './types'
 
-const IDLE_MEAL_COST = 1
-const WORK_MEAL_COST = 3
+// Food is measured per minute internally. A normal villager consumes 0.01/s;
+// working villagers consume three times as much while they are on the job.
+const IDLE_MEAL_COST = 0.6
+const WORK_MEAL_COST = 1.8
 
 function busy(state: GameState, index: number) {
   return (
@@ -22,14 +25,12 @@ export function mealCost(state: GameState) {
   )
 }
 
-// Work costs three food per minute. Food is shared, so a shortage pauses
+// Work costs three times the idle food rate. Food is shared, so a shortage pauses
 // automated work while manual work remains available.
 export function consumeMealTick(state: GameState, seconds: number) {
   const share = seconds / 60
-  state.resources.food = Math.max(
-    0,
-    state.resources.food - mealCost(state) * share,
-  )
+  const remaining = state.resources.food - mealCost(state) * share
+  state.resources.food = remaining <= EPSILON ? 0 : remaining
 }
 
 export function automatedWorkAllowed(state: GameState) {

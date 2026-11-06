@@ -26,6 +26,7 @@ import {
   housingFull,
   requirementBlocker,
   spawnSettler,
+  spawnSettlers,
 } from './settlement'
 import type {
   Cost,
@@ -205,6 +206,12 @@ export function actionYield(state: GameState, id: ActionId) {
           ACTION_BALANCE.yieldBonusPerLevel *
             (state.actionSkills[id].level - 1)) *
         bonus
+    : 0
+}
+export function actionArrivals(state: GameState, id: ActionId) {
+  const def = ACTIONS[id]
+  return def.kind === 'arrival'
+    ? Math.max(1, Math.floor(def.arrivals?.(state) ?? 1))
     : 0
 }
 // Skill- and research-adjusted cadence. Storage caps output; it does not change cadence.
@@ -611,7 +618,7 @@ function applyActionReward(
   const def = ACTIONS[id]
   if (def.resource) addResources(state, { [def.resource]: amount })
   if (def.kind === 'exploration') applyExploreReward(state, exploreScale, mode)
-  if (def.kind === 'arrival') spawnSettler(state)
+  if (def.kind === 'arrival') spawnSettlers(state, actionArrivals(state, id))
 }
 
 // One automated completion. Explore pays its cost here, mirroring how

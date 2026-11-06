@@ -233,20 +233,27 @@ export function arrivalAptitude(state: GameState, draw?: number): WorkingJob {
 export function housingFull(state: GameState) {
   return housingCapacity(state) <= state.people.length
 }
-// Invited and found settlers join as idle people with a drawn aptitude;
-// returns false without a free bed or any unlocked job to be apt at.
+// Settlers from actions and encounters join as idle people with a drawn
+// aptitude; returns false without a free bed or any unlocked job to be apt at.
 export function spawnSettler(state: GameState) {
-  if (housingFull(state) || arrivalAptitudes(state).length === 0) return false
-  state.people.push(
-    createPerson(
-      generatePersonName(
-        state.nameSeed + state.people.length,
-        state.people.map((person) => person.name),
+  return spawnSettlers(state, 1) > 0
+}
+export function spawnSettlers(state: GameState, count: number) {
+  let spawned = 0
+  while (spawned < Math.max(0, Math.floor(count))) {
+    if (housingFull(state) || arrivalAptitudes(state).length === 0) break
+    state.people.push(
+      createPerson(
+        generatePersonName(
+          state.nameSeed + state.people.length,
+          state.people.map((person) => person.name),
+        ),
+        arrivalAptitude(state),
       ),
-      arrivalAptitude(state),
-    ),
-  )
-  return true
+    )
+    spawned++
+  }
+  return spawned
 }
 export function fillWorkers(state: GameState, job: JobId) {
   return adjustWorkers(

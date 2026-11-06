@@ -44,7 +44,7 @@ test('expertise earned at a threshold changes only subsequent work', () => {
   expect(p.practice.farmer).toBeCloseTo(920, 8)
   expect(expertiseLevel(p.practice.farmer)).toBe(1)
   expect(s.resources.food - 100000 + p.progress).toBeCloseTo(
-    (60 * 10) / 60 + (60 * 1.05 * 20) / 60 - 90 / 60,
+    (60 * 10) / 60 + (60 * 1.05 * 20) / 60 - 54 / 60,
     8,
   )
 })
@@ -98,12 +98,12 @@ test('crowding slows practice while storage does not change efficiency', () => {
   expect(required(stock.people[0]).practice.farmer - before).toBeCloseTo(0, 8)
 })
 
-test('idle villagers consume one food per minute', () => {
+test('idle villagers consume 0.6 food per minute', () => {
   const s = camp()
   people(s, 'idle')
   s.resources.food = 4
   advanceTime(s, 60)
-  expect(s.resources.food).toBeCloseTo(3, 8)
+  expect(s.resources.food).toBeCloseTo(3.4, 8)
 })
 
 test('builders learn through active work, preserve practice on cancellation, and stop after completion', () => {

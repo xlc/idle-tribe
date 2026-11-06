@@ -1,6 +1,7 @@
 import { Card } from '@radix-ui/themes'
 import { useEffect, useRef, useState } from 'react'
 import {
+  actionArrivals,
   actionAvailability,
   actionCompletionDuration,
   actionCost,
@@ -147,7 +148,7 @@ export function ActionCard({
   const yieldPrefix = def.resource
     ? `+${formatResource(actionYield(s, id))} ${def.resource} · `
     : def.kind === 'arrival'
-      ? '+1 settler · '
+      ? `+${actionArrivals(s, id)} settler${actionArrivals(s, id) === 1 ? '' : 's'} · `
       : null
   const yieldLine = `${yieldPrefix ?? ''}${formatResource(duration)}s${housingFull ? ' · Housing full' : ''}`
   const icon = (
@@ -293,7 +294,9 @@ export function ActionCard({
               <p className="action-hint">
                 {def.resource
                   ? `+${formatResource(actionOutputRate(s, id))} ${def.resource}/s`
-                  : `${formatResource(1 / duration)} explores/s`}
+                  : def.kind === 'arrival'
+                    ? `+${formatResource(actionArrivals(s, id) / duration)} settlers/s`
+                    : `${formatResource(1 / duration)} explores/s`}
               </p>
             )}
             {Object.keys(cost).length > 0 && (

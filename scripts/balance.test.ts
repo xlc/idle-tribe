@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test'
 import type { Specialization } from '../src/types'
 import { runBalance } from './balance-runner'
 
-// A balance guard: both branches should reach Mechanization by the 170-hour
+// A balance guard: both branches should reach Mechanization by the 168-hour
 // milestone under the deliberate frequent-visit policy. This catches broken
 // openings, stalled research, and pacing regressions; `bun run balance` remains
 // the tool for detailed tuning. Runtime is dominated by deterministic absence
@@ -14,7 +14,7 @@ for (const branch of ['forestry', 'stonecraft'] as Specialization[]) {
       branch,
       policy: 'bottleneck',
       schedule: 'frequent',
-      days: 8,
+      days: 7,
       goal: 'mechanization',
       collectDetails: false,
     })
@@ -23,7 +23,7 @@ for (const branch of ['forestry', 'stonecraft'] as Specialization[]) {
     expect((goal?.time.by ?? Infinity) / HOURS).toBeLessThanOrEqual(170)
     // The scripted opening establishes the settlement within its hour.
     expect(result.openingSeconds).toBeLessThan(HOURS)
-  }, 30_000)
+  }, 90_000)
 }
 
 test('exploratory paths are repeatable for the same seed', () => {

@@ -65,14 +65,14 @@ test('food starvation releases builders for manual gathering and resumes constru
   state.research.shelters = 1
   state.facilities.housing.level = 1
   state.resources.wood = 10
-  state.resources.food = 5
+  state.resources.food = 4.45
   const project = nextExpansion(state, 'housing')
   expect(enqueue(state, project)).toBe(true)
   expect(state.people[0]?.job).toBe('builder')
 
-  advanceTime(state, 30, true)
+  advanceTime(state, 15, true)
 
-  expect(state.resources.food).toBe(0)
+  expect(state.resources.food).toBeCloseTo(0, 8)
   expect(state.people[0]?.job).toBe('idle')
   expect(state.queues.construction.active?.progress).toBeGreaterThan(0)
   expect(startAction(state, 'gather')).toBe(true)
@@ -147,9 +147,7 @@ test('arrival actions do not report exploration production', () => {
   founder.job = 'greeter'
 
   const invite = resourceFlowEntries(s).food.filter(
-    (entry) => entry.label === 'Invite settlers',
+    (entry) => entry.label === 'Hold a feast',
   )
-  expect(invite).toEqual([
-    { label: 'Invite settlers', amount: 30, kind: 'input' },
-  ])
+  expect(invite).toEqual([{ label: 'Hold a feast', amount: 30, kind: 'input' }])
 })

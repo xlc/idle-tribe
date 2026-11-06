@@ -66,15 +66,16 @@ export const actions = {
   },
   invite: {
     kind: 'arrival',
-    name: 'Invite settlers',
+    name: 'Hold a feast',
     description:
-      'Walk the trails and talk someone into joining a group that lives in a leaf hut.',
+      'Lay out a generous table and let the good news travel down the trail.',
     seconds: 30,
     baseXp: 6,
     xp: 4,
     // The live price comes from scaledCost; the static cost stays empty.
     cost: {},
     scaledCost: (s) => ({ food: 10 + 5 * s.people.length }),
+    arrivals: (s) => s.actionSkills.invite.level,
     building: 'housing',
     job: 'greeter',
     visible: unlocked('shelters'),

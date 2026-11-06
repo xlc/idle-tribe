@@ -112,7 +112,7 @@ test('villagers never die and food consumption continues while they are idle', (
   s.resources.food = 4
   advanceTime(s, 60)
   expect(s.people).toHaveLength(2)
-  expect(s.resources.food).toBeCloseTo(2, 6)
+  expect(s.resources.food).toBeCloseTo(2.8, 6)
 })
 
 test('happiness begins at Writing and moves gradually after the shared meal', () => {
@@ -164,13 +164,13 @@ test('net rates include processor inputs, meals and equipment without storage pe
       s.people
         .filter((p) => p.job === job)
         .reduce((n, p) => n + workerRate(s, p), 0)
-  expect(rates.food).toBeCloseTo(sum('forager') - sum('scholar') - 9)
+  expect(rates.food).toBeCloseTo(sum('forager') - sum('scholar') - 5.4)
   expect(rates.wood).toBeCloseTo(-2 * sum('sawyer'))
   expect(rates.planks).toBeCloseTo(sum('sawyer'))
   const flows = resourceFlows(s)
   expect(flows.food.production).toBeCloseTo(sum('forager'))
   expect(flows.food.inputs).toBeCloseTo(sum('scholar'))
-  expect(flows.food.meals).toBe(9)
+  expect(flows.food.meals).toBe(5.4)
   expect(flows.wood.inputs).toBeCloseTo(2 * sum('sawyer'))
   expect(flows.planks.production).toBeCloseTo(sum('sawyer'))
 })
