@@ -80,7 +80,7 @@ export function createSession(
       if (state.people.length > lastPeople)
         logEvent(
           'arrival',
-          `A new settler arrived · ${state.people.length} people`,
+          `A new settler arrived`,
         )
     }
     syncEventBaselines()
