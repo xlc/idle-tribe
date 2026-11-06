@@ -63,6 +63,7 @@ bun run check
 | `bun run lint` / `bun run lint:fix` | Check or fix Biome formatting, lint rules, and import organization. |
 | `bun run typecheck` | Check TypeScript types. |
 | `bun run test` | Run unit tests. |
+| `bun run test:balance` | Run the slower deliberate-player balance guards. |
 | `bun run balance` | Simulate ordinary visits; `--full` reaches all eras, `--matrix` sweeps branches and schedules. |
 | `bun run build` | Check types and generate the production bundle in `dist/`. |
 | `bun run preview` | Build and serve locally using Cloudflare's runtime. |
