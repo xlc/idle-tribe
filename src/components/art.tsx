@@ -102,7 +102,6 @@ const symbols = {
   buildings:
     'M4 21V5l8-3 8 3v16M2 21h20M8 9h2M14 9h2M8 13h2M14 13h2M8 17h2M14 17h2',
   research: 'M12 6v15M3 4c4-1 7 0 9 2 2-2 5-3 9-2v15c-4-1-7 0-9 2-2-2-5-3-9-2Z',
-  queue: 'M4 5h16M4 12h16M4 19h16',
   people:
     'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75',
   legacy: 'M4 8h16v13H4ZM3 4h18v4H3ZM12 4v17M9 12h6',

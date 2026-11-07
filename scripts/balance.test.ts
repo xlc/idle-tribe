@@ -2,26 +2,26 @@ import { expect, test } from 'bun:test'
 import type { Specialization } from '../src/types'
 import { runBalance } from './balance-runner'
 
-// A balance guard: both branches should reach Mechanization by the 168-hour
+// A balance guard: both branches should reach town planning by the 168-hour
 // milestone under the deliberate frequent-visit policy. This catches broken
 // openings, stalled research, and pacing regressions; `bun run balance` remains
 // the tool for detailed tuning. Runtime is dominated by deterministic absence
 // simulation, so allow it to finish on slower CI hosts.
 const HOURS = 3600
 for (const branch of ['forestry', 'stonecraft'] as Specialization[]) {
-  test(`${branch} reaches Mechanization under a deliberate player`, () => {
+  test(`${branch} reaches town planning under a deliberate player`, () => {
     const result = runBalance({
       branch,
       policy: 'bottleneck',
       schedule: 'frequent',
       days: 7,
-      goal: 'mechanization',
+      goal: 'town-planning',
       collectDetails: false,
     })
     expect(result.status).toBe('completed')
-    const goal = result.milestones.find(({ id }) => id === 'mechanization')
+    const goal = result.milestones.find(({ id }) => id === 'town-planning')
     expect((goal?.time.by ?? Infinity) / HOURS).toBeLessThanOrEqual(170)
-    // The scripted opening establishes the settlement within its hour.
+    // The scripted opening establishes the settlement before visits begin.
     expect(result.openingSeconds).toBeLessThan(HOURS)
   }, 90_000)
 }

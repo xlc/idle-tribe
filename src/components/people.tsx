@@ -72,7 +72,7 @@ function output(
 function activity(state: GameState, index: number): string | null {
   const run = state.manual.find((m) => m.person === index)
   if (run) return ACTIONS[run.id].name
-  const active = state.queues.research.active
+  const active = state.projects.research
   if (active?.worker === index)
     return `Researching ${projectName(state, active.project)}`
   return null

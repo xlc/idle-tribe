@@ -175,7 +175,7 @@ export function assignJob(state: GameState, index: number, job: JobId) {
 export function busyWith(state: GameState, index: number) {
   return (
     state.manual.some((m) => m.person === index) ||
-    state.queues.research.active?.worker === index
+    state.projects.research?.worker === index
   )
 }
 export function firstIdlePerson(state: GameState) {

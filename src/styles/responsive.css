@@ -24,9 +24,9 @@
 }
 @media (max-width: 719px) {
   .game-shell {
-    padding: calc(12px + env(safe-area-inset-top))
-      calc(12px + env(safe-area-inset-right)) env(safe-area-inset-bottom)
-      calc(12px + env(safe-area-inset-left));
+    padding: calc(8px + env(safe-area-inset-top))
+      calc(10px + env(safe-area-inset-right)) env(safe-area-inset-bottom)
+      calc(10px + env(safe-area-inset-left));
   }
   .stockpile {
     flex-wrap: nowrap;
@@ -61,25 +61,11 @@
   .resource-value {
     font-size: 16px;
   }
-  .plan-toggle {
-    padding: 12px;
-    gap: 7px;
-  }
-  .plan-category {
-    font-size: 19px;
-  }
-  .plan-toggle strong {
-    font-size: 12px;
-    min-height: 2.5em;
-  }
-  .plan-status {
-    font-size: 11px;
-  }
   .research-active {
     display: grid;
     grid-template-columns: 36px minmax(0, 1fr);
     gap: 8px 10px;
-    padding: 10px 10px 16px;
+    padding: 8px 10px 12px;
   }
   .research-active .research-icon,
   .research-active .construction-icon {
@@ -91,12 +77,6 @@
   .facility-construction .action-stop.rt-Button {
     grid-column: 2;
     justify-self: start;
-  }
-  .plan-details {
-    padding: 10px;
-  }
-  .plan-details .worker-control {
-    flex-wrap: wrap;
   }
   .action-automated {
     display: grid;
@@ -141,7 +121,7 @@
     flex-basis: 100%;
   }
   .production-view {
-    gap: 18px;
+    gap: 12px;
   }
   .action-automated .action-icon,
   .action-automated .action-icon .painted-art {
@@ -183,12 +163,6 @@
     gap: 6px 10px;
   }
   .building-card {
-    padding: 12px;
-  }
-}
-@media (max-height: 760px) and (max-width: 719px) {
-  .plan-toggle {
-    gap: 5px;
     padding: 10px;
   }
 }

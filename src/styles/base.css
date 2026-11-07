@@ -85,8 +85,7 @@ small {
   color: var(--color-neutral);
   font-size: 12px;
 }
-/* Display serif for names and plan headings. */
-.plan-category,
+/* Display serif for names. */
 .action-name,
 .person-title > strong {
   font-family: Georgia, serif;
@@ -103,7 +102,7 @@ small {
 summary {
   cursor: pointer;
   font-size: 13px;
-  padding: 12px 0;
+  padding: 8px 0;
   min-height: 44px;
 }
 details {

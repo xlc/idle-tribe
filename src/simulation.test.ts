@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test'
 import { startAction } from './actions'
 import { JOBS } from './definitions'
 import { RESOURCES } from './ids'
-import { enqueue, nextExpansion, quoteProject } from './research'
+import { nextExpansion, quoteProject, startProject } from './research'
 import { advanceTime, resourceFlowEntries, resourceFlows } from './simulation'
 import { createDefaultState } from './state'
 import { people, settlement } from './test-helpers'
@@ -67,14 +67,14 @@ test('food starvation releases builders for manual gathering and resumes constru
   state.resources.wood = 10
   state.resources.food = 4.45
   const project = nextExpansion(state, 'housing')
-  expect(enqueue(state, project)).toBe(true)
+  expect(startProject(state, project)).toBe(true)
   expect(state.people[0]?.job).toBe('builder')
 
   advanceTime(state, 15, true)
 
   expect(state.resources.food).toBeCloseTo(0, 8)
   expect(state.people[0]?.job).toBe('idle')
-  expect(state.queues.construction.active?.progress).toBeGreaterThan(0)
+  expect(state.projects.construction?.progress).toBeGreaterThan(0)
   expect(startAction(state, 'gather')).toBe(true)
 
   advanceTime(state, 1, true)

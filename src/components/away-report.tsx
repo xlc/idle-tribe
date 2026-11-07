@@ -5,7 +5,6 @@ import { MIN_VISIBLE_RESOURCE_CHANGE } from '../constants'
 import { JOBS, RESOURCE_INFO } from '../definitions'
 import { formatDuration, formatResource } from '../format'
 import { RESOURCES } from '../ids'
-import { QUEUES, queueBlocker } from '../research'
 import { storageFull } from '../resources'
 import type { GameSession, SessionNotification } from '../session'
 import { Button } from './common'
@@ -116,12 +115,6 @@ export function AwayReport({
     changedResources = RESOURCES.filter(
       (r) => Math.abs(report.gains[r]) > MIN_VISIBLE_RESOURCE_CHANGE,
     ),
-    blockers = QUEUES.flatMap((id) => {
-      const blocker = queueBlocker(s, id)
-      return blocker && blocker !== 'Waiting'
-        ? [`${id === 'research' ? 'Research' : 'Construction'} · ${blocker}`]
-        : []
-    }),
     full = RESOURCES.filter((r) => storageFull(s, r))
   return (
     <section className="away-report" aria-label="Offline progress">
@@ -163,19 +156,12 @@ export function AwayReport({
             )}
           </section>
         )}
-        {(blockers.length > 0 || full.length > 0) && (
+        {full.length > 0 && (
           <section
             className="away-section away-attention"
             aria-label="Needs attention"
           >
             <h3>Needs attention</h3>
-            {blockers.length > 0 && (
-              <ul>
-                {blockers.map((blocker) => (
-                  <li key={blocker}>{blocker}</li>
-                ))}
-              </ul>
-            )}
             {full.length > 0 && (
               <p className="away-storage">
                 <strong>Storage full</strong>

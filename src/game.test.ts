@@ -12,13 +12,10 @@ import { createGame, removeFacility } from './game'
 import { BUILDING_IDS, RESEARCH_IDS } from './ids'
 import { parseSave } from './persistence'
 import {
-  allEntries,
   cancelProject,
-  enqueue,
-  moveProject,
   nextExpansion,
   quoteProject,
-  startQueues,
+  startProject,
 } from './research'
 import { canAfford, storageCapacity, storageFull } from './resources'
 import {
@@ -36,7 +33,7 @@ import {
 } from './settlement'
 import { advanceTime } from './simulation'
 import { createDefaultState } from './state'
-import { complete, people, required, settlement } from './test-helpers'
+import { complete, people, settlement } from './test-helpers'
 
 test('the opening discovers resources and unlocks camps without building them', () => {
   const s = createDefaultState()
@@ -68,10 +65,14 @@ test('the opening discovers resources and unlocks camps without building them', 
     expect(startAction(s, 'stone')).toBe(true)
     advanceTime(s, 3, true)
   }
-  enqueue(s, { kind: 'research', id: 'sharpened-stick' })
-  enqueue(s, { kind: 'research', id: 'shelters' })
-  enqueue(s, { kind: 'research', id: 'foraging-rounds' })
-  advanceTime(s, 180)
+  for (const id of [
+    'sharpened-stick',
+    'shelters',
+    'foraging-rounds',
+  ] as const) {
+    expect(startProject(s, { kind: 'research', id })).toBe(true)
+    advanceTime(s, quoteProject(s, { kind: 'research', id }).total)
+  }
   expect(s.research.shelters).toBe(1)
   expect(s.research['foraging-rounds']).toBe(1)
   expect(s.facilities.foraging.level).toBe(0)
@@ -97,7 +98,7 @@ test('construction keeps old effects until completion, pays once, and can exceed
     quote = quoteProject(s, project),
     before = s.resources.wood,
     places = housingCapacity(s)
-  enqueue(s, project)
+  startProject(s, project)
   advanceTime(s, 0)
   expect(s.resources.wood).toBe(before - (quote.cost.wood ?? 0))
   expect(housingCapacity(s)).toBe(places)
@@ -114,73 +115,17 @@ test('active cancellation restores exact stock and storage state once', () => {
   people(s, 'builder')
   const before = s.resources.wood,
     full = storageFull(s, 'wood')
-  enqueue(s, nextExpansion(s, 'stockyard'))
+  startProject(s, nextExpansion(s, 'stockyard'))
   advanceTime(s, 0)
-  const active = s.queues.construction.active
+  const active = s.projects.construction
   expect(active).not.toBeNull()
   if (!active) throw new Error('Missing project')
   expect(storageFull(s, 'wood')).toBe(full)
-  expect(cancelProject(s, 'construction', active.sequence)).toBe(true)
+  expect(cancelProject(s, 'construction')).toBe(true)
   expect(s.resources.wood).toBe(before)
   expect(storageFull(s, 'wood')).toBe(full)
-  expect(cancelProject(s, 'construction', active.sequence)).toBe(false)
+  expect(cancelProject(s, 'construction')).toBe(false)
   expect(s.resources.wood).toBe(before)
-})
-
-test('an older ready queue pays first, but a blocked queue does not reserve stock', () => {
-  const s = createDefaultState()
-  complete(s, 'sharpened-stick', 'shelters')
-  // Shelters research unlocks housing; build from scratch.
-  s.facilities.housing.level = 0
-  s.discovered.wood = true
-  people(s, 'builder')
-  s.resources.food = 10
-  s.resources.wood = BUILDINGS.housing.cost.wood ?? 0
-  enqueue(s, { kind: 'expand', id: 'housing', target: 1 })
-  enqueue(s, { kind: 'research', id: 'stone-tools' })
-  startQueues(s)
-  expect(s.queues.construction.active?.project.kind).toBe('expand')
-  expect(s.resources.wood).toBe(0)
-  const other = createDefaultState()
-  complete(other, 'sharpened-stick', 'shelters')
-  other.facilities.housing.level = 0
-  people(other, 'builder')
-  other.resources.wood = 20
-  other.resources.food = 10
-  enqueue(other, { kind: 'research', id: 'stone-tools' })
-  enqueue(other, { kind: 'expand', id: 'housing', target: 1 })
-  startQueues(other)
-  expect(other.queues.construction.active?.project.kind).toBe('expand')
-})
-
-test('both eligible queue heads use enqueue order and preserve it through reorder', () => {
-  const s = settlement()
-  people(s, 'builder', 'idle')
-  s.research['record-keeping'] = 0
-  s.resources.planks = 200
-  s.resources.blocks = 100
-  enqueue(s, { kind: 'research', id: 'record-keeping' })
-  enqueue(s, { kind: 'expand', id: 'sawmill', target: 3 })
-  // Both need resources shared with construction; the oldest research wins.
-  s.facilities.sawmill.level = 0
-  required(s.queues.construction.waiting[0]).project = {
-    kind: 'expand',
-    id: 'farm',
-    target: 3,
-  }
-  startQueues(s)
-  expect(s.queues.research.active?.project.id).toBe('record-keeping')
-  expect(s.resources.planks).toBe(0)
-  const q = settlement()
-  people(q, 'builder')
-  enqueue(q, nextExpansion(q, 'housing'))
-  enqueue(q, nextExpansion(q, 'housing'))
-  const second = q.queues.construction.waiting[1]
-  if (!second) throw new Error('Missing second')
-  const sequence = second.sequence
-  moveProject(q, 'construction', sequence, -1)
-  expect(q.queues.construction.waiting[0]?.sequence).toBe(sequence)
-  expect(quoteProject(q, second.project).blocker).toBe('Requires level 3')
 })
 
 test('removal preserves people and stock, releases workers, and rebuilding starts from the base building', () => {
@@ -191,7 +136,7 @@ test('removal preserves people and stock, releases workers, and rebuilding start
   expect(removeFacility(s, 'lumber')).toBe(true)
   expect(s.people[0]?.job).toBe('idle')
   expect(s.resources.wood).toBe(wood)
-  enqueue(s, { kind: 'expand', id: 'lumber', target: 1 })
+  startProject(s, { kind: 'expand', id: 'lumber', target: 1 })
   advanceTime(s, 900)
   expect(s.facilities.lumber).toEqual({ level: 1, equipment: 0 })
 })
@@ -229,7 +174,7 @@ test('tool refinements continue above tier three and replace rather than compoun
   const s = settlement()
   people(s, 'builder')
   s.facilities.sawmill.equipment = 3
-  enqueue(s, { kind: 'equip', id: 'sawmill', target: 4 })
+  startProject(s, { kind: 'equip', id: 'sawmill', target: 4 })
   advanceTime(s, 7200)
   expect(s.facilities.sawmill.equipment).toBe(4)
   expect(equipmentMultiplier(4)).toBeCloseTo(1.75 + 0.5 * (Math.sqrt(2) - 1))
@@ -241,7 +186,7 @@ for (const branch of ['forestry', 'stonecraft'] as const)
     const s = settlement(branch)
     people(s, 'forager', 'idle')
     const game = createGame(s)
-    expect(game.enqueue({ kind: 'research', id: 'mechanization' })).toBe(true)
+    expect(game.start({ kind: 'research', id: 'mechanization' })).toBe(true)
     game.advanceTime(
       quoteProject(s, { kind: 'research', id: 'mechanization' }).total,
     )
@@ -251,19 +196,17 @@ for (const branch of ['forestry', 'stonecraft'] as const)
     expect(jobInput(s, 'sawyer').wood).toBe(branch === 'forestry' ? 2 : 3)
   })
 
-test('queued branches can be cancelled before choosing the other path', () => {
+test('active branches can be cancelled before choosing the other path', () => {
   const s = settlement()
   s.research.forestry = 0
   s.specialization = null
-  expect(enqueue(s, { kind: 'research', id: 'forestry' })).toBe(true)
-  expect(enqueue(s, { kind: 'research', id: 'stonecraft' })).toBe(false)
-  const entry = allEntries(s)[0]
-  if (!entry) throw new Error('No choice')
-  cancelProject(s, 'research', entry.sequence)
-  expect(enqueue(s, { kind: 'research', id: 'stonecraft' })).toBe(true)
-  const active = s.queues.research.waiting[0]
+  expect(startProject(s, { kind: 'research', id: 'forestry' })).toBe(true)
+  expect(startProject(s, { kind: 'research', id: 'stonecraft' })).toBe(false)
+  cancelProject(s, 'research')
+  expect(startProject(s, { kind: 'research', id: 'stonecraft' })).toBe(true)
+  const active = s.projects.research
   if (!active) throw new Error('No replacement research')
-  advanceTime(s, quoteProject(s, active.project).total)
+  advanceTime(s, active.total)
   expect(s).toMatchObject({ specialization: 'stonecraft' })
 })
 
@@ -312,20 +255,6 @@ test('the common research graph is reachable independently of either branch', ()
     expect(s.research['causal-synthesis']).toBe(1)
     expect(s.legacy.discovered).toBe(true)
   }
-})
-
-test('a missing lower expansion can be rebuilt while a higher target stays queued', () => {
-  const s = settlement()
-  people(s, 'builder')
-  s.facilities.housing.level = 0
-  enqueue(s, { kind: 'expand', id: 'housing', target: 2 })
-  const rebuild = nextExpansion(s, 'housing')
-  expect(rebuild).toEqual({ kind: 'expand', id: 'housing', target: 1 })
-  enqueue(s, rebuild)
-  const entry = required(s.queues.construction.waiting[1])
-  moveProject(s, 'construction', entry.sequence, -1)
-  advanceTime(s, 2400)
-  expect(s.facilities.housing.level).toBe(2)
 })
 
 test('food gathering rewards the first second and opens exploration once a trip is affordable', () => {
@@ -394,23 +323,23 @@ test('automated gathering follows the same storage cap timeline across tick size
   expect(s.resources.food).toBeCloseTo(sliced.resources.food, 4)
 })
 
-test('queued Writing follows a paid farm investment and retains its research cost', () => {
+test('Writing starts after its farm prerequisite is complete', () => {
   const s = settlement()
   s.research.writing = 0
   s.facilities.farm.level = 0
   people(s, 'builder', 'forager', 'idle')
+  s.resources.knowledge = 2000
   const before = s.resources.knowledge
-  enqueue(s, { kind: 'research', id: 'writing' })
-  enqueue(s, nextExpansion(s, 'farm'))
-  advanceTime(s, 0)
-  expect(s.queues.construction.active?.project.id).toBe('farm')
+  expect(startProject(s, nextExpansion(s, 'farm'))).toBe(true)
+  expect(s.projects.construction?.project.id).toBe('farm')
   advanceTime(s, 15 * 60)
   expect(s.facilities.farm.level).toBe(1)
-  expect(s.queues.research.active?.project.id).toBe('writing')
-  expect(s.queues.research.active?.paid.knowledge).toBe(
+  expect(startProject(s, { kind: 'research', id: 'writing' })).toBe(true)
+  expect(s.projects.research?.project.id).toBe('writing')
+  expect(s.projects.research?.paid.knowledge).toBe(
     before - s.resources.knowledge,
   )
-  const active = s.queues.research.active
+  const active = s.projects.research
   if (!active) throw new Error('Writing did not start')
   advanceTime(s, active.total)
   expect(s.research.writing).toBe(1)

@@ -7,7 +7,6 @@ import { JOB_IDS, RESEARCH_IDS, RESOURCES } from '../src/ids'
 import { isProductionJob } from '../src/jobs'
 import { buyPerk, canReset, legacyReward, resetRun } from '../src/prestige'
 import { createRecord } from '../src/records'
-import { queueBlocker } from '../src/research'
 import { canAfford, committed, storageCapacity } from '../src/resources'
 import { assigned, housingCapacity, jobInput } from '../src/settlement'
 import { resourceRates } from '../src/simulation'
@@ -86,19 +85,7 @@ export function snapshot(state: GameState) {
     commitments: Object.fromEntries(
       RESOURCES.map((r) => [r, committed(state, r)]),
     ),
-    queues: Object.fromEntries(
-      Object.entries(state.queues).map(([id, q]) => [
-        id,
-        {
-          active: structuredClone(q.active),
-          waiting: structuredClone(q.waiting),
-          blocker: queueBlocker(
-            state,
-            id === 'research' ? 'research' : 'construction',
-          ),
-        },
-      ]),
-    ),
+    projects: structuredClone(state.projects),
     inputBlockedWorkers: state.people.filter(
       (p) =>
         isProductionJob(p.job) && !canAfford(state, jobInput(state, p.job)),
@@ -175,7 +162,7 @@ export function runBalance(
   }
   const controls: Controls = {
     plan(project) {
-      if (wall >= horizon || !game.enqueue(project)) return false
+      if (wall >= horizon || !game.start(project)) return false
       game.advanceTime(0, true)
       actions.push({
         wallSeconds: wall,
@@ -204,8 +191,8 @@ export function runBalance(
     while (wall < Math.min(deadline, horizon)) {
       if (startAction(state, id)) break
       // Wait only while a busy researcher or runner will free up soon;
-      // otherwise the action is not runnable and waiting would burn the visit.
-      if (!state.queues.research.active && !state.manual.length) return false
+      // otherwise the action is not runnable and spending the visit would burn time.
+      if (!state.projects.research && !state.manual.length) return false
       advance(Math.min(0.5, deadline - wall))
     }
     if (!state.manual.some((m) => m.id === id)) return false
@@ -247,7 +234,7 @@ export function runBalance(
       advance(1)
   }
   function opening() {
-    const deadline = Math.min(horizon, wall + 3600)
+    const deadline = Math.min(horizon, wall + 7200)
     // Exploration can take several attempts before the first discovery; keep
     // enough provisions on hand so a dry streak cannot deadlock the opening.
     // Base food storage caps at 50; stay below it so the loop can terminate.
@@ -261,35 +248,32 @@ export function runBalance(
     gather('wood', 18, deadline)
     gather('food', 20, deadline)
     waitForResearch(deadline, 'sharpened-stick')
-    controls.plan({ kind: 'research', id: 'shelters' })
-    advance(0)
     gather('wood', 30, deadline)
     // Shelters research needs stone, and a full-scale manual explore always
     // makes the next discovery, so one trip finds it.
     while (!state.discovered.stone && wall < deadline)
       if (!manual('explore', deadline)) break
     gather('stone', 6, deadline)
+    controls.plan({ kind: 'research', id: 'shelters' })
     waitForResearch(deadline, 'shelters')
     gather('food', 48, deadline)
     // The camp researches gate the workplace expansions and the forager job.
     controls.plan({ kind: 'research', id: 'foraging-rounds' })
+    waitForResearch(deadline, 'foraging-rounds')
     controls.plan({ kind: 'research', id: 'timber-camps' })
-    advance(0)
-    waitForResearch(deadline, 'foraging-rounds', 'timber-camps')
-    // Research unlocks the building; construction still needs to be
-    // queued and paid for. Gather all three opening building costs before
-    // queueing them because construction claims the lone person as builder.
-    gather('wood', 27, deadline)
-    gather('food', 8, deadline)
-    controls.plan({ kind: 'expand', id: 'housing', target: 1 })
-    controls.plan({ kind: 'expand', id: 'foraging', target: 1 })
-    controls.plan({ kind: 'expand', id: 'lumber', target: 1 })
-    while (
-      (state.queues.construction.waiting.length ||
-        state.queues.construction.active) &&
-      wall < deadline
-    )
-      advance(1)
+    waitForResearch(deadline, 'timber-camps')
+    if (state.manual.length) game.cancelAction()
+    // Research unlocks the building; construction starts one project at a time.
+    gather('food', 40, deadline)
+    gather('wood', 48, deadline)
+    for (const project of [
+      { kind: 'expand' as const, id: 'housing' as const, target: 1 },
+      { kind: 'expand' as const, id: 'foraging' as const, target: 1 },
+      { kind: 'expand' as const, id: 'lumber' as const, target: 1 },
+    ]) {
+      controls.plan(project)
+      while (state.projects.construction && wall < deadline) advance(1)
+    }
     controls.assign(0, 'forager')
     if (
       wall < horizon &&
@@ -298,7 +282,7 @@ export function runBalance(
         !state.facilities.lumber.level)
     )
       throw new Error(
-        'Opening policy did not establish its settlement within one hour',
+        'Opening policy did not establish its settlement within two hours',
       )
   }
   if (!start) opening()

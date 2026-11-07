@@ -10,7 +10,7 @@ function busy(state: GameState, index: number) {
   return (
     state.people[index]?.job !== 'idle' ||
     state.manual.some((entry) => entry.person === index) ||
-    state.queues.research.active?.worker === index
+    state.projects.research?.worker === index
   )
 }
 

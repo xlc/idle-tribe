@@ -13,7 +13,6 @@ import {
   WORKING_JOB_IDS,
 } from './ids'
 import { createRecord } from './records'
-import { QUEUES } from './research'
 import { jobUnlocked } from './settlement'
 import { expertiseLevel } from './skills'
 import { createDefaultState } from './state'
@@ -23,8 +22,6 @@ import type {
   ExploreOutcome,
   GameState,
   Project,
-  ProjectQueue,
-  QueueEntry,
 } from './types'
 export const STORAGE_KEY = 'primitive-tribe'
 // JSON is the untrusted boundary. Model its values explicitly and rebuild the
@@ -130,19 +127,12 @@ function project(v: JsonValue | undefined): Project {
   const target = number(p.target, 1, Infinity, true)
   return kind === 'expand' ? { kind, id, target } : { kind, id, target }
 }
-function entry(v: JsonValue | undefined): QueueEntry {
-  const e = object(v)
-  return {
-    sequence: number(e.sequence, 1, Infinity, true),
-    project: project(e.project),
-  }
-}
 function active(v: JsonValue | undefined): ActiveProject | null {
   if (v === null) return null
   const a = object(v),
     total = number(a.total)
   return {
-    ...entry(v),
+    project: project(a.project),
     paid: cost(a.paid),
     total,
     progress: number(a.progress, 0, total + 1e-7),
@@ -150,10 +140,6 @@ function active(v: JsonValue | undefined): ActiveProject | null {
       ? {}
       : { worker: number(a.worker, 0, Infinity, true) }),
   }
-}
-function queue(v: JsonValue | undefined): ProjectQueue {
-  const q = object(v)
-  return { active: active(q.active), waiting: list(q.waiting).map(entry) }
 }
 export function parseSave(serialized: string | null, nameSeed = 0): GameState {
   try {
@@ -165,7 +151,7 @@ export function parseSave(serialized: string | null, nameSeed = 0): GameState {
       facilities = object(p.facilities),
       research = object(p.research),
       discovered = object(p.discovered),
-      queues = object(p.queues),
+      projects = object(p.projects),
       legacy = object(p.legacy),
       perks = object(legacy.perks)
     const actionSkills = object(p.actionSkills),
@@ -230,24 +216,17 @@ export function parseSave(serialized: string | null, nameSeed = 0): GameState {
     s.seenNotes = createRecord(NOTE_IDS, (id) => bool(seenNotes[id]))
     if (s.pendingEncounter && s.completedEncounters[s.pendingEncounter])
       throw new Error('Invalid pending encounter')
-    s.queues = {
-      research: queue(queues.research),
-      construction: queue(queues.construction),
+    s.projects = {
+      research: active(projects.research),
+      construction: active(projects.construction),
     }
-    s.nextSequence = number(p.nextSequence, 1, Infinity, true)
-    const sequences = new Set<number>()
-    for (const id of QUEUES) {
-      const q = s.queues[id]
-      for (const e of [...(q.active ? [q.active] : []), ...q.waiting]) {
-        if (
-          sequences.has(e.sequence) ||
-          e.sequence >= s.nextSequence ||
-          (e.project.kind === 'research') !== (id === 'research')
-        )
-          throw new Error('Invalid queue')
-        sequences.add(e.sequence)
-      }
-    }
+    if (
+      (s.projects.research &&
+        s.projects.research.project.kind !== 'research') ||
+      (s.projects.construction &&
+        s.projects.construction.project.kind === 'research')
+    )
+      throw new Error('Invalid project slot')
     s.manual = list(p.manual).map((v) => {
       const m = object(v)
       return {
@@ -263,16 +242,16 @@ export function parseSave(serialized: string | null, nameSeed = 0): GameState {
         throw new Error('Invalid manual work')
       busy.add(m.person)
     }
-    const researcher = s.queues.research.active?.worker
+    const researcher = s.projects.research?.worker
     if (
-      s.queues.construction.active?.worker !== undefined ||
-      (researcher !== undefined) !== Boolean(s.queues.research.active) ||
+      s.projects.construction?.worker !== undefined ||
+      (researcher !== undefined) !== Boolean(s.projects.research) ||
       (researcher !== undefined &&
         (researcher >= s.people.length ||
           s.people[researcher]?.job !== 'idle' ||
           busy.has(researcher)))
     )
-      throw new Error('Invalid queue worker')
+      throw new Error('Invalid project worker')
     s.minuteProgress = number(p.minuteProgress, 0, 60)
     s.happiness = number(p.happiness, 0, 100)
     s.era = number(p.era, 0, ERAS.length - 1, true)

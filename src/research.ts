@@ -1,6 +1,4 @@
-import { EPSILON } from './constants'
 import { BUILDINGS, EQUIPMENT, RESEARCH } from './definitions'
-import { automatedWorkAllowed } from './food'
 import { RESEARCH_IDS, RESOURCES } from './ids'
 import { hasResearch } from './research-effects'
 import {
@@ -10,7 +8,6 @@ import {
   marginal,
   pay,
   refund,
-  storageCapacity,
 } from './resources'
 import {
   assignJob,
@@ -20,11 +17,18 @@ import {
   prestigeMultiplier,
   requirementBlocker,
 } from './settlement'
-import type { Cost, GameState, Project, QueueId } from './types'
-export const QUEUES: QueueId[] = ['research', 'construction']
-export function researchQueueUnlocked(state: GameState) {
-  return state.facilities.library.level > 0
+import type { Cost, GameState, Project, ProjectSlot } from './types'
+
+export function projectSlot(project: Project): ProjectSlot {
+  return project.kind === 'research' ? 'research' : 'construction'
 }
+
+export function activeProjects(state: GameState) {
+  return Object.values(state.projects).filter(
+    (project): project is NonNullable<typeof project> => project !== null,
+  )
+}
+
 export function projectName(_state: GameState, project: Project) {
   if (project.kind === 'research') {
     const level = project.target ?? 1
@@ -33,6 +37,7 @@ export function projectName(_state: GameState, project: Project) {
   const name = BUILDINGS[project.id].name
   return `${name}${project.kind === 'equip' ? ` · tools ${project.target}` : ` · level ${project.target}`}`
 }
+
 export function quoteProject(
   state: GameState,
   project: Project,
@@ -46,14 +51,6 @@ export function quoteProject(
       scale = isUpgrade && upgrade ? upgrade.costMultiplier ** (target - 1) : 1,
       timeScale =
         isUpgrade && upgrade ? upgrade.timeMultiplier ** (target - 1) : 1
-    const otherBranchPlanned =
-      def.branch &&
-      allEntries(state).some(
-        (entry) =>
-          entry.project.kind === 'research' &&
-          RESEARCH[entry.project.id].branch &&
-          RESEARCH[entry.project.id].branch !== def.branch,
-      )
     const cost = Object.fromEntries(
       RESOURCES.filter((r) => def.cost[r]).map((r) => [
         r,
@@ -77,7 +74,6 @@ export function quoteProject(
       cost,
       total: (def.seconds * timeScale) / prestigeMultiplier(state),
       blocker:
-        (otherBranchPlanned ? 'Other path queued' : '') ||
         blocker ||
         (def.branch &&
         state.specialization &&
@@ -128,167 +124,61 @@ export function quoteProject(
           : requirementBlocker(state, def.requires),
   }
 }
-export function allEntries(state: GameState) {
-  return QUEUES.flatMap((id) => {
-    const q = state.queues[id]
-    return [...(q.active ? [q.active] : []), ...q.waiting]
-  })
-}
-function sameProject(a: Project, b: Project) {
-  return (
-    a.kind === b.kind && a.id === b.id && (a.target ?? 1) === (b.target ?? 1)
-  )
-}
-// Surfaces why a build cannot start: no builder on hand and no idle person
-// who can become one.
+
+// Surfaces why a build cannot start.
 export function buildBlocker(state: GameState) {
+  if (state.projects.construction) return 'Construction in progress'
   return constructionSpeed(state) > 0 ||
     (jobUnlocked(state, 'builder') && firstIdlePerson(state) >= 0)
     ? ''
     : 'No builders'
 }
-export function enqueue(state: GameState, project: Project) {
+
+export function startProject(state: GameState, project: Project) {
   const normalized =
     project.kind === 'research' && project.target === undefined
       ? { ...project, target: 1 }
       : project
-  const queue: QueueId =
-    normalized.kind === 'research' ? 'research' : 'construction'
+  const slot = projectSlot(normalized)
+  if (state.projects[slot]) return false
   const quote = quoteProject(state, normalized)
-  if (
-    quote.obsolete ||
-    (normalized.kind === 'research' &&
-      normalized.target !== undefined &&
-      normalized.target > (RESEARCH[normalized.id].upgrade?.maxLevel ?? 1))
-  )
-    return false
-  if (allEntries(state).some((e) => sameProject(e.project, normalized)))
+  if (quote.obsolete || quote.blocker || !canAfford(state, quote.cost))
     return false
   if (normalized.kind === 'research') {
-    const branch = RESEARCH[normalized.id].branch
-    if (
-      branch &&
-      ((state.specialization && state.specialization !== branch) ||
-        allEntries(state).some(
-          (e) =>
-            e.project.kind === 'research' &&
-            RESEARCH[e.project.id].branch &&
-            RESEARCH[e.project.id].branch !== branch,
-        ))
-    )
-      return false
-  }
-  // Construction needs at least one builder; starting one takes an idle
-  // person and puts them to work.
-  if (queue === 'construction' && !constructionSpeed(state)) {
-    const person = firstIdlePerson(state)
-    if (person < 0 || !assignJob(state, person, 'builder')) return false
-  }
-  state.queues[queue].waiting.push({
-    sequence: state.nextSequence++,
-    project: normalized,
-  })
-  return true
-}
-export function queueBlocker(state: GameState, id: QueueId) {
-  const q = state.queues[id]
-  if (q.active)
-    return id === 'construction' && !constructionSpeed(state)
-      ? 'No builders'
-      : ''
-  const entry = q.waiting[0]
-  if (!entry) return 'Waiting'
-  const quote = quoteProject(state, entry.project)
-  // Research may cost more than current storage (paid from over-cap stock or
-  // after later growth); a queued building whose cost exceeds capacity can
-  // never be funded, and "waiting" would mislead.
-  const exceedsStorage =
-    id === 'construction' &&
-    RESOURCES.some((r) => {
-      const required = quote.cost[r] ?? 0
-      return (
-        required > storageCapacity(state, r) &&
-        state.resources[r] + EPSILON < required
-      )
-    })
-  return (
-    quote.blocker ||
-    (id === 'research' && firstIdlePerson(state) < 0 ? 'No idle people' : '') ||
-    (id === 'construction' && !constructionSpeed(state) ? 'No builders' : '') ||
-    (exceedsStorage ? 'Exceeds storage' : '') ||
-    (!canAfford(state, quote.cost) ? 'Waiting for materials' : '')
-  )
-}
-export function startQueues(state: GameState) {
-  for (const id of QUEUES) {
-    const q = state.queues[id]
-    while (
-      !q.active &&
-      q.waiting[0] &&
-      quoteProject(state, q.waiting[0].project).obsolete
-    ) {
-      const removed = q.waiting.shift()
-      if (removed)
-        state.notice = `Removed completed plan: ${projectName(state, removed.project)}`
-    }
-  }
-  const order = [...QUEUES].sort(
-    (a, b) =>
-      (state.queues[a].waiting[0]?.sequence ?? Infinity) -
-      (state.queues[b].waiting[0]?.sequence ?? Infinity),
-  )
-  for (const id of order) {
-    const q = state.queues[id]
-    if (
-      id === 'construction' &&
-      q.active &&
-      automatedWorkAllowed(state) &&
-      !constructionSpeed(state)
-    ) {
-      const person = firstIdlePerson(state)
-      if (person >= 0) assignJob(state, person, 'builder')
-    }
-    if (q.active || queueBlocker(state, id)) continue
-    const entry = q.waiting.shift()
-    if (!entry) continue
-    const quote = quoteProject(state, entry.project)
+    const worker = firstIdlePerson(state)
+    if (worker < 0) return false
     pay(state, quote.cost)
-    q.active = {
-      ...entry,
+    state.projects.research = {
+      project: normalized,
       paid: { ...quote.cost },
       progress: 0,
       total: quote.total,
-      ...(id === 'research' ? { worker: firstIdlePerson(state) } : {}),
+      worker,
     }
-  }
-}
-export function cancelProject(state: GameState, id: QueueId, sequence: number) {
-  const q = state.queues[id]
-  if (q.active?.sequence === sequence) {
-    refund(state, q.active.paid)
-    q.active = null
     return true
   }
-  const i = q.waiting.findIndex((e) => e.sequence === sequence)
-  if (i < 0) return false
-  q.waiting.splice(i, 1)
+  if (!constructionSpeed(state)) {
+    const person = firstIdlePerson(state)
+    if (person < 0 || !assignJob(state, person, 'builder')) return false
+  }
+  pay(state, quote.cost)
+  state.projects.construction = {
+    project: normalized,
+    paid: { ...quote.cost },
+    progress: 0,
+    total: quote.total,
+  }
   return true
 }
-export function moveProject(
-  state: GameState,
-  id: QueueId,
-  sequence: number,
-  direction: number,
-) {
-  const q = state.queues[id],
-    i = q.waiting.findIndex((e) => e.sequence === sequence),
-    entry = q.waiting[i]
-  if (!entry || i + direction < 0 || i + direction >= q.waiting.length)
-    return false
-  q.waiting.splice(i, 1)
-  q.waiting.splice(i + direction, 0, entry)
+
+export function cancelProject(state: GameState, slot: ProjectSlot) {
+  const active = state.projects[slot]
+  if (!active) return false
+  refund(state, active.paid)
+  state.projects[slot] = null
   return true
 }
+
 export function completeProject(state: GameState, project: Project) {
   if (project.kind === 'research') {
     const def = RESEARCH[project.id],
@@ -309,69 +199,49 @@ export function completeProject(state: GameState, project: Project) {
     if (project.kind === 'equip') f.equipment = project.target
   }
 }
-// Quotes project the preceding plans only; actual payment is always recalculated at start.
-export function plannedQuotes(state: GameState, id: QueueId) {
-  const projected =
-      id === 'construction' ? researchPlan(state) : structuredClone(state),
-    q = state.queues[id],
-    result = new Map<number, ReturnType<typeof quoteProject>>()
-  if (q.active) completeProject(projected, q.active.project)
-  for (const entry of q.waiting) {
-    const quote = quoteProject(projected, entry.project)
-    result.set(entry.sequence, quote)
-    if (!quote.blocker && !quote.obsolete)
-      completeProject(projected, entry.project)
-  }
-  return result
-}
+
 export function nextExpansion(
   state: GameState,
   id: import('./ids').BuildingId,
 ): Project {
-  const targets = allEntries(state).flatMap((e) =>
-    e.project.kind === 'expand' && e.project.id === id
-      ? [e.project.target]
-      : [],
-  )
-  let target = state.facilities[id].level + 1
-  while (targets.includes(target)) target++
+  const active = state.projects.construction?.project
+  const target =
+    active?.kind === 'expand' && active.id === id
+      ? active.target + 1
+      : state.facilities[id].level + 1
   return { kind: 'expand', id, target }
 }
+
 export function nextEquipment(
   state: GameState,
   id: import('./ids').BuildingId,
 ): Project {
-  const targets = allEntries(state).flatMap((e) =>
-    e.project.kind === 'equip' && e.project.id === id ? [e.project.target] : [],
-  )
-  let target = state.facilities[id].equipment + 1
-  while (targets.includes(target)) target++
-  return {
-    kind: 'equip',
-    id,
-    target,
-  }
+  const active = state.projects.construction?.project
+  const target =
+    active?.kind === 'equip' && active.id === id
+      ? active.target + 1
+      : state.facilities[id].equipment + 1
+  return { kind: 'equip', id, target }
 }
+
 export function researchPlan(state: GameState) {
   const projected = structuredClone(state)
-  for (const entry of allEntries(state))
-    if (entry.project.kind === 'research')
-      completeProject(projected, entry.project)
+  const active = projected.projects.research
+  if (active) completeProject(projected, active.project)
   return projected
 }
+
 export function constructionPlan(state: GameState) {
   const projected = researchPlan(state)
-  const q = state.queues.construction
-  for (const entry of [...(q.active ? [q.active] : []), ...q.waiting]) {
-    const quote = quoteProject(projected, entry.project)
-    if (!quote.blocker && !quote.obsolete)
-      completeProject(projected, entry.project)
-  }
+  const active = projected.projects.construction
+  if (active) completeProject(projected, active.project)
   return projected
 }
+
 export function previewProject(state: GameState, project: Project) {
   return quoteProject(constructionPlan(state), project)
 }
+
 export function researchVisible(
   state: GameState,
   id: import('./ids').ResearchId,
@@ -385,6 +255,7 @@ export function researchVisible(
     !requirementBlocker(state, def.requires)
   )
 }
+
 export function researchUpgradeVisible(
   state: GameState,
   id: import('./ids').ResearchId,
@@ -393,18 +264,9 @@ export function researchUpgradeVisible(
     level = state.research[id],
     upgrade = def.upgrade
   if (!upgrade || level < 1 || level >= upgrade.maxLevel) return false
-  const target = level + 1
-  if (
-    allEntries(state).some(
-      (entry) =>
-        entry.project.kind === 'research' &&
-        entry.project.id === id &&
-        (entry.project.target ?? 1) >= target,
-    )
-  )
-    return false
   return !requirementBlocker(state, upgrade.requires)
 }
+
 export function completedTechnologies(state: GameState) {
   return RESEARCH_IDS.filter((id) => hasResearch(state, id)).length
 }

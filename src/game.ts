@@ -6,10 +6,9 @@ import {
 } from './actions'
 import {
   cancelProject,
-  enqueue,
-  moveProject,
   nextEquipment,
   nextExpansion,
+  startProject,
 } from './research'
 import { addResources } from './resources'
 import {
@@ -25,11 +24,11 @@ import type {
   GameState,
   JobId,
   Project,
-  QueueId,
+  ProjectSlot,
 } from './types'
 export function removeFacility(state: GameState, id: BuildingId) {
   const f = state.facilities[id],
-    active = state.queues.construction.active
+    active = state.projects.construction
   if (!f.level || active?.project.id === id) return false
   const jobs = buildingJobs(id)
   if (jobs.length)
@@ -47,13 +46,11 @@ export function createGame(state: GameState) {
     state,
     advanceTime: (seconds: number, visible = false) =>
       advanceTime(state, seconds, visible),
-    enqueue: (project: Project) => enqueue(state, project),
-    build: (id: BuildingId) => enqueue(state, nextExpansion(state, id)),
-    equip: (id: BuildingId) => enqueue(state, nextEquipment(state, id)),
+    start: (project: Project) => startProject(state, project),
+    build: (id: BuildingId) => startProject(state, nextExpansion(state, id)),
+    equip: (id: BuildingId) => startProject(state, nextEquipment(state, id)),
     remove: (id: BuildingId) => removeFacility(state, id),
-    cancel: (id: QueueId, seq: number) => cancelProject(state, id, seq),
-    move: (id: QueueId, seq: number, direction: number) =>
-      moveProject(state, id, seq, direction),
+    cancel: (slot: ProjectSlot) => cancelProject(state, slot),
     assign: (index: number, job: JobId) => assignJob(state, index, job),
     adjust: (job: JobId, n: number) => adjustWorkers(state, job, n),
     fill: (job: JobId) => fillWorkers(state, job),

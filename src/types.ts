@@ -195,21 +195,14 @@ export type Project =
   | { kind: 'research'; id: ResearchId; target?: number }
   | { kind: 'expand'; id: BuildingId; target: number }
   | { kind: 'equip'; id: BuildingId; target: number }
-export interface QueueEntry {
-  sequence: number
-  project: Project
-}
-export interface ActiveProject extends QueueEntry {
+export interface ActiveProject {
   paid: Cost
   progress: number
   total: number
+  project: Project
   worker?: number
 }
-export interface ProjectQueue {
-  active: ActiveProject | null
-  waiting: QueueEntry[]
-}
-export type QueueId = 'research' | 'construction'
+export type ProjectSlot = 'research' | 'construction'
 export interface ManualAction {
   id: ActionId
   paid: Cost
@@ -243,8 +236,7 @@ export interface GameState {
   pendingEncounter: ExpeditionEncounterId | null
   completedEncounters: Record<ExpeditionEncounterId, boolean>
   seenNotes: Record<NoteId, boolean>
-  queues: Record<QueueId, ProjectQueue>
-  nextSequence: number
+  projects: Record<ProjectSlot, ActiveProject | null>
   manual: ManualAction[]
   minuteProgress: number
   happiness: number

@@ -8,18 +8,14 @@ import {
   xpFactor,
 } from './actions'
 import { RESEARCH } from './definitions'
-import { parseSave } from './persistence'
 import {
   buildBlocker,
   cancelProject,
   completeProject,
-  enqueue,
-  queueBlocker,
   quoteProject,
-  researchQueueUnlocked,
   researchUpgradeVisible,
   researchVisible,
-  startQueues,
+  startProject,
 } from './research'
 import { researchEffects } from './research-effects'
 import { firstIdlePerson } from './settlement'
@@ -44,82 +40,64 @@ test('opening research keeps wood costs and work times light', () => {
   ])
 })
 
-test('reloading a queued project does not allow the same project to be queued again', () => {
-  const state = createDefaultState()
-  state.resources.food = 100
-  completeProject(state, { kind: 'research', id: 'foraging-rounds' })
-  expect(enqueue(state, { kind: 'expand', id: 'housing', target: 1 })).toBe(
-    true,
-  )
-  expect(state.people[0]?.job).toBe('builder')
-  const restored = parseSave(JSON.stringify(state))
-  expect(restored.queues.construction.waiting).toHaveLength(1)
-  expect(enqueue(restored, { kind: 'expand', id: 'housing', target: 1 })).toBe(
-    false,
-  )
-  expect(enqueue(restored, { kind: 'expand', id: 'housing', target: 2 })).toBe(
-    true,
-  )
-  expect(restored.queues.construction.waiting).toHaveLength(2)
-})
-
 test('research waits for an idle person, binds one, and releases them on cancel', () => {
   const state = createDefaultState()
   state.discovered.wood = true
   state.resources.wood = 100
   state.resources.food = 100
+  state.resources.food = 100
   // The founder is busy gathering, so research cannot start.
   startAction(state, 'gather')
-  enqueue(state, { kind: 'research', id: 'sharpened-stick' })
-  startQueues(state)
-  expect(state.queues.research.active).toBeNull()
-  expect(queueBlocker(state, 'research')).toBe('No idle people')
+  startProject(state, { kind: 'research', id: 'sharpened-stick' })
+  expect(state.projects.research).toBeNull()
 
   cancelManual(state)
-  startQueues(state)
-  const active = state.queues.research.active
+  expect(startProject(state, { kind: 'research', id: 'sharpened-stick' })).toBe(
+    true,
+  )
+  const active = state.projects.research
   expect(active?.project.id).toBe('sharpened-stick')
   expect(active?.worker).toBe(0)
   expect(state.people[0]?.job).toBe('idle')
 
   if (!active) throw new Error('Research did not start')
-  cancelProject(state, 'research', active.sequence)
-  expect(state.queues.research.active).toBeNull()
+  cancelProject(state, 'research')
+  expect(state.projects.research).toBeNull()
   expect(firstIdlePerson(state)).toBe(0)
 })
 
 test('starting a build takes an idle person as builder and reports why it cannot', () => {
   const state = createDefaultState()
   completeProject(state, { kind: 'research', id: 'foraging-rounds' })
+  completeProject(state, { kind: 'research', id: 'shelters' })
   state.resources.food = 100
   state.resources.wood = 100
   state.resources.stone = 100
 
-  expect(enqueue(state, { kind: 'expand', id: 'housing', target: 1 })).toBe(
-    true,
-  )
+  expect(
+    startProject(state, { kind: 'expand', id: 'housing', target: 1 }),
+  ).toBe(true)
   expect(state.people[0]?.job).toBe('builder')
 
-  // The founder is now building; a second project still enqueues because a
-  // builder is on hand.
-  expect(enqueue(state, { kind: 'expand', id: 'foraging', target: 2 })).toBe(
-    true,
-  )
+  // Only one construction can run at a time.
+  expect(
+    startProject(state, { kind: 'expand', id: 'foraging', target: 2 }),
+  ).toBe(false)
 
   const alone = createDefaultState()
   completeProject(alone, { kind: 'research', id: 'foraging-rounds' })
   startAction(alone, 'gather')
   expect(buildBlocker(alone)).toBe('No builders')
-  expect(enqueue(alone, { kind: 'expand', id: 'housing', target: 1 })).toBe(
-    false,
-  )
+  expect(
+    startProject(alone, { kind: 'expand', id: 'housing', target: 1 }),
+  ).toBe(false)
 
   const locked = createDefaultState()
   startAction(locked, 'gather')
   expect(buildBlocker(locked)).toBe('No builders')
 })
 
-test('over-cap stock can fund a queued construction project', () => {
+test('over-cap stock can fund a construction project', () => {
   const state = createDefaultState()
   state.research.shelters = 1
   state.research['oral-tradition'] = 1
@@ -133,10 +111,8 @@ test('over-cap stock can fund a queued construction project', () => {
     state.resources[resource] = 1_000_000
 
   const project = { kind: 'expand', id: 'study', target: 100 } as const
-  expect(enqueue(state, project)).toBe(true)
-  expect(queueBlocker(state, 'construction')).toBe('')
-  startQueues(state)
-  expect(state.queues.construction.active?.project).toEqual(project)
+  expect(startProject(state, project)).toBe(true)
+  expect(state.projects.construction?.project).toEqual(project)
 })
 
 test('repeatable research has gated levels, rising costs, and a hard maximum', () => {
@@ -187,16 +163,22 @@ test('repeatable research has gated levels, rising costs, and a hard maximum', (
     target: 4,
   })
   expect(maximum.blocker).toBe('Maximum level 3')
-  expect(enqueue(state, maximumProject('inventory-keeping', 4))).toBe(false)
+  expect(startProject(state, maximumProject('inventory-keeping', 4))).toBe(
+    false,
+  )
 })
 
 test('research prerequisites stay hidden until the prerequisite completes', () => {
   const state = createDefaultState()
   state.discovered.wood = true
   state.researchUnlocked = true
+  state.resources.wood = 10
+  state.resources.food = 10
 
   expect(researchVisible(state, 'sharpened-stick')).toBe(true)
-  expect(enqueue(state, { kind: 'research', id: 'sharpened-stick' })).toBe(true)
+  expect(startProject(state, { kind: 'research', id: 'sharpened-stick' })).toBe(
+    true,
+  )
   expect(researchVisible(state, 'shelters')).toBe(false)
 
   completeProject(state, { kind: 'research', id: 'sharpened-stick' })
@@ -364,13 +346,6 @@ test('reusable research effects follow the same gated level progression', () => 
     sawyer: { wood: 2 },
     mason: { stone: 2 },
   })
-})
-
-test('the research queue unlocks with a library', () => {
-  const state = createDefaultState()
-  expect(researchQueueUnlocked(state)).toBe(false)
-  state.facilities.library.level = 1
-  expect(researchQueueUnlocked(state)).toBe(true)
 })
 
 test('repeatable effects do not repeat one-time offline bonuses', () => {

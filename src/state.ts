@@ -45,11 +45,7 @@ export function createDefaultState(nameSeed = 0): GameState {
     pendingEncounter: null,
     completedEncounters: createRecord(EXPEDITION_ENCOUNTER_IDS, () => false),
     seenNotes: createRecord(NOTE_IDS, () => false),
-    queues: {
-      research: { active: null, waiting: [] },
-      construction: { active: null, waiting: [] },
-    },
-    nextSequence: 1,
+    projects: { research: null, construction: null },
     manual: [],
     minuteProgress: 0,
     happiness: 50,
@@ -89,8 +85,7 @@ export function resetState(
   state.exploreRolls = fresh.exploreRolls
   state.pendingEncounter = fresh.pendingEncounter
   state.completedEncounters = fresh.completedEncounters
-  state.queues = fresh.queues
-  state.nextSequence = fresh.nextSequence
+  state.projects = fresh.projects
   state.manual = fresh.manual
   state.minuteProgress = fresh.minuteProgress
   state.happiness = fresh.happiness

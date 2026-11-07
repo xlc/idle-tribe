@@ -1,23 +1,23 @@
 .technology-panel {
-  margin-top: 24px;
+  margin-top: 14px;
 }
 .tech-section {
-  margin: 0 0 24px;
+  margin: 0 0 16px;
 }
 .tech-section h2 {
   font-size: 15px;
-  margin: 0 0 10px;
+  margin: 0 0 8px;
 }
 .tech-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
-  gap: 12px;
+  gap: 8px;
   align-items: start;
 }
 .research-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   align-items: stretch;
 }
 .research-list .research-card {
@@ -29,17 +29,6 @@
 .research-trigger {
   gap: 12px;
   padding-right: 56px;
-}
-.research-inline-control {
-  position: absolute;
-  top: 50%;
-  right: 52px;
-  z-index: 1;
-  min-height: 32px;
-  min-width: 44px;
-  padding: 4px 8px;
-  font-size: 12px;
-  transform: translateY(-50%);
 }
 .research-card[data-action-state="running"] {
   border-color: var(--color-accent);
@@ -68,17 +57,6 @@
 .research-card .requirement[data-visible="false"] {
   visibility: hidden;
 }
-.queue-view {
-  display: grid;
-  gap: 24px;
-}
-.queue-section {
-  min-width: 0;
-}
-.queue-section h2 {
-  font-size: 18px;
-  margin: 0 0 10px;
-}
 .research-effect {
   display: flex;
   flex-direction: column;
@@ -93,7 +71,7 @@
 .completed-research {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   font-size: 13px;
   line-height: 1.7;
 }
@@ -119,12 +97,12 @@
   visibility: hidden;
 }
 .legacy h2 {
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 .legacy > p {
   font-size: 13px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 .legacy .tech-grid {
-  margin-top: 20px;
+  margin-top: 12px;
 }

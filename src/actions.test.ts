@@ -465,8 +465,7 @@ test('staffing an action job stops its manual runs with a refund', () => {
 test('completing action-unlocking research keeps the plain completion notice', () => {
   const state = createDefaultState()
   state.discovered.wood = true
-  state.queues.research.active = {
-    sequence: 1,
+  state.projects.research = {
     project: { kind: 'research', id: 'woodcutting' },
     paid: {},
     progress: 12,
@@ -474,7 +473,7 @@ test('completing action-unlocking research keeps the plain completion notice', (
   }
 
   advanceTime(state, 1)
-  expect(state.queues.research.active).toBeNull()
+  expect(state.projects.research).toBeNull()
   // The new card is its own announcement; the notice stays minimal.
   expect(state.notice).toBe('Completed Stone axes')
   expect(actionAvailability(state, 'chop-wood').kind).not.toBe('locked')

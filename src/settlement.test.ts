@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test'
 import { PERKS } from './definitions'
 import { BUILDING_IDS, NOTE_IDS, PERK_IDS, RESOURCES } from './ids'
 import { createRecord } from './records'
-import { enqueue, nextExpansion } from './research'
+import { nextExpansion, startProject } from './research'
 import { storageCapacity } from './resources'
 import {
   happinessTarget,
@@ -87,9 +87,9 @@ test('live and sliced simulations have the same resources, projects, meals and a
     'builder',
   )
   initial.resources.food = 400
-  enqueue(initial, nextExpansion(initial, 'food-store'))
+  startProject(initial, nextExpansion(initial, 'food-store'))
   initial.research['record-keeping'] = 0
-  enqueue(initial, { kind: 'research', id: 'record-keeping' })
+  startProject(initial, { kind: 'research', id: 'record-keeping' })
   const one = structuredClone(initial),
     many = structuredClone(initial)
   advanceTime(one, 18000)

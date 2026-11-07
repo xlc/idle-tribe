@@ -13,19 +13,17 @@ import { Legacy } from './components/legacy'
 import { OfflineStatus } from './components/offline-status'
 import { PeopleView } from './components/people'
 import { Production } from './components/production'
-import { Construction, QueueView } from './components/queues'
 import { Settings } from './components/settings'
 import { Stockpile } from './components/stockpile'
 import { Technology } from './components/technology'
 import { ERAS } from './definitions'
 import { NOTES } from './definitions/notes'
 import { NOTE_IDS } from './ids'
-import { researchQueueUnlocked } from './research'
 import type { GameSession } from './session'
 import { automationUnlocked, noteUnlocked } from './settlement'
 import { useSession } from './use-session'
 
-type View = 'settlement' | 'queue' | 'people' | 'legacy' | 'settings'
+type View = 'settlement' | 'people' | 'legacy' | 'settings'
 
 export function App({ session }: { session: GameSession }) {
   useSession(session)
@@ -48,15 +46,6 @@ export function App({ session }: { session: GameSession }) {
       available: true,
     },
     {
-      id: 'queue',
-      label: 'Queue',
-      mobileLabel: 'Queue',
-      available: s.researchUnlocked && researchQueueUnlocked(s),
-      working: Boolean(
-        s.queues.research.active || s.queues.research.waiting.length,
-      ),
-    },
-    {
       id: 'people',
       label: 'People',
       mobileLabel: 'People',
@@ -76,7 +65,7 @@ export function App({ session }: { session: GameSession }) {
     },
   ]
   const availableViews = views.filter((entry) => entry.available)
-  // First unlocked-but-unseen note; dismissing marks it seen and queues the next.
+  // First unlocked-but-unseen note; dismissing reveals the next one.
   const note = NOTE_IDS.find((id) => noteUnlocked(s, id) && !s.seenNotes[id])
   const dismissNote = () => {
     if (note) session.change(() => (s.seenNotes[note] = true))
@@ -149,28 +138,18 @@ export function App({ session }: { session: GameSession }) {
                   hidden={view !== 'settlement'}
                 >
                   {automated ? (
-                    <>
-                      <Production
-                        {...props}
-                        middle={
-                          s.researchUnlocked ? <Technology {...props} /> : null
-                        }
-                      />
-                      <Construction {...props} compact />
-                    </>
+                    <Production
+                      {...props}
+                      middle={
+                        s.researchUnlocked ? <Technology {...props} /> : null
+                      }
+                    />
                   ) : (
                     <p className="opening-flavor">{ERAS[0]?.description}</p>
                   )}
                   {!automated && s.researchUnlocked && (
                     <Technology {...props} />
                   )}
-                </Tabs.Content>
-                <Tabs.Content
-                  value="queue"
-                  forceMount
-                  hidden={view !== 'queue'}
-                >
-                  <QueueView {...props} />
                 </Tabs.Content>
                 <Tabs.Content
                   value="people"

@@ -4,13 +4,12 @@ import { RESEARCH } from '../definitions'
 import { formatDuration } from '../format'
 import { RESEARCH_IDS } from '../ids'
 import {
-  allEntries,
   quoteProject,
-  researchQueueUnlocked,
   researchUpgradeVisible,
   researchVisible,
 } from '../research'
 import { affordability, canAfford } from '../resources'
+import { firstIdlePerson } from '../settlement'
 import type { Project } from '../types'
 import { ViewIcon } from './art'
 import {
@@ -24,21 +23,6 @@ import {
   SectionDisclosure,
   type ViewProps,
 } from './common'
-
-function queuedResearchTarget(
-  entries: ReturnType<typeof allEntries>,
-  id: (typeof RESEARCH_IDS)[number],
-  current: number,
-) {
-  const entry = entries.find(
-    (candidate) =>
-      candidate.project.kind === 'research' &&
-      candidate.project.id === id &&
-      (candidate.project.target ?? 1) > 1 &&
-      (candidate.project.target ?? 1) > current,
-  )
-  return entry?.project.kind === 'research' ? (entry.project.target ?? 1) : null
-}
 
 function isResearchProject(
   project: Project,
@@ -57,29 +41,21 @@ function effectRows(effect: string | readonly string[] | undefined) {
   return Array.isArray(effect) ? effect : [effect]
 }
 
-type ResearchCardState =
-  | 'running'
-  | 'planned'
-  | 'blocked'
-  | 'missing-cost'
-  | 'ready'
+type ResearchCardState = 'running' | 'blocked' | 'missing-cost' | 'ready'
 
 function researchCardState({
   active,
-  queued,
-  queueBusy,
+  busy,
   blocked,
   affordable,
 }: {
   active: boolean
-  queued: boolean
-  queueBusy: boolean
+  busy: boolean
   blocked: boolean
   affordable: boolean
 }): ResearchCardState {
   if (active) return 'running'
-  if (queued) return 'planned'
-  if (queueBusy || blocked) return 'blocked'
+  if (busy || blocked) return 'blocked'
   if (!affordable) return 'missing-cost'
   return 'ready'
 }
@@ -95,31 +71,23 @@ function ResearchCard({
     def = RESEARCH[id],
     project = { kind: 'research' as const, id, target },
     quote = quoteProject(s, project),
-    q = s.queues.research,
-    active = q.active,
+    active = s.projects.research,
     activeResearch =
       active && isResearchProject(active.project, id, target) ? active : null
-  const queued = allEntries(s).some((entry) =>
-    isResearchProject(entry.project, id, target),
-  )
-  const blocked = Boolean(quote.blocker),
+  const availabilityBlocker =
+      !active && firstIdlePerson(s) < 0 ? 'No idle people' : '',
+    blocked = Boolean(quote.blocker || availabilityBlocker),
     affordable = canAfford(s, quote.cost),
-    queueBusy = Boolean(active || q.waiting.length),
-    queueUnlocked = researchQueueUnlocked(s),
-    needsQueue = queueBusy || !affordable,
     status = researchCardState({
       active: Boolean(activeResearch),
-      queued,
-      queueBusy,
+      busy: Boolean(active && !activeResearch),
       blocked,
       affordable,
     }),
-    canStart = status === 'ready',
-    canQueue =
-      queueUnlocked && !activeResearch && !queued && !blocked && needsQueue
+    canStart = status === 'ready'
   const statusNote = blocked ? (
     <span className="action-status action-status-unavailable">
-      {quote.blocker}
+      {quote.blocker || availabilityBlocker}
     </span>
   ) : null
   const cancelResearch = () => {
@@ -129,19 +97,19 @@ function ResearchCard({
       paid: activeResearch.paid,
       loss: 'Research',
       earned: activeResearch.progress > 10,
-      run: () => session.game.cancel('research', activeResearch.sequence),
+      run: () => session.game.cancel('research'),
     })
   }
-  const runResearch = (action: 'start' | 'queue') => {
+  const runResearch = () => {
     if (def.branch) {
       confirm(
-        `${action === 'start' ? 'Start' : 'Queue'} ${def.name}?`,
+        `Start ${def.name}?`,
         `${def.branchIdentity}. Locks the other path when research completes. You can cancel unfinished research.`,
-        () => session.game.enqueue(project),
+        () => session.game.start(project),
       )
       return
     }
-    session.change(() => session.game.enqueue(project))
+    session.change(() => session.game.start(project))
   }
 
   return (
@@ -162,7 +130,7 @@ function ResearchCard({
             className="manual-trigger research-trigger"
             aria-label={def.name}
             disabled={!canStart}
-            onClick={() => runResearch('start')}
+            onClick={runResearch}
           >
             <span className="action-icon research-icon" aria-hidden="true">
               <ViewIcon name="research" />
@@ -228,18 +196,6 @@ function ResearchCard({
               Stop
             </Button>
           )}
-          {canQueue && (
-            <Button
-              className="research-inline-control"
-              variant="solid"
-              color="grass"
-              aria-label="Add research to queue"
-              title="Add research to queue"
-              onClick={() => runResearch('queue')}
-            >
-              Queue
-            </Button>
-          )}
           <DisclosureToggle
             expanded={expanded}
             controls={`${id}-details`}
@@ -266,14 +222,9 @@ function ResearchCard({
 
 export function Technology({ session, confirm }: ViewProps) {
   const s = session.game.state
-  const entries = allEntries(s).filter(
-    (entry) => entry.project.kind === 'research',
-  )
   const researchEntries = RESEARCH_IDS.flatMap((id) => {
     if (researchVisible(s, id)) return [{ id, target: 1 }]
-    const target =
-      queuedResearchTarget(entries, id, s.research[id]) ??
-      (researchUpgradeVisible(s, id) ? s.research[id] + 1 : null)
+    const target = researchUpgradeVisible(s, id) ? s.research[id] + 1 : null
     return target ? [{ id, target }] : []
   })
   return (

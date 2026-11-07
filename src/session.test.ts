@@ -10,7 +10,7 @@ import {
 } from './clock'
 import { RESOURCES } from './ids'
 import { parseSave } from './persistence'
-import { enqueue, quoteProject } from './research'
+import { quoteProject, startProject } from './research'
 import { createSession } from './session'
 import { createDefaultState } from './state'
 import { people, settlement } from './test-helpers'
@@ -53,7 +53,7 @@ test('an offline upgrade extends the next absence without changing this one', ()
   people(s, 'forager', 'idle')
   s.research['record-keeping'] = 0
   s.savedAt = hour
-  enqueue(s, { kind: 'research', id: 'record-keeping' })
+  startProject(s, { kind: 'research', id: 'record-keeping' })
   const before = offlineWindow(s)
   beginAbsence(s, hour)
   settleAbsence(s, 25 * hour)
@@ -73,7 +73,7 @@ test('manual work pauses while hidden; research continues; duplicate restoration
   const session = createSession(s, () => {}, hour, true)
   session.change(() => {
     session.game.startAction('sticks')
-    enqueue(s, { kind: 'research', id: 'record-keeping' })
+    startProject(s, { kind: 'research', id: 'record-keeping' })
   }, hour)
   session.setVisible(false, hour + 500)
   const researchDuration = quoteProject(s, {

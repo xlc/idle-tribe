@@ -65,8 +65,8 @@ export function refund(state: GameState, cost: Cost) {
 }
 export function committed(state: GameState, r: ResourceId) {
   return (
-    (state.queues.research.active?.paid[r] ?? 0) +
-    (state.queues.construction.active?.paid[r] ?? 0) +
+    (state.projects.research?.paid[r] ?? 0) +
+    (state.projects.construction?.paid[r] ?? 0) +
     state.manual.reduce((n, m) => n + (m.paid[r] ?? 0), 0)
   )
 }

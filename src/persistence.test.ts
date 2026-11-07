@@ -1,18 +1,18 @@
 import { expect, test } from 'bun:test'
 import { startAction } from './actions'
 import { parseSave } from './persistence'
-import { enqueue, nextExpansion } from './research'
+import { nextExpansion, startProject } from './research'
 import { advanceTime } from './simulation'
 import { createDefaultState } from './state'
 import { people, settlement } from './test-helpers'
 
-test('current saves preserve active paid projects and queued ordering without refunding', () => {
+test('current saves preserve active paid projects without refunding', () => {
   const s = settlement()
   people(s, 'builder', 'sawyer')
   s.research['record-keeping'] = 0
-  enqueue(s, nextExpansion(s, 'housing'))
-  enqueue(s, nextExpansion(s, 'housing'))
-  enqueue(s, { kind: 'research', id: 'record-keeping' })
+  startProject(s, nextExpansion(s, 'housing'))
+  startProject(s, nextExpansion(s, 'housing'))
+  startProject(s, { kind: 'research', id: 'record-keeping' })
   advanceTime(s, 30)
   s.savedAt = 12345
   const loaded = parseSave(JSON.stringify(s))
@@ -53,7 +53,7 @@ test('incompatible and incomplete saves reset projects and absence timestamps to
   )
   const s = settlement()
   s.savedAt = 1000
-  const malformed = { ...s, queues: { research: null, construction: null } }
+  const malformed = { ...s, projects: null }
   expect(parseSave(JSON.stringify(malformed))).toEqual(createDefaultState())
 })
 

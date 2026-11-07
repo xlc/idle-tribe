@@ -3,7 +3,12 @@ import { beginAbsence, effectiveOfflineSeconds, settleAbsence } from './clock'
 import { RESOURCES, WORKING_JOB_IDS } from './ids'
 import { parseSave } from './persistence'
 import { resetRun } from './prestige'
-import { cancelProject, enqueue, nextExpansion, quoteProject } from './research'
+import {
+  cancelProject,
+  nextExpansion,
+  quoteProject,
+  startProject,
+} from './research'
 import {
   adjustWorkers,
   arrivalAptitude,
@@ -114,15 +119,15 @@ test('builders learn through active work, preserve practice on cancellation, and
   const p = required(s.people[0])
   const project = nextExpansion(s, 'housing')
   const quote = quoteProject(s, project)
-  enqueue(s, project)
+  startProject(s, project)
   advanceTime(s, 30)
   expect(p.practice.builder).toBeCloseTo(30, 8)
-  const active = required(s.queues.construction.active ?? undefined)
+  const active = required(s.projects.construction ?? undefined)
   expect(active.progress).toBeCloseTo(30 / 60, 8)
-  expect(cancelProject(s, 'construction', active.sequence)).toBe(true)
+  expect(cancelProject(s, 'construction')).toBe(true)
   expect(p.practice.builder).toBeCloseTo(30, 8)
   expect(s.resources.wood).toBe(100)
-  enqueue(s, nextExpansion(s, 'housing'))
+  startProject(s, nextExpansion(s, 'housing'))
   advanceTime(s, 300)
   expect(s.facilities.housing.level).toBe(3)
   expect(p.practice.builder).toBeCloseTo(30 + quote.total * 60, 8)

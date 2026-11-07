@@ -38,8 +38,7 @@ export const buildings = {
     cost: { planks: 8, blocks: 4 },
     work: 2,
     requires: { research: ['oral-tradition'] },
-    effect:
-      'Unlocks the research queue; later archives store knowledge and data.',
+    effect: 'Stores research and knowledge; later archives hold more data.',
   },
   'builders-lodge': {
     name: "Builders' lodge",

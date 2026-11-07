@@ -11,9 +11,9 @@ import { parseSave } from './persistence'
 import { buyPerk, canReset, legacyReward, resetRun } from './prestige'
 import {
   completeProject,
-  enqueue,
   quoteProject,
   researchVisible,
+  startProject,
 } from './research'
 import { storageCapacity } from './resources'
 import { jobInput, prestigeMultiplier, requirementBlocker } from './settlement'
@@ -56,9 +56,9 @@ test('Chronometry earns discovery through a paid timer, then reset purchases ope
   const project = { kind: 'research', id: 'chronometry' } as const
   const quote = quoteProject(s, project)
   const before = s.resources.machinery
-  enqueue(s, project)
+  startProject(s, project)
   advanceTime(s, quote.total - 1)
-  expect(s.queues.research.active?.paid.machinery).toBe(quote.cost.machinery)
+  expect(s.projects.research?.paid.machinery).toBe(quote.cost.machinery)
   expect(s.resources.machinery).toBe(before - (quote.cost.machinery ?? 0))
   advanceTime(s, 1)
   expect(s.legacy.discovered).toBe(true)

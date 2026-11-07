@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 import { investmentOutcome } from './investment'
-import { completeProject, enqueue } from './research'
+import { completeProject, startProject } from './research'
 import { createDefaultState } from './state'
 import { people } from './test-helpers'
 
@@ -8,6 +8,10 @@ test('output previews compare the current workforce through expansions and equip
   const s = createDefaultState()
   s.facilities.farm.level = 1
   s.resources.food = 100
+  s.resources.wood = 100
+  s.resources.planks = 100
+  s.resources.blocks = 100
+  s.resources.tools = 100
   people(s, 'farmer')
   const original = structuredClone(s)
   const expansion = investmentOutcome(s, {
@@ -44,14 +48,18 @@ test('unstaffed workplaces, housing and storage show a useful investment consequ
   ).toEqual({ label: 'Food storage', before: 50, after: 450 })
 })
 
-test('investment comparisons account for preceding queued construction', () => {
+test('investment comparisons ignore unfinished construction', () => {
   const s = createDefaultState()
   s.research.agriculture = 1
   s.resources.food = 100
+  s.resources.wood = 100
+  s.resources.planks = 100
+  s.resources.blocks = 100
+  s.resources.tools = 100
   completeProject(s, { kind: 'research', id: 'shelters' })
   s.facilities.farm.level = 1
   people(s, 'farmer', 'builder')
-  enqueue(s, { kind: 'expand', id: 'farm', target: 2 })
+  startProject(s, { kind: 'expand', id: 'farm', target: 2 })
   const outcome = investmentOutcome(s, {
     kind: 'expand',
     id: 'farm',

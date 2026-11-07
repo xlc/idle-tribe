@@ -111,14 +111,15 @@ export function Facility({
             ? 'No workers'
             : ''
   const activeEntry =
-      s.queues.construction.active?.project.id === id
-        ? s.queues.construction.active
+      s.projects.construction?.project.id === id
+        ? s.projects.construction
         : null,
-    waitingIndex = s.queues.construction.waiting.findIndex(
-      (entry) => entry.project.id === id,
-    ),
     speed = constructionSpeed(s) / 60,
-    blocker = activeEntry ? '' : buildBlocker(s)
+    blocker = activeEntry
+      ? ''
+      : buildBlocker(s) ||
+        quote.blocker ||
+        (!canAfford(s, quote.cost) ? 'Waiting for materials' : '')
   const facilityType = def.housing
     ? 'Housing'
     : def.storage
@@ -173,7 +174,7 @@ export function Facility({
       paid: activeEntry.paid,
       loss: 'Work',
       earned: activeEntry.progress > 10,
-      run: () => session.game.cancel('construction', activeEntry.sequence),
+      run: () => session.game.cancel('construction'),
     })
   }
   const investment = activeEntry ? (
@@ -318,14 +319,9 @@ export function Facility({
             )}
             <p
               className="action-status building-status"
-              data-visible={Boolean(blocked || blocker || waitingIndex >= 0)}
+              data-visible={Boolean(blocked || blocker)}
             >
-              {blocked ||
-                blocker ||
-                (waitingIndex >= 0
-                  ? `Queued · position ${waitingIndex + 1}`
-                  : '') ||
-                '\u00a0'}
+              {blocked || blocker || '\u00a0'}
             </p>
           </div>
           {craftingJob && (
@@ -373,9 +369,14 @@ export function Facility({
                   `${formatResource(equipmentQuote.total)} work`}
               </small>
               <Button
+                disabled={Boolean(
+                  s.projects.construction ||
+                    equipmentQuote.blocker ||
+                    !canAfford(s, equipmentQuote.cost),
+                )}
                 onClick={() => session.change(() => session.game.equip(id))}
               >
-                Queue tools {equipment.kind === 'equip' ? equipment.target : ''}
+                Start tools {equipment.kind === 'equip' ? equipment.target : ''}
               </Button>
             </div>
           )}

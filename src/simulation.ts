@@ -31,10 +31,12 @@ import {
 } from './ids'
 import { isProductionJob, jobRecipe } from './jobs'
 import { createRecord } from './records'
-import { completeProject, projectName, QUEUES, startQueues } from './research'
+import { completeProject, projectName } from './research'
 import { addResources, canAfford, pay, storageCapacity } from './resources'
 import {
+  assignJob,
   constructionSpeed,
+  firstIdlePerson,
   happinessMultiplier,
   happinessTarget,
   happinessUnlocked,
@@ -46,9 +48,21 @@ import {
 import { expertiseLevel, practiceThreshold } from './skills'
 import type { GameState, ResourceId } from './types'
 
+function resumeConstruction(state: GameState) {
+  if (
+    !automatedWorkAllowed(state) ||
+    !state.projects.construction ||
+    constructionSpeed(state)
+  )
+    return false
+  const person = firstIdlePerson(state)
+  return person >= 0 && assignJob(state, person, 'builder')
+}
+
 function settleEvents(state: GameState, visible: boolean) {
   let changed = false
   if (!automatedWorkAllowed(state) && releaseBuilders(state)) changed = true
+  if (resumeConstruction(state)) changed = true
   for (const p of state.people)
     if (isProductionJob(p.job) && p.progress >= 1 - EPSILON) {
       const input = jobInput(state, p.job)
@@ -58,12 +72,11 @@ function settleEvents(state: GameState, visible: boolean) {
         addResources(state, { [jobRecipe(p.job).output]: 1 })
       } else p.progress = 1
     }
-  for (const id of QUEUES) {
-    const q = state.queues[id],
-      active = q.active
+  for (const slot of ['research', 'construction'] as const) {
+    const active = state.projects[slot]
     if (active && active.progress >= active.total - EPSILON) {
       changed = true
-      q.active = null
+      state.projects[slot] = null
       completeProject(state, active.project)
       state.completedProjects++
       state.notice =
@@ -82,6 +95,7 @@ function settleEvents(state: GameState, visible: boolean) {
       }
     changed = done || changed
   }
+  if (resumeConstruction(state)) changed = true
   // Automated actions run whether or not the settlement is visible.
   for (const id of ACTION_IDS) {
     const progress = state.actionProgress[id]
@@ -108,14 +122,7 @@ function settleEvents(state: GameState, visible: boolean) {
         Math.min(2, happinessTarget(state) - state.happiness),
       )
   }
-  const active = QUEUES.map((id) => state.queues[id].active?.sequence)
-  startQueues(state)
-  return (
-    changed ||
-    QUEUES.some(
-      (id, index) => state.queues[id].active?.sequence !== active[index],
-    )
-  )
+  return changed
 }
 // Structure and expertise bonuses change at discrete events. Keep stock,
 // commitment and cycle-progress checks live between those events.
@@ -219,7 +226,7 @@ export function advanceTime(
           ? action
             ? actionWorking(action)
             : (rates[index] ?? 0) > 0
-          : Boolean(state.queues.construction.active && rules.construction > 0)
+          : Boolean(state.projects.construction && rules.construction > 0)
       if (!working) return 0
       return automatedWorkAllowed(state) ? rules.staffing[job] : 0
     })
@@ -241,7 +248,8 @@ export function advanceTime(
     if (
       automatedWorkAllowed(state) &&
       (state.people.some((person) => person.job !== 'idle') ||
-        QUEUES.some((id) => state.queues[id].active))
+        state.projects.research ||
+        state.projects.construction)
     ) {
       const foodRate = mealCost(state) / 60
       if (foodRate > 0) step = Math.min(step, state.resources.food / foodRate)
@@ -255,10 +263,10 @@ export function advanceTime(
         step = Math.min(step, (next - p.practice[p.job]) / practice)
       }
     })
-    for (const id of QUEUES) {
-      const active = state.queues[id].active,
+    for (const slot of ['research', 'construction'] as const) {
+      const active = state.projects[slot],
         rate = automatedWorkAllowed(state)
-          ? id === 'research'
+          ? slot === 'research'
             ? 1
             : construction
           : 0
@@ -300,10 +308,10 @@ export function advanceTime(
         learned = expertiseLevel(p.practice[p.job]) !== previous || learned
       }
     })
-    for (const id of QUEUES) {
-      const active = state.queues[id].active
+    for (const slot of ['research', 'construction'] as const) {
+      const active = state.projects[slot]
       if (active)
-        active.progress += step * (id === 'research' ? 1 : construction)
+        active.progress += step * (slot === 'research' ? 1 : construction)
     }
     for (const { entry, duration } of manual) entry.progress += step / duration
     for (const action of activeActions) {

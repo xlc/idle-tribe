@@ -15,7 +15,6 @@ import {
   cancelProject,
   nextEquipment,
   nextExpansion,
-  QUEUES,
   quoteProject,
 } from '../src/research'
 import {
@@ -74,13 +73,8 @@ function checkpoint(id: ResearchId): Checkpoint {
   return found
 }
 function clearPlans(state: GameState) {
-  // Ordinary cancellation in every arm: exact paid refunds, no granted stock.
-  for (const queue of QUEUES) {
-    const q = state.queues[queue]
-    if (q.active) cancelProject(state, queue, q.active.sequence)
-    for (const entry of [...q.waiting])
-      cancelProject(state, queue, entry.sequence)
-  }
+  cancelProject(state, 'research')
+  cancelProject(state, 'construction')
 }
 const pairs = []
 const cases: {
@@ -124,7 +118,7 @@ for (const scenario of cases) {
       })
       continue
     }
-    if (candidate.project) game.enqueue(candidate.project)
+    if (candidate.project) game.start(candidate.project)
     if (candidate.staff) {
       const i = state.people.findIndex((p) => p.job === 'idle')
       const staffing = buildingJobs(scenario.workplace)[0]
@@ -166,7 +160,12 @@ await Bun.write(
 )
 
 const recoveries = []
-for (const mistake of ['food', 'consumers', 'queue', 'week-away'] as const) {
+for (const mistake of [
+  'food',
+  'consumers',
+  'construction',
+  'week-away',
+] as const) {
   const start = structuredClone(checkpoint('writing'))
   const game = createGame(start.state)
   let controls = 0
@@ -185,10 +184,10 @@ for (const mistake of ['food', 'consumers', 'queue', 'week-away'] as const) {
       if (p.job === 'woodcutter' && game.assign(i, 'sawyer')) controls += 2
     })
   }
-  if (mistake === 'queue') {
+  if (mistake === 'construction') {
     clearPlans(start.state)
     const p = nextExpansion(start.state, 'housing')
-    game.enqueue(p)
+    game.start(p)
     start.state.people.forEach((person, index) => {
       if (person.job === 'builder' && game.assign(index, 'idle')) controls++
     })
@@ -213,7 +212,7 @@ for (const mistake of ['food', 'consumers', 'queue', 'week-away'] as const) {
       'bottleneck',
       {
         plan(project) {
-          const changed = game.enqueue(project)
+          const changed = game.start(project)
           if (changed) {
             controls++
             game.advanceTime(0, true)

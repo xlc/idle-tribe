@@ -3,7 +3,7 @@ import { BUILDINGS, JOBS, RESEARCH } from '../src/definitions'
 import { BUILDING_IDS, JOB_IDS, RESEARCH_IDS, RESOURCES } from '../src/ids'
 import { isProductionJob, jobRecipe } from '../src/jobs'
 import {
-  allEntries,
+  activeProjects,
   nextExpansion,
   quoteProject,
   researchVisible,
@@ -174,7 +174,7 @@ export function makeDecisions(
     )
       continue
     if (
-      allEntries(s).some(
+      activeProjects(s).some(
         (e) => e.project.kind !== 'research' && e.project.id === id,
       )
     )
@@ -182,7 +182,7 @@ export function makeDecisions(
     const project = nextExpansion(s, id)
     const cost = quoteProject(s, project).cost
     // Do not place a material sink ahead of its first source. Existing or earlier
-    // queued workplaces count; manually gathering the quarry's seed stone is
+    // planned workplaces count; manually gathering the quarry's seed stone is
     // handled in the opening. This is a policy constraint, not a game rule.
     const supplied = RESOURCES.every(
       (resource) =>
@@ -194,7 +194,7 @@ export function makeDecisions(
             isProductionJob(crafting) &&
             JOBS[crafting].output === resource &&
             (s.facilities[source].level > 0 ||
-              allEntries(s).some(
+              activeProjects(s).some(
                 (entry) =>
                   entry.project.kind === 'expand' &&
                   entry.project.id === source,
@@ -202,8 +202,7 @@ export function makeDecisions(
           )
         }),
     )
-    if (s.queues.construction.waiting.length < 2 && supplied)
-      controls.plan(project)
+    if (!s.projects.construction && supplied) controls.plan(project)
   }
   if (!rebalance) return
   const actual = s
@@ -219,21 +218,19 @@ export function makeDecisions(
   // decline while the settlement grows.
   while (resourceRates(s).food <= 0 && assigned(s, 'idle') > 2)
     if (!add(food)) break
-  const constructionHead = s.queues.construction.active
-    ? s.queues.construction.active.project
-    : s.queues.construction.waiting[0]?.project
+  const constructionHead = s.projects.construction?.project
   const constructionReady = constructionHead
-    ? s.queues.construction.active !== null ||
+    ? s.projects.construction !== null ||
       (() => {
         const quote = quoteProject(s, constructionHead)
         return !quote.blocker && canAfford(s, quote.cost)
       })()
     : false
   if (constructionReady) {
-    // Keep one worker available for the construction queue before staffing
+    // Keep one worker available for the construction project before staffing
     // optional gathering and production roles. Without this reservation, a
     // three-person settlement can fill food, wood, and stone roles and leave
-    // every queued building permanently blocked by "No builders".
+    // every planned building permanently blocked by "No builders".
     add('builder')
     // The deliberate planner uses the displayed efficient crew size, just as
     // Fill does. The simple policy keeps one builder and more producers.
@@ -245,7 +242,7 @@ export function makeDecisions(
         if (!add('builder')) break
   }
   // Gathering workplaces use action jobs rather than production definitions;
-  // keep their discovered sources staffed so the policy can fund its queues.
+  // keep their discovered sources staffed so the policy can fund its projects.
   for (const job of ['woodcutter', 'stoneworker'] as const)
     if (jobUnlocked(s, job)) add(job)
   // Growth is explicit: a greeter invites settlers while a bed is free and
@@ -261,21 +258,20 @@ export function makeDecisions(
     (job) => JOBS[job].output !== 'food',
   )
   // Staffed research occupies an idle person; keep one free whenever research
-  // is waiting, or the whole tech tree stalls behind "No idle people".
-  const researchReserve = s.queues.research.waiting.length ? 1 : 0
+  // is active, or the whole tech tree stalls behind "No idle people".
+  const researchReserve =
+    s.projects.research || RESEARCH_IDS.some((id) => researchVisible(s, id))
+      ? 1
+      : 0
   for (const job of roles)
     if (jobUnlocked(s, job) && assigned(s, 'idle') > researchReserve) add(job)
   while (assigned(s, 'idle') > researchReserve) {
     const demand: Partial<Record<(typeof RESOURCES)[number], number>> = {}
-    for (const q of Object.values(s.queues)) {
-      const head = q.waiting[0]
-      if (head) {
-        const quote = quoteProject(s, head.project)
-        for (const r of RESOURCES)
-          demand[r] =
-            (demand[r] ?? 0) +
-            Math.max(0, (quote.cost[r] ?? 0) - s.resources[r])
-      }
+    for (const project of activeProjects(s)) {
+      const quote = quoteProject(s, project.project)
+      for (const r of RESOURCES)
+        demand[r] =
+          (demand[r] ?? 0) + Math.max(0, (quote.cost[r] ?? 0) - s.resources[r])
     }
     // Plan upstream supply for the assigned crew, including processors that
     // are currently stopped for ingredients. Current output alone hides demand.
@@ -336,19 +332,17 @@ export function makeDecisions(
 }
 
 // Reallocate when a visit starts or the workforce, technology, or project
-// queues change. Stock fluctuations alone do not justify discarding partial
+// projects change. Stock fluctuations alone do not justify discarding partial
 // worker cycles each minute.
 export function allocationKey(s: GameState) {
   return JSON.stringify([
     s.people.map((p) => p.job),
     s.facilities,
     s.research,
-    // Queue identities, not progress: a new project needs workers, but a
-    // running one does not justify discarding partial worker cycles.
     Object.fromEntries(
-      Object.entries(s.queues).map(([id, q]) => [
+      Object.entries(s.projects).map(([id, project]) => [
         id,
-        [q.active?.sequence, ...q.waiting.map((e) => e.sequence)],
+        project?.project ?? null,
       ]),
     ),
   ])
