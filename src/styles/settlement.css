@@ -6,18 +6,6 @@
 .building-card {
   padding: 0;
 }
-.building-card[data-action-state="blocked"] {
-  border-color: var(--color-warning);
-  box-shadow: 0 0 0 1px var(--color-warning);
-}
-.building-card[data-action-state="missing-cost"] {
-  border-color: var(--color-error);
-  box-shadow: 0 0 0 1px var(--color-error);
-}
-.building-card[data-action-state="constructing"] {
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 1px var(--color-accent);
-}
 .facility-construction .action-stop.rt-Button {
   flex: 0 0 auto;
   min-height: 32px;
@@ -30,9 +18,9 @@
 .facility-overview {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
-  padding: 8px 10px;
+  padding: 6px 8px;
 }
 .facility-overview > .facility-art {
   flex-basis: 36px;
@@ -44,7 +32,6 @@
   height: 36px;
 }
 .facility-worker-slot[data-visible="false"],
-.building-status[data-visible="false"],
 .investment-change[data-visible="false"] {
   display: none;
 }
@@ -76,7 +63,7 @@
   color: var(--color-neutral);
   font-size: 12px;
   display: block;
-  margin-top: 3px;
+  margin-top: 2px;
 }
 .flavor {
   font-size: 13px;
@@ -86,7 +73,7 @@
 .building-recipe {
   font-size: 13px;
   line-height: 1.35;
-  margin-top: 3px;
+  margin-top: 2px;
   font-variant-numeric: tabular-nums;
 }
 .recipe-output,
@@ -99,21 +86,13 @@
 .recipe-input {
   color: var(--color-warning);
 }
-.building-status {
-  overflow: hidden;
-  font-size: 12px;
-  color: var(--color-warning);
-  margin-top: 4px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 .building-controls {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
-  margin-top: 6px;
+  gap: 4px;
+  margin-top: 4px;
 }
 .facility-investment {
   margin: 0;
@@ -166,25 +145,19 @@
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
-.building-card[data-action-state="missing-cost"] h3 {
-  color: var(--color-error);
-}
 .research-active {
   position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
   min-width: 0;
-  min-height: 68px;
+  min-height: 56px;
   overflow: hidden;
-  padding: 8px 10px 12px;
+  padding: 6px 8px 10px;
   border-top: 1px solid var(--color-base-300);
 }
 .research-active[data-visible="false"] {
   visibility: hidden;
-}
-.research-active[data-running="true"] {
-  border-top-color: var(--color-accent);
 }
 .research-icon,
 .construction-icon {
@@ -214,20 +187,20 @@
   height: 4px;
 }
 .facility-detail {
-  margin-top: 12px;
+  margin-top: 8px;
 }
 .facility-detail summary {
-  padding: 10px 0 0;
+  padding: 6px 0 0;
   color: var(--color-neutral);
   min-height: 32px;
   font-size: 12px;
 }
 .facility-detail p {
   font-size: 13px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 .facility-detail > div {
-  margin: 12px 0;
+  margin: 8px 0;
 }
 .facility-equipment-slot[data-visible="false"],
 .facility-remove-slot[data-visible="false"] {

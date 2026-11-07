@@ -156,10 +156,6 @@
 .action-status-ready {
   color: var(--color-primary);
 }
-.action-status-unavailable {
-  color: var(--color-error);
-  font-weight: 600;
-}
 .action-explore-summary {
   display: grid;
   gap: 2px;
@@ -181,10 +177,6 @@
 .manual-action[data-cost-missing="true"] {
   border-color: var(--color-error);
   box-shadow: 0 0 0 1px var(--color-error);
-}
-.manual-action[data-action-state="blocked"] .action-status-unavailable,
-.manual-action[data-action-state="paused"] .action-status-unavailable {
-  color: var(--color-warning);
 }
 .action-name {
   display: block;

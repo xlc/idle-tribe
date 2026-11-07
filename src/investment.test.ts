@@ -21,7 +21,7 @@ test('output previews compare the current workforce through expansions and equip
   })
   expect(expansion?.label).toBe('Food/s')
   expect(expansion?.before).toBeCloseTo(1)
-  expect(expansion?.after).toBeCloseTo(1.1)
+  expect(expansion?.after).toBeCloseTo(1.15)
   const equipment = investmentOutcome(s, {
     kind: 'equip',
     id: 'farm',
@@ -65,7 +65,7 @@ test('investment comparisons ignore unfinished construction', () => {
     id: 'farm',
     target: 3,
   })
-  expect(outcome?.before).toBeCloseTo(1.1)
-  expect(outcome?.after).toBeCloseTo(1.2)
+  expect(outcome?.before).toBeCloseTo(1.15)
+  expect(outcome?.after).toBeCloseTo(1.3)
   expect(s.facilities.farm.level).toBe(1)
 })

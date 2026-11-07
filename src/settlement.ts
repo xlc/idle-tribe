@@ -1,5 +1,8 @@
 import { actionForJob, cancelManual } from './actions'
-import { WORKERS_PER_BUILDING_LEVEL } from './constants'
+import {
+  BUILDING_OUTPUT_PER_LEVEL,
+  WORKERS_PER_BUILDING_LEVEL,
+} from './constants'
 import { BUILDINGS, JOBS, PERKS, RESEARCH } from './definitions'
 import { automatedWorkAllowed } from './food'
 import {
@@ -337,7 +340,7 @@ function workplaceRate(
   }
   return (
     (def.rate ?? 0) *
-    (1 + 0.1 * (f.level - 1)) *
+    (1 + BUILDING_OUTPUT_PER_LEVEL * (f.level - 1)) *
     staffingMultiplier(state, job) *
     equipmentMultiplier(f.equipment) *
     technology *

@@ -1,4 +1,4 @@
-import { EPSILON } from './constants'
+import { BUILDING_OUTPUT_PER_LEVEL, EPSILON } from './constants'
 import { ACTIONS, BUILDINGS } from './definitions'
 import {
   type Discovery,
@@ -258,7 +258,9 @@ export function automationFactor(state: GameState, id: ActionId) {
     factor += BUILDINGS[ACTIONS[id].building].actionAutomation?.[id] ?? 0
     factor += ACTION_BALANCE.automationPerEquipment * facility.equipment
   }
-  return factor
+  return (
+    factor * (1 + BUILDING_OUTPUT_PER_LEVEL * Math.max(0, facility.level - 1))
+  )
 }
 // Automated skill XP is its own dial, separate from the output factor.
 export function xpFactor(state: GameState, id: ActionId) {

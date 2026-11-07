@@ -1,8 +1,8 @@
 .technology-panel {
-  margin-top: 14px;
+  margin-top: 8px;
 }
 .tech-section {
-  margin: 0 0 16px;
+  margin: 0 0 8px;
 }
 .tech-section h2 {
   font-size: 15px;
@@ -11,13 +11,13 @@
 .tech-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
-  gap: 8px;
+  gap: 6px;
   align-items: start;
 }
 .research-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   align-items: stretch;
 }
 .research-list .research-card {
@@ -27,35 +27,15 @@
   gap: 0 4px;
 }
 .research-trigger {
-  gap: 12px;
-  padding-right: 56px;
+  gap: 8px;
+  padding: 6px 8px;
+  padding-right: 44px;
 }
-.research-card[data-action-state="running"] {
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 1px var(--color-accent);
-}
-.research-card[data-action-state="blocked"] {
-  border-color: var(--color-warning);
-  box-shadow: 0 0 0 1px var(--color-warning);
-}
-.research-card[data-action-state="missing-cost"] .action-status-unavailable {
-  color: var(--color-error);
+.research-card .action-details {
+  padding: 8px 10px;
 }
 .research-card .project-progress small {
   color: var(--color-neutral);
-}
-.requirement {
-  color: var(--color-warning);
-  font-size: 12px;
-  margin-top: 8px;
-}
-.research-card .requirement {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.research-card .requirement[data-visible="false"] {
-  visibility: hidden;
 }
 .research-effect {
   display: flex;
@@ -71,7 +51,7 @@
 .completed-research {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   font-size: 13px;
   line-height: 1.7;
 }

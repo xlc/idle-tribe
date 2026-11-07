@@ -41,25 +41,6 @@ function effectRows(effect: string | readonly string[] | undefined) {
   return Array.isArray(effect) ? effect : [effect]
 }
 
-type ResearchCardState = 'running' | 'blocked' | 'missing-cost' | 'ready'
-
-function researchCardState({
-  active,
-  busy,
-  blocked,
-  affordable,
-}: {
-  active: boolean
-  busy: boolean
-  blocked: boolean
-  affordable: boolean
-}): ResearchCardState {
-  if (active) return 'running'
-  if (busy || blocked) return 'blocked'
-  if (!affordable) return 'missing-cost'
-  return 'ready'
-}
-
 function ResearchCard({
   session,
   confirm,
@@ -78,18 +59,7 @@ function ResearchCard({
       !active && firstIdlePerson(s) < 0 ? 'No idle people' : '',
     blocked = Boolean(quote.blocker || availabilityBlocker),
     affordable = canAfford(s, quote.cost),
-    status = researchCardState({
-      active: Boolean(activeResearch),
-      busy: Boolean(active && !activeResearch),
-      blocked,
-      affordable,
-    }),
-    canStart = status === 'ready'
-  const statusNote = blocked ? (
-    <span className="action-status action-status-unavailable">
-      {quote.blocker || availabilityBlocker}
-    </span>
-  ) : null
+    canStart = !activeResearch && !active && !blocked && affordable
   const cancelResearch = () => {
     if (!activeResearch) return
     confirmStop(confirm, session, {
@@ -117,9 +87,6 @@ function ResearchCard({
       <article
         className="manual-action tech-card research-card"
         aria-label={def.name}
-        data-running={Boolean(activeResearch)}
-        data-action-state={status}
-        data-cost-missing={!activeResearch && !affordable}
       >
         {!activeResearch && !affordable && (
           <CostProgress progress={affordability(s, quote.cost)} />
@@ -151,7 +118,6 @@ function ResearchCard({
                   <span className="action-level">Level {target}</span>
                 </span>
               )}
-              {statusNote}
               <span className="action-yield">
                 {formatDuration(quote.total)}
               </span>
@@ -210,9 +176,6 @@ function ResearchCard({
               <p className="branch-identity">{def.branchIdentity}</p>
             )}
             <Costs session={session} cost={quote.cost} vertical />
-            <p className="requirement" data-visible={Boolean(quote.blocker)}>
-              {quote.blocker || '\u00a0'}
-            </p>
           </div>
         )}
       </article>

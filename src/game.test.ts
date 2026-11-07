@@ -144,11 +144,12 @@ test('removal preserves people and stock, releases workers, and rebuilding start
 test('storage capacity caps new resource gains while prices remain payable', () => {
   const s = createDefaultState()
   s.facilities.stockyard.level = 2
-  expect(storageCapacity(s, 'wood')).toBe(818)
-  s.resources.wood = 4 * 818
+  const capacity = storageCapacity(s, 'wood')
+  expect(capacity).toBe(896)
+  s.resources.wood = 4 * capacity
   expect(canAfford(s, { wood: 3000 })).toBe(true)
   removeFacility(s, 'stockyard')
-  expect(s.resources.wood).toBe(3272)
+  expect(s.resources.wood).toBe(3584)
   expect(storageFull(s, 'wood')).toBe(true)
 })
 
@@ -318,8 +319,9 @@ test('automated gathering follows the same storage cap timeline across tick size
   expect(s.actionProgress.gather).toBeCloseTo(sliced.actionProgress.gather, 3)
   advanceTime(s, 4, true)
   advanceTime(sliced, 4, true)
-  // Two working foragers eat 1.8 food per minute each while filling storage.
-  expect(s.resources.food).toBeCloseTo(50 - (1.8 * 2 * 4.5) / 60, 8)
+  // The level-10 camp's improved output reaches the food cap before the
+  // final meal interval, so only the remaining four seconds drain food.
+  expect(s.resources.food).toBeCloseTo(50 - (1.8 * 2 * 4) / 60, 8)
   expect(s.resources.food).toBeCloseTo(sliced.resources.food, 4)
 })
 

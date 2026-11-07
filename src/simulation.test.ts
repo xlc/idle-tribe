@@ -96,6 +96,10 @@ test('the first shelter is a quick, cheap build and later levels scale up', () =
   expect(second.cost.wood).toBeGreaterThan(first.cost.wood ?? 0)
   expect(second.cost.food).toBeGreaterThan(first.cost.food ?? 0)
   expect(second.total).toBeGreaterThan(first.total)
+
+  state.facilities.housing.level = 4
+  const fifth = quoteProject(state, nextExpansion(state, 'housing'))
+  expect(fifth.cost.wood).toBeGreaterThan((first.cost.wood ?? 0) * 5)
 })
 
 test('itemized flow entries sum to the aggregate resource flows', () => {

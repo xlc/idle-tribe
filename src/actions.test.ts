@@ -7,6 +7,7 @@ import {
   actionRequiredXp,
   actionYield,
   applyExploreReward,
+  automationFactor,
   exploreExpectedRate,
   exploreExpectedRewards,
   resolveEncounter,
@@ -130,6 +131,17 @@ test('full output storage does not block manual or automated work', () => {
   advanceTime(automated, actionDuration(automated, 'sticks'))
   expect(automated.resources.wood).toBe(storageCapacity(automated, 'wood'))
   expect(automated.actionSkills.sticks.xp).toBeGreaterThan(0)
+})
+
+test('building levels improve automated action output', () => {
+  const state = createDefaultState()
+  state.discovered.wood = true
+  state.facilities.lumber.level = 1
+  people(state, 'woodcutter')
+  const first = automationFactor(state, 'sticks')
+  state.facilities.lumber.level = 2
+  const second = automationFactor(state, 'sticks')
+  expect(second).toBeCloseTo(first * 1.15)
 })
 
 test('retired gathering becomes unavailable', () => {

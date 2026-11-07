@@ -1,17 +1,22 @@
-import { EPSILON } from './constants'
+import {
+  BUILDING_LEVEL_GROWTH,
+  BUILDING_WORK_GROWTH,
+  EPSILON,
+} from './constants'
 import { BUILDINGS, RESOURCE_INFO } from './definitions'
 import { BUILDING_IDS, RESEARCH_IDS, RESOURCES } from './ids'
 import { hasResearch, researchEffects } from './research-effects'
 import type { Cost, GameState, ResourceId } from './types'
 export function cumulative(level: number) {
+  const growth = BUILDING_LEVEL_GROWTH
   return (
     level +
-    0.25 * level * (level - 1) +
-    (0.0625 / 6) * level * (level - 1) * (2 * level - 1)
+    growth * level * (level - 1) +
+    ((growth * growth) / 6) * level * (level - 1) * (2 * level - 1)
   )
 }
 export function marginal(level: number) {
-  return (1 + 0.25 * level) ** 2
+  return (1 + BUILDING_WORK_GROWTH * level) ** 2
 }
 export function capital(cost: Cost, level: number): Cost {
   return Object.fromEntries(

@@ -97,19 +97,6 @@ export function Facility({
         ? jobInput(s, craftingJob)
         : {}
   const slots = WORKERS_PER_BUILDING_LEVEL * f.level
-  const missingInputs = RESOURCES.filter(
-    (r) => n > 0 && (input[r] ?? 0) > s.resources[r],
-  )
-  const blocked =
-    actions.length > 0 && visibleActions.length === 0
-      ? 'Retired'
-      : missingInputs.length
-        ? `Paused · Missing ${missingInputs.map((r) => RESOURCE_INFO[r].name.toLowerCase()).join(', ')}`
-        : !f.level
-          ? ''
-          : jobs.length && !n
-            ? 'No workers'
-            : ''
   const activeEntry =
       s.projects.construction?.project.id === id
         ? s.projects.construction
@@ -251,15 +238,6 @@ export function Facility({
       <article
         className="manual-action building-card"
         data-built={f.level > 0}
-        data-action-state={
-          activeEntry
-            ? 'constructing'
-            : missingBuildCost
-              ? 'missing-cost'
-              : blocked
-                ? 'blocked'
-                : undefined
-        }
         aria-label={def.name}
       >
         {missingBuildCost && !activeEntry && (
@@ -317,12 +295,6 @@ export function Facility({
                     : def.effect}
               </p>
             )}
-            <p
-              className="action-status building-status"
-              data-visible={Boolean(blocked || blocker)}
-            >
-              {blocked || blocker || '\u00a0'}
-            </p>
           </div>
           {craftingJob && (
             <div className="facility-worker-slot" data-visible={f.level > 0}>
