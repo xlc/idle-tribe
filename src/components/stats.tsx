@@ -12,7 +12,7 @@ export function StatsView({ session }: { session: GameSession }) {
   const population = state.people.length
   const target = happinessTarget(state)
   return (
-    <div className="people">
+    <div className="stats">
       {happinessUnlocked(state) && (
         <Card asChild>
           <section className="happiness-stat" aria-label="Happiness">
@@ -33,12 +33,12 @@ export function StatsView({ session }: { session: GameSession }) {
         </Card>
       )}
       <Card asChild>
-        <section className="people-roster" aria-label="Population">
+        <section className="stats-card" aria-label="Settlement statistics">
           <header className="people-summary">
             <strong>{population} population</strong>
             <span>{housingCapacity(state)} housing capacity</span>
           </header>
-          <p className="person-status">
+          <p className="stats-note">
             Population is shared automatically across the settlement. Food,
             housing, and buildings determine how much work the town can sustain.
           </p>
