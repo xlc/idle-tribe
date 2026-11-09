@@ -1,35 +1,16 @@
-import { Card, Flex } from '@radix-ui/themes'
-import { JOBS } from '../definitions'
+import { Card } from '@radix-ui/themes'
 import { formatResource } from '../format'
-import { isWorkingJob, JOB_IDS, type WorkingJob } from '../ids'
 import type { GameSession } from '../session'
 import {
-  assigned,
-  availablePeople,
-  happinessMultiplier,
   happinessTarget,
   happinessUnlocked,
-  jobCapacity,
-  jobUnlocked,
-  prestigeMultiplier,
-  staffingMultiplier,
+  housingCapacity,
 } from '../settlement'
-import type { GameState, JobId } from '../types'
-import { Button } from './common'
-
-function jobOutput(state: GameState, job: JobId) {
-  if (!isWorkingJob(job)) return 'Unassigned'
-  const workingJob = job as WorkingJob
-  return `${formatResource(staffingMultiplier(state, workingJob) * happinessMultiplier(state) * prestigeMultiplier(state))} work/s`
-}
 
 export function PeopleView({ session }: { session: GameSession }) {
   const state = session.game.state
+  const population = state.people.length
   const target = happinessTarget(state)
-  const jobs = JOB_IDS.filter(
-    (job): job is JobId => isWorkingJob(job) && jobUnlocked(state, job),
-  )
-  const idle = availablePeople(state)
   return (
     <div className="people">
       {happinessUnlocked(state) && (
@@ -52,59 +33,15 @@ export function PeopleView({ session }: { session: GameSession }) {
         </Card>
       )}
       <Card asChild>
-        <section className="people-roster" aria-label="Workforce">
+        <section className="people-roster" aria-label="Population">
           <header className="people-summary">
-            <strong>{state.people.length} population</strong>
-            <span>
-              {idle} available · {state.people.length - idle} occupied
-            </span>
+            <strong>{population} population</strong>
+            <span>{housingCapacity(state)} housing capacity</span>
           </header>
-          {jobs.map((job) => {
-            const workingJob = job as WorkingJob
-            const count = assigned(state, job)
-            const capacity = jobCapacity(state, job)
-            return (
-              <article
-                className="person-row"
-                key={job}
-                aria-label={JOBS[workingJob].name}
-              >
-                <div className="person-main">
-                  <p className="person-title">
-                    <strong>{JOBS[workingJob as WorkingJob].name}</strong>
-                  </p>
-                  <p className="person-status">
-                    <span>
-                      {count} / {capacity} assigned
-                    </span>
-                    <span> · {jobOutput(state, job)}</span>
-                  </p>
-                </div>
-                <Flex gap="1" align="center">
-                  <Button
-                    variant="soft"
-                    aria-label={`Remove ${JOBS[workingJob as WorkingJob].name}`}
-                    disabled={count === 0}
-                    onClick={() =>
-                      session.change(() => session.game.adjust(job, -1))
-                    }
-                  >
-                    −
-                  </Button>
-                  <Button
-                    variant="soft"
-                    aria-label={`Assign ${JOBS[workingJob as WorkingJob].name}`}
-                    disabled={count >= capacity || idle === 0}
-                    onClick={() =>
-                      session.change(() => session.game.adjust(job, 1))
-                    }
-                  >
-                    +
-                  </Button>
-                </Flex>
-              </article>
-            )
-          })}
+          <p className="person-status">
+            Population is shared automatically across the settlement. Food,
+            housing, and buildings determine how much work the town can sustain.
+          </p>
         </section>
       </Card>
     </div>
