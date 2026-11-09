@@ -11,7 +11,7 @@ import { Button, type Confirm, SectionDisclosure } from './components/common'
 import { ExpeditionEncounter } from './components/expedition'
 import { Legacy } from './components/legacy'
 import { OfflineStatus } from './components/offline-status'
-import { PeopleView } from './components/people'
+import { StatsView } from './components/people'
 import { Production } from './components/production'
 import { Settings } from './components/settings'
 import { Stockpile } from './components/stockpile'
@@ -47,8 +47,8 @@ export function App({ session }: { session: GameSession }) {
     },
     {
       id: 'people',
-      label: 'People',
-      mobileLabel: 'People',
+      label: 'Stats',
+      mobileLabel: 'Stats',
       available: true,
     },
     {
@@ -156,7 +156,7 @@ export function App({ session }: { session: GameSession }) {
                   forceMount
                   hidden={view !== 'people'}
                 >
-                  <PeopleView session={session} />
+                  <StatsView session={session} />
                 </Tabs.Content>
                 {s.legacy.discovered && (
                   <Tabs.Content

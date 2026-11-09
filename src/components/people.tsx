@@ -7,7 +7,7 @@ import {
   housingCapacity,
 } from '../settlement'
 
-export function PeopleView({ session }: { session: GameSession }) {
+export function StatsView({ session }: { session: GameSession }) {
   const state = session.game.state
   const population = state.people.length
   const target = happinessTarget(state)
