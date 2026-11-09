@@ -9,7 +9,6 @@ import {
   actionJobActive,
   actionOutputRate,
   actionRequiredXp,
-  actionWorkersUnlocked,
   actionYield,
   exploreExpectedRate,
   isRateMode,
@@ -32,7 +31,6 @@ import {
   confirmStop,
   DisclosureToggle,
 } from './common'
-import { WorkerControls } from './worker-controls'
 
 function ActionSkill({
   level,
@@ -126,7 +124,6 @@ export function ActionCard({
     rateMode = isRateMode(s, id),
     duration = actionCompletionDuration(s, id),
     skill = s.actionSkills[id],
-    workersUnlocked = actionWorkersUnlocked(s, id),
     housingFull = def.kind === 'arrival' && isHousingFull(s)
   const working =
     availability.kind === 'automated' &&
@@ -197,16 +194,6 @@ export function ActionCard({
                   />
                 )}
               </span>
-              <span
-                className="action-worker-inline"
-                data-visible={workersUnlocked}
-              >
-                <WorkerControls
-                  session={session}
-                  job={def.job}
-                  showFill={false}
-                />
-              </span>
             </fieldset>
           ) : (
             <button
@@ -251,18 +238,6 @@ export function ActionCard({
                 </small>
               </span>
             </button>
-          )}
-          {availability.kind === 'manual' && (
-            <span
-              className="action-worker-inline"
-              data-visible={workersUnlocked}
-            >
-              <WorkerControls
-                session={session}
-                job={def.job}
-                showFill={false}
-              />
-            </span>
           )}
           {running && (
             <Button

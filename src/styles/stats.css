@@ -1,10 +1,10 @@
-.people {
+.stats {
   display: grid;
   gap: 10px;
   min-width: 0;
 }
 
-.opening .people {
+.opening .stats {
   margin-top: 24px;
 }
 

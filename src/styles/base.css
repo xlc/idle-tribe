@@ -86,8 +86,7 @@ small {
   font-size: 12px;
 }
 /* Display serif for names. */
-.action-name,
-.person-title > strong {
+.action-name {
   font-family: Georgia, serif;
   font-weight: 700;
 }

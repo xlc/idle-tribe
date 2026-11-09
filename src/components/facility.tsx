@@ -45,7 +45,6 @@ import {
   confirmStop,
   type ViewProps,
 } from './common'
-import { WorkerControls } from './worker-controls'
 
 function InvestmentChange({
   state,
@@ -296,16 +295,6 @@ export function Facility({
               </p>
             )}
           </div>
-          {craftingJob && (
-            <div className="facility-worker-slot" data-visible={f.level > 0}>
-              <span className="facility-worker-label">Staff</span>
-              <WorkerControls
-                session={session}
-                job={craftingJob}
-                assignable={!singleAction || ACTIONS[singleAction].visible(s)}
-              />
-            </div>
-          )}
         </div>
         {investment}
         <details className="facility-detail">

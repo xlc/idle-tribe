@@ -32,7 +32,7 @@ export function Legacy({
         onClick={() =>
           confirm(
             'Begin a new settlement?',
-            `Gain ${legacyReward(s)} legacy points. Lose all resources, people, facilities, equipment, assignments, aptitudes, personal expertise, action levels, discoveries, research, and branch choices. Keep lifetime points, perks, settings, and the time box.`,
+            `Gain ${legacyReward(s)} legacy points. Lose all resources, population, facilities, equipment, action levels, discoveries, research, and branch choices. Keep lifetime points, perks, settings, and the time box.`,
             () => {
               resetRun(s)
               onReset()

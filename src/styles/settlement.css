@@ -31,17 +31,9 @@
   width: 36px;
   height: 36px;
 }
-.facility-worker-slot[data-visible="false"],
 .investment-change[data-visible="false"] {
   display: none;
 }
-.facility-worker-slot {
-  display: grid;
-  justify-items: end;
-  gap: 3px;
-  min-width: max-content;
-}
-.facility-worker-label,
 .facility-type {
   color: var(--color-neutral);
   font-size: 10px;
@@ -122,28 +114,6 @@
   font-size: 13px;
   margin-top: 5px;
   font-weight: 600;
-}
-.worker-allocation {
-  display: grid;
-  grid-template-rows: 40px;
-  justify-items: center;
-  gap: 4px;
-  min-width: max-content;
-}
-.worker-control {
-  display: flex;
-  gap: 5px;
-  align-items: center;
-  min-height: 40px;
-}
-.worker-count {
-  display: inline-grid;
-  place-items: center;
-  font-size: 16px;
-  font-weight: 700;
-  min-width: 28px;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
 }
 .research-active {
   position: relative;

@@ -17,10 +17,6 @@
     grid-template-columns: 48px minmax(0, 1fr);
     gap: 10px;
   }
-  .facility-overview .facility-worker-slot {
-    grid-column: 2;
-    justify-self: start;
-  }
 }
 @media (max-width: 719px) {
   .game-shell {
@@ -93,10 +89,6 @@
     grid-row: 1;
     overflow: hidden;
   }
-  .action-automated .action-worker-inline {
-    grid-column: 3;
-    grid-row: 1;
-  }
   .action-automation-controls {
     grid-column: 2 / -1;
     grid-row: 2;
@@ -151,16 +143,6 @@
   .facility-overview > .painted-art {
     width: 44px;
     height: 44px;
-  }
-  .facility-overview .facility-worker-slot {
-    grid-column: 2;
-    justify-self: start;
-  }
-  .facility-overview .facility-worker-slot .worker-allocation {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 6px 10px;
   }
   .building-card {
     padding: 10px;

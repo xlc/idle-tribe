@@ -311,33 +311,3 @@
     grid-template-columns: 1fr;
   }
 }
-.action-worker-inline {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  padding: 0 4px;
-}
-.action-worker-inline[data-visible="false"] {
-  display: none;
-}
-.action-worker-inline .worker-allocation {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-}
-.action-worker-inline .worker-allocation > small {
-  display: none;
-}
-.action-worker-inline .worker-control {
-  min-height: 32px;
-  gap: 3px;
-}
-.action-worker-inline .worker-control .rt-Button {
-  min-width: 30px;
-  min-height: 32px;
-  font-size: 15px;
-}
-.action-worker-inline .worker-count {
-  min-width: 20px;
-  font-size: 14px;
-}
